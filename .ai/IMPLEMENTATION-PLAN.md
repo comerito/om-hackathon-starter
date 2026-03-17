@@ -874,9 +874,9 @@ Add before the `example` module entry:
 | 5 | Agenda & Announcements | [x] Done |
 | 6 | Competition Context Enricher & Check-In Scanner | [x] Done |
 | 7 | Tracks Module | [x] Done |
-| 8 | Teams: Entity & Creation | [ ] Not started |
-| 9 | Teams: Invitations & Join Requests | [ ] Not started |
-| 10 | Teams: Track Selection & Stage Lockdown | [ ] Not started |
+| 8 | Teams: Entity & Creation | [x] Done |
+| 9 | Teams: Invitations & Join Requests | [x] Done |
+| 10 | Teams: Track Selection & Stage Lockdown | [x] Done |
 | 11 | Projects: Entity & Editor | [ ] Not started |
 | 12 | Projects: Submission & Flagging | [ ] Not started |
 | 13 | Judging: Panels & Criteria | [ ] Not started |

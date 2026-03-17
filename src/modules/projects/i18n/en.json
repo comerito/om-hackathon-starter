@@ -1,1 +1,149 @@
-{ "projects": { "title": "Projects", "description": "Project submissions" } }
+{
+  "projects": {
+    "title": "Projects",
+    "description": "Project submissions",
+    "table": {
+      "title": "Projects",
+      "selectCompetition": "Please select a competition to view its projects.",
+      "column": {
+        "title": "Title",
+        "team": "Team",
+        "track": "Track",
+        "status": "Status",
+        "flagged": "Flagged",
+        "submittedAt": "Submitted"
+      },
+      "filter": {
+        "allStatuses": "All statuses",
+        "draft": "Draft",
+        "published": "Published",
+        "underReview": "Under Review",
+        "scored": "Scored",
+        "allFlags": "All",
+        "flaggedOnly": "Flagged only",
+        "unflaggedOnly": "Unflagged only"
+      },
+      "actions": {
+        "view": "View details",
+        "flag": "Flag for reuse",
+        "unflag": "Remove flag",
+        "delete": "Delete"
+      },
+      "confirm": {
+        "delete": "Delete this project?"
+      },
+      "prompt": {
+        "flagReason": "Reason for flagging:"
+      },
+      "error": {
+        "generic": "Failed to load projects",
+        "flag": "Failed to flag project",
+        "unflag": "Failed to remove flag",
+        "delete": "Failed to delete project"
+      }
+    },
+    "flash": {
+      "flagged": "Project flagged",
+      "unflagged": "Flag removed",
+      "deleted": "Project deleted"
+    },
+    "detail": {
+      "backToProjects": "Projects",
+      "notFound": "Project not found",
+      "team": "Team",
+      "track": "Track",
+      "submitted": "Submitted",
+      "score": "Score",
+      "description": "Description",
+      "problemStatement": "Problem Statement",
+      "solution": "Solution",
+      "techStack": "Tech Stack",
+      "links": "Links",
+      "originality": "Originality Disclosure",
+      "usesPreexistingCode": "Uses pre-existing code",
+      "preexistingDesc": "Description",
+      "builtDuringDesc": "Built during hackathon",
+      "flagReason": "Flag Reason",
+      "flaggedAt": "Flagged at",
+      "scoring": "Scoring",
+      "finalScore": "Final Score",
+      "peerVotes": "Peer Votes",
+      "rank": "Rank",
+      "manualOverride": "Manual Override",
+      "actions": {
+        "flag": "Flag for Reuse",
+        "unflag": "Remove Flag"
+      },
+      "prompt": {
+        "flagReason": "Reason for flagging:"
+      }
+    },
+    "audit": {
+      "project": {
+        "create": "Create project",
+        "update": "Update project",
+        "delete": "Delete project"
+      }
+    },
+    "portal": {
+      "nav": {
+        "myProject": "My Project"
+      },
+      "editor": {
+        "title": "My Project",
+        "draft": "Draft",
+        "submitted": "Submitted",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "noProject": "No project yet",
+        "noProjectDesc": "A project will be created for your team when the hacking phase begins.",
+        "deadline": "Submission Deadline",
+        "deadlinePassed": "Deadline passed",
+        "saving": "Saving...",
+        "lastSaved": "Last saved",
+        "saveNow": "Save now",
+        "completeness": "Completeness",
+        "basics": "Basics",
+        "titleAndTagline": "Title & Tagline",
+        "titleLabel": "Project title",
+        "titlePlaceholder": "What did you build?",
+        "taglineLabel": "Tagline",
+        "taglinePlaceholder": "One-line description of your project",
+        "content": "Content",
+        "descriptionTitle": "Description",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Tell us about your project...",
+        "problemLabel": "Problem Statement",
+        "problemPlaceholder": "What problem are you solving?",
+        "solutionLabel": "Solution",
+        "solutionPlaceholder": "How does your project solve the problem?",
+        "technical": "Technical",
+        "techStackTitle": "Tech Stack",
+        "techPlaceholder": "e.g. React, Python, PostgreSQL",
+        "addTech": "Add",
+        "links": "Links",
+        "projectLinks": "Project Links",
+        "demoUrl": "Demo URL",
+        "repoUrl": "Repository URL",
+        "videoUrl": "Video URL",
+        "slidesUrl": "Slides URL",
+        "media": "Media",
+        "screenshots": "Screenshots",
+        "screenshotPlaceholder": "Screenshot upload coming soon",
+        "integrity": "Integrity",
+        "originalityTitle": "Originality Disclosure",
+        "usesPreexisting": "This project uses pre-existing code, templates, or libraries beyond standard open-source dependencies",
+        "preexistingLabel": "Describe the pre-existing code used",
+        "preexistingPlaceholder": "What code existed before the hackathon started?",
+        "builtDuringLabel": "What was built during the hackathon?",
+        "builtDuringPlaceholder": "Describe what your team built from scratch during this event.",
+        "readyToSubmit": "Ready to submit?",
+        "submitWarning": "Once submitted, you can no longer edit your project.",
+        "submitBtn": "Submit Project",
+        "submittingBtn": "Submitting...",
+        "submittedMsg": "Your project has been submitted!",
+        "submittedAt": "Submitted at"
+      }
+    }
+  }
+}
