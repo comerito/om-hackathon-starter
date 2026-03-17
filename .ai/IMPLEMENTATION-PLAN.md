@@ -249,7 +249,7 @@ Add before the `example` module entry:
 - [ ] API: `GET /api/competitions` returns paginated list
 - [ ] API: JSONB configs validated by Zod on write (invalid data rejected)
 
-**Status:** `[ ] Not started`
+**Status:** `[x] Done` — committed `116c6c1`
 
 ---
 
@@ -867,7 +867,7 @@ Add before the `example` module entry:
 | Step | Description | Status |
 |------|-------------|--------|
 | 0 | Directory Structure & Module Registration | [x] Done |
-| 1 | Competition Entity & Admin CRUD | [ ] Not started |
+| 1 | Competition Entity & Admin CRUD | [x] Done |
 | 2 | Competition Stage Machine | [ ] Not started |
 | 3 | Participant Profile & Competition Participation | [ ] Not started |
 | 4 | Portal Shell & Auth Gates | [ ] Not started |
