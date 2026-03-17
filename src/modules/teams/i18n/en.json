@@ -1,6 +1,141 @@
 {
   "teams": {
     "title": "Teams",
-    "description": "Team formation and management"
+    "description": "Team formation and management",
+
+    "table": {
+      "title": "Teams",
+      "selectCompetition": "Please select a competition to view its teams.",
+      "column": {
+        "name": "Name",
+        "status": "Status",
+        "members": "Members",
+        "track": "Track",
+        "table": "Table",
+        "createdAt": "Created"
+      },
+      "filter": {
+        "allStatuses": "All statuses",
+        "active": "Active",
+        "disqualified": "Disqualified",
+        "withdrawn": "Withdrawn"
+      },
+      "actions": {
+        "view": "View details",
+        "disqualify": "Disqualify",
+        "reactivate": "Reactivate",
+        "delete": "Delete"
+      },
+      "confirm": {
+        "delete": "Delete this team?"
+      },
+      "prompt": {
+        "disqualifyReason": "Reason for disqualification:"
+      },
+      "error": {
+        "generic": "Failed to load teams",
+        "delete": "Failed to delete team",
+        "disqualify": "Failed to disqualify team",
+        "reactivate": "Failed to reactivate team"
+      }
+    },
+
+    "detail": {
+      "backToTeams": "Teams",
+      "notFound": "Team not found",
+      "description": "Description",
+      "trackId": "Track",
+      "tableLocation": "Location",
+      "presentationOrder": "Presentation Order",
+      "created": "Created",
+      "invitations": "Invitations",
+      "noInvitations": "No invitations",
+      "invitation": {
+        "type": "Type",
+        "invitee": "Invitee",
+        "status": "Status",
+        "created": "Created",
+        "expires": "Expires"
+      },
+      "actions": {
+        "disqualify": "Disqualify",
+        "reactivate": "Reactivate"
+      },
+      "prompt": {
+        "disqualifyReason": "Reason for disqualification:"
+      }
+    },
+
+    "flash": {
+      "deleted": "Team deleted",
+      "disqualified": "Team disqualified",
+      "reactivated": "Team reactivated"
+    },
+
+    "audit": {
+      "team": {
+        "create": "Create team",
+        "update": "Update team",
+        "delete": "Delete team"
+      }
+    },
+
+    "portal": {
+      "nav": {
+        "myTeam": "My Team",
+        "browseTeams": "Browse Teams"
+      },
+      "team": {
+        "title": "My Team",
+        "label": "Your Team",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "pendingInvitations": "Pending Invitations",
+        "youveBeenInvited": "You've been invited!",
+        "accept": "Accept",
+        "decline": "Decline",
+        "createTeam": "Create a Team",
+        "createTeamDesc": "Start your own team",
+        "createTeamHint": "Start your own team and invite others",
+        "browseTeams": "Browse Teams",
+        "browseTeamsHint": "Find a team looking for members",
+        "lookingForTeam": "Looking for Team",
+        "lookingForTeamHint": "Mark yourself as available",
+        "nameLabel": "Team name",
+        "namePlaceholder": "e.g. The Innovators",
+        "descLabel": "Description (optional)",
+        "descPlaceholder": "What is your team about?",
+        "createButton": "Create Team",
+        "cancel": "Cancel",
+        "statusLabel": "Status",
+        "leaveTeam": "Leave Team",
+        "confirmLeave": "Are you sure you want to leave this team?",
+        "tableAssignment": "Table Assignment",
+        "track": "Track",
+        "trackSelected": "Track Selected",
+        "selectTrack": "Select a Track",
+        "invitations": "Invitations",
+        "about": "About",
+        "teamDescription": "Team Description"
+      },
+      "browse": {
+        "title": "Browse Teams",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "teamsTab": "Teams",
+        "peopleTab": "Looking for Team",
+        "searchPlaceholder": "Search teams...",
+        "allTracks": "All tracks",
+        "noTeams": "No teams found",
+        "noTeamsDesc": "Try adjusting your filters.",
+        "noTrack": "No track",
+        "requestJoin": "Request to Join",
+        "sending": "Sending...",
+        "joinRequestSent": "Join request sent!",
+        "noPeople": "No one looking for a team",
+        "noPeopleDesc": "Check back later as more participants register.",
+        "lookingForTeam": "Looking for team"
+      }
+    }
   }
 }

@@ -873,7 +873,7 @@ Add before the `example` module entry:
 | 4 | Portal Shell & Auth Gates | [x] Done |
 | 5 | Agenda & Announcements | [x] Done |
 | 6 | Competition Context Enricher & Check-In Scanner | [x] Done |
-| 7 | Tracks Module | [ ] Not started |
+| 7 | Tracks Module | [x] Done |
 | 8 | Teams: Entity & Creation | [ ] Not started |
 | 9 | Teams: Invitations & Join Requests | [ ] Not started |
 | 10 | Teams: Track Selection & Stage Lockdown | [ ] Not started |
