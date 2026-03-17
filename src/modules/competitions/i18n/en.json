@@ -22,6 +22,120 @@
         "coc_label": "I have read and accept the Code of Conduct",
         "privacy_label": "I have read and accept the Privacy Policy",
         "submit": "Continue"
+      },
+      "agenda": {
+        "title": "Agenda",
+        "empty": "No agenda items yet",
+        "filter_track": "Filter by track:",
+        "all_tracks": "All tracks",
+        "mandatory": "Required"
+      },
+      "announcements": {
+        "title": "Announcements",
+        "empty": "No announcements yet",
+        "pinned": "Pinned",
+        "recent": "Recent"
+      }
+    },
+    "agenda": {
+      "table": {
+        "title": "Agenda",
+        "error": {
+          "generic": "Failed to load agenda items"
+        },
+        "column": {
+          "title": "Title",
+          "type": "Type",
+          "startsAt": "Starts",
+          "endsAt": "Ends",
+          "location": "Location",
+          "isMandatory": "Mandatory"
+        },
+        "actions": {
+          "create": "Add agenda item",
+          "edit": "Edit",
+          "delete": "Delete"
+        }
+      },
+      "filter": {
+        "type": "Type",
+        "type.all": "All types",
+        "mandatory": "Mandatory",
+        "all": "All",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "confirm": {
+        "delete": "Delete this agenda item?"
+      },
+      "flash": {
+        "deleted": "Agenda item deleted"
+      },
+      "error": {
+        "delete": "Failed to delete agenda item"
+      },
+      "audit": {
+        "create": "Create agenda item",
+        "update": "Update agenda item",
+        "delete": "Delete agenda item"
+      }
+    },
+    "announcements": {
+      "table": {
+        "title": "Announcements",
+        "error": {
+          "generic": "Failed to load announcements"
+        },
+        "column": {
+          "title": "Title",
+          "priority": "Priority",
+          "publishedAt": "Published",
+          "pinned": "Pinned"
+        },
+        "actions": {
+          "create": "New announcement",
+          "delete": "Delete"
+        }
+      },
+      "filter": {
+        "priority": "Priority",
+        "priority.all": "All priorities",
+        "pinned": "Pinned",
+        "all": "All",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "confirm": {
+        "delete": "Delete this announcement?"
+      },
+      "flash": {
+        "deleted": "Announcement deleted"
+      },
+      "error": {
+        "delete": "Failed to delete announcement"
+      },
+      "audit": {
+        "create": "Create announcement",
+        "delete": "Delete announcement"
+      }
+    },
+    "checkin": {
+      "title": "Check-In Scanner",
+      "description": "Enter a participation ID or search by email to check in a participant.",
+      "count": {
+        "label": "Checked In"
+      },
+      "input": {
+        "placeholder": "Participation ID or email..."
+      },
+      "button": {
+        "submit": "Check In",
+        "loading": "Checking in..."
+      },
+      "hint": "Press Cmd/Ctrl+Enter to submit",
+      "success": "Participant checked in successfully!",
+      "error": {
+        "generic": "Failed to check in. Please verify the ID and try again."
       }
     }
   }

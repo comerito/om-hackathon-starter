@@ -329,3 +329,166 @@ export const bulkImportItemSchema = z.object({
 export const bulkImportSchema = z.array(bulkImportItemSchema)
 
 export type BulkImportItem = z.infer<typeof bulkImportItemSchema>
+
+// ==========================================================================
+// AgendaItem Validators
+// ==========================================================================
+
+export const agendaItemTypeSchema = z.enum([
+  'ceremony',
+  'talk',
+  'workshop',
+  'break',
+  'meal',
+  'deadline',
+  'demo_session',
+  'custom',
+])
+
+export type AgendaItemTypeValue = z.infer<typeof agendaItemTypeSchema>
+
+// --- Create AgendaItem ---
+
+export const createAgendaItemSchema = z.object({
+  competitionId: z.string().uuid(),
+  title: z.string().min(1).max(500),
+  description: z.string().max(10000).nullable().optional(),
+  type: agendaItemTypeSchema.default('custom'),
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date(),
+  location: z.string().max(500).nullable().optional(),
+  speakerName: z.string().max(255).nullable().optional(),
+  speakerBio: z.string().max(5000).nullable().optional(),
+  trackId: z.string().uuid().nullable().optional(),
+  isMandatory: z.boolean().default(false),
+  order: z.number().int().min(0).default(0),
+}).refine((data) => data.endsAt > data.startsAt, {
+  message: 'endsAt must be after startsAt',
+  path: ['endsAt'],
+})
+
+export type CreateAgendaItemInput = z.infer<typeof createAgendaItemSchema>
+
+// --- Update AgendaItem ---
+
+export const updateAgendaItemSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(10000).nullable().optional(),
+  type: agendaItemTypeSchema.optional(),
+  startsAt: z.coerce.date().optional(),
+  endsAt: z.coerce.date().optional(),
+  location: z.string().max(500).nullable().optional(),
+  speakerName: z.string().max(255).nullable().optional(),
+  speakerBio: z.string().max(5000).nullable().optional(),
+  trackId: z.string().uuid().nullable().optional(),
+  isMandatory: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+})
+
+export type UpdateAgendaItemInput = z.infer<typeof updateAgendaItemSchema>
+
+// --- List AgendaItems ---
+
+export const listAgendaItemSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(50),
+  sortField: z.string().optional().default('starts_at'),
+  sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
+  competitionId: z.string().uuid().optional(),
+  type: agendaItemTypeSchema.optional(),
+  trackId: z.string().uuid().optional(),
+  isMandatory: z.coerce.boolean().optional(),
+})
+
+export type ListAgendaItemQuery = z.infer<typeof listAgendaItemSchema>
+
+// --- AgendaItem List Item (OpenAPI response shape) ---
+
+export const agendaItemListItemSchema = z.object({
+  id: z.string().uuid(),
+  competitionId: z.string().uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  type: agendaItemTypeSchema,
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+  location: z.string().nullable(),
+  speakerName: z.string().nullable(),
+  speakerBio: z.string().nullable(),
+  trackId: z.string().uuid().nullable(),
+  isMandatory: z.boolean(),
+  order: z.number(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+})
+
+export type AgendaItemListItem = z.infer<typeof agendaItemListItemSchema>
+
+// ==========================================================================
+// Announcement Validators
+// ==========================================================================
+
+export const announcementPrioritySchema = z.enum(['info', 'warning', 'urgent'])
+
+export type AnnouncementPriorityValue = z.infer<typeof announcementPrioritySchema>
+
+// --- Create Announcement ---
+
+export const createAnnouncementSchema = z.object({
+  competitionId: z.string().uuid(),
+  title: z.string().min(1).max(500),
+  content: z.string().min(1).max(50000),
+  priority: announcementPrioritySchema.default('info'),
+  targetRoles: z.array(z.string()).default([]),
+  targetTrackIds: z.array(z.string().uuid()).default([]),
+  pinned: z.boolean().default(false),
+})
+
+export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>
+
+// --- Update Announcement ---
+
+export const updateAnnouncementSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(500).optional(),
+  content: z.string().min(1).max(50000).optional(),
+  priority: announcementPrioritySchema.optional(),
+  targetRoles: z.array(z.string()).optional(),
+  targetTrackIds: z.array(z.string().uuid()).optional(),
+  pinned: z.boolean().optional(),
+})
+
+export type UpdateAnnouncementInput = z.infer<typeof updateAnnouncementSchema>
+
+// --- List Announcements ---
+
+export const listAnnouncementSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(50),
+  sortField: z.string().optional().default('published_at'),
+  sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
+  competitionId: z.string().uuid().optional(),
+  priority: announcementPrioritySchema.optional(),
+  pinned: z.coerce.boolean().optional(),
+})
+
+export type ListAnnouncementQuery = z.infer<typeof listAnnouncementSchema>
+
+// --- Announcement List Item (OpenAPI response shape) ---
+
+export const announcementListItemSchema = z.object({
+  id: z.string().uuid(),
+  competitionId: z.string().uuid(),
+  authorId: z.string().uuid(),
+  title: z.string(),
+  content: z.string(),
+  priority: announcementPrioritySchema,
+  targetRoles: z.array(z.string()),
+  targetTrackIds: z.array(z.string()),
+  pinned: z.boolean(),
+  publishedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+})
+
+export type AnnouncementListItem = z.infer<typeof announcementListItemSchema>

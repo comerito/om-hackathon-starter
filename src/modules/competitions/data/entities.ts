@@ -223,3 +223,130 @@ export class ParticipantProfile {
   @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
   updatedAt: Date = new Date()
 }
+
+// ---------------------------------------------------------------------------
+// AgendaItem
+// ---------------------------------------------------------------------------
+
+export enum AgendaItemType {
+  CEREMONY = 'ceremony',
+  TALK = 'talk',
+  WORKSHOP = 'workshop',
+  BREAK = 'break',
+  MEAL = 'meal',
+  DEADLINE = 'deadline',
+  DEMO_SESSION = 'demo_session',
+  CUSTOM = 'custom',
+}
+
+@Entity({ tableName: 'competitions_agenda_item' })
+export class AgendaItem {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ type: 'text' })
+  title!: string
+
+  @Property({ type: 'text', nullable: true })
+  description?: string | null
+
+  @Enum({ items: () => AgendaItemType, default: AgendaItemType.CUSTOM })
+  type: AgendaItemType = AgendaItemType.CUSTOM
+
+  @Property({ name: 'starts_at', type: 'timestamptz' })
+  startsAt!: Date
+
+  @Property({ name: 'ends_at', type: 'timestamptz' })
+  endsAt!: Date
+
+  @Property({ type: 'text', nullable: true })
+  location?: string | null
+
+  @Property({ name: 'speaker_name', type: 'text', nullable: true })
+  speakerName?: string | null
+
+  @Property({ name: 'speaker_bio', type: 'text', nullable: true })
+  speakerBio?: string | null
+
+  @Property({ name: 'track_id', type: 'uuid', nullable: true })
+  trackId?: string | null
+
+  @Property({ name: 'is_mandatory', type: 'boolean', default: false })
+  isMandatory: boolean = false
+
+  @Property({ name: 'order', type: 'integer', default: 0 })
+  order: number = 0
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
+
+// ---------------------------------------------------------------------------
+// Announcement
+// ---------------------------------------------------------------------------
+
+export enum AnnouncementPriority {
+  INFO = 'info',
+  WARNING = 'warning',
+  URGENT = 'urgent',
+}
+
+@Entity({ tableName: 'competitions_announcement' })
+export class Announcement {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ name: 'author_id', type: 'uuid' })
+  authorId!: string
+
+  @Property({ type: 'text' })
+  title!: string
+
+  @Property({ type: 'text' })
+  content!: string
+
+  @Enum({ items: () => AnnouncementPriority, default: AnnouncementPriority.INFO })
+  priority: AnnouncementPriority = AnnouncementPriority.INFO
+
+  @Property({ name: 'target_roles', type: 'jsonb', default: '[]' })
+  targetRoles: string[] = []
+
+  @Property({ name: 'target_track_ids', type: 'jsonb', default: '[]' })
+  targetTrackIds: string[] = []
+
+  @Property({ type: 'boolean', default: false })
+  pinned: boolean = false
+
+  @Property({ name: 'published_at', type: 'timestamptz', onCreate: () => new Date() })
+  publishedAt: Date = new Date()
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+}

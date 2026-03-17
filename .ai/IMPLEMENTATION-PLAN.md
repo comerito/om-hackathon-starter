@@ -870,7 +870,7 @@ Add before the `example` module entry:
 | 1 | Competition Entity & Admin CRUD | [x] Done |
 | 2 | Competition Stage Machine | [x] Done |
 | 3 | Participant Profile & Competition Participation | [x] Done |
-| 4 | Portal Shell & Auth Gates | [ ] Not started |
+| 4 | Portal Shell & Auth Gates | [x] Done |
 | 5 | Agenda & Announcements | [ ] Not started |
 | 6 | Competition Context Enricher & Check-In Scanner | [ ] Not started |
 | 7 | Tracks Module | [ ] Not started |
