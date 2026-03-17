@@ -1,3 +1,9 @@
 // Cross-module entity links (ParticipantProfile → CustomerUser)
-// Will be implemented in Step 3
-export const extensions = []
+import { defineLink, entityId, linkable } from '@open-mercato/shared/modules/dsl'
+
+export const extensions = [
+  defineLink({
+    source: entityId('competitions:participant_profile'),
+    target: linkable('customer_accounts:user'),
+  }),
+]

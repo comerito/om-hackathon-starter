@@ -271,7 +271,7 @@ Add before the `example` module entry:
 - [ ] Stage advance confirmation dialog shows preview + warnings
 - [ ] `competitions.competition.stage_advanced` event emitted (visible in audit log)
 
-**Status:** `[ ] Not started`
+**Status:** `[x] Done` — committed `621ec25`
 
 ---
 
@@ -868,7 +868,7 @@ Add before the `example` module entry:
 |------|-------------|--------|
 | 0 | Directory Structure & Module Registration | [x] Done |
 | 1 | Competition Entity & Admin CRUD | [x] Done |
-| 2 | Competition Stage Machine | [ ] Not started |
+| 2 | Competition Stage Machine | [x] Done |
 | 3 | Participant Profile & Competition Participation | [ ] Not started |
 | 4 | Portal Shell & Auth Gates | [ ] Not started |
 | 5 | Agenda & Announcements | [ ] Not started |

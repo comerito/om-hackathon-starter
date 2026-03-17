@@ -110,3 +110,116 @@ export class Competition {
   @Property({ name: 'deleted_at', type: Date, nullable: true })
   deletedAt?: Date | null
 }
+
+// ---------------------------------------------------------------------------
+// CompetitionParticipation
+// ---------------------------------------------------------------------------
+
+export enum ParticipationRole {
+  PARTICIPANT = 'participant',
+  MENTOR = 'mentor',
+  JUDGE = 'judge',
+}
+
+@Entity({ tableName: 'competitions_participation' })
+@Unique({ properties: ['competitionId', 'customerUserId'] })
+export class CompetitionParticipation {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Index()
+  @Property({ name: 'customer_user_id', type: 'uuid' })
+  customerUserId!: string
+
+  @Enum({ items: () => ParticipationRole, default: ParticipationRole.PARTICIPANT })
+  role: ParticipationRole = ParticipationRole.PARTICIPANT
+
+  @Property({ name: 'checked_in', type: 'boolean', default: false })
+  checkedIn: boolean = false
+
+  @Property({ name: 'checked_in_at', type: 'timestamptz', nullable: true })
+  checkedInAt?: Date | null
+
+  @Property({ name: 'badge_printed', type: 'boolean', default: false })
+  badgePrinted: boolean = false
+
+  @Property({ name: 'coc_accepted', type: 'boolean', default: false })
+  cocAccepted: boolean = false
+
+  @Property({ name: 'coc_accepted_at', type: 'timestamptz', nullable: true })
+  cocAcceptedAt?: Date | null
+
+  @Property({ name: 'privacy_policy_accepted', type: 'boolean', default: false })
+  privacyPolicyAccepted: boolean = false
+
+  @Property({ name: 'privacy_policy_accepted_at', type: 'timestamptz', nullable: true })
+  privacyPolicyAcceptedAt?: Date | null
+
+  @Property({ name: 'profile_complete', type: 'boolean', default: false })
+  profileComplete: boolean = false
+
+  @Property({ name: 'looking_for_team', type: 'boolean', default: false })
+  lookingForTeam: boolean = false
+
+  @Property({ name: 'looking_for_team_description', type: 'text', nullable: true })
+  lookingForTeamDescription?: string | null
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
+
+// ---------------------------------------------------------------------------
+// ParticipantProfile
+// ---------------------------------------------------------------------------
+
+@Entity({ tableName: 'competitions_participant_profile' })
+@Unique({ properties: ['customerUserId', 'tenantId'] })
+export class ParticipantProfile {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'customer_user_id', type: 'uuid' })
+  customerUserId!: string
+
+  @Property({ name: 'bio', type: 'text', nullable: true })
+  bio?: string | null
+
+  @Property({ name: 'organization', type: 'varchar(255)', nullable: true })
+  organization?: string | null
+
+  @Property({ name: 'skills', type: 'jsonb', default: '[]' })
+  skills: string[] = []
+
+  @Property({ name: 'social_links', type: 'jsonb', default: '{}' })
+  socialLinks: Record<string, string> = {}
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: Date, onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
