@@ -222,7 +222,7 @@ Add before the `example` module entry:
 - [ ] `yarn dev` — app starts, no module discovery errors
 - [ ] Backend sidebar shows 7 new module placeholder pages
 
-**Status:** `[ ] Not started`
+**Status:** `[x] Done` — committed `4d01fe6`
 
 ---
 
@@ -866,7 +866,7 @@ Add before the `example` module entry:
 
 | Step | Description | Status |
 |------|-------------|--------|
-| 0 | Directory Structure & Module Registration | [ ] Not started |
+| 0 | Directory Structure & Module Registration | [x] Done |
 | 1 | Competition Entity & Admin CRUD | [ ] Not started |
 | 2 | Competition Stage Machine | [ ] Not started |
 | 3 | Participant Profile & Competition Participation | [ ] Not started |
