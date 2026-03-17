@@ -1,6 +1,28 @@
 {
   "competitions": {
     "title": "Competitions",
-    "description": "Hackathon competition management"
+    "description": "Hackathon competition management",
+    "portal": {
+      "nav": {
+        "dashboard": "Dashboard",
+        "competition": "Competition",
+        "agenda": "Agenda",
+        "participants": "Participants",
+        "announcements": "Announcements",
+        "qr_code": "My QR Code"
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "your_task": "Your Current Task",
+        "stage": "Current Stage",
+        "no_competition": "No active competition found."
+      },
+      "accept": {
+        "title": "Accept Terms",
+        "coc_label": "I have read and accept the Code of Conduct",
+        "privacy_label": "I have read and accept the Privacy Policy",
+        "submit": "Continue"
+      }
+    }
   }
 }

@@ -301,7 +301,7 @@ Add before the `example` module entry:
 - [ ] Admin can re-send invitation
 - [ ] `competitions.participation.created`, `competitions.participation.checked_in` events emitted
 
-**Status:** `[ ] Not started`
+**Status:** `[x] Done` — committed `469fbf1`
 
 ---
 
@@ -869,7 +869,7 @@ Add before the `example` module entry:
 | 0 | Directory Structure & Module Registration | [x] Done |
 | 1 | Competition Entity & Admin CRUD | [x] Done |
 | 2 | Competition Stage Machine | [x] Done |
-| 3 | Participant Profile & Competition Participation | [ ] Not started |
+| 3 | Participant Profile & Competition Participation | [x] Done |
 | 4 | Portal Shell & Auth Gates | [ ] Not started |
 | 5 | Agenda & Announcements | [ ] Not started |
 | 6 | Competition Context Enricher & Check-In Scanner | [ ] Not started |

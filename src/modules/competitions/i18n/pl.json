@@ -1,6 +1,28 @@
 {
   "competitions": {
     "title": "Konkursy",
-    "description": "Zarządzanie konkursami hackathonowymi"
+    "description": "Zarządzanie konkursami hackathonowymi",
+    "portal": {
+      "nav": {
+        "dashboard": "Panel",
+        "competition": "Konkurs",
+        "agenda": "Agenda",
+        "participants": "Uczestnicy",
+        "announcements": "Ogłoszenia",
+        "qr_code": "Mój kod QR"
+      },
+      "dashboard": {
+        "title": "Panel",
+        "your_task": "Twoje bieżące zadanie",
+        "stage": "Aktualny etap",
+        "no_competition": "Brak aktywnego konkursu."
+      },
+      "accept": {
+        "title": "Akceptacja regulaminów",
+        "coc_label": "Przeczytałem/am i akceptuję Kodeks Postępowania",
+        "privacy_label": "Przeczytałem/am i akceptuję Politykę Prywatności",
+        "submit": "Kontynuuj"
+      }
+    }
   }
 }
