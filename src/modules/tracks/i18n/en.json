@@ -1,6 +1,109 @@
 {
   "tracks": {
     "title": "Tracks",
-    "description": "Thematic track categories"
+    "description": "Thematic track categories",
+    "table": {
+      "title": "Tracks",
+      "selectCompetition": "Please select a competition to view its tracks.",
+      "column": {
+        "name": "Name",
+        "description": "Description",
+        "maxTeams": "Max teams",
+        "order": "Order",
+        "teamsCount": "Teams"
+      },
+      "actions": {
+        "create": "New track",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "confirm": {
+        "delete": "Delete this track?"
+      },
+      "error": {
+        "generic": "Failed to load tracks",
+        "delete": "Failed to delete track"
+      }
+    },
+    "form": {
+      "create": {
+        "title": "New track",
+        "submit": "Create track"
+      },
+      "edit": {
+        "title": "Edit track",
+        "submit": "Save track"
+      },
+      "loading": "Loading track...",
+      "fields": {
+        "competitionId": {
+          "label": "Competition"
+        },
+        "name": {
+          "label": "Name",
+          "placeholder": "e.g. AI / Machine Learning"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "What this track is about"
+        },
+        "color": {
+          "label": "Color",
+          "placeholder": "#6366f1"
+        },
+        "iconUrl": {
+          "label": "Icon URL",
+          "placeholder": "https://..."
+        },
+        "maxTeams": {
+          "label": "Max teams",
+          "placeholder": "Leave empty for unlimited"
+        },
+        "order": {
+          "label": "Display order"
+        },
+        "mentorIds": {
+          "label": "Mentor IDs",
+          "placeholder": "Comma-separated UUIDs (multiselect coming soon)"
+        }
+      },
+      "groups": {
+        "details": "Details",
+        "constraints": "Constraints",
+        "mentors": "Mentors"
+      },
+      "error": {
+        "notFound": "Track not found",
+        "load": "Failed to load track"
+      }
+    },
+    "flash": {
+      "created": "Track created",
+      "saved": "Track saved",
+      "deleted": "Track deleted"
+    },
+    "audit": {
+      "track": {
+        "create": "Create track",
+        "update": "Update track",
+        "delete": "Delete track"
+      }
+    },
+    "portal": {
+      "title": "Tracks",
+      "empty": "No tracks yet",
+      "empty.description": "Tracks will be announced soon.",
+      "maxTeams": "Max {{count}} teams",
+      "teams": "0 teams",
+      "mentors": "{{count}} mentors"
+    },
+    "mentor": {
+      "title": "My Tracks",
+      "empty": "No assigned tracks",
+      "empty.description": "You are not assigned as a mentor to any track yet.",
+      "maxTeams": "Max {{count}} teams",
+      "teams": "Teams",
+      "teams.placeholder": "Team list will be available once the teams module is implemented."
+    }
   }
 }

@@ -871,8 +871,8 @@ Add before the `example` module entry:
 | 2 | Competition Stage Machine | [x] Done |
 | 3 | Participant Profile & Competition Participation | [x] Done |
 | 4 | Portal Shell & Auth Gates | [x] Done |
-| 5 | Agenda & Announcements | [ ] Not started |
-| 6 | Competition Context Enricher & Check-In Scanner | [ ] Not started |
+| 5 | Agenda & Announcements | [x] Done |
+| 6 | Competition Context Enricher & Check-In Scanner | [x] Done |
 | 7 | Tracks Module | [ ] Not started |
 | 8 | Teams: Entity & Creation | [ ] Not started |
 | 9 | Teams: Invitations & Join Requests | [ ] Not started |
