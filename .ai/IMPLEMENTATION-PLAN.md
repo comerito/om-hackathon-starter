@@ -879,10 +879,10 @@ Add before the `example` module entry:
 | 10 | Teams: Track Selection & Stage Lockdown | [x] Done |
 | 11 | Projects: Entity & Editor | [x] Done |
 | 12 | Projects: Submission & Flagging | [x] Done |
-| 13 | Judging: Panels & Criteria | [ ] Not started |
-| 14 | Judging: Demo Queue & Timer | [ ] Not started |
-| 15 | Judging: Score Submission & Leaderboard | [ ] Not started |
-| 16 | Judging: Two-Round & Finalists | [ ] Not started |
+| 13 | Judging: Panels & Criteria | [x] Done |
+| 14 | Judging: Demo Queue & Timer | [x] Done |
+| 15 | Judging: Score Submission & Leaderboard | [x] Done |
+| 16 | Judging: Two-Round & Finalists | [x] Done |
 | 17 | Sponsors & Prizes | [ ] Not started |
 | 18 | People's Choice Voting | [ ] Not started |
 | 19 | Results & Prize Announcement | [ ] Not started |

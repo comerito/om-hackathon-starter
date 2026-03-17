@@ -1,1 +1,185 @@
-{ "sponsors": { "title": "Sponsors & Prizes", "description": "Partner and prize management" } }
+{
+  "sponsors": {
+    "title": "Sponsors & Prizes",
+    "description": "Partner and prize management",
+    "table": {
+      "title": "Sponsors",
+      "selectCompetition": "Please select a competition to manage sponsors.",
+      "column": {
+        "name": "Name",
+        "tier": "Tier",
+        "challenge": "Challenge",
+        "contact": "Contact",
+        "order": "Order",
+        "visible": "Visible"
+      },
+      "filter": {
+        "allTiers": "All tiers"
+      },
+      "actions": {
+        "create": "Add Sponsor",
+        "edit": "Edit",
+        "delete": "Delete",
+        "prizes": "Manage Prizes",
+        "results": "Results"
+      },
+      "confirm": {
+        "delete": "Delete this sponsor?"
+      },
+      "error": {
+        "generic": "Failed to load sponsors",
+        "delete": "Failed to delete sponsor"
+      }
+    },
+    "flash": {
+      "created": "Sponsor created",
+      "updated": "Sponsor updated",
+      "deleted": "Sponsor deleted"
+    },
+    "form": {
+      "createTitle": "Add Sponsor",
+      "editTitle": "Edit Sponsor",
+      "backToSponsors": "Back to Sponsors",
+      "name": "Name",
+      "tier": "Tier",
+      "logoUrl": "Logo URL",
+      "websiteUrl": "Website URL",
+      "description": "Description",
+      "challenge": "Sponsor Challenge",
+      "challengeTitle": "Challenge Title",
+      "challengeDescription": "Challenge Description",
+      "challengeResources": "Resources URL",
+      "contact": "Contact",
+      "contactName": "Contact Name",
+      "contactEmail": "Contact Email",
+      "order": "Display Order",
+      "isVisible": "Visible on portal",
+      "saving": "Saving...",
+      "create": "Create Sponsor",
+      "update": "Update Sponsor",
+      "cancel": "Cancel",
+      "error": {
+        "required": "Name and Logo URL are required"
+      }
+    },
+    "prizes": {
+      "title": "Prizes",
+      "selectCompetition": "Please select a competition.",
+      "column": {
+        "name": "Prize",
+        "category": "Category",
+        "rank": "Rank",
+        "winner": "Winner",
+        "order": "Order"
+      },
+      "filter": {
+        "all": "All categories"
+      },
+      "actions": {
+        "create": "Add Prize",
+        "delete": "Delete",
+        "backToSponsors": "Sponsors"
+      },
+      "confirm": {
+        "delete": "Delete this prize?"
+      },
+      "dialog": {
+        "title": "Add Prize"
+      },
+      "flash": {
+        "created": "Prize created",
+        "deleted": "Prize deleted"
+      }
+    },
+    "results": {
+      "title": "Results & Prize Assignment",
+      "backToSponsors": "Back to Sponsors",
+      "voteTally": "Peer Vote Tally",
+      "totalVoters": "Total voters",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes have been cast yet.",
+      "project": "Project",
+      "votes": "Votes",
+      "leaderboard": "Project Leaderboard",
+      "noProjects": "No scored projects yet.",
+      "rank": "Rank",
+      "score": "Score",
+      "peerVotes": "Peer Votes",
+      "prizeAssignment": "Prize Assignment",
+      "noPrizes": "No prizes defined yet.",
+      "assign": "Assign",
+      "unassign": "Unassign",
+      "assignPrize": "Assign Prize",
+      "cancelAssign": "Cancel",
+      "flash": {
+        "assigned": "Prize assigned",
+        "unassigned": "Prize unassigned"
+      }
+    },
+    "audit": {
+      "sponsor": {
+        "create": "Create sponsor",
+        "update": "Update sponsor",
+        "delete": "Delete sponsor"
+      },
+      "prize": {
+        "create": "Create prize",
+        "update": "Update prize",
+        "delete": "Delete prize"
+      }
+    },
+    "portal": {
+      "nav": {
+        "sponsors": "Sponsors & Prizes",
+        "voting": "Vote",
+        "results": "Results"
+      },
+      "sponsors": {
+        "title": "Sponsors & Prizes",
+        "empty": "No sponsors yet",
+        "emptyDesc": "Sponsors will be listed here once they are added.",
+        "challenges": "Sponsor Challenges",
+        "viewResources": "View Resources",
+        "prizes": "Prizes"
+      },
+      "voting": {
+        "title": "Peer Voting",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "open": "Voting is open",
+        "closed": "Voting is closed",
+        "votesUsed": "Votes used",
+        "votesRemaining": "You have {{count}} vote(s) remaining",
+        "endedMsg": "Voting has ended. Results will be announced during the closing ceremony.",
+        "noProjects": "No projects to vote on",
+        "noProjectsDesc": "Projects will appear here once they are submitted.",
+        "vote": "Vote",
+        "unvote": "Remove Vote",
+        "processing": "Processing..."
+      },
+      "results": {
+        "title": "Results",
+        "published": "Official Results",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "notReady": "Results not ready",
+        "notReadyDesc": "Results will be published after the competition concludes.",
+        "myTeam": "My Team",
+        "rank": "Final Rank",
+        "score": "Judge Score",
+        "peerVotes": "Peer Votes",
+        "prizesWon": "Prizes Won",
+        "rankCol": "#",
+        "projectCol": "Project",
+        "scoreCol": "Score",
+        "votesCol": "Votes",
+        "you": "You",
+        "peoplesChoice": "People's Choice Award",
+        "topVoted": "Top voted project by participants",
+        "votesLabel": "votes",
+        "allPrizes": "Prize Winners",
+        "voteTally": "Peer Vote Leaderboard"
+      }
+    }
+  }
+}
