@@ -877,8 +877,8 @@ Add before the `example` module entry:
 | 8 | Teams: Entity & Creation | [x] Done |
 | 9 | Teams: Invitations & Join Requests | [x] Done |
 | 10 | Teams: Track Selection & Stage Lockdown | [x] Done |
-| 11 | Projects: Entity & Editor | [ ] Not started |
-| 12 | Projects: Submission & Flagging | [ ] Not started |
+| 11 | Projects: Entity & Editor | [x] Done |
+| 12 | Projects: Submission & Flagging | [x] Done |
 | 13 | Judging: Panels & Criteria | [ ] Not started |
 | 14 | Judging: Demo Queue & Timer | [ ] Not started |
 | 15 | Judging: Score Submission & Leaderboard | [ ] Not started |

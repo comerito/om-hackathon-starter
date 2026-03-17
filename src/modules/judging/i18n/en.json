@@ -1,1 +1,116 @@
-{ "judging": { "title": "Demos & Judging", "description": "Scoring and demo management" } }
+{
+  "judging": {
+    "title": "Demos & Judging",
+    "description": "Scoring and demo management",
+    "tab": {
+      "panels": "Panels",
+      "criteria": "Criteria",
+      "progress": "Scoring Progress",
+      "demos": "Demos"
+    },
+    "panels": {
+      "title": "Judge Panels",
+      "column": {
+        "name": "Name",
+        "round": "Round",
+        "createdAt": "Created"
+      },
+      "actions": {
+        "create": "Add panel",
+        "delete": "Delete"
+      },
+      "confirm": {
+        "delete": "Delete this panel?"
+      },
+      "flash": {
+        "deleted": "Panel deleted"
+      },
+      "error": {
+        "delete": "Failed to delete panel"
+      }
+    },
+    "criteria": {
+      "title": "Judging Criteria",
+      "column": {
+        "name": "Name",
+        "round": "Round",
+        "maxScore": "Max Score",
+        "weight": "Weight",
+        "order": "Order"
+      },
+      "actions": {
+        "create": "Add criterion",
+        "delete": "Delete"
+      },
+      "confirm": {
+        "delete": "Delete this criterion?"
+      },
+      "flash": {
+        "deleted": "Criterion deleted"
+      },
+      "error": {
+        "delete": "Failed to delete criterion"
+      }
+    },
+    "progress": {
+      "title": "Scoring Progress",
+      "noCompetition": "Select a competition to view scoring progress.",
+      "noData": "No scoring data available yet."
+    },
+    "demos": {
+      "title": "Demo Sessions",
+      "description": "Use the demo management page for queue control, timer, and status updates.",
+      "noCompetition": "Select a competition to manage demos.",
+      "actions": {
+        "manage": "Manage demos",
+        "generate": "Generate Queue",
+        "advance": "Advance",
+        "skip": "Skip"
+      },
+      "confirm": {
+        "skip": "Skip this demo?",
+        "generate": "Generate demo queue? This will replace the existing queue."
+      },
+      "flash": {
+        "advanced": "Demo advanced",
+        "skipped": "Demo skipped",
+        "generated": "Demo queue generated"
+      }
+    },
+    "audit": {
+      "panel": {
+        "create": "Create judge panel",
+        "update": "Update judge panel",
+        "delete": "Delete judge panel"
+      },
+      "criterion": {
+        "create": "Create judging criterion",
+        "update": "Update judging criterion",
+        "delete": "Delete judging criterion"
+      }
+    },
+    "portal": {
+      "nav": {
+        "presentations": "Presentations",
+        "judging": "Judging",
+        "results": "Results"
+      },
+      "presentations": {
+        "title": "Presentations",
+        "empty": "No presentations scheduled"
+      },
+      "judging": {
+        "title": "Judging",
+        "empty": "No projects assigned"
+      },
+      "scoreCard": {
+        "title": "Score Card",
+        "coi": "I have a conflict of interest with this project and should be recused from scoring.",
+        "coiMessage": "You have declared a conflict of interest. No scoring is required for this project.",
+        "back": "Back",
+        "submit": "Submit Score",
+        "submitted": "Submitted"
+      }
+    }
+  }
+}
