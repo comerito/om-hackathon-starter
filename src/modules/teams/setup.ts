@@ -6,6 +6,13 @@ export const setup: ModuleSetupConfig = {
     admin: ['teams.*'],
   },
   defaultCustomerRoleFeatures: {
+    buyer: [
+      'portal.teams.view',
+      'portal.teams.create',
+      'portal.teams.join',
+      'portal.teams.invite',
+      'portal.teams.leave',
+    ],
     participant: [
       'portal.teams.view',
       'portal.teams.create',

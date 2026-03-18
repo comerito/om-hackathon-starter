@@ -6,6 +6,7 @@ export const setup: ModuleSetupConfig = {
     admin: ['incidents.*'],
   },
   defaultCustomerRoleFeatures: {
+    buyer: ['portal.incidents.report'],
     participant: ['portal.incidents.report'],
     mentor: ['portal.incidents.report'],
     judge: ['portal.incidents.report'],

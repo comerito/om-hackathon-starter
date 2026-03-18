@@ -6,6 +6,11 @@ export const setup: ModuleSetupConfig = {
     admin: ['competitions.*'],
   },
   defaultCustomerRoleFeatures: {
+    buyer: [
+      'portal.competitions.view',
+      'portal.competitions.checkin',
+      'portal.participants.view',
+    ],
     participant: [
       'portal.competitions.view',
       'portal.competitions.checkin',

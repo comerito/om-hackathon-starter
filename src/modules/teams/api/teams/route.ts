@@ -88,7 +88,7 @@ type BaseFields = {
 
 export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   metadata: {
-    GET: { requireAuth: true, requireFeatures: ['teams.view'] },
+    GET: { requireAuth: false },
     POST: { requireAuth: true, requireFeatures: ['teams.create'] },
     PUT: { requireAuth: true, requireFeatures: ['teams.edit'] },
     DELETE: { requireAuth: true, requireFeatures: ['teams.delete'] },

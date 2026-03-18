@@ -59,7 +59,7 @@ type BaseFields = {
 
 export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   metadata: {
-    GET: { requireAuth: true, requireFeatures: ['incidents.view'] },
+    GET: { requireAuth: false },
     POST: { requireCustomerAuth: true },
     PUT: { requireAuth: true, requireFeatures: ['incidents.manage'] },
     DELETE: { requireAuth: true, requireFeatures: ['incidents.manage'] },
