@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { TeamMember, TeamRole } from '../../../data/entities'
@@ -53,16 +53,11 @@ export async function POST(
   const isOwner = membership.role === TeamRole.OWNER
   const now = new Date()
 
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        membership.leftAt = now
-        membership.deletedAt = now
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    membership.leftAt = now
+    membership.deletedAt = now
+    await em.flush()
+  })
 
   // If owner leaving, transfer ownership to the longest-standing remaining member
   if (isOwner) {

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { TeamInvitation, InvitationStatus } from '../../../data/entities'
@@ -46,16 +46,11 @@ export async function POST(
     return NextResponse.json({ error: 'Invitation not found or no longer pending' }, { status: 404 })
   }
 
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        invitation.status = InvitationStatus.DECLINED
-        invitation.respondedAt = new Date()
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    invitation.status = InvitationStatus.DECLINED
+    invitation.respondedAt = new Date()
+    await em.flush()
+  })
 
   // Emit event
   try {

@@ -1,1 +1,2 @@
-export default []
+export const injectionTable = {}
+export default injectionTable

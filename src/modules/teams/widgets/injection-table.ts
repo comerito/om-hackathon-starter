@@ -8,3 +8,4 @@ const injectionTable: ModuleInjectionTable = {
 }
 
 export default injectionTable
+export { injectionTable }

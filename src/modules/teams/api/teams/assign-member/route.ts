@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { Team, TeamMember, TeamRole, TeamStatus } from '../../../data/entities'
@@ -65,25 +65,20 @@ export async function POST(
 
   // Create membership
   let member: TeamMember | null = null
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        const memberData = {
-          teamId,
-          customerUserId,
-          competitionId,
-          role: TeamRole.MEMBER,
-          tenantId: team.tenantId,
-          organizationId: team.organizationId,
-        }
-        member = new TeamMember()
-        Object.assign(member, memberData)
-        em.persist(member)
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    const memberData = {
+      teamId,
+      customerUserId,
+      competitionId,
+      role: TeamRole.MEMBER,
+      tenantId: team.tenantId,
+      organizationId: team.organizationId,
+    }
+    member = new TeamMember()
+    Object.assign(member, memberData)
+    em.persist(member)
+    await em.flush()
+  })
 
   // Emit event
   try {

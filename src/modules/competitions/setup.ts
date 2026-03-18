@@ -25,3 +25,4 @@ export const setup: ModuleSetupConfig = {
     ],
   },
 }
+export default setup

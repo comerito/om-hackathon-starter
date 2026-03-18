@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import type { NextRequest } from 'next/server'
-import { makeApiHandler } from '@open-mercato/shared/lib/api/handler'
-import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
+import { NextResponse } from 'next/server'
+import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
+import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import { CompetitionParticipation } from '../../../data/entities'
@@ -17,46 +17,58 @@ export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.checkin.manage'] },
 }
 
-export const POST = makeApiHandler({
-  schema: checkinBodySchema,
-  async handler({ parsed, container, auth }) {
-    const tenantId = auth?.tenantId
-    if (!tenantId) throw new CrudHttpError(400, { error: 'Tenant context is required' })
-    const organizationId = auth?.orgId
-    if (!organizationId) throw new CrudHttpError(400, { error: 'Organization context is required' })
+export async function POST(request: Request) {
+  const auth = await getAuthFromRequest(request)
+  const tenantId = auth?.tenantId
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant context is required' }, { status: 400 })
+  }
+  const organizationId = auth?.orgId
+  if (!organizationId) {
+    return NextResponse.json({ error: 'Organization context is required' }, { status: 400 })
+  }
 
-    const em = container.resolve('em') as EntityManager
-    const de = container.resolve('dataEngine') as DataEngine
+  const rawBody = await request.json().catch(() => ({}))
+  const parsed = checkinBodySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request body', details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
+  }
 
-    const participation = await em.findOne(CompetitionParticipation, {
-      id: parsed.participationId,
-      tenantId,
-      organizationId,
-    } as FilterQuery<CompetitionParticipation>)
+  const container = await createRequestContainer()
+  const em = container.resolve('em') as EntityManager
+  const de = container.resolve('dataEngine') as DataEngine
 
-    if (!participation) {
-      throw new CrudHttpError(404, { error: 'Participation not found' })
-    }
+  const participation = await em.findOne(CompetitionParticipation, {
+    id: parsed.data.participationId,
+    tenantId,
+    organizationId,
+  } as FilterQuery<CompetitionParticipation>)
 
-    if (participation.checkedIn) {
-      throw new CrudHttpError(409, { error: 'Participant is already checked in' })
-    }
+  if (!participation) {
+    return NextResponse.json({ error: 'Participation not found' }, { status: 404 })
+  }
 
-    participation.checkedIn = true
-    participation.checkedInAt = new Date()
-    await em.persistAndFlush(participation)
+  if (participation.checkedIn) {
+    return NextResponse.json({ error: 'Participant is already checked in' }, { status: 409 })
+  }
 
-    await emitCompetitionsEvent(de, 'competitions.participation.checked_in', {
-      id: participation.id,
-      competitionId: participation.competitionId,
-      customerUserId: participation.customerUserId,
-      tenantId,
-      organizationId,
-    })
+  participation.checkedIn = true
+  participation.checkedInAt = new Date()
+  await em.persistAndFlush(participation)
 
-    return { ok: true }
-  },
-})
+  await emitCompetitionsEvent(de, 'competitions.participation.checked_in', {
+    id: participation.id,
+    competitionId: participation.competitionId,
+    customerUserId: participation.customerUserId,
+    tenantId,
+    organizationId,
+  })
+
+  return NextResponse.json({ ok: true })
+}
 
 export const openApi: OpenApiRouteDoc = {
   POST: {

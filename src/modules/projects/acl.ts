@@ -6,3 +6,4 @@ export const features = [
   'projects.manage',
   'projects.flag',
 ]
+export default features

@@ -17,3 +17,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.teams.view'],
   },
 }
+export default setup

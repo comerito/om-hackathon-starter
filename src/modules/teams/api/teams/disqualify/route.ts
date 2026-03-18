@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { Team, TeamStatus } from '../../../data/entities'
@@ -53,19 +53,14 @@ export async function POST(
   const now = new Date()
   const adminId = ctx.auth?.sub ?? null
 
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        team.status = TeamStatus.DISQUALIFIED
-        team.disqualificationReason = reason
-        team.disqualifiedAt = now
-        team.disqualifiedBy = adminId
-        team.updatedAt = now
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    team.status = TeamStatus.DISQUALIFIED
+    team.disqualificationReason = reason
+    team.disqualifiedAt = now
+    team.disqualifiedBy = adminId
+    team.updatedAt = now
+    await em.flush()
+  })
 
   // Emit event
   try {

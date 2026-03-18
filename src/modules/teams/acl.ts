@@ -6,3 +6,4 @@ export const features = [
   'teams.manage',
   'teams.disqualify',
 ]
+export default features

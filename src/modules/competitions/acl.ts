@@ -9,3 +9,4 @@ export const features = [
   'competitions.participants.manage',
   'competitions.checkin.manage',
 ]
+export default features

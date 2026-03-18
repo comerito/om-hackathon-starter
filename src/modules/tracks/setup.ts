@@ -11,3 +11,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.tracks.view'],
   },
 }
+export default setup

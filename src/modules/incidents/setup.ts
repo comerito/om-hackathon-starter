@@ -11,3 +11,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.incidents.report'],
   },
 }
+export default setup

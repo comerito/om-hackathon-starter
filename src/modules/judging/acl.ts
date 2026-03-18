@@ -10,3 +10,4 @@ export const features = [
   'judging.results.view',
   'judging.results.manage',
 ]
+export default features

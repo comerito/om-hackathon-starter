@@ -11,3 +11,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.judging.score', 'portal.judging.view_assigned', 'portal.judging.demos.view', 'portal.judging.results.view'],
   },
 }
+export default setup

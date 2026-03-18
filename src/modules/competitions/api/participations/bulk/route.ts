@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { makeApiHandler } from '@open-mercato/shared/lib/api/handler'
-import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
+import { NextResponse } from 'next/server'
+import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
+import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import { CompetitionParticipation, ParticipationRole } from '../../../data/entities'
@@ -25,82 +26,94 @@ export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
 }
 
-export const POST = makeApiHandler({
-  schema: bulkImportBodySchema,
-  async handler({ parsed, container, auth }) {
-    const tenantId = auth?.tenantId
-    if (!tenantId) throw new CrudHttpError(400, { error: 'Tenant context is required' })
-    const organizationId = auth?.orgId
-    if (!organizationId) throw new CrudHttpError(400, { error: 'Organization context is required' })
+export async function POST(request: Request) {
+  const auth = await getAuthFromRequest(request)
+  const tenantId = auth?.tenantId
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant context is required' }, { status: 400 })
+  }
+  const organizationId = auth?.orgId
+  if (!organizationId) {
+    return NextResponse.json({ error: 'Organization context is required' }, { status: 400 })
+  }
 
-    const em = container.resolve('em') as EntityManager
-    const de = container.resolve('dataEngine') as DataEngine
+  const rawBody = await request.json().catch(() => ({}))
+  const parsed = bulkImportBodySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request body', details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    )
+  }
 
-    let created = 0
-    const errors: Array<{ row: number; error: string }> = []
+  const container = await createRequestContainer()
+  const em = container.resolve('em') as EntityManager
+  const de = container.resolve('dataEngine') as DataEngine
 
-    for (let i = 0; i < parsed.participants.length; i++) {
-      const participant = parsed.participants[i]
-      try {
-        // Check if a customer user exists with this email via the customer_accounts module
-        // For now, create the participation record with a placeholder customerUserId.
-        // In production, this would look up or invite the user first.
-        // TODO: integrate with customer_accounts invitation flow
+  let created = 0
+  const errors: Array<{ row: number; error: string }> = []
 
-        // Attempt to find existing user by email using a raw query
-        const rows = await em.getConnection().execute(
-          `SELECT id FROM customer_accounts_user WHERE email = ? AND tenant_id = ? LIMIT 1`,
-          [participant.email, tenantId],
+  for (let i = 0; i < parsed.data.participants.length; i++) {
+    const participant = parsed.data.participants[i]
+    try {
+      // Check if a customer user exists with this email via the customer_accounts module
+      // For now, create the participation record with a placeholder customerUserId.
+      // In production, this would look up or invite the user first.
+      // TODO: integrate with customer_accounts invitation flow
+
+      // Attempt to find existing user by email using a raw query
+      const rows = await em.getConnection().execute(
+        `SELECT id FROM customer_accounts_user WHERE email = ? AND tenant_id = ? LIMIT 1`,
+        [participant.email, tenantId],
+      )
+
+      let customerUserId: string
+
+      if (rows.length > 0) {
+        customerUserId = rows[0].id
+      } else {
+        // Create a minimal customer user record for the invitation
+        const userRows = await em.getConnection().execute(
+          `INSERT INTO customer_accounts_user (id, email, name, tenant_id, organization_id, created_at, updated_at)
+           VALUES (gen_random_uuid(), ?, ?, ?, ?, now(), now())
+           RETURNING id`,
+          [participant.email, participant.name, tenantId, organizationId],
         )
-
-        let customerUserId: string
-
-        if (rows.length > 0) {
-          customerUserId = rows[0].id
-        } else {
-          // Create a minimal customer user record for the invitation
-          const userRows = await em.getConnection().execute(
-            `INSERT INTO customer_accounts_user (id, email, name, tenant_id, organization_id, created_at, updated_at)
-             VALUES (gen_random_uuid(), ?, ?, ?, ?, now(), now())
-             RETURNING id`,
-            [participant.email, participant.name, tenantId, organizationId],
-          )
-          customerUserId = userRows[0].id
-        }
-
-        // Check for duplicate participation
-        const existing = await em.findOne(CompetitionParticipation, {
-          competitionId: parsed.competitionId,
-          customerUserId,
-          tenantId,
-        } as FilterQuery<CompetitionParticipation>)
-
-        if (existing) {
-          errors.push({ row: i + 1, error: `Participant with email ${participant.email} is already registered` })
-          continue
-        }
-
-        await de.createOrmEntity({
-          entity: CompetitionParticipation,
-          data: {
-            competitionId: parsed.competitionId,
-            customerUserId,
-            role: (participant.role ?? 'participant') as ParticipationRole,
-            tenantId,
-            organizationId,
-          },
-        })
-
-        created++
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        errors.push({ row: i + 1, error: message })
+        customerUserId = userRows[0].id
       }
-    }
 
-    return { created, errors }
-  },
-})
+      // Check for duplicate participation
+      const existing = await em.findOne(CompetitionParticipation, {
+        competitionId: parsed.data.competitionId,
+        customerUserId,
+        tenantId,
+      } as FilterQuery<CompetitionParticipation>)
+
+      if (existing) {
+        errors.push({ row: i + 1, error: `Participant with email ${participant.email} is already registered` })
+        continue
+      }
+
+      await de.createOrmEntity({
+        entity: CompetitionParticipation,
+        data: {
+          competitionId: parsed.data.competitionId,
+          customerUserId,
+          role: (participant.role ?? 'participant') as ParticipationRole,
+          tenantId,
+          organizationId,
+        },
+      })
+
+      created++
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      errors.push({ row: i + 1, error: message })
+    }
+  }
+
+  return NextResponse.json({ created, errors })
+}
 
 export const openApi: OpenApiRouteDoc = {
   POST: {

@@ -7,3 +7,4 @@ export const features = [
   'sponsors.prizes.manage',
   'sponsors.prizes.assign',
 ]
+export default features

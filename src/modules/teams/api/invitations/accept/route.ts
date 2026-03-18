@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { Team, TeamMember, TeamInvitation, TeamRole, TeamStatus, InvitationStatus } from '../../../data/entities'
@@ -108,27 +108,22 @@ export async function POST(
 
   // Atomic: create member, update invitation, cancel other pending invitations
   try {
-    await withAtomicFlush(
-      em,
-      [
-        () => {
-          // Create team member
-          const member = new TeamMember()
-          member.teamId = invitation.teamId
-          member.customerUserId = customerUserId
-          member.competitionId = invitation.competitionId
-          member.role = TeamRole.MEMBER
-          member.tenantId = invitation.tenantId
-          member.organizationId = invitation.organizationId
-          em.persist(member)
+    await em.transactional(async () => {
+      // Create team member
+      const member = new TeamMember()
+      member.teamId = invitation.teamId
+      member.customerUserId = customerUserId
+      member.competitionId = invitation.competitionId
+      member.role = TeamRole.MEMBER
+      member.tenantId = invitation.tenantId
+      member.organizationId = invitation.organizationId
+      em.persist(member)
 
-          // Accept this invitation
-          invitation.status = InvitationStatus.ACCEPTED
-          invitation.respondedAt = now
-        },
-      ],
-      { transaction: true },
-    )
+      // Accept this invitation
+      invitation.status = InvitationStatus.ACCEPTED
+      invitation.respondedAt = now
+      await em.flush()
+    })
   } catch (err: unknown) {
     // Handle unique constraint violation (user already on a team)
     const message = err instanceof Error ? err.message : String(err)

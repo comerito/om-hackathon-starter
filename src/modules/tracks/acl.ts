@@ -4,3 +4,4 @@ export const features = [
   'tracks.edit',
   'tracks.delete',
 ]
+export default features

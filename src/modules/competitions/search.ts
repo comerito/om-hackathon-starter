@@ -19,3 +19,4 @@ export const searchConfig: SearchModuleConfig = {
 }
 
 export default searchConfig
+export const config = searchConfig

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { Team, TeamStatus } from '../../../data/entities'
@@ -50,19 +50,14 @@ export async function POST(
     return NextResponse.json({ error: 'Team is already active' }, { status: 422 })
   }
 
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        team.status = TeamStatus.ACTIVE
-        team.disqualificationReason = null
-        team.disqualifiedAt = null
-        team.disqualifiedBy = null
-        team.updatedAt = new Date()
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    team.status = TeamStatus.ACTIVE
+    team.disqualificationReason = null
+    team.disqualifiedAt = null
+    team.disqualifiedBy = null
+    team.updatedAt = new Date()
+    await em.flush()
+  })
 
   // Emit event
   try {

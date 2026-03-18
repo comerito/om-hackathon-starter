@@ -11,3 +11,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.sponsors.view', 'portal.voting.view'],
   },
 }
+export default setup

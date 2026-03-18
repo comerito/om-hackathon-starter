@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { Competition, CompetitionStage } from '../../../data/entities'
@@ -97,16 +97,11 @@ export async function POST(
 
   // Perform the stage update atomically
   const oldStage = competition.stage
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        competition.stage = targetStage as CompetitionStage
-        competition.updatedAt = new Date()
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    competition.stage = targetStage as CompetitionStage
+    competition.updatedAt = new Date()
+    await em.flush()
+  })
 
   // Emit stage_advanced event
   try {

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { withAtomicFlush } from '@open-mercato/shared/lib/commands/flush'
+
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import type { AuthContext } from '@open-mercato/shared/lib/auth/server'
 import { TeamInvitation, InvitationType, InvitationStatus } from '../../data/entities'
@@ -123,26 +123,21 @@ export async function POST(
   const expiresAt = new Date(Date.now() + (expiresInHours ?? 48) * 60 * 60 * 1000)
 
   let invitation: TeamInvitation | null = null
-  await withAtomicFlush(
-    em,
-    [
-      () => {
-        invitation = new TeamInvitation()
-        invitation.teamId = teamId
-        invitation.inviterId = inviterId
-        invitation.inviteeId = inviteeId
-        invitation.type = type as InvitationType
-        invitation.status = InvitationStatus.PENDING
-        invitation.message = message ?? null
-        invitation.expiresAt = expiresAt
-        invitation.competitionId = competitionId
-        invitation.tenantId = ctx.auth?.tenantId ?? ''
-        invitation.organizationId = ((ctx.auth as Record<string, unknown>)?.orgId as string) ?? ''
-        em.persist(invitation)
-      },
-    ],
-    { transaction: true },
-  )
+  await em.transactional(async () => {
+    invitation = new TeamInvitation()
+    invitation.teamId = teamId
+    invitation.inviterId = inviterId
+    invitation.inviteeId = inviteeId
+    invitation.type = type as InvitationType
+    invitation.status = InvitationStatus.PENDING
+    invitation.message = message ?? null
+    invitation.expiresAt = expiresAt
+    invitation.competitionId = competitionId
+    invitation.tenantId = ctx.auth?.tenantId ?? ''
+    invitation.organizationId = ((ctx.auth as Record<string, unknown>)?.orgId as string) ?? ''
+    em.persist(invitation)
+    await em.flush()
+  })
 
   // Emit event
   try {

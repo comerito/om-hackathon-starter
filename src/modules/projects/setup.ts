@@ -11,3 +11,4 @@ export const setup: ModuleSetupConfig = {
     judge: ['portal.projects.view'],
   },
 }
+export default setup
