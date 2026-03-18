@@ -2,34 +2,21 @@ import { InjectionPosition } from '@open-mercato/shared/modules/widgets/injectio
 import type { InjectionMenuItemWidget } from '@open-mercato/shared/modules/widgets/injection'
 
 /**
- * Portal sidebar navigation items.
- *
- * NOTE: hrefs must include the /:orgSlug prefix to work under the portal
- * layout (e.g. /acme-corp/portal/dashboard). The PortalShell does not
- * auto-prefix injected menu item hrefs — only built-in items get prefixed.
- *
- * As a workaround the hrefs start with /portal/ which works for direct
- * links but NOT for client-side navigation inside the portal shell.
- * TODO: Upstream fix in PortalShell to auto-prefix injected hrefs.
+ * Consolidated portal sidebar navigation for all HackOn modules.
+ * Hardcoded /acme-corp/ prefix — TODO: update when framework adds auto-prefixing.
  */
 const widget: InjectionMenuItemWidget = {
   metadata: {
     id: 'competitions.injection.portal-nav',
   },
   menuItems: [
-    {
-      id: 'hackon-dashboard',
-      labelKey: 'competitions.portal.nav.dashboard',
-      icon: 'lucide:layout-dashboard',
-      href: '/acme-corp/portal/dashboard',
-      placement: { position: InjectionPosition.Start },
-    },
+    // --- Competitions ---
     {
       id: 'hackon-competition',
       labelKey: 'competitions.portal.nav.competition',
       icon: 'lucide:trophy',
       href: '/acme-corp/portal/competition',
-      placement: { position: InjectionPosition.After, relativeTo: 'hackon-dashboard' },
+      placement: { position: InjectionPosition.After, relativeTo: 'portal-dashboard' },
     },
     {
       id: 'hackon-agenda',
@@ -39,18 +26,78 @@ const widget: InjectionMenuItemWidget = {
       placement: { position: InjectionPosition.After, relativeTo: 'hackon-competition' },
     },
     {
-      id: 'hackon-participants',
-      labelKey: 'competitions.portal.nav.participants',
-      icon: 'lucide:users',
-      href: '/acme-corp/portal/participants',
-      placement: { position: InjectionPosition.After, relativeTo: 'hackon-agenda' },
-    },
-    {
       id: 'hackon-announcements',
       labelKey: 'competitions.portal.nav.announcements',
       icon: 'lucide:megaphone',
       href: '/acme-corp/portal/announcements',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-agenda' },
+    },
+    {
+      id: 'hackon-participants',
+      labelKey: 'competitions.portal.nav.participants',
+      icon: 'lucide:contact',
+      href: '/acme-corp/portal/participants',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-announcements' },
+    },
+    // --- Teams ---
+    {
+      id: 'hackon-my-team',
+      labelKey: 'teams.portal.nav.myTeam',
+      icon: 'lucide:users',
+      href: '/acme-corp/portal/team',
       placement: { position: InjectionPosition.After, relativeTo: 'hackon-participants' },
+    },
+    {
+      id: 'hackon-browse-teams',
+      labelKey: 'teams.portal.nav.browseTeams',
+      icon: 'lucide:search',
+      href: '/acme-corp/portal/teams/browse',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-my-team' },
+    },
+    // --- Projects ---
+    {
+      id: 'hackon-my-project',
+      labelKey: 'projects.portal.nav.myProject',
+      icon: 'lucide:folder-code',
+      href: '/acme-corp/portal/project',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-browse-teams' },
+    },
+    // --- Judging ---
+    {
+      id: 'hackon-presentations',
+      labelKey: 'judging.portal.nav.presentations',
+      icon: 'lucide:presentation',
+      href: '/acme-corp/portal/presentations',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-my-project' },
+    },
+    {
+      id: 'hackon-judging',
+      labelKey: 'judging.portal.nav.judging',
+      icon: 'lucide:gavel',
+      href: '/acme-corp/portal/judging',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-presentations' },
+    },
+    // --- Sponsors & Results ---
+    {
+      id: 'hackon-sponsors',
+      labelKey: 'sponsors.portal.nav.sponsors',
+      icon: 'lucide:award',
+      href: '/acme-corp/portal/sponsors',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-judging' },
+    },
+    {
+      id: 'hackon-voting',
+      labelKey: 'sponsors.portal.nav.voting',
+      icon: 'lucide:heart',
+      href: '/acme-corp/portal/voting',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-sponsors' },
+    },
+    {
+      id: 'hackon-results',
+      labelKey: 'sponsors.portal.nav.results',
+      icon: 'lucide:bar-chart-3',
+      href: '/acme-corp/portal/results',
+      placement: { position: InjectionPosition.After, relativeTo: 'hackon-voting' },
     },
   ],
 }
