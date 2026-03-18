@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
+import { E } from '@/.mercato/generated/entities.ids.generated'
 import { JudgingCriterion } from '../../data/entities'
 import { listCriterionSchema, criterionListItemSchema } from '../../data/validators'
 import { criterionCrudEvents } from '../../commands/judging'
@@ -78,6 +79,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   },
   events: { module: 'judging', entity: 'criterion', persistent: true },
   list: {
+    entityId: E.judging.judging_criterion,
     schema: querySchema,
     fields: listFields,
     sortFieldMap,

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
+import { E } from '@/.mercato/generated/entities.ids.generated'
 import { AgendaItem } from '../../data/entities'
 import { agendaItemListItemSchema, agendaItemTypeSchema } from '../../data/validators'
 import type { Where, WhereValue } from '@open-mercato/shared/lib/query/types'
@@ -105,6 +106,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   events: { module: 'competitions', entity: 'agenda_item', persistent: true },
   indexer: { entityType: 'competitions:agenda_item' },
   list: {
+    entityId: E.competitions.agenda_item,
     schema: querySchema,
     fields: listFields,
     sortFieldMap,

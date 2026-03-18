@@ -37,6 +37,7 @@ const rawBodySchema = z.object({}).passthrough()
 
 type Query = z.infer<typeof querySchema>
 
+import { E } from '@/.mercato/generated/entities.ids.generated'
 import { id, name, slug, stage, location, starts_at, ends_at, created_at, tenant_id, organization_id } from '@/.mercato/generated/entities/competition'
 
 const listFields = [id, name, slug, stage, location, starts_at, ends_at, created_at]
@@ -62,8 +63,6 @@ type BaseFields = {
   location: string | null
   starts_at: Date | null
   ends_at: Date | null
-  startsAt?: Date | null
-  endsAt?: Date | null
   created_at: Date
 }
 
@@ -84,6 +83,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   events: { module: 'competitions', entity: 'competition', persistent: true },
   indexer: { entityType: 'competitions:competition' },
   list: {
+    entityId: E.competitions.competition,
     schema: querySchema,
     fields: listFields,
     sortFieldMap,
@@ -109,8 +109,8 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       slug: String(item.slug),
       stage: String(item.stage ?? ''),
       location: item.location ? String(item.location) : null,
-      starts_at: item.starts_at ?? item.startsAt ?? null,
-      ends_at: item.ends_at ?? item.endsAt ?? null,
+      starts_at: item.starts_at,
+      ends_at: item.ends_at,
       created_at: item.created_at,
     }),
     allowCsv: true,

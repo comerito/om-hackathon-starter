@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
+import { E } from '@/.mercato/generated/entities.ids.generated'
 import { IncidentReport } from '../../data/entities'
 import { incidentListItemSchema as incidentListItemDocSchema, listIncidentQuerySchema } from '../../data/validators'
 import type { Where, WhereValue } from '@open-mercato/shared/lib/query/types'
@@ -72,6 +73,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   events: { module: 'incidents', entity: 'report', persistent: true },
   indexer: { entityType: 'incidents:report' },
   list: {
+    entityId: E.incidents.incident_report,
     schema: listIncidentQuerySchema,
     fields: listFields,
     sortFieldMap,

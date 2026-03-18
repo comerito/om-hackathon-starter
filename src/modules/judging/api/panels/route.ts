@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { NextResponse, type NextRequest } from 'next/server'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
+import { E } from '@/.mercato/generated/entities.ids.generated'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 
 import { JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../data/entities'
@@ -72,6 +73,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   },
   events: { module: 'judging', entity: 'panel', persistent: true },
   list: {
+    entityId: E.judging.judge_panel,
     schema: querySchema,
     fields: listFields,
     sortFieldMap,
