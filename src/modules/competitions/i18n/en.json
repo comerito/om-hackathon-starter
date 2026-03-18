@@ -35,6 +35,23 @@
         "empty": "No announcements yet",
         "pinned": "Pinned",
         "recent": "Recent"
+      },
+      "participants": {
+        "title": "Participants",
+        "subtitle": "{{count}} participants",
+        "noCompetition": "No active competition",
+        "noCompetitionDesc": "There is no active competition at this time.",
+        "searchPlaceholder": "Search participants...",
+        "allSkills": "All skills",
+        "allOrganizations": "All organizations",
+        "lookingForTeam": "Looking for team",
+        "lookingBadge": "Looking for team",
+        "empty": "No participants found",
+        "emptyDesc": "Try adjusting your filters.",
+        "inviteToTeam": "Invite to Team",
+        "inviting": "Sending...",
+        "inviteSent": "Invitation sent!",
+        "inviteError": "Failed to send invitation"
       }
     },
     "agenda": {

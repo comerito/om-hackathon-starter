@@ -121,6 +121,7 @@
         "techStackTitle": "Tech Stack",
         "techPlaceholder": "e.g. React, Python, PostgreSQL",
         "addTech": "Add",
+        "removeTech": "Remove",
         "links": "Links",
         "projectLinks": "Project Links",
         "demoUrl": "Demo URL",
@@ -130,6 +131,7 @@
         "media": "Media",
         "screenshots": "Screenshots",
         "screenshotPlaceholder": "Screenshot upload coming soon",
+        "uploadScreenshot": "Upload Screenshot",
         "integrity": "Integrity",
         "originalityTitle": "Originality Disclosure",
         "usesPreexisting": "This project uses pre-existing code, templates, or libraries beyond standard open-source dependencies",
@@ -142,7 +144,10 @@
         "submitBtn": "Submit Project",
         "submittingBtn": "Submitting...",
         "submittedMsg": "Your project has been submitted!",
-        "submittedAt": "Submitted at"
+        "submittedAt": "Submitted at",
+        "autoSaved": "Auto-saved",
+        "validationErrors": "Please fix the following issues before submitting",
+        "requiredField": "This field is required"
       }
     }
   }

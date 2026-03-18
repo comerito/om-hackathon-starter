@@ -116,7 +116,18 @@
         "selectTrack": "Select a Track",
         "invitations": "Invitations",
         "about": "About",
-        "teamDescription": "Team Description"
+        "teamDescription": "Team Description",
+        "members": "Members",
+        "memberCount": "{{count}} members",
+        "leader": "Leader",
+        "inviteMember": "Invite Member",
+        "invitePlaceholder": "Enter email or participant ID",
+        "sendInvite": "Send Invite",
+        "removeMember": "Remove",
+        "confirmRemove": "Remove this member from the team?",
+        "disbanded": "Team disbanded",
+        "disbandTeam": "Disband Team",
+        "confirmDisband": "Are you sure you want to disband this team? This action cannot be undone."
       },
       "browse": {
         "title": "Browse Teams",
@@ -134,7 +145,9 @@
         "joinRequestSent": "Join request sent!",
         "noPeople": "No one looking for a team",
         "noPeopleDesc": "Check back later as more participants register.",
-        "lookingForTeam": "Looking for team"
+        "lookingForTeam": "Looking for team",
+        "teamSize": "{{count}} members",
+        "openSpots": "{{count}} open spots"
       }
     }
   }

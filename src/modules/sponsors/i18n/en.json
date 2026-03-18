@@ -140,7 +140,10 @@
         "emptyDesc": "Sponsors will be listed here once they are added.",
         "challenges": "Sponsor Challenges",
         "viewResources": "View Resources",
-        "prizes": "Prizes"
+        "prizes": "Prizes",
+        "tier": "Tier",
+        "visitWebsite": "Visit Website",
+        "challengeDetails": "Challenge Details"
       },
       "voting": {
         "title": "Peer Voting",
@@ -155,7 +158,15 @@
         "noProjectsDesc": "Projects will appear here once they are submitted.",
         "vote": "Vote",
         "unvote": "Remove Vote",
-        "processing": "Processing..."
+        "processing": "Processing...",
+        "voteConfirm": "Vote for this project?",
+        "unvoteConfirm": "Remove your vote for this project?",
+        "voteSuccess": "Vote cast successfully",
+        "unvoteSuccess": "Vote removed",
+        "voteError": "Failed to cast vote",
+        "unvoteError": "Failed to remove vote",
+        "maxVotesReached": "You have used all your votes",
+        "selfVoteError": "You cannot vote for your own project"
       },
       "results": {
         "title": "Results",
@@ -178,7 +189,9 @@
         "topVoted": "Top voted project by participants",
         "votesLabel": "votes",
         "allPrizes": "Prize Winners",
-        "voteTally": "Peer Vote Leaderboard"
+        "voteTally": "Peer Vote Leaderboard",
+        "noPrizesAwarded": "No prizes have been awarded yet.",
+        "congratulations": "Congratulations!"
       }
     }
   }

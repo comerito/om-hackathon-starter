@@ -97,11 +97,47 @@
       },
       "presentations": {
         "title": "Presentations",
-        "empty": "No presentations scheduled"
+        "empty": "No presentations scheduled",
+        "currentlyPresenting": "Currently Presenting",
+        "upNext": "Up Next",
+        "completed": "Completed",
+        "upcoming": "Upcoming",
+        "teamName": "Team",
+        "projectTitle": "Project",
+        "duration": "Duration",
+        "status": "Status",
+        "order": "Order",
+        "presenting": "Presenting",
+        "qa": "Q&A",
+        "onDeck": "On Deck",
+        "waiting": "Waiting",
+        "done": "Done",
+        "skipped": "Skipped"
       },
       "judging": {
         "title": "Judging",
-        "empty": "No projects assigned"
+        "empty": "No projects assigned",
+        "emptyDesc": "Projects will appear here once they are assigned to your panel.",
+        "projectsToScore": "Projects to Score",
+        "scored": "Scored",
+        "pending": "Pending",
+        "totalProjects": "Total Projects"
+      },
+      "scoring": {
+        "title": "Score Project",
+        "criterionLabel": "{{name}}",
+        "maxScore": "Max: {{max}}",
+        "weight": "Weight: {{weight}}",
+        "notes": "Notes",
+        "notesPlaceholder": "Optional notes about this project...",
+        "submit": "Submit Score",
+        "submitting": "Submitting...",
+        "submitted": "Score submitted",
+        "update": "Update Score",
+        "confirmSubmit": "Submit your scores? This action is final.",
+        "error": "Failed to submit score",
+        "totalScore": "Total Score",
+        "back": "Back to Projects"
       },
       "scoreCard": {
         "title": "Score Card",
@@ -110,6 +146,19 @@
         "back": "Back",
         "submit": "Submit Score",
         "submitted": "Submitted"
+      },
+      "kiosk": {
+        "title": "Demo Kiosk",
+        "noActiveDemo": "No Active Demo",
+        "currentlyPresenting": "Currently Presenting",
+        "timer": "Time Remaining",
+        "overtime": "Overtime",
+        "upNext": "Up Next",
+        "presentationPhase": "Presentation",
+        "qaPhase": "Q&A",
+        "team": "Team",
+        "project": "Project",
+        "order": "Order"
       }
     }
   }

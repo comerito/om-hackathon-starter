@@ -886,8 +886,8 @@ Add before the `example` module entry:
 | 17 | Sponsors & Prizes | [x] Done |
 | 18 | People's Choice Voting | [x] Done |
 | 19 | Results & Prize Announcement | [x] Done |
-| 20 | Incidents Module | [ ] Not started |
-| 21 | Event Command Center | [ ] Not started |
+| 20 | Incidents Module | [x] Done |
+| 21 | Event Command Center | [x] Done |
 | 22 | Search, Caching & i18n | [ ] Not started |
 | 23 | Mobile, Accessibility & Offline | [ ] Not started |
 | 24 | End-to-End Testing & Polish | [ ] Not started |

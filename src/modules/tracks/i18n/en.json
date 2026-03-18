@@ -95,7 +95,31 @@
       "empty.description": "Tracks will be announced soon.",
       "maxTeams": "Max {{count}} teams",
       "teams": "0 teams",
-      "mentors": "{{count}} mentors"
+      "mentors": "{{count}} mentors",
+      "browse": {
+        "title": "Browse Tracks",
+        "description": "Explore the available tracks for this competition.",
+        "searchPlaceholder": "Search tracks...",
+        "empty": "No tracks available",
+        "emptyDesc": "Tracks will be announced soon.",
+        "spotsRemaining": "{{count}} spots remaining",
+        "full": "Full",
+        "unlimited": "Unlimited spots",
+        "selectTrack": "Select Track",
+        "selected": "Selected",
+        "viewDetails": "View Details"
+      },
+      "mentor": {
+        "title": "My Tracks",
+        "empty": "No assigned tracks",
+        "emptyDesc": "You are not assigned as a mentor to any track yet.",
+        "maxTeams": "Max {{count}} teams",
+        "teams": "Teams",
+        "teamsPlaceholder": "Team list will be available once teams are formed.",
+        "viewTeams": "View Teams",
+        "teamCount": "{{count}} teams",
+        "contactTeam": "Contact Team"
+      }
     },
     "mentor": {
       "title": "My Tracks",

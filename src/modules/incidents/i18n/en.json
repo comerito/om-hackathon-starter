@@ -71,7 +71,8 @@
 
       "error": {
         "descriptionShort": "Description must be at least 10 characters.",
-        "noCompetition": "No active competition found."
+        "noCompetition": "No active competition found.",
+        "generic": "Failed to submit report. Please try again."
       },
 
       "field": {
@@ -82,7 +83,18 @@
         "reportedUser": "Person involved (optional)",
         "reportedUserPlaceholder": "Name or identifier of the person involved (if known)",
         "anonymous": "Submit anonymously",
-        "anonymousHint": "Your identity will not be linked to this report. Note: this may limit our ability to follow up."
+        "anonymousHint": "Your identity will not be linked to this report. Note: this may limit our ability to follow up.",
+        "location": "Where did this happen? (optional)",
+        "locationPlaceholder": "e.g. Main hall, Table 5, Online",
+        "witnesses": "Were there witnesses? (optional)",
+        "witnessesPlaceholder": "Names or descriptions of any witnesses"
+      },
+
+      "report": {
+        "title": "Report an Incident",
+        "safetyNote": "Your safety is our priority. All reports are reviewed promptly.",
+        "confidential": "All reports are handled confidentially.",
+        "emergencyNote": "If someone is in immediate danger, please contact emergency services first."
       },
 
       "submitted": {
