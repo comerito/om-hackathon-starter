@@ -14,6 +14,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useAppEvent } from '@open-mercato/ui/backend/injection/useAppEvent'
+import { CompetitionPicker } from '../../competitions/components/CompetitionPicker'
 
 type IncidentRow = {
   id: string
@@ -218,6 +219,9 @@ export default function IncidentsPage() {
   return (
     <Page>
       <PageBody>
+      <div className="mb-4">
+        <CompetitionPicker value={competitionId} />
+      </div>
       {/* Stats bar */}
       {data && (
         <div className="mb-4 flex gap-4 px-1">

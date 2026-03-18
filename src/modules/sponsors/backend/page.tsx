@@ -13,6 +13,7 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@open-mercato/ui/primitives/button'
 import Link from 'next/link'
+import { CompetitionPicker } from '../../competitions/components/CompetitionPicker'
 
 type SponsorRow = {
   id: string
@@ -163,12 +164,17 @@ export default function SponsorsPage() {
 
   if (!competitionId) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold">{t('sponsors.table.title', 'Sponsors & Prizes')}</h1>
-        <p className="text-muted-foreground mt-2">
-          {t('sponsors.table.selectCompetition', 'Please select a competition to manage sponsors.')}
-        </p>
-      </div>
+      <Page>
+        <PageBody>
+          <div className="flex flex-col gap-4">
+            <h1 className="text-2xl font-bold">{t('sponsors.table.title', 'Sponsors & Prizes')}</h1>
+            <CompetitionPicker value="" />
+            <p className="text-muted-foreground">
+              {t('sponsors.table.selectCompetition', 'Please select a competition to manage sponsors.')}
+            </p>
+          </div>
+        </PageBody>
+      </Page>
     )
   }
 
@@ -179,6 +185,9 @@ export default function SponsorsPage() {
   return (
     <Page>
       <PageBody>
+        <div className="mb-4">
+          <CompetitionPicker value={competitionId} />
+        </div>
         <DataTable
           title={t('sponsors.table.title', 'Sponsors')}
           actions={(

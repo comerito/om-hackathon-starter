@@ -12,6 +12,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { CompetitionPicker } from '../../competitions/components/CompetitionPicker'
 
 type ProjectRow = {
   id: string
@@ -198,12 +199,17 @@ export default function ProjectsPage() {
 
   if (!competitionId) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold">{t('projects.table.title', 'Projects')}</h1>
-        <p className="text-muted-foreground mt-2">
-          {t('projects.table.selectCompetition', 'Please select a competition to view its projects.')}
-        </p>
-      </div>
+      <Page>
+        <PageBody>
+          <div className="flex flex-col gap-4">
+            <h1 className="text-2xl font-bold">{t('projects.table.title', 'Projects')}</h1>
+            <CompetitionPicker value="" />
+            <p className="text-muted-foreground">
+              {t('projects.table.selectCompetition', 'Please select a competition to view its projects.')}
+            </p>
+          </div>
+        </PageBody>
+      </Page>
     )
   }
 
@@ -214,6 +220,9 @@ export default function ProjectsPage() {
   return (
     <Page>
       <PageBody>
+        <div className="mb-4">
+          <CompetitionPicker value={competitionId} />
+        </div>
         <DataTable
           title={t('projects.table.title', 'Projects')}
           actions={(

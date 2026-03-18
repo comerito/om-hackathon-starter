@@ -13,6 +13,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { CompetitionPicker } from '../../competitions/components/CompetitionPicker'
 
 type TrackRow = {
   id: string
@@ -131,12 +132,17 @@ export default function TracksPage() {
 
   if (!competitionId) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold">{t('tracks.table.title', 'Tracks')}</h1>
-        <p className="text-muted-foreground mt-2">
-          {t('tracks.table.selectCompetition', 'Please select a competition to view its tracks.')}
-        </p>
-      </div>
+      <Page>
+        <PageBody>
+          <div className="flex flex-col gap-4">
+            <h1 className="text-2xl font-bold">{t('tracks.table.title', 'Tracks')}</h1>
+            <CompetitionPicker value="" />
+            <p className="text-muted-foreground">
+              {t('tracks.table.selectCompetition', 'Please select a competition to view its tracks.')}
+            </p>
+          </div>
+        </PageBody>
+      </Page>
     )
   }
 
@@ -147,6 +153,9 @@ export default function TracksPage() {
   return (
     <Page>
       <PageBody>
+        <div className="mb-4">
+          <CompetitionPicker value={competitionId} />
+        </div>
         <DataTable
           title={t('tracks.table.title', 'Tracks')}
           actions={(
