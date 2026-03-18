@@ -3,7 +3,7 @@ import { findApi, type HttpMethod } from '@open-mercato/shared/modules/registry'
 import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import { modules } from '@/.mercato/generated/modules.generated'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
-import { getCustomerAuthFromCookies } from '@open-mercato/core/modules/customer_accounts/lib/customerAuthServer'
+import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { bootstrap } from '@/bootstrap'
 
 // Ensure all package registrations are initialized for API routes
@@ -273,7 +273,7 @@ async function handleRequest(
   // Fallback: if no staff auth, check for customer auth and build a minimal
   // auth context so tenant/org scoping works for portal-facing API calls.
   if (!auth) {
-    const customerAuth = await getCustomerAuthFromCookies()
+    const customerAuth = await getCustomerAuthFromRequest(req)
     if (customerAuth) {
       auth = {
         sub: customerAuth.sub,
