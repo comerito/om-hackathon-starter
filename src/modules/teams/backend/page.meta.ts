@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(Users, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['teams.view'],
+  pageTitle: 'Teams',
+  pageTitleKey: 'teams.page.title',
   pageGroup: 'HackOn',
-  order: 400,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 400,
 }

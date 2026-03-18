@@ -6,6 +6,9 @@ export const metadata = {
   icon: React.createElement(LayoutDashboard, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['competitions.view'],
+  pageTitle: 'Command Center',
+  pageTitleKey: 'competitions.commandCenter.page.title',
   pageGroup: 'HackOn',
-  order: 50,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 50,
 }

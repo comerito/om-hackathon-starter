@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(FolderCode, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['projects.view'],
+  pageTitle: 'Projects',
+  pageTitleKey: 'projects.page.title',
   pageGroup: 'HackOn',
-  order: 500,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 500,
 }

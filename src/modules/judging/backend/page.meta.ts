@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(Gavel, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['judging.view'],
+  pageTitle: 'Judging',
+  pageTitleKey: 'judging.page.title',
   pageGroup: 'HackOn',
-  order: 600,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 600,
 }

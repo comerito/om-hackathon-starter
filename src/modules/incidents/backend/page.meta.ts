@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(ShieldAlert, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['incidents.view'],
+  pageTitle: 'Incidents',
+  pageTitleKey: 'incidents.page.title',
   pageGroup: 'HackOn',
-  order: 800,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 800,
 }

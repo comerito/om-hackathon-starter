@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(Award, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['sponsors.view'],
+  pageTitle: 'Sponsors',
+  pageTitleKey: 'sponsors.page.title',
   pageGroup: 'HackOn',
-  order: 700,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 700,
 }

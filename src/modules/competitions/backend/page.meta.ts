@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(Trophy, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['competitions.view'],
+  pageTitle: 'Competitions',
+  pageTitleKey: 'competitions.page.title',
   pageGroup: 'HackOn',
-  order: 100,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 100,
 }

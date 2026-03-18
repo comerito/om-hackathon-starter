@@ -5,6 +5,9 @@ export const metadata = {
   icon: React.createElement(GitBranch, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['tracks.view'],
+  pageTitle: 'Tracks',
+  pageTitleKey: 'tracks.page.title',
   pageGroup: 'HackOn',
-  order: 200,
+  pageGroupKey: 'hackon.nav.group',
+  pageOrder: 200,
 }
