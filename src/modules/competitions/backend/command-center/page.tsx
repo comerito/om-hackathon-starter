@@ -7,6 +7,8 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useSearchParams } from 'next/navigation'
 import { useAppEvent } from '@open-mercato/ui/backend/injection/useAppEvent'
 import Link from 'next/link'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
+import { CompetitionPicker } from '../../components/CompetitionPicker'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -265,12 +267,17 @@ export default function CommandCenterPage() {
 
   if (!competitionId) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold">{t('competitions.commandCenter.title', 'Event Command Center')}</h1>
-        <p className="text-muted-foreground mt-2">
-          {t('competitions.commandCenter.selectCompetition', 'Please select a competition to view the dashboard.')}
-        </p>
-      </div>
+      <Page>
+        <PageBody>
+          <div className="flex flex-col gap-4">
+            <h1 className="text-2xl font-bold">{t('competitions.commandCenter.title', 'Event Command Center')}</h1>
+            <CompetitionPicker value="" />
+            <p className="text-muted-foreground">
+              {t('competitions.commandCenter.selectCompetition', 'Please select a competition to view the dashboard.')}
+            </p>
+          </div>
+        </PageBody>
+      </Page>
     )
   }
 
@@ -303,12 +310,17 @@ export default function CommandCenterPage() {
   const sections = ['Check-In', 'Teams', 'Projects', 'Demos', 'Judging', 'Voting', 'Incidents']
 
   return (
-    <div className="flex flex-col gap-8 p-6">
+    <Page>
+      <PageBody>
+    <div className="flex flex-col gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">
-          {t('competitions.commandCenter.title', 'Event Command Center')}
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">
+            {t('competitions.commandCenter.title', 'Event Command Center')}
+          </h1>
+          <CompetitionPicker value={competitionId} />
+        </div>
         <div className="flex items-center gap-3 mt-2">
           <span className="text-sm text-muted-foreground">{data.competition.name}</span>
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
@@ -368,6 +380,8 @@ export default function CommandCenterPage() {
         </div>
       </div>
     </div>
+      </PageBody>
+    </Page>
   )
 }
 
