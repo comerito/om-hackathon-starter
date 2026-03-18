@@ -6,6 +6,7 @@ import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -144,70 +145,72 @@ export default function TracksPage() {
   }
 
   return (
-    <>
-      <DataTable
-        title={t('tracks.table.title', 'Tracks')}
-        actions={(
-          <Button asChild>
-            <Link href={`/backend/tracks/tracks/create?competitionId=${competitionId}`}>
-              {t('tracks.table.actions.create', 'New track')}
-            </Link>
-          </Button>
-        )}
-        columns={columns}
-        data={data?.items ?? []}
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v)
-          setPage(1)
-        }}
-        searchAlign="right"
-        sortable
-        sorting={sorting}
-        onSortingChange={handleSortingChange}
-        rowActions={(row) => (
-          <RowActions
-            items={[
-              {
-                label: t('tracks.table.actions.edit', 'Edit'),
-                href: `/backend/tracks/tracks/${row.id}/edit`,
-              },
-              {
-                label: t('tracks.table.actions.delete', 'Delete'),
-                destructive: true,
-                onSelect: async () => {
-                  const confirmed = await confirm({
-                    title: t('tracks.table.confirm.delete', 'Delete this track?'),
-                    variant: 'destructive',
-                  })
-                  if (!confirmed) return
-                  try {
-                    await deleteCrud('tracks/tracks', row.id)
-                    flash(t('tracks.flash.deleted', 'Track deleted'), 'success')
-                    queryClient.invalidateQueries({ queryKey: ['tracks'] })
-                  } catch (err) {
-                    const message =
-                      err instanceof Error && err.message
-                        ? err.message
-                        : t('tracks.table.error.delete', 'Failed to delete track')
-                    flash(message, 'error')
-                  }
+    <Page>
+      <PageBody>
+        <DataTable
+          title={t('tracks.table.title', 'Tracks')}
+          actions={(
+            <Button asChild>
+              <Link href={`/backend/tracks/create?competitionId=${competitionId}`}>
+                {t('tracks.table.actions.create', 'New track')}
+              </Link>
+            </Button>
+          )}
+          columns={columns}
+          data={data?.items ?? []}
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v)
+            setPage(1)
+          }}
+          searchAlign="right"
+          sortable
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
+          rowActions={(row) => (
+            <RowActions
+              items={[
+                {
+                  label: t('tracks.table.actions.edit', 'Edit'),
+                  href: `/backend/tracks/${row.id}/edit`,
                 },
-              },
-            ]}
-          />
-        )}
-        pagination={{
-          page,
-          pageSize: 50,
-          total: data?.total || 0,
-          totalPages: data?.totalPages || 0,
-          onPageChange: setPage,
-        }}
-        isLoading={isLoading}
-        onRowClick={(row) => router.push(`/backend/tracks/tracks/${row.id}/edit`)}
-      />
-      {ConfirmDialogElement}
-    </>
+                {
+                  label: t('tracks.table.actions.delete', 'Delete'),
+                  destructive: true,
+                  onSelect: async () => {
+                    const confirmed = await confirm({
+                      title: t('tracks.table.confirm.delete', 'Delete this track?'),
+                      variant: 'destructive',
+                    })
+                    if (!confirmed) return
+                    try {
+                      await deleteCrud('tracks/tracks', row.id)
+                      flash(t('tracks.flash.deleted', 'Track deleted'), 'success')
+                      queryClient.invalidateQueries({ queryKey: ['tracks'] })
+                    } catch (err) {
+                      const message =
+                        err instanceof Error && err.message
+                          ? err.message
+                          : t('tracks.table.error.delete', 'Failed to delete track')
+                      flash(message, 'error')
+                    }
+                  },
+                },
+              ]}
+            />
+          )}
+          pagination={{
+            page,
+            pageSize: 50,
+            total: data?.total || 0,
+            totalPages: data?.totalPages || 0,
+            onPageChange: setPage,
+          }}
+          isLoading={isLoading}
+          onRowClick={(row) => router.push(`/backend/tracks/${row.id}/edit`)}
+        />
+        {ConfirmDialogElement}
+      </PageBody>
+    </Page>
   )
 }

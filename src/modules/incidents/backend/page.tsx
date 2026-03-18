@@ -5,6 +5,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -215,7 +216,8 @@ export default function IncidentsPage() {
   const totalCritical = data?.items?.filter((i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED' && i.status !== 'DISMISSED').length ?? 0
 
   return (
-    <>
+    <Page>
+      <PageBody>
       {/* Stats bar */}
       {data && (
         <div className="mb-4 flex gap-4 px-1">
@@ -271,7 +273,7 @@ export default function IncidentsPage() {
         onSortingChange={(s) => { setSorting(s); setPage(1) }}
         onRowClick={(row) => {
           const params = competitionId ? `?competitionId=${competitionId}` : ''
-          router.push(`/backend/incidents/incidents/${row.id}${params}`)
+          router.push(`/backend/incidents/${row.id}${params}`)
         }}
         rowActions={(row) => (
           <RowActions
@@ -280,7 +282,7 @@ export default function IncidentsPage() {
                 label: t('incidents.actions.view', 'View Details'),
                 onSelect: () => {
                   const params = competitionId ? `?competitionId=${competitionId}` : ''
-                  router.push(`/backend/incidents/incidents/${row.id}${params}`)
+                  router.push(`/backend/incidents/${row.id}${params}`)
                 },
               },
               ...(row.status === 'REPORTED' || row.status === 'UNDER_REVIEW'
@@ -368,6 +370,7 @@ export default function IncidentsPage() {
         </div>
       )}
       {ConfirmDialogElement}
-    </>
+      </PageBody>
+    </Page>
   )
 }

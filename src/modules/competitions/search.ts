@@ -14,7 +14,7 @@ export const searchConfig: SearchModuleConfig = {
       icon: 'lucide:trophy',
       badge: 'Competition',
     }),
-    resolveUrl: async (ctx) => `/backend/competitions/competitions/${ctx.record.id}/edit`,
+    resolveUrl: async (ctx) => `/backend/competitions/${ctx.record.id}/edit`,
   }],
 }
 

@@ -8,6 +8,7 @@ import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -207,6 +208,8 @@ export default function JudgingPage() {
   }
 
   return (
+    <Page>
+      <PageBody>
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('judging.title', 'Demos & Judging')}</h1>
@@ -367,5 +370,7 @@ export default function JudgingPage() {
 
       {ConfirmDialogElement}
     </div>
+      </PageBody>
+    </Page>
   )
 }

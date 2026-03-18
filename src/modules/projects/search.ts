@@ -27,7 +27,7 @@ export const searchConfig: SearchModuleConfig = {
           icon: 'lucide:folder-code',
           badge: 'Project',
         },
-        links: [{ href: `/backend/projects/projects/${ctx.record.id}`, label: 'View', kind: 'primary' as const }],
+        links: [{ href: `/backend/projects/${ctx.record.id}`, label: 'View', kind: 'primary' as const }],
         checksumSource: { record: ctx.record, customFields: ctx.customFields },
       }
     },
@@ -37,7 +37,7 @@ export const searchConfig: SearchModuleConfig = {
       icon: 'lucide:folder-code',
       badge: 'Project',
     }),
-    resolveUrl: async (ctx) => `/backend/projects/projects/${ctx.record.id}`,
+    resolveUrl: async (ctx) => `/backend/projects/${ctx.record.id}`,
   }],
 }
 

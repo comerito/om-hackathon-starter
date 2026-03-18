@@ -14,7 +14,7 @@ export const searchConfig: SearchModuleConfig = {
       icon: 'lucide:users',
       badge: 'Team',
     }),
-    resolveUrl: async (ctx) => `/backend/teams/teams/${ctx.record.id}`,
+    resolveUrl: async (ctx) => `/backend/teams/${ctx.record.id}`,
   }],
 }
 

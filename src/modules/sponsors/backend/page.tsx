@@ -5,6 +5,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -176,12 +177,13 @@ export default function SponsorsPage() {
   }
 
   return (
-    <>
-      <DataTable
-        title={t('sponsors.table.title', 'Sponsors')}
-        actions={(
-          <div className="flex items-center gap-2">
-            <select
+    <Page>
+      <PageBody>
+        <DataTable
+          title={t('sponsors.table.title', 'Sponsors')}
+          actions={(
+            <div className="flex items-center gap-2">
+              <select
               value={tierFilter}
               onChange={(e) => { setTierFilter(e.target.value); setPage(1) }}
               className="rounded-md border px-2 py-1.5 text-sm"
@@ -193,7 +195,7 @@ export default function SponsorsPage() {
               <option value="PARTNER">Partner</option>
               <option value="IN_KIND">In-Kind</option>
             </select>
-            <Link href={`/backend/sponsors/sponsors/create?competitionId=${competitionId}`}>
+            <Link href={`/backend/sponsors/create?competitionId=${competitionId}`}>
               <Button size="sm">{t('sponsors.table.actions.create', 'Add Sponsor')}</Button>
             </Link>
             <Link href={`/backend/sponsors/prizes?competitionId=${competitionId}`}>
@@ -217,7 +219,7 @@ export default function SponsorsPage() {
             items={[
               {
                 label: t('sponsors.table.actions.edit', 'Edit'),
-                href: `/backend/sponsors/sponsors/create?competitionId=${competitionId}&id=${row.id}`,
+                href: `/backend/sponsors/create?competitionId=${competitionId}&id=${row.id}`,
               },
               {
                 label: t('sponsors.table.actions.delete', 'Delete'),
@@ -251,8 +253,9 @@ export default function SponsorsPage() {
           onPageChange: setPage,
         }}
         isLoading={isLoading}
-      />
-      {ConfirmDialogElement}
-    </>
+        />
+        {ConfirmDialogElement}
+      </PageBody>
+    </Page>
   )
 }

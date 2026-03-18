@@ -7,6 +7,7 @@ import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -103,65 +104,67 @@ export default function CompetitionsPage() {
   }
 
   return (
-    <>
-      <DataTable
-        title={t('competitions.table.title', 'Competitions')}
-        actions={(
-          <Button asChild>
-            <Link href="/backend/competitions/competitions/create">{t('competitions.table.actions.create', 'New competition')}</Link>
-          </Button>
-        )}
-        columns={columns}
-        data={data?.items ?? []}
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v)
-          setPage(1)
-        }}
-        searchAlign="right"
-        sortable
-        sorting={sorting}
-        onSortingChange={handleSortingChange}
-        rowActions={(row) => (
-          <RowActions
-            items={[
-              { label: t('competitions.table.actions.edit', 'Edit'), href: `/backend/competitions/competitions/${row.id}/edit` },
-              {
-                label: t('competitions.table.actions.delete', 'Delete'),
-                destructive: true,
-                onSelect: async () => {
-                  const confirmed = await confirm({
-                    title: t('competitions.table.confirm.delete', 'Delete this competition?'),
-                    variant: 'destructive',
-                  })
-                  if (!confirmed) return
-                  try {
-                    await deleteCrud('competitions/competitions', row.id)
-                    flash(t('competitions.flash.deleted', 'Competition deleted'), 'success')
-                    queryClient.invalidateQueries({ queryKey: ['competitions'] })
-                  } catch (err) {
-                    const message =
-                      err instanceof Error && err.message
-                        ? err.message
-                        : t('competitions.table.error.delete', 'Failed to delete competition')
-                    flash(message, 'error')
-                  }
+    <Page>
+      <PageBody>
+        <DataTable
+          title={t('competitions.table.title', 'Competitions')}
+          actions={(
+            <Button asChild>
+              <Link href="/backend/competitions/create">{t('competitions.table.actions.create', 'New competition')}</Link>
+            </Button>
+          )}
+          columns={columns}
+          data={data?.items ?? []}
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v)
+            setPage(1)
+          }}
+          searchAlign="right"
+          sortable
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
+          rowActions={(row) => (
+            <RowActions
+              items={[
+                { label: t('competitions.table.actions.edit', 'Edit'), href: `/backend/competitions/${row.id}/edit` },
+                {
+                  label: t('competitions.table.actions.delete', 'Delete'),
+                  destructive: true,
+                  onSelect: async () => {
+                    const confirmed = await confirm({
+                      title: t('competitions.table.confirm.delete', 'Delete this competition?'),
+                      variant: 'destructive',
+                    })
+                    if (!confirmed) return
+                    try {
+                      await deleteCrud('competitions/competitions', row.id)
+                      flash(t('competitions.flash.deleted', 'Competition deleted'), 'success')
+                      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+                    } catch (err) {
+                      const message =
+                        err instanceof Error && err.message
+                          ? err.message
+                          : t('competitions.table.error.delete', 'Failed to delete competition')
+                      flash(message, 'error')
+                    }
+                  },
                 },
-              },
-            ]}
-          />
-        )}
-        pagination={{
-          page,
-          pageSize: 50,
-          total: data?.total || 0,
-          totalPages: data?.totalPages || 0,
-          onPageChange: setPage,
-        }}
-        isLoading={isLoading}
-        onRowClick={(row) => router.push(`/backend/competitions/competitions/${row.id}/edit`)}
-      />
-      {ConfirmDialogElement}
-    </>
+              ]}
+            />
+          )}
+          pagination={{
+            page,
+            pageSize: 50,
+            total: data?.total || 0,
+            totalPages: data?.totalPages || 0,
+            onPageChange: setPage,
+          }}
+          isLoading={isLoading}
+          onRowClick={(row) => router.push(`/backend/competitions/${row.id}/edit`)}
+        />
+        {ConfirmDialogElement}
+      </PageBody>
+    </Page>
   )
 }

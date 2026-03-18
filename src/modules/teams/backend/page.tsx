@@ -5,6 +5,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -199,12 +200,13 @@ export default function TeamsPage() {
   }
 
   return (
-    <>
-      <DataTable
-        title={t('teams.table.title', 'Teams')}
-        actions={(
-          <div className="flex items-center gap-2">
-            <select
+    <Page>
+      <PageBody>
+        <DataTable
+          title={t('teams.table.title', 'Teams')}
+          actions={(
+            <div className="flex items-center gap-2">
+              <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
               className="rounded-md border px-2 py-1.5 text-sm"
@@ -232,7 +234,7 @@ export default function TeamsPage() {
             items={[
               {
                 label: t('teams.table.actions.view', 'View details'),
-                href: `/backend/teams/teams/${row.id}`,
+                href: `/backend/teams/${row.id}`,
               },
               ...(row.status === 'ACTIVE'
                 ? [{
@@ -280,9 +282,10 @@ export default function TeamsPage() {
           onPageChange: setPage,
         }}
         isLoading={isLoading}
-        onRowClick={(row) => router.push(`/backend/teams/teams/${row.id}`)}
-      />
-      {ConfirmDialogElement}
-    </>
+        onRowClick={(row) => router.push(`/backend/teams/${row.id}`)}
+        />
+        {ConfirmDialogElement}
+      </PageBody>
+    </Page>
   )
 }

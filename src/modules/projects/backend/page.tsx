@@ -5,6 +5,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
+import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -211,12 +212,13 @@ export default function ProjectsPage() {
   }
 
   return (
-    <>
-      <DataTable
-        title={t('projects.table.title', 'Projects')}
-        actions={(
-          <div className="flex items-center gap-2">
-            <select
+    <Page>
+      <PageBody>
+        <DataTable
+          title={t('projects.table.title', 'Projects')}
+          actions={(
+            <div className="flex items-center gap-2">
+              <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
               className="rounded-md border px-2 py-1.5 text-sm"
@@ -254,7 +256,7 @@ export default function ProjectsPage() {
             items={[
               {
                 label: t('projects.table.actions.view', 'View details'),
-                href: `/backend/projects/projects/${row.id}`,
+                href: `/backend/projects/${row.id}`,
               },
               ...(!row.flagged_for_reuse
                 ? [{
@@ -299,9 +301,10 @@ export default function ProjectsPage() {
           onPageChange: setPage,
         }}
         isLoading={isLoading}
-        onRowClick={(row) => router.push(`/backend/projects/projects/${row.id}`)}
-      />
-      {ConfirmDialogElement}
-    </>
+        onRowClick={(row) => router.push(`/backend/projects/${row.id}`)}
+        />
+        {ConfirmDialogElement}
+      </PageBody>
+    </Page>
   )
 }
