@@ -91,8 +91,6 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   orm: {
     entity: Sponsor,
     idField: 'id',
-    orgField: 'organizationId',
-    tenantField: 'tenantId',
   },
   events: { module: 'sponsors', entity: 'sponsor', persistent: true },
   indexer: { entityType: 'sponsors:sponsor' },

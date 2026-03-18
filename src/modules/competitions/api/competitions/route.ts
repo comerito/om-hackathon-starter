@@ -76,8 +76,6 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   orm: {
     entity: Competition,
     idField: 'id',
-    orgField: 'organizationId',
-    tenantField: 'tenantId',
     softDeleteField: 'deletedAt',
   },
   events: { module: 'competitions', entity: 'competition', persistent: true },
