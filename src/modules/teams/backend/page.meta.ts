@@ -1,5 +1,8 @@
+import React from 'react'
+import { Users } from 'lucide-react'
+
 export const metadata = {
-  icon: 'lucide:users',
+  icon: React.createElement(Users, { className: 'size-4' }),
   requireAuth: true,
   requireFeatures: ['teams.view'],
   pageGroup: 'HackOn',
