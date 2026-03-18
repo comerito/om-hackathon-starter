@@ -122,7 +122,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
       setErr(null)
       try {
         // We need to fetch with a known competitionId; use a broad search with pageSize 1
-        const data = await fetchCrudList<TrackItem>('tracks/tracks', { id: String(id), pageSize: '1', competitionId: '' } as Record<string, string>)
+        const data = await fetchCrudList<TrackItem>('tracks/tracks', { id: String(id), pageSize: '1' })
         const item = data?.items?.[0]
         if (!item) throw new Error(t('tracks.form.error.notFound', 'Track not found'))
         if (!cancelled) {

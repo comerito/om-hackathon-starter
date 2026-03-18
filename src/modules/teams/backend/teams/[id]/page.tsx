@@ -94,7 +94,7 @@ export default function TeamDetailPage({ params }: { params?: { id?: string } })
   const { data: teamData, isLoading: teamLoading } = useQuery({
     queryKey: ['team-detail', id],
     queryFn: async () => {
-      const res = await fetchCrudList<TeamRow>('teams/teams', { id: id!, pageSize: '1', competitionId: '' } as Record<string, string>)
+      const res = await fetchCrudList<TeamRow>('teams/teams', { id: id!, pageSize: '1' })
       return res?.items?.[0] ?? null
     },
     enabled: !!id,
