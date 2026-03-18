@@ -98,7 +98,7 @@ export default function PresentationsPage({ params }: { params: { orgSlug: strin
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0]
       if (!comp) { setLoading(false); return }
       setCompetitionId(comp.id)
@@ -110,7 +110,7 @@ export default function PresentationsPage({ params }: { params: { orgSlug: strin
 
       // Get demo queue
       const [demoRes, currentRes] = await Promise.all([
-        apiCall(`/api/judging/demos?competitionId=${comp.id}&pageSize=100&sortField=presentation_order&sortDir=asc`),
+        apiCall(`/api/competitions/portal/data?type=demos&competitionId=${comp.id}`),
         apiCall(`/api/judging/demos/current?competitionId=${comp.id}`),
       ])
 

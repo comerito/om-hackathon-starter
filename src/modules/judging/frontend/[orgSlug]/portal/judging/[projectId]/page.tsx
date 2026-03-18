@@ -111,7 +111,7 @@ export default function ScoreCardPage({ params }: { params: { orgSlug: string; p
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0]
       if (!comp) { setLoading(false); return }
       setCompetitionId(comp.id)
@@ -132,7 +132,7 @@ export default function ScoreCardPage({ params }: { params: { orgSlug: string; p
       }
 
       // Get criteria
-      const criteriaRes = await apiCall(`/api/judging/criteria?competitionId=${comp.id}&pageSize=50&sortField=order&sortDir=asc`)
+      const criteriaRes = await apiCall(`/api/competitions/portal/data?type=criteria&competitionId=${comp.id}`)
       const criteriaList: Criterion[] = (criteriaRes?.items ?? []).map((c: Record<string, unknown>) => ({
         id: String(c.id),
         name: String(c.name),
@@ -144,7 +144,7 @@ export default function ScoreCardPage({ params }: { params: { orgSlug: string; p
       setCriteria(criteriaList)
 
       // Get judge's panel
-      const panelRes = await apiCall(`/api/judging/panels?competitionId=${comp.id}&pageSize=50`)
+      const panelRes = await apiCall(`/api/competitions/portal/data?type=panels&competitionId=${comp.id}`)
       // Find the panel that this judge belongs to (simplified: take first one)
       const panels = panelRes?.items ?? []
       if (panels.length > 0) {

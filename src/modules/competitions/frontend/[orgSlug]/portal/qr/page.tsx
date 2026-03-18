@@ -109,10 +109,10 @@ export default function PortalQrPage({ params }: { params: { orgSlug: string } }
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0]
       if (comp) {
-        const partRes = await apiCall(`/api/competitions/participations?competitionId=${comp.id}&customerUserId=${user.id}&pageSize=1`)
+        const partRes = await apiCall(`/api/competitions/portal/data?type=participations&competitionId=${comp.id}`)
         setParticipation(partRes?.data?.[0] ?? null)
       }
     } catch {

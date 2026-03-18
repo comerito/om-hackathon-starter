@@ -61,7 +61,7 @@ export default function PortalVotingPage() {
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] as Competition | undefined
       setCompetition(comp ?? null)
 
@@ -71,7 +71,7 @@ export default function PortalVotingPage() {
       }
 
       // Find user's team
-      const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&pageSize=100`)
+      const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
       const allTeams = teamsRes?.data ?? []
       let foundTeamId: string | null = null
 
@@ -90,7 +90,7 @@ export default function PortalVotingPage() {
       setUserTeamId(foundTeamId)
 
       // Fetch published projects
-      const projRes = await apiCall(`/api/projects/projects?competitionId=${comp.id}&status=PUBLISHED&pageSize=100&sortField=title&sortDir=asc`)
+      const projRes = await apiCall(`/api/competitions/portal/data?type=projects&competitionId=${comp.id}`)
       const scoredRes = await apiCall(`/api/projects/projects?competitionId=${comp.id}&status=SCORED&pageSize=100&sortField=title&sortDir=asc`)
       const allProjects = [...(projRes?.data ?? []), ...(scoredRes?.data ?? [])]
       setProjects(allProjects)

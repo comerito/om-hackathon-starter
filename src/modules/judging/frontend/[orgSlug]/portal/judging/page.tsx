@@ -58,13 +58,13 @@ export default function JudgeDashboardPage({ params }: { params: { orgSlug: stri
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0]
       if (!comp) { setLoading(false); return }
       setCompetitionId(comp.id)
 
       // Get demo sessions for this competition
-      const demoRes = await apiCall(`/api/judging/demos?competitionId=${comp.id}&pageSize=100&sortField=presentation_order&sortDir=asc`)
+      const demoRes = await apiCall(`/api/competitions/portal/data?type=demos&competitionId=${comp.id}`)
       const demos: DemoSession[] = demoRes?.items ?? []
 
       // Get my scores
@@ -94,12 +94,12 @@ export default function JudgeDashboardPage({ params }: { params: { orgSlug: stri
       const projectIds = assignedProjects.map((p) => p.projectId)
       if (projectIds.length > 0) {
         try {
-          const projectsRes = await apiCall(`/api/projects/projects?competitionId=${comp.id}&pageSize=100`)
+          const projectsRes = await apiCall(`/api/competitions/portal/data?type=projects&competitionId=${comp.id}`)
           const projectMap = new Map<string, { title: string; team_id: string }>()
           for (const p of projectsRes?.items ?? []) {
             projectMap.set(p.id, { title: p.title, team_id: p.team_id })
           }
-          const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&pageSize=100`)
+          const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
           const teamMap = new Map<string, string>()
           for (const t of teamsRes?.items ?? []) {
             teamMap.set(t.id, t.name)

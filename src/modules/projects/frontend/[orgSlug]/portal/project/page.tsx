@@ -105,7 +105,7 @@ export default function PortalProjectEditorPage({ params }: { params: { orgSlug:
     if (!user) return
     try {
       // Fetch active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] ?? null
       setCompetition(comp)
 
@@ -115,7 +115,7 @@ export default function PortalProjectEditorPage({ params }: { params: { orgSlug:
       }
 
       // Find user's team
-      const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&pageSize=100`)
+      const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
       const allTeams = teamsRes?.data ?? []
 
       let userTeamId: string | null = null

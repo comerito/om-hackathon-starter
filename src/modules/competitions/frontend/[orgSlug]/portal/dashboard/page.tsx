@@ -169,13 +169,13 @@ export default function PortalDashboardPage({ params }: { params: { orgSlug: str
     if (!user) return
     try {
       // Fetch active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp: Competition | null = compRes?.data?.[0] ?? null
       setCompetition(comp)
 
       if (comp) {
         // Fetch current user's participation
-        const partRes = await apiCall(`/api/competitions/participations?competitionId=${comp.id}&customerUserId=${user.id}&pageSize=1`)
+        const partRes = await apiCall(`/api/competitions/portal/data?type=participations&competitionId=${comp.id}`)
         setParticipation(partRes?.data?.[0] ?? null)
       }
     } catch {

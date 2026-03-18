@@ -68,7 +68,7 @@ export default function ParticipantsPage({ params }: { params: { orgSlug: string
   const fetchData = useCallback(async () => {
     if (!user) return
     try {
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] ?? null
       setCompetition(comp)
 

@@ -44,7 +44,7 @@ export default function KioskPage({ params }: { params: { orgSlug: string } }) {
     if (!user) return
     try {
       if (!competitionId) {
-        const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+        const compRes = await apiCall('/api/competitions/portal/active')
         const comp = compRes?.data?.[0]
         if (comp) setCompetitionId(comp.id)
         if (!comp) return

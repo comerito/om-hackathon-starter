@@ -64,7 +64,7 @@ export default function BrowseTeamsPage({ params }: { params: { orgSlug: string 
   const fetchData = useCallback(async () => {
     if (!user) return
     try {
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] ?? null
       setCompetition(comp)
 
@@ -74,15 +74,15 @@ export default function BrowseTeamsPage({ params }: { params: { orgSlug: string 
       }
 
       // Fetch all active teams
-      const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&status=ACTIVE&pageSize=100&sortField=name&sortDir=asc`)
+      const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
       setTeams(teamsRes?.data ?? [])
 
       // Fetch tracks
-      const tracksRes = await apiCall(`/api/tracks/tracks?competitionId=${comp.id}&pageSize=100&sortField=order&sortDir=asc`)
+      const tracksRes = await apiCall(`/api/competitions/portal/data?type=tracks&competitionId=${comp.id}`)
       setTracks(tracksRes?.data ?? [])
 
       // Fetch people looking for teams
-      const participantsRes = await apiCall(`/api/competitions/participations?competitionId=${comp.id}&pageSize=100`)
+      const participantsRes = await apiCall(`/api/competitions/portal/data?type=participations&competitionId=${comp.id}`)
       const looking = ((participantsRes?.data ?? []) as LookingForTeamUser[]).filter((p) => p.lookingForTeam)
       setLookingUsers(looking)
     } catch {

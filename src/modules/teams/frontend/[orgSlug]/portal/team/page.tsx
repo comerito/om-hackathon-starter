@@ -89,7 +89,7 @@ export default function PortalMyTeamPage({ params }: { params: { orgSlug: string
     if (!user) return
     try {
       // Fetch active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] ?? null
       setCompetition(comp)
 
@@ -100,7 +100,7 @@ export default function PortalMyTeamPage({ params }: { params: { orgSlug: string
 
       // Find user's team membership by checking team members
       // First, find teams in this competition that the user belongs to
-      const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&pageSize=100`)
+      const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
       const allTeams: Team[] = teamsRes?.data ?? []
 
       // Find the team the user is on by checking invitations with accepted status
@@ -142,7 +142,7 @@ export default function PortalMyTeamPage({ params }: { params: { orgSlug: string
       }
 
       // Fetch tracks
-      const tracksRes = await apiCall(`/api/tracks/tracks?competitionId=${comp.id}&pageSize=100&sortField=order&sortDir=asc`)
+      const tracksRes = await apiCall(`/api/competitions/portal/data?type=tracks&competitionId=${comp.id}`)
       setTracks((tracksRes?.data ?? []).filter((tr: Track) => tr.is_active !== false))
     } catch {
       // silent

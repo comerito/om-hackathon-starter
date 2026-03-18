@@ -84,14 +84,14 @@ export default function PortalAnnouncementsPage({ params }: { params: { orgSlug:
   const fetchData = useCallback(async () => {
     if (!user) return
     try {
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp: Competition | null = compRes?.data?.[0] ?? null
       if (!comp) {
         setAnnouncements([])
         return
       }
 
-      const annRes = await apiCall(`/api/competitions/announcements?competitionId=${comp.id}&pageSize=100&sortField=published_at&sortDir=desc`)
+      const annRes = await apiCall(`/api/competitions/portal/data?type=announcements&competitionId=${comp.id}`)
       setAnnouncements(annRes?.data ?? [])
     } catch {
       // silent

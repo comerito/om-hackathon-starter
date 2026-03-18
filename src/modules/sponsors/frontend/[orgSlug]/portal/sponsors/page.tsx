@@ -79,7 +79,7 @@ export default function PortalSponsorsPage() {
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0]
       if (!comp) {
         setLoading(false)
@@ -87,11 +87,11 @@ export default function PortalSponsorsPage() {
       }
 
       // Fetch sponsors
-      const sponsorRes = await apiCall(`/api/sponsors/sponsors?competitionId=${comp.id}&isVisible=true&pageSize=100&sortField=order&sortDir=asc`)
+      const sponsorRes = await apiCall(`/api/competitions/portal/data?type=sponsors&competitionId=${comp.id}`)
       setSponsors(sponsorRes?.data ?? [])
 
       // Fetch prizes
-      const prizeRes = await apiCall(`/api/sponsors/prizes?competitionId=${comp.id}&pageSize=100&sortField=order&sortDir=asc`)
+      const prizeRes = await apiCall(`/api/competitions/portal/data?type=prizes&competitionId=${comp.id}`)
       setPrizes(prizeRes?.data ?? [])
     } catch {
       // silent

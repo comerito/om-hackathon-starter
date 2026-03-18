@@ -46,7 +46,7 @@ export default function MentorTracksPage({ params }: { params: { orgSlug: string
     if (!user) return
     try {
       // Get the active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp: Competition | null = compRes?.data?.[0] ?? null
       if (!comp) {
         setTracks([])
@@ -54,7 +54,7 @@ export default function MentorTracksPage({ params }: { params: { orgSlug: string
       }
 
       // Fetch all tracks and filter client-side for those containing current user as mentor
-      const tracksRes = await apiCall(`/api/tracks/tracks?competitionId=${comp.id}&pageSize=100&sortField=order&sortDir=asc`)
+      const tracksRes = await apiCall(`/api/competitions/portal/data?type=tracks&competitionId=${comp.id}`)
       const allTracks: Track[] = tracksRes?.data ?? []
       const userId = (user as { id?: string })?.id
       const myTracks = allTracks.filter(

@@ -74,7 +74,7 @@ export default function PortalResultsPage() {
     if (!user) return
     try {
       // Get active competition
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp = compRes?.data?.[0] as Competition | undefined
       setCompetition(comp ?? null)
 
@@ -90,7 +90,7 @@ export default function PortalResultsPage() {
       }
 
       // Find user's team
-      const teamsRes = await apiCall(`/api/teams/teams?competitionId=${comp.id}&pageSize=100`)
+      const teamsRes = await apiCall(`/api/competitions/portal/data?type=teams&competitionId=${comp.id}`)
       const allTeams = teamsRes?.data ?? []
       let foundTeamId: string | null = null
       for (const team of allTeams) {
@@ -107,11 +107,11 @@ export default function PortalResultsPage() {
       setUserTeamId(foundTeamId)
 
       // Fetch tracks
-      const tracksRes = await apiCall(`/api/tracks/tracks?competitionId=${comp.id}&pageSize=100`)
+      const tracksRes = await apiCall(`/api/competitions/portal/data?type=tracks&competitionId=${comp.id}`)
       setTracks(tracksRes?.data ?? [])
 
       // Fetch scored projects
-      const projRes = await apiCall(`/api/projects/projects?competitionId=${comp.id}&status=SCORED&pageSize=100&sortField=rank&sortDir=asc`)
+      const projRes = await apiCall(`/api/competitions/portal/data?type=projects&competitionId=${comp.id}`)
       setProjects(projRes?.data ?? [])
 
       // Fetch vote tally
@@ -123,7 +123,7 @@ export default function PortalResultsPage() {
       }
 
       // Fetch prizes
-      const prizeRes = await apiCall(`/api/sponsors/prizes?competitionId=${comp.id}&pageSize=100`)
+      const prizeRes = await apiCall(`/api/competitions/portal/data?type=prizes&competitionId=${comp.id}`)
       setPrizes(prizeRes?.data ?? [])
     } catch {
       // silent

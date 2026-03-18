@@ -50,12 +50,12 @@ export default function PortalAcceptPage({ params }: { params: { orgSlug: string
   const fetchData = useCallback(async () => {
     if (!user) return
     try {
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp: Competition | null = compRes?.data?.[0] ?? null
       setCompetition(comp)
 
       if (comp) {
-        const partRes = await apiCall(`/api/competitions/participations?competitionId=${comp.id}&customerUserId=${user.id}&pageSize=1`)
+        const partRes = await apiCall(`/api/competitions/portal/data?type=participations&competitionId=${comp.id}`)
         const part: Participation | null = partRes?.data?.[0] ?? null
         setParticipation(part)
 

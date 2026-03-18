@@ -45,14 +45,14 @@ export default function PortalTracksPage({ params }: { params: { orgSlug: string
   const fetchData = useCallback(async () => {
     if (!user) return
     try {
-      const compRes = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const compRes = await apiCall('/api/competitions/portal/active')
       const comp: Competition | null = compRes?.data?.[0] ?? null
       if (!comp) {
         setTracks([])
         return
       }
 
-      const tracksRes = await apiCall(`/api/tracks/tracks?competitionId=${comp.id}&pageSize=100&sortField=order&sortDir=asc`)
+      const tracksRes = await apiCall(`/api/competitions/portal/data?type=tracks&competitionId=${comp.id}`)
       setTracks((tracksRes?.data ?? []).filter((t: Track) => t.is_active))
     } catch {
       // silent

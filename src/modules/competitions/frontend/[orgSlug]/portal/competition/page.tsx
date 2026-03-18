@@ -80,7 +80,7 @@ export default function PortalCompetitionPage({ params }: { params: { orgSlug: s
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await apiCall('/api/competitions/competitions?isActive=true&pageSize=1')
+      const res = await apiCall('/api/competitions/portal/active')
       setCompetition(res?.data?.[0] ?? null)
     } catch {
       // silent
