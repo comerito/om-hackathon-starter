@@ -10,7 +10,7 @@ const widget: InjectionMenuItemWidget = {
       id: 'hackon-qr',
       labelKey: 'competitions.portal.nav.qr_code',
       icon: 'lucide:qr-code',
-      href: '/portal/qr',
+      href: '/acme-corp/portal/qr',
       placement: { position: InjectionPosition.Start },
     },
   ],
