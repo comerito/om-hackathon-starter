@@ -1,6 +1,17 @@
 import { InjectionPosition } from '@open-mercato/shared/modules/widgets/injection-position'
 import type { InjectionMenuItemWidget } from '@open-mercato/shared/modules/widgets/injection'
 
+/**
+ * Portal sidebar navigation items.
+ *
+ * NOTE: hrefs must include the /:orgSlug prefix to work under the portal
+ * layout (e.g. /acme-corp/portal/dashboard). The PortalShell does not
+ * auto-prefix injected menu item hrefs — only built-in items get prefixed.
+ *
+ * As a workaround the hrefs start with /portal/ which works for direct
+ * links but NOT for client-side navigation inside the portal shell.
+ * TODO: Upstream fix in PortalShell to auto-prefix injected hrefs.
+ */
 const widget: InjectionMenuItemWidget = {
   metadata: {
     id: 'competitions.injection.portal-nav',
