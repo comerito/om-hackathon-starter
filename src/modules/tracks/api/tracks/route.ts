@@ -21,7 +21,7 @@ const querySchema = z
     pageSize: z.coerce.number().min(1).max(100).default(50),
     sortField: z.string().optional().default('order'),
     sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
-    competitionId: z.string().uuid(),
+    competitionId: z.string().uuid().optional(),
     name: z.string().optional(),
     isActive: z.coerce.boolean().optional(),
     format: z.enum(['json', 'csv']).optional(),

@@ -21,7 +21,7 @@ const querySchema = z
     pageSize: z.coerce.number().min(1).max(100).default(50),
     sortField: z.string().optional().default('name'),
     sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
-    competitionId: z.string().uuid(),
+    competitionId: z.string().uuid().optional(),
     trackId: z.string().uuid().optional(),
     status: z.enum(['ACTIVE', 'DISQUALIFIED', 'WITHDRAWN']).optional(),
     name: z.string().optional(),
