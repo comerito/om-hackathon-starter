@@ -36,13 +36,13 @@ export default function CreateCompetitionPage() {
       placeholder: t('competitions.form.fields.location.placeholder', 'e.g. Warsaw, Poland'),
     },
     {
-      id: 'starts_at',
+      id: 'startsAt',
       label: t('competitions.form.fields.startsAt.label', 'Starts at'),
       type: 'datetime',
       required: true,
     },
     {
-      id: 'ends_at',
+      id: 'endsAt',
       label: t('competitions.form.fields.endsAt.label', 'Ends at'),
       type: 'datetime',
       required: true,
@@ -54,20 +54,20 @@ export default function CreateCompetitionPage() {
       placeholder: t('competitions.form.fields.timezone.placeholder', 'e.g. Europe/Warsaw'),
     },
     {
-      id: 'code_of_conduct_url',
+      id: 'codeOfConductUrl',
       label: t('competitions.form.fields.codeOfConductUrl.label', 'Code of Conduct URL'),
       type: 'text',
       required: true,
       placeholder: t('competitions.form.fields.codeOfConductUrl.placeholder', 'https://...'),
     },
     {
-      id: 'rules_url',
+      id: 'rulesUrl',
       label: t('competitions.form.fields.rulesUrl.label', 'Rules URL'),
       type: 'text',
       placeholder: t('competitions.form.fields.rulesUrl.placeholder', 'https://...'),
     },
     {
-      id: 'privacy_policy_url',
+      id: 'privacyPolicyUrl',
       label: t('competitions.form.fields.privacyPolicyUrl.label', 'Privacy Policy URL'),
       type: 'text',
       placeholder: t('competitions.form.fields.privacyPolicyUrl.placeholder', 'https://...'),
@@ -85,13 +85,13 @@ export default function CreateCompetitionPage() {
       id: 'schedule',
       title: t('competitions.form.groups.schedule', 'Schedule'),
       column: 2,
-      fields: ['starts_at', 'ends_at', 'timezone'],
+      fields: ['startsAt', 'endsAt', 'timezone'],
     },
     {
       id: 'legal',
       title: t('competitions.form.groups.legal', 'Legal'),
       column: 1,
-      fields: ['code_of_conduct_url', 'rules_url', 'privacy_policy_url'],
+      fields: ['codeOfConductUrl', 'rulesUrl', 'privacyPolicyUrl'],
     },
   ], [t])
 

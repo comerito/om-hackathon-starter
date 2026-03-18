@@ -13,13 +13,13 @@ type CompetitionItem = {
   slug: string
   description?: string | null
   location?: string | null
-  starts_at?: string | null
-  ends_at?: string | null
+  startsAt?: string | null
+  endsAt?: string | null
   timezone?: string | null
   stage?: string | null
-  code_of_conduct_url?: string | null
-  rules_url?: string | null
-  privacy_policy_url?: string | null
+  codeOfConductUrl?: string | null
+  rulesUrl?: string | null
+  privacyPolicyUrl?: string | null
 }
 
 type CompetitionFormValues = {
@@ -28,12 +28,12 @@ type CompetitionFormValues = {
   slug: string
   description: string
   location: string
-  starts_at: string
-  ends_at: string
+  startsAt: string
+  endsAt: string
   timezone: string
-  code_of_conduct_url: string
-  rules_url: string
-  privacy_policy_url: string
+  codeOfConductUrl: string
+  rulesUrl: string
+  privacyPolicyUrl: string
 }
 
 export default function EditCompetitionPage({ params }: { params?: { id?: string } }) {
@@ -72,13 +72,13 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
       placeholder: t('competitions.form.fields.location.placeholder', 'e.g. Warsaw, Poland'),
     },
     {
-      id: 'starts_at',
+      id: 'startsAt',
       label: t('competitions.form.fields.startsAt.label', 'Starts at'),
       type: 'datetime',
       required: true,
     },
     {
-      id: 'ends_at',
+      id: 'endsAt',
       label: t('competitions.form.fields.endsAt.label', 'Ends at'),
       type: 'datetime',
       required: true,
@@ -90,20 +90,20 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
       placeholder: t('competitions.form.fields.timezone.placeholder', 'e.g. Europe/Warsaw'),
     },
     {
-      id: 'code_of_conduct_url',
+      id: 'codeOfConductUrl',
       label: t('competitions.form.fields.codeOfConductUrl.label', 'Code of Conduct URL'),
       type: 'text',
       required: true,
       placeholder: t('competitions.form.fields.codeOfConductUrl.placeholder', 'https://...'),
     },
     {
-      id: 'rules_url',
+      id: 'rulesUrl',
       label: t('competitions.form.fields.rulesUrl.label', 'Rules URL'),
       type: 'text',
       placeholder: t('competitions.form.fields.rulesUrl.placeholder', 'https://...'),
     },
     {
-      id: 'privacy_policy_url',
+      id: 'privacyPolicyUrl',
       label: t('competitions.form.fields.privacyPolicyUrl.label', 'Privacy Policy URL'),
       type: 'text',
       placeholder: t('competitions.form.fields.privacyPolicyUrl.placeholder', 'https://...'),
@@ -121,13 +121,13 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
       id: 'schedule',
       title: t('competitions.form.groups.schedule', 'Schedule'),
       column: 2,
-      fields: ['starts_at', 'ends_at', 'timezone'],
+      fields: ['startsAt', 'endsAt', 'timezone'],
     },
     {
       id: 'legal',
       title: t('competitions.form.groups.legal', 'Legal'),
       column: 1,
-      fields: ['code_of_conduct_url', 'rules_url', 'privacy_policy_url'],
+      fields: ['codeOfConductUrl', 'rulesUrl', 'privacyPolicyUrl'],
     },
   ], [t])
 
@@ -152,12 +152,12 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
           slug: item.slug,
           description: item.description ?? '',
           location: item.location ?? '',
-          starts_at: item.starts_at ?? '',
-          ends_at: item.ends_at ?? '',
+          startsAt: item.startsAt ?? '',
+          endsAt: item.endsAt ?? '',
           timezone: item.timezone ?? 'Europe/Warsaw',
-          code_of_conduct_url: item.code_of_conduct_url ?? '',
-          rules_url: item.rules_url ?? '',
-          privacy_policy_url: item.privacy_policy_url ?? '',
+          codeOfConductUrl: item.codeOfConductUrl ?? '',
+          rulesUrl: item.rulesUrl ?? '',
+          privacyPolicyUrl: item.privacyPolicyUrl ?? '',
         }
         if (!cancelled) setInitial(init)
       } catch (error: unknown) {
@@ -179,12 +179,12 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     slug: '',
     description: '',
     location: '',
-    starts_at: '',
-    ends_at: '',
+    startsAt: '',
+    endsAt: '',
     timezone: 'Europe/Warsaw',
-    code_of_conduct_url: '',
-    rules_url: '',
-    privacy_policy_url: '',
+    codeOfConductUrl: '',
+    rulesUrl: '',
+    privacyPolicyUrl: '',
   }), [id])
 
   if (!id) return null
