@@ -37,17 +37,7 @@ const rawBodySchema = z.object({}).passthrough()
 
 type Query = z.infer<typeof querySchema>
 
-// Column references (no generated column module yet, use string literals)
-const id = 'id'
-const name = 'name'
-const slug = 'slug'
-const stage = 'stage'
-const location = 'location'
-const starts_at = 'starts_at'
-const ends_at = 'ends_at'
-const created_at = 'created_at'
-const tenant_id = 'tenant_id'
-const organization_id = 'organization_id'
+import { id, name, slug, stage, location, starts_at, ends_at, created_at, tenant_id, organization_id } from '@/.mercato/generated/entities/competition'
 
 const listFields = [id, name, slug, stage, location, starts_at, ends_at, created_at]
 
@@ -72,6 +62,8 @@ type BaseFields = {
   location: string | null
   starts_at: Date | null
   ends_at: Date | null
+  startsAt?: Date | null
+  endsAt?: Date | null
   created_at: Date
 }
 
@@ -115,12 +107,10 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       id: String(item.id),
       name: String(item.name),
       slug: String(item.slug),
-      stage: String(item.stage),
+      stage: String(item.stage ?? ''),
       location: item.location ? String(item.location) : null,
-      starts_at: item.starts_at,
-      startsAt: item.starts_at,
-      ends_at: item.ends_at,
-      endsAt: item.ends_at,
+      starts_at: item.starts_at ?? item.startsAt ?? null,
+      ends_at: item.ends_at ?? item.endsAt ?? null,
       created_at: item.created_at,
     }),
     allowCsv: true,
