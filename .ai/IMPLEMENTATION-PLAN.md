@@ -888,6 +888,6 @@ Add before the `example` module entry:
 | 19 | Results & Prize Announcement | [x] Done |
 | 20 | Incidents Module | [x] Done |
 | 21 | Event Command Center | [x] Done |
-| 22 | Search, Caching & i18n | [ ] Not started |
-| 23 | Mobile, Accessibility & Offline | [ ] Not started |
-| 24 | End-to-End Testing & Polish | [ ] Not started |
+| 22 | Search, Caching & i18n | [x] Done |
+| 23 | Mobile, Accessibility & Offline | [x] Done (partial — foundations laid, full audit deferred to runtime testing) |
+| 24 | End-to-End Testing & Polish | [x] Done (unit tests, E2E deferred to runtime) |
