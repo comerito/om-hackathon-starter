@@ -883,9 +883,9 @@ Add before the `example` module entry:
 | 14 | Judging: Demo Queue & Timer | [x] Done |
 | 15 | Judging: Score Submission & Leaderboard | [x] Done |
 | 16 | Judging: Two-Round & Finalists | [x] Done |
-| 17 | Sponsors & Prizes | [ ] Not started |
-| 18 | People's Choice Voting | [ ] Not started |
-| 19 | Results & Prize Announcement | [ ] Not started |
+| 17 | Sponsors & Prizes | [x] Done |
+| 18 | People's Choice Voting | [x] Done |
+| 19 | Results & Prize Announcement | [x] Done |
 | 20 | Incidents Module | [ ] Not started |
 | 21 | Event Command Center | [ ] Not started |
 | 22 | Search, Caching & i18n | [ ] Not started |

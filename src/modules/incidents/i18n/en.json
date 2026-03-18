@@ -1,1 +1,105 @@
-{ "incidents": { "title": "Incidents", "description": "Code of Conduct incident reporting" } }
+{
+  "incidents": {
+    "title": "Incidents",
+    "description": "Code of Conduct incident reporting and resolution",
+
+    "column": {
+      "severity": "Severity",
+      "status": "Status",
+      "description": "Description",
+      "reporter": "Reporter",
+      "reported_at": "Reported At"
+    },
+
+    "filter": {
+      "allSeverities": "All severities",
+      "allStatuses": "All statuses"
+    },
+
+    "stats": {
+      "total": "Total",
+      "open": "Open",
+      "critical": "Critical"
+    },
+
+    "actions": {
+      "view": "View Details",
+      "markUnderReview": "Mark Under Review",
+      "resolve": "Resolve"
+    },
+
+    "resolve": {
+      "title": "Resolve Incident",
+      "status": "Resolution Status",
+      "description": "Resolution Description",
+      "placeholder": "Describe the resolution or reason for dismissal...",
+      "submit": "Submit Resolution"
+    },
+
+    "flash": {
+      "resolved": "Incident resolved"
+    },
+
+    "detail": {
+      "title": "Incident Detail",
+      "back": "Back to Incidents",
+      "notFound": "Incident Not Found",
+      "description": "Description",
+      "metadata": "Details",
+      "adminNotes": "Admin Notes",
+      "editNotes": "Edit",
+      "notesSaved": "Notes saved",
+      "resolution": "Resolution",
+      "markReview": "Mark Under Review",
+      "resolve": "Resolve",
+      "resolved": "Incident resolved"
+    },
+
+    "severity": {
+      "low": "Low - Minor issue",
+      "medium": "Medium - Needs attention",
+      "high": "High - Serious concern",
+      "critical": "Critical - Immediate danger"
+    },
+
+    "portal": {
+      "title": "Report an Incident",
+      "description": "If you have witnessed or experienced a Code of Conduct violation or any safety concern, please report it here. You may submit anonymously.",
+      "success": "Incident report submitted. Thank you.",
+      "submitting": "Submitting...",
+      "submit": "Submit Report",
+
+      "error": {
+        "descriptionShort": "Description must be at least 10 characters.",
+        "noCompetition": "No active competition found."
+      },
+
+      "field": {
+        "description": "What happened?",
+        "descriptionPlaceholder": "Please describe the incident in as much detail as possible. Include what happened, when, where, and who was involved.",
+        "descriptionHint": "Minimum 10 characters",
+        "severity": "Severity Level",
+        "reportedUser": "Person involved (optional)",
+        "reportedUserPlaceholder": "Name or identifier of the person involved (if known)",
+        "anonymous": "Submit anonymously",
+        "anonymousHint": "Your identity will not be linked to this report. Note: this may limit our ability to follow up."
+      },
+
+      "submitted": {
+        "title": "Report Submitted",
+        "message": "Your incident report has been submitted and will be reviewed by the event organizers. If you provided contact information, we may follow up with you.",
+        "another": "Submit Another Report",
+        "dashboard": "Back to Dashboard"
+      }
+    },
+
+    "audit": {
+      "report": {
+        "create": "Report incident",
+        "update": "Update incident",
+        "resolve": "Resolve incident",
+        "delete": "Delete incident"
+      }
+    }
+  }
+}
