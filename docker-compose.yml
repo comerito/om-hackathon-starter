@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17-trixie
-    container_name: hackathon-postgres
+    container_name: hackon-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -17,11 +17,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - hackathon-network
+      - hackon-network
 
   redis:
     image: redis:7-alpine
-    container_name: hackathon-redis
+    container_name: hackon-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -32,11 +32,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - hackathon-network
+      - hackon-network
 
   meilisearch:
     image: getmeili/meilisearch:v1.11
-    container_name: hackathon-meilisearch
+    container_name: hackon-meilisearch
     restart: unless-stopped
     environment:
       MEILI_ENV: development
@@ -52,17 +52,17 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - hackathon-network
+      - hackon-network
 
 volumes:
   postgres_data:
-    name: hackathon-postgres-data
+    name: hackon-postgres-data
   redis_data:
-    name: hackathon-redis-data
+    name: hackon-redis-data
   meilisearch_data:
-    name: hackathon-meilisearch-data
+    name: hackon-meilisearch-data
 
 networks:
-  hackathon-network:
-    name: hackathon-network
+  hackon-network:
+    name: hackon-network
     driver: bridge
