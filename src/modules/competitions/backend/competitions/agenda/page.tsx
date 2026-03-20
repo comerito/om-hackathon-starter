@@ -70,13 +70,13 @@ export default function AgendaListPage() {
           sortable sorting={sorting} onSortingChange={(s) => { setSorting(s); setPage(1) }}
           rowActions={(row) => (
             <RowActions items={[
-              { label: 'Edit', href: `/backend/competitions/agenda/${row.id}/edit` },
+              { label: t('competitions.agenda.edit', 'Edit'), href: `/backend/competitions/agenda/${row.id}/edit` },
               {
-                label: 'Delete', destructive: true,
+                label: t('competitions.agenda.delete', 'Delete'), destructive: true,
                 onSelect: async () => {
-                  if (!await confirm({ title: 'Delete this item?', variant: 'destructive' })) return
-                  try { await deleteCrud('competitions/agenda', row.id); flash('Deleted', 'success'); queryClient.invalidateQueries({ queryKey: ['agenda'] }) }
-                  catch (err) { flash(err instanceof Error ? err.message : 'Error', 'error') }
+                  if (!await confirm({ title: t('competitions.agenda.confirmDelete', 'Delete this agenda item?'), variant: 'destructive' })) return
+                  try { await deleteCrud('competitions/agenda', row.id); flash(t('competitions.agenda.flash.deleted', 'Agenda item deleted'), 'success'); queryClient.invalidateQueries({ queryKey: ['agenda'] }) }
+                  catch (err) { flash(err instanceof Error ? err.message : t('competitions.agenda.error.delete', 'Failed to delete'), 'error') }
                 },
               },
             ]} />

@@ -6,8 +6,7 @@ export const metadata = {
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
   breadcrumb: [
-    { label: 'HackOn', labelKey: 'competitions.module.title', href: '/backend/competitions' },
-    { label: 'Competitions', labelKey: 'competitions.list.title', href: '/backend/competitions/competitions' },
+    { label: 'Competitions', labelKey: 'competitions.list.title', href: '/backend/competitions' },
     { label: 'Edit', labelKey: 'competitions.edit.title' },
   ],
 }

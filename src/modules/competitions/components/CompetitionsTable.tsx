@@ -104,7 +104,7 @@ export default function CompetitionsTable() {
         title={t('competitions.table.title', 'Competitions')}
         actions={
           <Button asChild>
-            <Link href="/backend/competitions/competitions/create">{t('competitions.table.create', 'Create Competition')}</Link>
+            <Link href="/backend/competitions/create">{t('competitions.table.create', 'Create Competition')}</Link>
           </Button>
         }
         columns={columns}
@@ -118,7 +118,7 @@ export default function CompetitionsTable() {
         rowActions={(row) => (
           <RowActions
             items={[
-              { label: t('competitions.table.edit', 'Edit'), href: `/backend/competitions/competitions/${row.id}/edit` },
+              { label: t('competitions.table.edit', 'Edit'), href: `/backend/competitions/${row.id}/edit` },
               {
                 label: t('competitions.table.delete', 'Delete'),
                 destructive: true,
@@ -148,7 +148,7 @@ export default function CompetitionsTable() {
           onPageChange: setPage,
         }}
         isLoading={isLoading}
-        onRowClick={(row) => router.push(`/backend/competitions/competitions/${row.id}/edit`)}
+        onRowClick={(row) => router.push(`/backend/competitions/${row.id}/edit`)}
       />
       {ConfirmDialogElement}
     </>

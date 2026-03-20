@@ -56,7 +56,7 @@ const createAnnouncementCommand: CommandHandler<Record<string, unknown>, Announc
       entity: Announcement,
       data: {
         competitionId: parsed.competition_id,
-        authorId: ctx.userId ?? scope.tenantId,
+        authorId: ctx.auth?.userId ?? ctx.auth?.sub ?? scope.tenantId,
         title: parsed.title,
         content: parsed.content,
         priority: parsed.priority,
@@ -87,16 +87,19 @@ const deleteAnnouncementCommand: CommandHandler<{ body?: Record<string, unknown>
     const id = requireId(input, 'Announcement id required')
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
-    const em = ctx.container.resolve('em') as import('@mikro-orm/postgresql').EntityManager
 
-    const announcement = await em.findOne(Announcement, {
-      id,
-      tenantId: scope.tenantId,
-      organizationId: scope.organizationId,
-    } as FilterQuery<Announcement>)
+    const announcement = await de.deleteOrmEntity({
+      entity: Announcement,
+      where: {
+        id,
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+        deletedAt: null,
+      } as FilterQuery<Announcement>,
+      soft: true,
+      softDeleteField: 'deletedAt',
+    })
     if (!announcement) throw new CrudHttpError(404, { error: 'Announcement not found' })
-
-    await em.removeAndFlush(announcement)
 
     await emitCrudSideEffects({
       dataEngine: de,

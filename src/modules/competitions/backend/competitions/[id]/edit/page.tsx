@@ -112,14 +112,14 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
         ) : (
           <CrudForm<CompetitionFormValues>
             title={t('competitions.edit.title', 'Edit Competition')}
-            backHref="/backend/competitions/competitions"
+            backHref="/backend/competitions"
             entityId="competitions:competition"
             fields={fields}
             groups={groups}
             initialValues={initial ?? fallback}
             submitLabel={t('competitions.edit.submit', 'Save')}
-            cancelHref="/backend/competitions/competitions"
-            successRedirect={`/backend/competitions/competitions?flash=${encodeURIComponent(t('competitions.flash.saved', 'Competition saved'))}&type=success`}
+            cancelHref="/backend/competitions"
+            successRedirect={`/backend/competitions?flash=${encodeURIComponent(t('competitions.flash.saved', 'Competition saved'))}&type=success`}
             isLoading={loading}
             loadingMessage={t('competitions.edit.loading', 'Loading competition...')}
             onSubmit={async (vals) => { await updateCrud('competitions/competitions', vals) }}
@@ -127,7 +127,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
               if (!id) return
               try {
                 await deleteCrud('competitions/competitions', String(id))
-                pushWithFlash(router, '/backend/competitions/competitions', t('competitions.flash.deleted', 'Competition deleted'), 'success')
+                pushWithFlash(router, '/backend/competitions', t('competitions.flash.deleted', 'Competition deleted'), 'success')
               } catch (error) {
                 setErr(error instanceof Error ? error.message : 'Delete failed')
               }

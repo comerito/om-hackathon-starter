@@ -130,16 +130,19 @@ const deleteParticipationCommand: CommandHandler<{ body?: Record<string, unknown
     const id = requireId(input, 'Participation id required')
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
-    const em = ctx.container.resolve('em') as import('@mikro-orm/postgresql').EntityManager
 
-    const participation = await em.findOne(CompetitionParticipation, {
-      id,
-      tenantId: scope.tenantId,
-      organizationId: scope.organizationId,
-    } as FilterQuery<CompetitionParticipation>)
+    const participation = await de.deleteOrmEntity({
+      entity: CompetitionParticipation,
+      where: {
+        id,
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+        deletedAt: null,
+      } as FilterQuery<CompetitionParticipation>,
+      soft: true,
+      softDeleteField: 'deletedAt',
+    })
     if (!participation) throw new CrudHttpError(404, { error: 'Participation not found' })
-
-    await em.removeAndFlush(participation)
 
     await emitCrudSideEffects({
       dataEngine: de,

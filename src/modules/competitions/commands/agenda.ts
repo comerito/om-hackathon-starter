@@ -134,16 +134,19 @@ const deleteAgendaItemCommand: CommandHandler<{ body?: Record<string, unknown>; 
     const id = requireId(input, 'Agenda item id required')
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
-    const em = ctx.container.resolve('em') as import('@mikro-orm/postgresql').EntityManager
 
-    const item = await em.findOne(AgendaItem, {
-      id,
-      tenantId: scope.tenantId,
-      organizationId: scope.organizationId,
-    } as FilterQuery<AgendaItem>)
+    const item = await de.deleteOrmEntity({
+      entity: AgendaItem,
+      where: {
+        id,
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+        deletedAt: null,
+      } as FilterQuery<AgendaItem>,
+      soft: true,
+      softDeleteField: 'deletedAt',
+    })
     if (!item) throw new CrudHttpError(404, { error: 'Agenda item not found' })
-
-    await em.removeAndFlush(item)
 
     await emitCrudSideEffects({
       dataEngine: de,

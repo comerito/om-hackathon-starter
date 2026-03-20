@@ -32,7 +32,7 @@ export default function CreateCompetitionPage() {
   ], [t])
 
   const successRedirect = React.useMemo(
-    () => `/backend/competitions/competitions?flash=${encodeURIComponent(t('competitions.flash.created', 'Competition created'))}&type=success`,
+    () => `/backend/competitions?flash=${encodeURIComponent(t('competitions.flash.created', 'Competition created'))}&type=success`,
     [t],
   )
 
@@ -41,12 +41,12 @@ export default function CreateCompetitionPage() {
       <PageBody>
         <CrudForm
           title={t('competitions.create.title', 'Create Competition')}
-          backHref="/backend/competitions/competitions"
+          backHref="/backend/competitions"
           entityId="competitions:competition"
           fields={fields}
           groups={groups}
           submitLabel={t('competitions.create.submit', 'Create')}
-          cancelHref="/backend/competitions/competitions"
+          cancelHref="/backend/competitions"
           successRedirect={successRedirect}
           onSubmit={async (vals) => { await createCrud('competitions/competitions', vals) }}
         />

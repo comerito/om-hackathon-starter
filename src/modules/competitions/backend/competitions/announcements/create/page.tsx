@@ -2,14 +2,21 @@
 import * as React from 'react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
-import { createCrud } from '@open-mercato/ui/backend/utils/crud'
+import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+
+async function loadCompetitions(query?: string) {
+  const params: Record<string, string> = { pageSize: '20' }
+  if (query) params.name = query
+  const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', params)
+  return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
+}
 
 export default function CreateAnnouncementPage() {
   const t = useT()
 
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: 'Competition ID', type: 'text', required: true },
+    { id: 'competition_id', label: t('competitions.announcements.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
     { id: 'title', label: 'Title', type: 'text', required: true },
     { id: 'content', label: 'Content', type: 'textarea', required: true },
     { id: 'priority', label: 'Priority', type: 'select', options: [
@@ -19,9 +26,9 @@ export default function CreateAnnouncementPage() {
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'content', title: 'Content', column: 1, fields: ['competition_id', 'title', 'content'] },
-    { id: 'settings', title: 'Settings', column: 2, fields: ['priority', 'pinned'] },
-  ], [])
+    { id: 'content', title: t('competitions.announcements.groups.content', 'Content'), column: 1, fields: ['competition_id', 'title', 'content'] },
+    { id: 'settings', title: t('competitions.announcements.groups.settings', 'Settings'), column: 2, fields: ['priority', 'pinned'] },
+  ], [t])
 
   return (
     <Page>
@@ -32,9 +39,9 @@ export default function CreateAnnouncementPage() {
           entityId="competitions:announcement"
           fields={fields}
           groups={groups}
-          submitLabel="Publish"
+          submitLabel={t('competitions.announcements.createSubmit', 'Publish')}
           cancelHref="/backend/competitions/announcements"
-          successRedirect={`/backend/competitions/announcements?flash=${encodeURIComponent('Announcement published')}&type=success`}
+          successRedirect={`/backend/competitions/announcements?flash=${encodeURIComponent(t('competitions.announcements.flash.published', 'Announcement published'))}&type=success`}
           onSubmit={async (vals) => { await createCrud('competitions/announcements', vals) }}
         />
       </PageBody>

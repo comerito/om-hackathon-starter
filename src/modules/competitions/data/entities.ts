@@ -268,6 +268,9 @@ export class CompetitionParticipation {
 
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
 }
 
 @Entity({ tableName: 'competitions_participant_profile' })
@@ -362,6 +365,9 @@ export class AgendaItem {
 
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
 }
 
 @Entity({ tableName: 'competitions_announcement' })
@@ -407,4 +413,10 @@ export class Announcement {
 
   @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
   createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
 }

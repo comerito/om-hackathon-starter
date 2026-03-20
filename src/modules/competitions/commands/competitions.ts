@@ -233,7 +233,7 @@ const advanceStageCommand: CommandHandler<Record<string, unknown>, Competition> 
       competitionId: competition.id,
       oldStage,
       newStage: target_stage,
-      advancedBy: ctx.userId,
+      advancedBy: ctx.auth?.userId ?? ctx.auth?.sub ?? null,
       tenantId: scope.tenantId,
       organizationId: scope.organizationId,
     })

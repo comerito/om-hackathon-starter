@@ -89,14 +89,14 @@ export default function ParticipantsListPage() {
                   label: t('competitions.participants.remove', 'Remove'),
                   destructive: true,
                   onSelect: async () => {
-                    const confirmed = await confirm({ title: 'Remove this participant?', variant: 'destructive' })
+                    const confirmed = await confirm({ title: t('competitions.participants.confirmRemove', 'Remove this participant?'), variant: 'destructive' })
                     if (!confirmed) return
                     try {
                       await deleteCrud('competitions/participations', row.id)
-                      flash('Participant removed', 'success')
+                      flash(t('competitions.participants.flash.removed', 'Participant removed'), 'success')
                       queryClient.invalidateQueries({ queryKey: ['participations'] })
                     } catch (err) {
-                      flash(err instanceof Error ? err.message : 'Error', 'error')
+                      flash(err instanceof Error ? err.message : t('competitions.participants.error.remove', 'Failed to remove participant'), 'error')
                     }
                   },
                 },

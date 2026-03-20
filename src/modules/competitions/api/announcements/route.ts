@@ -21,11 +21,10 @@ const querySchema = z
 
 const rawBodySchema = z.object({}).passthrough()
 
-export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
+export const { metadata, GET, POST, DELETE } = makeCrudRoute({
   metadata: {
     GET: { requireAuth: true, requireFeatures: ['competitions.view'] },
     POST: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
-    PUT: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
     DELETE: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
   },
   orm: {
@@ -33,6 +32,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     idField: 'id',
     orgField: 'organizationId',
     tenantField: 'tenantId',
+    softDeleteField: 'deletedAt',
   },
   events: { module: 'competitions', entity: 'announcement', persistent: true },
   indexer: { entityType: ENTITY_ID },
@@ -82,7 +82,11 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
 })
 
 export const openApi: OpenApiRouteDoc = {
-  GET: { summary: 'List announcements', tags: ['Competitions'] },
-  POST: { summary: 'Create an announcement', tags: ['Competitions'] },
-  DELETE: { summary: 'Delete an announcement', tags: ['Competitions'] },
+  tag: 'Competitions',
+  summary: 'Announcement management',
+  methods: {
+    GET: { summary: 'List announcements' },
+    POST: { summary: 'Create an announcement' },
+    DELETE: { summary: 'Delete an announcement' },
+  },
 }

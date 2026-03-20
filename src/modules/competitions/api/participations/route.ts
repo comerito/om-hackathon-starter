@@ -34,6 +34,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     idField: 'id',
     orgField: 'organizationId',
     tenantField: 'tenantId',
+    softDeleteField: 'deletedAt',
   },
   events: { module: 'competitions', entity: 'participation', persistent: true },
   indexer: { entityType: ENTITY_ID },
@@ -87,8 +88,12 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
 })
 
 export const openApi: OpenApiRouteDoc = {
-  GET: { summary: 'List competition participations', tags: ['Competitions'] },
-  POST: { summary: 'Register a participant', tags: ['Competitions'] },
-  PUT: { summary: 'Update a participation', tags: ['Competitions'] },
-  DELETE: { summary: 'Remove a participation', tags: ['Competitions'] },
+  tag: 'Competitions',
+  summary: 'Participation management',
+  methods: {
+    GET: { summary: 'List competition participations' },
+    POST: { summary: 'Register a participant' },
+    PUT: { summary: 'Update a participation' },
+    DELETE: { summary: 'Remove a participation' },
+  },
 }

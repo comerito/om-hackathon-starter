@@ -62,11 +62,11 @@ export default function AnnouncementsListPage() {
           sortable sorting={sorting} onSortingChange={(s) => { setSorting(s); setPage(1) }}
           rowActions={(row) => (
             <RowActions items={[{
-              label: 'Delete', destructive: true,
+              label: t('competitions.announcements.delete', 'Delete'), destructive: true,
               onSelect: async () => {
-                if (!await confirm({ title: 'Delete this announcement?', variant: 'destructive' })) return
-                try { await deleteCrud('competitions/announcements', row.id); flash('Deleted', 'success'); queryClient.invalidateQueries({ queryKey: ['announcements'] }) }
-                catch (err) { flash(err instanceof Error ? err.message : 'Error', 'error') }
+                if (!await confirm({ title: t('competitions.announcements.confirmDelete', 'Delete this announcement?'), variant: 'destructive' })) return
+                try { await deleteCrud('competitions/announcements', row.id); flash(t('competitions.announcements.flash.deleted', 'Announcement deleted'), 'success'); queryClient.invalidateQueries({ queryKey: ['announcements'] }) }
+                catch (err) { flash(err instanceof Error ? err.message : t('competitions.announcements.error.delete', 'Failed to delete'), 'error') }
               },
             }]} />
           )}

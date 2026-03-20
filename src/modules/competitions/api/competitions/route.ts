@@ -100,8 +100,12 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
 })
 
 export const openApi: OpenApiRouteDoc = {
-  GET: { summary: 'List competitions', tags: ['Competitions'] },
-  POST: { summary: 'Create a competition', tags: ['Competitions'] },
-  PUT: { summary: 'Update a competition', tags: ['Competitions'] },
-  DELETE: { summary: 'Delete a competition', tags: ['Competitions'] },
+  tag: 'Competitions',
+  summary: 'Competition management',
+  methods: {
+    GET: { summary: 'List competitions' },
+    POST: { summary: 'Create a competition' },
+    PUT: { summary: 'Update a competition' },
+    DELETE: { summary: 'Delete a competition' },
+  },
 }
