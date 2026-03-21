@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     const team = await em.findOne(Team, {
       id: parsed.team_id,
       tenantId: auth.tenantId,
+      organizationId: auth.orgId,
       deletedAt: null,
     } as FilterQuery<Team>)
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: error.issues }), { status: 422, headers: { 'content-type': 'application/json' } })
     }
+    console.error('[select-track] POST error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { 'content-type': 'application/json' } })
   }
 }

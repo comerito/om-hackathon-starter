@@ -3,12 +3,8 @@ import type { ModuleInjectionTable } from '@open-mercato/shared/modules/widgets/
 export const injectionTable: ModuleInjectionTable = {
   'menu:portal:sidebar:main': [
     {
-      widgetId: 'teams.portal-my-team',
+      widgetId: 'teams.portal-nav',
       priority: 60,
-    },
-    {
-      widgetId: 'teams.portal-browse-teams',
-      priority: 70,
     },
   ],
 }

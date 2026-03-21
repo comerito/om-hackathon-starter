@@ -3,7 +3,7 @@ import type { ModuleInjectionTable } from '@open-mercato/shared/modules/widgets/
 export const injectionTable: ModuleInjectionTable = {
   'menu:portal:sidebar:main': [
     {
-      widgetId: 'tracks.portal-tracks',
+      widgetId: 'tracks.portal-nav',
       priority: 50,
     },
   ],

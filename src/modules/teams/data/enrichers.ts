@@ -1,4 +1,5 @@
 import type { ResponseEnricher } from '@open-mercato/shared/lib/crud/response-enricher'
+import type { EntityManager } from '@mikro-orm/postgresql'
 import { TeamMember } from './entities'
 
 type TeamRecord = Record<string, unknown> & { id: string }
@@ -11,21 +12,23 @@ const teamMemberCountEnricher: ResponseEnricher<TeamRecord, { _teams: { memberCo
   fallback: { _teams: { memberCount: 0 } },
 
   async enrichOne(record, context) {
-    const em = (context.em as any).fork()
+    const em = (context.em as EntityManager).fork()
     const count = await em.count(TeamMember, {
       teamId: record.id,
+      organizationId: context.organizationId,
       deletedAt: null,
     })
     return { ...record, _teams: { memberCount: count } }
   },
 
   async enrichMany(records, context) {
-    const em = (context.em as any).fork()
+    const em = (context.em as EntityManager).fork()
     const teamIds = records.map(r => r.id)
     if (!teamIds.length) return records.map(r => ({ ...r, _teams: { memberCount: 0 } }))
 
     const members = await em.find(TeamMember, {
       teamId: { $in: teamIds },
+      organizationId: context.organizationId,
       deletedAt: null,
     })
 

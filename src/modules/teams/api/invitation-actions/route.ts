@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     const invitation = await em.findOne(TeamInvitation, {
       id: parsed.invitation_id,
       tenantId: auth.tenantId,
+      organizationId: auth.orgId,
     } as FilterQuery<TeamInvitation>)
 
     if (!invitation) {
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: error.issues }), { status: 422, headers: { 'content-type': 'application/json' } })
     }
+    console.error('[invitation-actions] POST error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { 'content-type': 'application/json' } })
   }
 }
