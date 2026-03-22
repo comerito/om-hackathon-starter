@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { TeamInvitation, InvitationStatus, TeamMember, TeamRole, InvitationType } from '../../../data/entities'
+import { CompetitionParticipation } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const respondSchema = z.object({
@@ -85,6 +86,18 @@ export async function POST(req: Request) {
         organizationId: invitation.organizationId,
       })
       await em.persistAndFlush(member)
+
+      // Clear "looking for team" flag on the joining user's participation
+      const participation = await em.findOne(CompetitionParticipation, {
+        customerUserId: joiningUserId,
+        competitionId: invitation.competitionId,
+        deletedAt: null,
+      } as FilterQuery<CompetitionParticipation>)
+      if (participation && participation.lookingForTeam) {
+        participation.lookingForTeam = false
+        participation.lookingForTeamDescription = null
+        await em.persistAndFlush(participation)
+      }
 
       invitation.status = InvitationStatus.ACCEPTED
       invitation.respondedAt = new Date()
