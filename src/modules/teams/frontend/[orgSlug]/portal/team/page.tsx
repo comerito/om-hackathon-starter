@@ -175,131 +175,156 @@ function NoTeamView({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Create Team Section */}
-      <PortalCard>
-        <PortalCardHeader title={t('teams.portal.myTeam.createTeam', 'Create a Team')} />
-        <div className="px-6 pb-6">
-          {!showCreateForm ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                {t('teams.portal.myTeam.noTeamDesc', 'Start your own team and invite others to join.')}
-              </p>
-              <Button onClick={() => setShowCreateForm(true)} className="w-fit">
-                {t('teams.portal.myTeam.createTeamBtn', 'Create Team')}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t('teams.portal.myTeam.teamName', 'Team Name')} *
-                </label>
-                <Input
-                  type="text"
-                  value={teamName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTeamName(e.target.value)}
-                  placeholder={t('teams.portal.myTeam.teamNamePlaceholder', 'Enter team name...')}
-                  className="max-w-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t('teams.portal.myTeam.teamDescription', 'Description')}
-                </label>
-                <textarea
-                  value={teamDesc}
-                  onChange={(e) => setTeamDesc(e.target.value)}
-                  placeholder={t('teams.portal.myTeam.teamDescPlaceholder', 'Describe your team idea or project...')}
-                  className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleCreateTeam} disabled={!teamName.trim() || creating}>
-                  {creating
-                    ? t('common.saving', 'Saving...')
-                    : t('teams.portal.myTeam.createTeamSubmit', 'Create Team')}
-                </Button>
-                <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                  {t('common.cancel', 'Cancel')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </PortalCard>
-
-      {/* Browse Teams Link */}
-      <PortalCard>
-        <div className="p-6 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.browseTeams', 'Browse Teams')}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t('teams.portal.myTeam.browseTeamsDesc', 'Find an existing team to join or see who is looking for teammates.')}
-            </p>
+    <div className="space-y-8">
+      {/* ── Action Tiles ── */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Tile 1: Create Team */}
+        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
+            </svg>
           </div>
-          <Button variant="outline" asChild>
+          <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.createTeam', 'Create a Team')}</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {t('teams.portal.myTeam.noTeamDesc', 'Start your own team and invite others to join.')}
+          </p>
+          <Button onClick={() => setShowCreateForm(true)} size="sm" className="w-full">
+            {t('teams.portal.myTeam.createTeamBtn', 'Create Team')}
+          </Button>
+        </div>
+
+        {/* Tile 2: Browse Teams */}
+        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.browseTeams', 'Browse Teams')}</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {t('teams.portal.myTeam.browseTeamsDesc', 'Find an existing team to join or see who is looking for teammates.')}
+          </p>
+          <Button variant="outline" size="sm" asChild className="w-full">
             <Link href={`/${orgSlug}/portal/teams`}>
               {t('teams.portal.myTeam.browseBtn', 'Browse')}
             </Link>
           </Button>
         </div>
-      </PortalCard>
 
-      {/* Looking for Team Toggle */}
-      <PortalCard>
-        <PortalCardHeader title={t('teams.portal.myTeam.lookingForTeam', 'Looking for a Team')} />
-        <div className="px-6 pb-6 space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer">
+        {/* Tile 3: Looking for Team */}
+        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.lookingForTeam', 'Looking for a Team')}</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {t('teams.portal.myTeam.lookingForTeamDesc', 'Let others know you are available to join a team.')}
+          </p>
+          <label className="flex items-center gap-2.5 cursor-pointer rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/50">
             <input
               type="checkbox"
               checked={lookingForTeam}
               onChange={(e) => handleToggleLooking(e.target.checked)}
               disabled={updatingLooking}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-gray-300 accent-primary"
             />
-            <span className="text-sm">
-              {t('teams.portal.myTeam.markLooking', 'Mark me as looking for a team')}
-            </span>
+            <span>{t('teams.portal.myTeam.markLooking', 'Mark me as looking')}</span>
           </label>
-          {lookingForTeam && (
-            <div className="space-y-2 ml-7">
-              <label className="block text-sm text-muted-foreground">
-                {t('teams.portal.myTeam.lookingDesc', 'Describe what you are looking for (skills, project ideas, etc.)')}
+        </div>
+      </div>
+
+      {/* ── Create Team Expanded Form ── */}
+      {showCreateForm && (
+        <PortalCard>
+          <PortalCardHeader title={t('teams.portal.myTeam.createTeamForm', 'New Team')} />
+          <div className="px-6 pb-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                {t('teams.portal.myTeam.teamName', 'Team Name')} <span className="text-destructive">*</span>
+              </label>
+              <Input
+                type="text"
+                value={teamName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTeamName(e.target.value)}
+                placeholder={t('teams.portal.myTeam.teamNamePlaceholder', 'Enter team name...')}
+                className="max-w-md"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                {t('teams.portal.myTeam.teamDescription', 'Description')}
               </label>
               <textarea
-                value={lookingDescription}
-                onChange={(e) => setLookingDescription(e.target.value)}
-                placeholder={t('teams.portal.myTeam.lookingDescPlaceholder', 'I am interested in...')}
-                className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[60px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                rows={2}
+                value={teamDesc}
+                onChange={(e) => setTeamDesc(e.target.value)}
+                placeholder={t('teams.portal.myTeam.teamDescPlaceholder', 'Describe your team idea or project...')}
+                className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                rows={3}
               />
-              <Button variant="outline" size="sm" onClick={handleSaveLookingDescription} disabled={updatingLooking}>
-                {t('common.save', 'Save')}
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleCreateTeam} disabled={!teamName.trim() || creating}>
+                {creating ? t('common.saving', 'Saving...') : t('teams.portal.myTeam.createTeamSubmit', 'Create Team')}
+              </Button>
+              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+                {t('common.cancel', 'Cancel')}
               </Button>
             </div>
-          )}
-        </div>
-      </PortalCard>
+          </div>
+        </PortalCard>
+      )}
 
-      {/* Received Invitations */}
+      {/* ── Looking for Team Description (expanded) ── */}
+      {lookingForTeam && (
+        <PortalCard>
+          <PortalCardHeader title={t('teams.portal.myTeam.lookingProfile', 'Your Looking-for-Team Profile')} />
+          <div className="px-6 pb-6 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {t('teams.portal.myTeam.lookingDesc', 'Describe what you are looking for (skills, project ideas, etc.)')}
+            </p>
+            <textarea
+              value={lookingDescription}
+              onChange={(e) => setLookingDescription(e.target.value)}
+              placeholder={t('teams.portal.myTeam.lookingDescPlaceholder', 'I am interested in AI/ML projects, have experience with Python and React...')}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              rows={3}
+            />
+            <Button variant="outline" size="sm" onClick={handleSaveLookingDescription} disabled={updatingLooking}>
+              {t('common.save', 'Save')}
+            </Button>
+          </div>
+        </PortalCard>
+      )}
+
+      {/* ── Received Invitations ── */}
       {receivedInvitations.length > 0 && (
         <PortalCard>
-          <PortalCardHeader title={t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')} />
+          <PortalCardHeader title={`${t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')} (${receivedInvitations.length})`} />
           <div className="px-6 pb-6">
             <div className="divide-y">
               {receivedInvitations.map((inv) => (
-                <div key={inv.id} className="py-3 flex items-center justify-between">
-                  <div className="text-sm">
-                    <span className="font-medium">{inv.team_name ?? t('teams.portal.myTeam.aTeam', 'A team')}</span>
-                    {' '}
-                    {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
-                    {inv.message && (
-                      <p className="text-muted-foreground text-xs mt-0.5">{inv.message}</p>
-                    )}
+                <div key={inv.id} className="py-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                      {(inv.team_name ?? 'T')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {inv.team_name ?? t('teams.portal.myTeam.aTeam', 'A team')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
+                      </p>
+                      {inv.message && (
+                        <p className="text-xs text-muted-foreground/80 mt-0.5 italic">&ldquo;{inv.message}&rdquo;</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2 ml-4 shrink-0">
+                  <div className="flex gap-2 shrink-0">
                     <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')}>
                       {t('common.accept', 'Accept')}
                     </Button>
