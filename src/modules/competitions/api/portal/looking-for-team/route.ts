@@ -54,10 +54,22 @@ export async function GET(req: Request) {
       : []
     const profileMap = new Map(profiles.map(p => [p.customerUserId, p]))
 
+    // Resolve display names from customer_users table
+    const knex = (em as any).getConnection().getKnex()
+    const userRows = userIds.length > 0
+      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', userIds)
+      : []
+    const userMap = new Map<string, { displayName: string | null; email: string | null }>(
+      userRows.map((r: any) => [r.id, { displayName: r.display_name ?? null, email: r.email ?? null }]),
+    )
+
     const items = lookingParticipations.map(p => {
       const profile = profileMap.get(p.customerUserId)
+      const user = userMap.get(p.customerUserId)
       return {
         customer_user_id: p.customerUserId,
+        display_name: user?.displayName || user?.email?.split('@')[0] || null,
+        email: user?.email || null,
         role: p.role,
         looking_for_team_description: p.lookingForTeamDescription,
         bio: profile?.bio ?? null,
