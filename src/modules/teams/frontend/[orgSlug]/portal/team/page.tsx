@@ -464,7 +464,9 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
             ) : (
               <div className="relative" ref={dropdownRef}>
                 <Input
-                  type="text"
+                  type="search"
+                  name="participant-search"
+                  autoComplete="off"
                   value={searchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setSearchQuery(e.target.value)
