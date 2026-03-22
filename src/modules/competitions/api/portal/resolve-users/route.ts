@@ -29,11 +29,14 @@ export async function GET(req: Request) {
 
     // Query customer_users table for display names
     const knex = (em as any).getConnection().getKnex()
-    const rows = await knex('customer_users')
+    let query = knex('customer_users')
       .select('id', 'display_name', 'email')
       .whereIn('id', limitedIds)
-      .andWhere('tenant_id', auth.tenantId)
+    if (auth.tenantId) {
+      query = query.andWhere('tenant_id', auth.tenantId)
+    }
 
+    const rows = await query
     const users: Record<string, { displayName: string; email: string }> = {}
     for (const row of rows) {
       users[row.id] = {
