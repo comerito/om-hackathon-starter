@@ -207,3 +207,140 @@ Regenerate the example module's snapshot with an isolated MikroORM instance (aft
 For the starter template: ship a clean snapshot or no snapshot at all (let `db:generate` create it fresh on first run).
 
 ---
+
+## ISSUE-004: Query engine entity ID convention undocumented — silent wrong-table fallback
+
+**Severity:** Critical
+**Affects:** Any module with entity classes whose name differs from the entity ID segment
+**Discovered:** 2026-03-22 during HackOn Phase 2
+
+### Problem
+
+`resolveEntityTableName()` in `@open-mercato/shared/lib/query/engine.ts` resolves table names from entity IDs (`<module>:<entity>`) via this chain:
+
+1. Split entity ID on `:`, take the second segment as `rawName`
+2. Convert `rawName` to PascalCase via `toPascalCase()` → candidate class names
+3. Look up ORM metadata by class name → if found, use `meta.tableName`
+4. **Fallback:** pluralize `rawName` naively → use as table name
+
+**The fallback at step 4 is silent.** When the class name lookup fails, the engine queries a non-existent table, producing a Postgres error: `relation "xxx" does not exist`.
+
+**Example:** Entity ID `competitions:participation` with class `CompetitionParticipation`:
+
+| Step | Value | Correct? |
+|------|-------|----------|
+| rawName | `participation` | — |
+| PascalCase | `Participation` | — |
+| ORM lookup | `Participation` → not found (`CompetitionParticipation`) | **FAIL** |
+| Fallback | `pluralize('participation')` → `participations` | **WRONG** |
+| Actual table | `competitions_participation` | — |
+| Result | `SELECT * FROM "participations"` → **500 error** | |
+
+The same issue affects any entity where the class name includes a module prefix (common for disambiguation):
+- `TeamMember` with ID `teams:member` → looks for `Member`, falls back to `members`
+- `TeamInvitation` with ID `teams:invitation` → looks for `Invitation`, falls back to `invitations`
+
+### Current Workaround
+
+Use entity ID segments that produce the correct PascalCase class name:
+
+```
+competitions:competition_participation  → toPascalCase → CompetitionParticipation ✓
+teams:team_member                       → toPascalCase → TeamMember ✓
+teams:team_invitation                   → toPascalCase → TeamInvitation ✓
+```
+
+This works but is undocumented, unintuitive, and discovered only via runtime errors.
+
+### Proposed Fix
+
+**Option A (recommended): Search ORM metadata by `tableName` as secondary lookup**
+
+When the PascalCase class name lookup fails, search all registered entities for a matching `tableName` before falling back to pluralization:
+
+```typescript
+// engine.ts — resolveEntityTableName()
+export function resolveEntityTableName(em: EntityManager | undefined, entity: EntityId): string {
+  if (entityTableCache.has(entity)) return entityTableCache.get(entity)!
+
+  const parts = String(entity || '').split(':')
+  const rawName = (parts[1]?.trim().length > 0) ? parts[1] : (parts[0] || '').trim()
+  const metadata = (em as any)?.getMetadata?.()
+
+  if (metadata && rawName) {
+    // Step 1: Try class name lookup (existing behavior)
+    const candidates = candidateClassNames(rawName)
+    for (const candidate of candidates) {
+      try {
+        const meta = metadata.find?.(candidate)
+        if (meta?.tableName) {
+          entityTableCache.set(entity, String(meta.tableName))
+          return String(meta.tableName)
+        }
+      } catch {}
+    }
+
+    // Step 2: NEW — Try table name lookup across all entities
+    const modulePrefix = parts[0] ?? ''
+    const candidateTables = [
+      `${modulePrefix}_${rawName}`,          // e.g., competitions_participation
+      pluralizeBaseName(rawName),             // e.g., participations
+      `${modulePrefix}_${pluralizeBaseName(rawName)}`, // e.g., competitions_participations
+    ]
+    try {
+      const allMeta = metadata.getAll?.() ?? []
+      for (const meta of allMeta) {
+        if (meta?.tableName && candidateTables.includes(String(meta.tableName))) {
+          entityTableCache.set(entity, String(meta.tableName))
+          return String(meta.tableName)
+        }
+      }
+    } catch {}
+  }
+
+  // Step 3: Fallback (existing) — but LOG A WARNING
+  const fallback = pluralizeBaseName(rawName || '')
+  console.warn(
+    `[QueryEngine] Could not resolve entity "${entity}" via ORM metadata. ` +
+    `Falling back to table name "${fallback}". ` +
+    `This may be incorrect — ensure the entity ID segment matches the class name convention.`
+  )
+  entityTableCache.set(entity, fallback)
+  return fallback
+}
+```
+
+**Pros:** Fixes all cases where class name differs from entity ID. No breaking changes. Warning log helps developers catch misconfigured entity IDs early.
+
+**Cons:** Additional metadata scan (but results are cached, so one-time cost).
+
+**Option B: Add warning log to the existing fallback**
+
+Minimal change — just add a `console.warn` at line 79 so developers see the fallback immediately instead of getting a cryptic Postgres error:
+
+```typescript
+const fallback = pluralizeBaseName(rawName || '')
+console.warn(`[QueryEngine] Entity "${entity}" not found in ORM metadata — falling back to table "${fallback}"`)
+entityTableCache.set(entity, fallback)
+return fallback
+```
+
+**Pros:** 2-line change. Makes the failure visible immediately.
+
+**Cons:** Doesn't fix the underlying issue — developers still need to know the naming convention.
+
+**Option C: Document the convention explicitly**
+
+Add to the module scaffold skill and AGENTS.md:
+
+> Entity IDs must use the snake_case form of the entity class name after the colon. Example: class `CompetitionParticipation` → entity ID `competitions:competition_participation` (not `competitions:participation`).
+
+**Pros:** Zero code changes.
+
+**Cons:** Convention-only fix. Developers will continue to hit this issue until they read the docs.
+
+### Recommendation
+
+**Option A + B combined** — add the secondary table name lookup AND the warning log. This fixes the issue for existing code while making future misconfiguration immediately visible.
+
+---
