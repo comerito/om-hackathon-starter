@@ -518,6 +518,41 @@ function TeamView({
   const teamRequests = invData?.team_requests ?? []
   const receivedInvitations = invData?.received ?? []
 
+  // Resolve member + invitation user IDs to display names
+  const allUserIds = React.useMemo(() => {
+    const ids = new Set<string>()
+    for (const m of members) ids.add(m.customer_user_id)
+    for (const inv of teamRequests) { ids.add(inv.inviter_id); ids.add(inv.invitee_id) }
+    for (const inv of receivedInvitations) { ids.add(inv.inviter_id); ids.add(inv.invitee_id) }
+    return Array.from(ids)
+  }, [members, teamRequests, receivedInvitations])
+
+  const { data: userNames } = useQuery({
+    queryKey: ['portal-user-names', allUserIds.join(',')],
+    queryFn: async () => {
+      if (allUserIds.length === 0) return {} as Record<string, { displayName: string; email: string }>
+      const { ok, result } = await apiCall<{ users: Record<string, { displayName: string; email: string }> }>(
+        `/api/competitions/portal/resolve-users?ids=${allUserIds.join(',')}`,
+      )
+      return ok && result ? result.users : {}
+    },
+    enabled: allUserIds.length > 0,
+  })
+
+  const resolveUser = React.useCallback((id: string) => {
+    const u = userNames?.[id]
+    return u?.displayName ?? id.slice(0, 8) + '...'
+  }, [userNames])
+
+  const resolveInitials = React.useCallback((id: string) => {
+    const name = userNames?.[id]?.displayName
+    if (name) {
+      const parts = name.split(/\s+/)
+      return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
+    }
+    return id.slice(0, 2).toUpperCase()
+  }, [userNames])
+
   // Track selection
   const [selectedTrackId, setSelectedTrackId] = React.useState(team.track_id ?? '')
 
@@ -638,9 +673,9 @@ function TeamView({
                   <div key={m.id} className="py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                        {m.customer_user_id.slice(0, 2).toUpperCase()}
+                        {resolveInitials(m.customer_user_id)}
                       </div>
-                      <span className="text-sm font-medium">{m.customer_user_id.slice(0, 8)}...</span>
+                      <span className="text-sm font-medium">{resolveUser(m.customer_user_id)}</span>
                     </div>
                     <span
                       className={`text-xs rounded px-1.5 py-0.5 capitalize ${
@@ -677,7 +712,7 @@ function TeamView({
                   {teamRequests.map((inv) => (
                     <div key={inv.id} className="py-3 flex items-center justify-between">
                       <div className="text-sm">
-                        <span className="font-medium">{inv.invitee_id.slice(0, 8)}...</span>
+                        <span className="font-medium">{resolveUser(inv.inviter_id)}</span>
                         {' '}
                         {t('teams.portal.myTeam.wantsToJoin', 'wants to join')}
                         {inv.message && (
