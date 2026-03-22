@@ -19,9 +19,9 @@ async function loadCompetitions(query?: string) {
 async function loadCustomerUsers(query?: string) {
   try {
     const params: Record<string, string> = { pageSize: '20' }
-    if (query) params.search = query
+    if (query) params.displayName = query
     const data = await readApiResultOrThrow<{ items: CustomerUserOption[] }>(
-      `/api/customer_accounts?${new URLSearchParams(params).toString()}`,
+      `/api/customer_accounts/admin/users?${new URLSearchParams(params).toString()}`,
     )
     return (data?.items ?? []).map((u) => ({ value: u.id, label: `${u.displayName || u.email} (${u.email})` }))
   } catch {
