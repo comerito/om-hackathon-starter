@@ -5,7 +5,34 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
+import { Button } from '@open-mercato/ui/primitives/button'
+import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { flash } from '@open-mercato/ui/backend/FlashMessages'
+import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+
+const STAGE_ORDER = [
+  'draft', 'open', 'team_formation', 'track_selection',
+  'hacking', 'demos', 'deliberation', 'finished', 'archived',
+]
+
+const STAGE_LABELS: Record<string, string> = {
+  draft: 'Draft', open: 'Registration Open', team_formation: 'Team Formation',
+  track_selection: 'Track Selection', hacking: 'Hacking',
+  demos: 'Demos', deliberation: 'Deliberation',
+  finished: 'Finished', archived: 'Archived',
+}
+
+const STAGE_DESCRIPTIONS: Record<string, string> = {
+  open: 'Participants can register and accept the Code of Conduct.',
+  team_formation: 'Participants form teams and send invitations.',
+  track_selection: 'Teams choose their competition track.',
+  hacking: 'Teams build their projects. Draft projects auto-created for all teams. Team membership locked.',
+  demos: 'Remaining draft projects auto-published. Demo presentation queue generated.',
+  deliberation: 'Judges deliberate. Voting closes.',
+  finished: 'Final scores calculated. Rankings published. Results visible to all.',
+  archived: 'Competition archived. No further changes.',
+}
 
 type CompetitionFormValues = {
   id: string
@@ -32,6 +59,8 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
   const [initial, setInitial] = React.useState<CompetitionFormValues | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
+  const [advancing, setAdvancing] = React.useState(false)
+  const { confirm, ConfirmDialogElement } = useConfirmDialog()
 
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'name', label: t('competitions.fields.name', 'Name'), type: 'text', required: true },
@@ -102,6 +131,47 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     code_of_conduct_url: '', rules_url: '', privacy_policy_url: '', cover_image_url: '', stage: 'draft',
   }), [id])
 
+  const currentStage = initial?.stage ?? 'draft'
+  const currentStageIdx = STAGE_ORDER.indexOf(currentStage)
+  const nextStage = currentStageIdx >= 0 && currentStageIdx < STAGE_ORDER.length - 1
+    ? STAGE_ORDER[currentStageIdx + 1]
+    : null
+
+  async function handleAdvanceStage() {
+    if (!id || !nextStage) return
+    const description = STAGE_DESCRIPTIONS[nextStage] ?? ''
+    const confirmTitle = description
+      ? `Advance to ${STAGE_LABELS[nextStage]}?\n\n${description}\n\nThis action cannot be undone.`
+      : `Advance to ${STAGE_LABELS[nextStage]}? This action cannot be undone.`
+    const confirmed = await confirm({
+      title: confirmTitle,
+      variant: 'default',
+    })
+    if (!confirmed) return
+
+    setAdvancing(true)
+    try {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string; competition?: { stage: string } }>(
+        '/api/competitions/advance-stage',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ competition_id: id, target_stage: nextStage }),
+        },
+      )
+      if (ok && result?.competition) {
+        flash(`Stage advanced to ${STAGE_LABELS[result.competition.stage] ?? result.competition.stage}`, 'success')
+        setInitial(prev => prev ? { ...prev, stage: result.competition!.stage } : prev)
+      } else {
+        flash(result?.error ?? 'Failed to advance stage', 'error')
+      }
+    } catch (advErr) {
+      flash(advErr instanceof Error ? advErr.message : 'Failed to advance stage', 'error')
+    } finally {
+      setAdvancing(false)
+    }
+  }
+
   if (!id) return null
 
   return (
@@ -110,6 +180,67 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
         {err ? (
           <div className="text-red-600">{err}</div>
         ) : (
+          <>
+          {/* Stage Control Panel */}
+          {!loading && initial && (
+            <div className="mb-6 rounded-lg border bg-card p-6">
+              <h3 className="text-sm font-semibold mb-4">{t('competitions.edit.stageControl', 'Stage Control')}</h3>
+
+              {/* Stage progress bar */}
+              <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-2">
+                {STAGE_ORDER.map((stage, idx) => {
+                  const isCurrent = stage === currentStage
+                  const isPast = idx < currentStageIdx
+                  const isFuture = idx > currentStageIdx
+                  return (
+                    <React.Fragment key={stage}>
+                      {idx > 0 && (
+                        <div className={`h-0.5 w-4 shrink-0 ${isPast ? 'bg-primary' : 'bg-muted'}`} />
+                      )}
+                      <div
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                          isCurrent
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/30'
+                            : isPast
+                            ? 'bg-primary/20 text-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                        title={STAGE_DESCRIPTIONS[stage] ?? ''}
+                      >
+                        {STAGE_LABELS[stage] ?? stage}
+                      </div>
+                    </React.Fragment>
+                  )
+                })}
+              </div>
+
+              {/* Advance button */}
+              {nextStage ? (
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handleAdvanceStage}
+                    disabled={advancing}
+                    variant={nextStage === 'finished' || nextStage === 'demos' ? 'destructive' : 'default'}
+                  >
+                    {advancing
+                      ? t('competitions.edit.advancing', 'Advancing...')
+                      : `${t('competitions.edit.advanceTo', 'Advance to')} ${STAGE_LABELS[nextStage] ?? nextStage}`
+                    }
+                  </Button>
+                  {STAGE_DESCRIPTIONS[nextStage] && (
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      {STAGE_DESCRIPTIONS[nextStage]}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t('competitions.edit.finalStage', 'This competition has reached its final stage.')}
+                </p>
+              )}
+            </div>
+          )}
+
           <CrudForm<CompetitionFormValues>
             title={t('competitions.edit.title', 'Edit Competition')}
             backHref="/backend/competitions"
@@ -133,7 +264,9 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
               }
             }}
           />
+          </>
         )}
+        {ConfirmDialogElement}
       </PageBody>
     </Page>
   )
