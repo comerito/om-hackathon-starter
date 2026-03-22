@@ -342,6 +342,133 @@ function NoTeamView({
   )
 }
 
+/* ========== InviteMemberSection ========== */
+
+function InviteMemberSection({ teamId, competitionId }: { teamId: string; competitionId: string }) {
+  const t = useT()
+  const queryClient = useQueryClient()
+  const [showForm, setShowForm] = React.useState(false)
+  const [inviteeId, setInviteeId] = React.useState('')
+  const [message, setMessage] = React.useState('')
+  const [sending, setSending] = React.useState(false)
+
+  // Fetch participants looking for a team as suggestions
+  const { data: lookingData } = useQuery({
+    queryKey: ['portal-looking-for-team', competitionId],
+    queryFn: async () => {
+      const { ok, result } = await apiCall<{ items: Array<{ customer_user_id: string; organization: string | null; skills: string[] }> }>(
+        `/api/competitions/portal/looking-for-team?competition_id=${competitionId}`,
+      )
+      return ok && result ? result.items : []
+    },
+    enabled: !!competitionId && showForm,
+  })
+
+  const suggestions = lookingData ?? []
+
+  async function handleInvite() {
+    if (!inviteeId.trim()) return
+    setSending(true)
+    try {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/invite-member', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ team_id: teamId, invitee_id: inviteeId.trim(), message: message.trim() || undefined }),
+      })
+      if (ok) {
+        flash(t('teams.portal.myTeam.inviteSent', 'Invitation sent!'), 'success')
+        setInviteeId('')
+        setMessage('')
+        setShowForm(false)
+        queryClient.invalidateQueries({ queryKey: ['portal-invitations'] })
+      } else {
+        flash(result?.error ?? t('teams.portal.myTeam.inviteFailed', 'Failed to send invitation'), 'error')
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="pt-4 mt-4 border-t">
+      {!showForm ? (
+        <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="w-full">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+          {t('teams.portal.myTeam.inviteMember', 'Invite Member')}
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium">{t('teams.portal.myTeam.inviteMember', 'Invite Member')}</h4>
+
+          {/* Quick pick from people looking for team */}
+          {suggestions.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">
+                {t('teams.portal.myTeam.peopleLooking', 'People looking for a team:')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestions.slice(0, 5).map((p) => (
+                  <button
+                    key={p.customer_user_id}
+                    type="button"
+                    onClick={() => setInviteeId(p.customer_user_id)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                      inviteeId === p.customer_user_id
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <span className="font-medium">{p.customer_user_id.slice(0, 8)}...</span>
+                    {p.skills.length > 0 && (
+                      <span className="text-muted-foreground">{p.skills.slice(0, 2).join(', ')}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium mb-1">
+              {t('teams.portal.myTeam.inviteeId', 'User ID')}
+            </label>
+            <Input
+              type="text"
+              value={inviteeId}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteeId(e.target.value)}
+              placeholder={t('teams.portal.myTeam.inviteeIdPlaceholder', 'Paste user ID...')}
+              className="text-xs"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">
+              {t('teams.portal.myTeam.inviteMessage', 'Message (optional)')}
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={t('teams.portal.myTeam.inviteMessagePlaceholder', 'Hey, want to join our team?')}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              rows={2}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleInvite} disabled={!inviteeId.trim() || sending}>
+              {sending ? t('common.sending', 'Sending...') : t('teams.portal.myTeam.sendInvite', 'Send Invite')}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); setInviteeId(''); setMessage('') }}>
+              {t('common.cancel', 'Cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ========== TeamView ========== */
 
 function TeamView({
@@ -499,7 +626,7 @@ function TeamView({
 
         {/* Members Card */}
         <PortalCard>
-          <PortalCardHeader title={t('teams.portal.myTeam.members', 'Team Members')} />
+          <PortalCardHeader title={`${t('teams.portal.myTeam.members', 'Team Members')} (${members.length})`} />
           <div className="px-6 pb-6">
             {members.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -509,8 +636,11 @@ function TeamView({
               <div className="divide-y">
                 {members.map((m) => (
                   <div key={m.id} className="py-2.5 flex items-center justify-between">
-                    <div className="text-sm">
-                      <span className="font-medium">{m.customer_user_id.slice(0, 8)}...</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {m.customer_user_id.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium">{m.customer_user_id.slice(0, 8)}...</span>
                     </div>
                     <span
                       className={`text-xs rounded px-1.5 py-0.5 capitalize ${
@@ -525,6 +655,9 @@ function TeamView({
                 ))}
               </div>
             )}
+
+            {/* Invite Member (owner only) */}
+            {isOwner && <InviteMemberSection teamId={team.id} competitionId={competitionId} />}
           </div>
         </PortalCard>
       </div>
