@@ -47,16 +47,20 @@ const statusStyles: Record<string, string> = {
   withdrawn: 'bg-gray-100 text-gray-500',
 }
 
+type TeamMembership = { teamId: string; role: string } | null
+
 /* ========== TeamsTab ========== */
 
 function TeamsTab({
   competitionId,
   pendingTeamIds,
   onRequestJoin,
+  myMembership,
 }: {
   competitionId: string
   pendingTeamIds: Set<string>
   onRequestJoin: (teamId: string) => Promise<void>
+  myMembership: TeamMembership
 }) {
   const t = useT()
   const [search, setSearch] = React.useState('')
@@ -135,7 +139,11 @@ function TeamsTab({
                     <span className="text-xs text-muted-foreground">
                       {team._teams?.memberCount ?? '?'} {t('teams.portal.browse.members', 'members')}
                     </span>
-                    {hasPending ? (
+                    {myMembership ? (
+                      myMembership.teamId === team.id ? (
+                        <span className="text-xs text-primary font-medium">{t('teams.portal.browse.yourTeam', 'Your team')}</span>
+                      ) : null
+                    ) : hasPending ? (
                       <span className="text-xs text-muted-foreground italic">
                         {t('teams.portal.browse.pendingRequest', 'Request pending')}
                       </span>
@@ -164,8 +172,31 @@ function TeamsTab({
 
 /* ========== PeopleTab ========== */
 
-function PeopleTab({ competitionId }: { competitionId: string }) {
+function PeopleTab({ competitionId, myMembership }: { competitionId: string; myMembership: TeamMembership }) {
   const t = useT()
+  const queryClient = useQueryClient()
+  const [invitingId, setInvitingId] = React.useState<string | null>(null)
+  const isOwner = myMembership?.role === 'owner'
+
+  async function handleInvite(userId: string) {
+    if (!myMembership?.teamId) return
+    setInvitingId(userId)
+    try {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/invite-member', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ team_id: myMembership.teamId, invitee_id: userId }),
+      })
+      if (ok) {
+        flash(t('teams.portal.browse.inviteSent', 'Invitation sent!'), 'success')
+        queryClient.invalidateQueries({ queryKey: ['portal-looking-for-team'] })
+      } else {
+        flash(result?.error ?? t('teams.portal.browse.inviteFailed', 'Failed to send invitation'), 'error')
+      }
+    } finally {
+      setInvitingId(null)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-looking-for-team', competitionId],
@@ -220,7 +251,7 @@ function PeopleTab({ competitionId }: { competitionId: string }) {
               </p>
             )}
             {person.skills && person.skills.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1 mb-3">
                 {person.skills.map((skill) => (
                   <span
                     key={skill}
@@ -230,6 +261,19 @@ function PeopleTab({ competitionId }: { competitionId: string }) {
                   </span>
                 ))}
               </div>
+            )}
+            {isOwner && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-2"
+                disabled={invitingId === person.customer_user_id}
+                onClick={() => handleInvite(person.customer_user_id)}
+              >
+                {invitingId === person.customer_user_id
+                  ? t('common.sending', 'Sending...')
+                  : t('teams.portal.browse.inviteToTeam', 'Invite to Team')}
+              </Button>
             )}
           </div>
         </PortalCard>
@@ -243,8 +287,27 @@ function PeopleTab({ competitionId }: { competitionId: string }) {
 function TeamsContent() {
   const t = useT()
   const queryClient = useQueryClient()
+  const { auth } = usePortalContext()
   const { selectedId } = useCompetitionContext()
   const [tab, setTab] = React.useState<'teams' | 'people'>('teams')
+  const userId = auth.user?.id
+
+  // Fetch my team membership to determine if I'm an owner
+  const { data: myMemberData } = useQuery({
+    queryKey: ['portal-my-membership-browse', selectedId, userId],
+    queryFn: () => {
+      if (!selectedId || !userId) return { items: [] as Array<{ team_id: string; role: string }>, total: 0, page: 1, pageSize: 10, totalPages: 0 }
+      return fetchCrudList<{ team_id: string; role: string }>('teams/members', {
+        pageSize: '10', competition_id: selectedId, customer_user_id: userId,
+      })
+    },
+    enabled: !!selectedId && !!userId,
+  })
+
+  const myMembership: TeamMembership = React.useMemo(() => {
+    const m = myMemberData?.items?.[0]
+    return m ? { teamId: m.team_id, role: m.role } : null
+  }, [myMemberData])
 
   // Fetch my pending join requests to know which teams already have a pending request
   const { data: myInvData } = useQuery({
@@ -330,9 +393,10 @@ function TeamsContent() {
           competitionId={selectedId}
           pendingTeamIds={pendingTeamIds}
           onRequestJoin={handleRequestJoin}
+          myMembership={myMembership}
         />
       ) : (
-        <PeopleTab competitionId={selectedId} />
+        <PeopleTab competitionId={selectedId} myMembership={myMembership} />
       )}
     </>
   )
