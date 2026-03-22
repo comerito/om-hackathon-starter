@@ -14,7 +14,7 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'tracks.portal-tracks', label: 'Tracks', labelKey: 'tracks.portal.nav.tracks', icon: 'lucide:git-branch', href: `${prefix}/tracks`, features: ['portal.tracks.view'] },
+      { id: 'tracks.portal-tracks', label: 'Tracks', labelKey: 'tracks.portal.nav.tracks', icon: 'lucide:git-branch', href: `${prefix}/tracks` },
     ]
   },
 }
