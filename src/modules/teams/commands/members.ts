@@ -9,7 +9,7 @@ import type { FilterQuery } from '@mikro-orm/postgresql'
 import { TeamMember } from '../data/entities'
 import { createTeamMemberSchema } from '../data/validators'
 
-const ENTITY_ID = 'teams:member'
+const ENTITY_ID = 'teams:team_member'
 
 export const memberCrudEvents: CrudEventsConfig<TeamMember> = {
   module: 'teams',

@@ -8,7 +8,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { TeamInvitation, InvitationStatus } from '../data/entities'
 import { createTeamInvitationSchema, updateTeamInvitationSchema } from '../data/validators'
 
-const ENTITY_ID = 'teams:invitation'
+const ENTITY_ID = 'teams:team_invitation'
 
 export const invitationCrudEvents: CrudEventsConfig<TeamInvitation> = {
   module: 'teams',

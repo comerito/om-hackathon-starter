@@ -8,7 +8,7 @@ import type { FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../data/entities'
 import { createParticipationSchema, updateParticipationSchema } from '../data/validators'
 
-const ENTITY_ID = 'competitions:participation'
+const ENTITY_ID = 'competitions:competition_participation'
 
 function ensureScope(ctx: CommandRuntimeContext): { tenantId: string; organizationId: string } {
   const tenantId = ctx.auth?.tenantId ?? null

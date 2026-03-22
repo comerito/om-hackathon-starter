@@ -3,7 +3,7 @@ import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
 import { TeamInvitation } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const ENTITY_ID = 'teams:invitation'
+const ENTITY_ID = 'teams:team_invitation'
 
 const querySchema = z
   .object({

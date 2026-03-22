@@ -4,7 +4,7 @@ import { CompetitionParticipation } from '../../data/entities'
 import { participationCrudEvents, participationCrudIndexer } from '../../commands/participations'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const ENTITY_ID = 'competitions:participation'
+const ENTITY_ID = 'competitions:competition_participation'
 
 const querySchema = z
   .object({
