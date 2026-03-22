@@ -6,11 +6,14 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { BooleanIcon, EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
+import { Button } from '@open-mercato/ui/primitives/button'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
+import Link from 'next/link'
 
 type ParticipationRow = {
   id: string
@@ -36,14 +39,20 @@ export default function ParticipantsListPage() {
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'created_at', desc: true }])
   const [page, setPage] = React.useState(1)
+  const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
 
-  const queryParams = React.useMemo(() => new URLSearchParams({
-    page: page.toString(),
-    pageSize: '50',
-    sortField: sorting[0]?.id || 'created_at',
-    sortDir: sorting[0]?.desc ? 'desc' : 'asc',
-  }).toString(), [page, sorting])
+  const queryParams = React.useMemo(() => {
+    const params: Record<string, string> = {
+      page: page.toString(),
+      pageSize: '50',
+      sortField: sorting[0]?.id || 'created_at',
+      sortDir: sorting[0]?.desc ? 'desc' : 'asc',
+    }
+    if (filterValues.role && typeof filterValues.role === 'string') params.role = filterValues.role
+    if (filterValues.checked_in === true || filterValues.checked_in === false) params.checked_in = String(filterValues.checked_in)
+    return new URLSearchParams(params).toString()
+  }, [page, sorting, filterValues])
 
   const { data, isLoading } = useQuery({
     queryKey: ['participations', queryParams, scopeVersion],
@@ -51,7 +60,8 @@ export default function ParticipantsListPage() {
   })
 
   const columns = React.useMemo<ColumnDef<ParticipationRow>[]>(() => [
-    { accessorKey: 'customer_user_id', header: t('competitions.participants.userId', 'User ID'), meta: { priority: 1 } },
+    { accessorKey: 'customer_user_id', header: t('competitions.participants.userId', 'User ID'), meta: { priority: 1, truncate: true, maxWidth: 280 } },
+    { accessorKey: 'competition_id', header: t('competitions.participants.competitionId', 'Competition'), meta: { priority: 5, truncate: true, maxWidth: 280 } },
     {
       accessorKey: 'role',
       header: t('competitions.participants.role', 'Role'),
@@ -77,11 +87,34 @@ export default function ParticipantsListPage() {
       <PageBody>
         <DataTable
           title={t('competitions.participants.title', 'Participants')}
+          actions={
+            <Button asChild>
+              <Link href="/backend/competitions/participants/create">
+                {t('competitions.participants.add', 'Add Participant')}
+              </Link>
+            </Button>
+          }
           columns={columns}
           data={data?.items ?? []}
           sortable
           sorting={sorting}
           onSortingChange={(s) => { setSorting(s); setPage(1) }}
+          filters={[
+            {
+              id: 'role',
+              label: t('competitions.participants.filterRole', 'Role'),
+              type: 'select',
+              options: [
+                { value: 'participant', label: 'Participant' },
+                { value: 'mentor', label: 'Mentor' },
+                { value: 'judge', label: 'Judge' },
+              ],
+            },
+            { id: 'checked_in', label: t('competitions.participants.filterCheckedIn', 'Checked In'), type: 'checkbox' },
+          ]}
+          filterValues={filterValues}
+          onFiltersApply={(vals: FilterValues) => { setFilterValues(vals); setPage(1) }}
+          onFiltersClear={() => { setFilterValues({}); setPage(1) }}
           rowActions={(row) => (
             <RowActions
               items={[
