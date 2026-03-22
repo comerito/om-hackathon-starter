@@ -6,6 +6,7 @@ import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
 import { Button } from '@open-mercato/ui/primitives/button'
+import { Input } from '@open-mercato/ui/primitives/input'
 import { fetchCrudList, deleteCrud, updateCrud } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
@@ -46,6 +47,9 @@ export default function TeamsTable() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'name', desc: false }])
   const [page, setPage] = React.useState(1)
   const [searchValue, setSearchValue] = React.useState('')
+  const [disqualifyTeamId, setDisqualifyTeamId] = React.useState<string | null>(null)
+  const [disqualifyReason, setDisqualifyReason] = React.useState('')
+  const [disqualifying, setDisqualifying] = React.useState(false)
   const scopeVersion = useOrganizationScopeVersion()
 
   const queryParams = React.useMemo(() => {
@@ -99,8 +103,47 @@ export default function TeamsTable() {
     return <div className="text-sm text-destructive">{t('teams.table.error', 'Failed to load teams')}</div>
   }
 
+  async function handleDisqualify() {
+    if (!disqualifyTeamId || !disqualifyReason.trim()) return
+    setDisqualifying(true)
+    try {
+      await updateCrud('teams/teams', { id: disqualifyTeamId, status: 'disqualified', disqualification_reason: disqualifyReason.trim() })
+      flash(t('teams.flash.disqualified', 'Team disqualified'), 'success')
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      setDisqualifyTeamId(null)
+      setDisqualifyReason('')
+    } catch (err) {
+      flash(err instanceof Error ? err.message : t('teams.table.error', 'Error'), 'error')
+    } finally {
+      setDisqualifying(false)
+    }
+  }
+
   return (
     <>
+      {disqualifyTeamId && (
+        <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+          <h3 className="text-sm font-medium text-destructive mb-2">
+            {t('teams.table.confirmDisqualify', 'Disqualify this team?')}
+          </h3>
+          <Input
+            value={disqualifyReason}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDisqualifyReason(e.target.value)}
+            placeholder={t('teams.table.disqualifyReasonPlaceholder', 'Reason for disqualification...')}
+            className="mb-2"
+            autoFocus
+            onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleDisqualify(); if (e.key === 'Escape') setDisqualifyTeamId(null) }}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" variant="destructive" onClick={handleDisqualify} disabled={disqualifying || !disqualifyReason.trim()}>
+              {disqualifying ? t('common.saving', 'Saving...') : t('teams.table.disqualify', 'Disqualify')}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setDisqualifyTeamId(null); setDisqualifyReason('') }}>
+              {t('common.cancel', 'Cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
       <DataTable
         title={t('teams.table.title', 'Teams')}
         actions={
@@ -123,20 +166,9 @@ export default function TeamsTable() {
               {
                 label: t('teams.table.disqualify', 'Disqualify'),
                 destructive: true,
-                onSelect: async () => {
-                  const confirmed = await confirm({
-                    title: t('teams.table.confirmDisqualify', 'Disqualify this team?'),
-                    text: t('teams.table.disqualifyText', 'This action will mark the team as disqualified.'),
-                    variant: 'destructive',
-                  })
-                  if (!confirmed) return
-                  try {
-                    await updateCrud('teams/teams', { id: row.id, status: 'disqualified', disqualification_reason: 'Disqualified by admin' })
-                    flash(t('teams.flash.disqualified', 'Team disqualified'), 'success')
-                    queryClient.invalidateQueries({ queryKey: ['teams'] })
-                  } catch (err) {
-                    flash(err instanceof Error ? err.message : t('teams.table.error', 'Error'), 'error')
-                  }
+                onSelect: () => {
+                  setDisqualifyTeamId(row.id)
+                  setDisqualifyReason('')
                 },
               },
               {

@@ -18,6 +18,7 @@ const widget: InjectionMenuItemWidget = {
       { id: 'competitions.portal-competition', label: 'Competition', labelKey: 'competitions.portal.nav.competition', icon: 'lucide:trophy', href: `${prefix}/competition` },
       { id: 'competitions.portal-agenda', label: 'Agenda', labelKey: 'competitions.portal.nav.agenda', icon: 'lucide:calendar-clock', href: `${prefix}/agenda` },
       { id: 'competitions.portal-announcements', label: 'Announcements', labelKey: 'competitions.portal.nav.announcements', icon: 'lucide:megaphone', href: `${prefix}/announcements` },
+      { id: 'competitions.portal-participants', label: 'Participants', labelKey: 'competitions.portal.nav.participants', icon: 'lucide:users', href: `${prefix}/participants` },
     ]
   },
 }
