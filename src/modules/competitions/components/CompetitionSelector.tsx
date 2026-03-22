@@ -1,7 +1,7 @@
 "use client"
 import * as React from 'react'
+import { createPortal } from 'react-dom'
 import { useCompetitionContext } from './CompetitionContext'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
 
 const stageLabels: Record<string, string> = {
   draft: 'Draft', open: 'Open', team_formation: 'Team Formation',
@@ -9,48 +9,44 @@ const stageLabels: Record<string, string> = {
   deliberation: 'Deliberation', finished: 'Finished', archived: 'Archived',
 }
 
+/**
+ * Renders the competition selector into the portal header (next to notification bell)
+ * using React createPortal. Falls back to inline rendering if header element not found.
+ */
 export function CompetitionSelector() {
-  const t = useT()
   const { competitions, selected, selectedId, setSelectedId, isLoading } = useCompetitionContext()
+  const [headerEl, setHeaderEl] = React.useState<Element | null>(null)
 
-  if (isLoading) return null
-  if (competitions.length === 0) {
-    return (
-      <div className="mb-6 rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-        {t('competitions.portal.noCompetitions', 'You are not registered in any competition yet. Please contact the organizer.')}
-      </div>
-    )
-  }
-  if (competitions.length === 1) {
-    return (
-      <div className="mb-6 flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{selected?.name}</span>
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {stageLabels[selected?.stage ?? ''] ?? selected?.stage}
-          </span>
-        </div>
-      </div>
-    )
-  }
+  React.useEffect(() => {
+    // Find the right side of the portal header (the div containing the notification bell)
+    const header = document.querySelector('[data-portal-handle="section:portal:header"]')
+    if (header) {
+      const rightSection = header.querySelector('.flex.items-center.gap-3:last-child')
+      setHeaderEl(rightSection ?? header)
+    }
+  }, [])
 
-  return (
-    <div className="mb-6 flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-2.5">
-      <label htmlFor="competition-select" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-        {t('competitions.portal.selectCompetition', 'Competition')}:
-      </label>
-      <select
-        id="competition-select"
-        value={selectedId ?? ''}
-        onChange={(e) => setSelectedId(e.target.value)}
-        className="flex h-8 w-full max-w-xs rounded-md border border-input bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        {competitions.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name} — {stageLabels[c.stage] ?? c.stage}
-          </option>
-        ))}
-      </select>
-    </div>
+  if (isLoading || competitions.length === 0) return null
+
+  const selectorContent = (
+    <select
+      value={selectedId ?? ''}
+      onChange={(e) => setSelectedId(e.target.value)}
+      className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring max-w-[200px] truncate"
+      aria-label="Select competition"
+    >
+      {competitions.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} — {stageLabels[c.stage] ?? c.stage}
+        </option>
+      ))}
+    </select>
   )
+
+  // Render into the header via portal, or inline as fallback
+  if (headerEl) {
+    return createPortal(selectorContent, headerEl)
+  }
+
+  return null
 }
