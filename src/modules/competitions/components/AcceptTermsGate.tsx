@@ -3,7 +3,6 @@ import * as React from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { Button } from '@open-mercato/ui/primitives/button'
-import { useCompetitionContext } from './CompetitionContext'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
 type ParticipationStatus = {
@@ -14,10 +13,9 @@ type ParticipationStatus = {
   competitionName: string | null
 }
 
-export function AcceptTermsGate({ children }: { children: React.ReactNode }) {
+export function AcceptTermsGate({ children, selectedId }: { children: React.ReactNode; selectedId: string | null }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const { selectedId } = useCompetitionContext()
   const [cocChecked, setCocChecked] = React.useState(false)
   const [privacyChecked, setPrivacyChecked] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)

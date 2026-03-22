@@ -1,6 +1,7 @@
 "use client"
 import * as React from 'react'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { AcceptTermsGate } from './AcceptTermsGate'
 
 type CompetitionSummary = {
   id: string
@@ -89,7 +90,9 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
 
   return (
     <CompetitionContext.Provider value={value}>
-      {children}
+      <AcceptTermsGate selectedId={selectedId}>
+        {children}
+      </AcceptTermsGate>
     </CompetitionContext.Provider>
   )
 }
