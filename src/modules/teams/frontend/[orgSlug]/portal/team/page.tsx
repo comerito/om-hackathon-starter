@@ -344,40 +344,78 @@ function NoTeamView({
 
 /* ========== InviteMemberSection ========== */
 
+type SearchResult = { id: string; displayName: string; email: string }
+
 function InviteMemberSection({ teamId, competitionId }: { teamId: string; competitionId: string }) {
   const t = useT()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = React.useState(false)
   const [inviteeId, setInviteeId] = React.useState('')
+  const [inviteeName, setInviteeName] = React.useState('')
+  const [searchQuery, setSearchQuery] = React.useState('')
   const [message, setMessage] = React.useState('')
   const [sending, setSending] = React.useState(false)
+  const [showDropdown, setShowDropdown] = React.useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
 
-  // Fetch participants looking for a team as suggestions
-  const { data: lookingData } = useQuery({
-    queryKey: ['portal-looking-for-team', competitionId],
+  // Debounced search
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Search participants by email/name
+  const { data: searchResults } = useQuery({
+    queryKey: ['portal-search-participants', competitionId, debouncedQuery],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ items: Array<{ customer_user_id: string; organization: string | null; skills: string[] }> }>(
-        `/api/competitions/portal/looking-for-team?competition_id=${competitionId}`,
+      if (debouncedQuery.length < 2) return []
+      const { ok, result } = await apiCall<{ items: SearchResult[] }>(
+        `/api/competitions/portal/search-participants?competition_id=${competitionId}&q=${encodeURIComponent(debouncedQuery)}`,
       )
       return ok && result ? result.items : []
     },
-    enabled: !!competitionId && showForm,
+    enabled: debouncedQuery.length >= 2 && showForm,
   })
 
-  const suggestions = lookingData ?? []
+  const results = searchResults ?? []
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleSelectUser(user: SearchResult) {
+    setInviteeId(user.id)
+    setInviteeName(`${user.displayName} (${user.email})`)
+    setSearchQuery('')
+    setShowDropdown(false)
+  }
+
+  function handleClearSelection() {
+    setInviteeId('')
+    setInviteeName('')
+    setSearchQuery('')
+  }
 
   async function handleInvite() {
-    if (!inviteeId.trim()) return
+    if (!inviteeId) return
     setSending(true)
     try {
       const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/invite-member', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ team_id: teamId, invitee_id: inviteeId.trim(), message: message.trim() || undefined }),
+        body: JSON.stringify({ team_id: teamId, invitee_id: inviteeId, message: message.trim() || undefined }),
       })
       if (ok) {
         flash(t('teams.portal.myTeam.inviteSent', 'Invitation sent!'), 'success')
-        setInviteeId('')
+        handleClearSelection()
         setMessage('')
         setShowForm(false)
         queryClient.invalidateQueries({ queryKey: ['portal-invitations'] })
@@ -403,46 +441,70 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
         <div className="space-y-3">
           <h4 className="text-sm font-medium">{t('teams.portal.myTeam.inviteMember', 'Invite Member')}</h4>
 
-          {/* Quick pick from people looking for team */}
-          {suggestions.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">
-                {t('teams.portal.myTeam.peopleLooking', 'People looking for a team:')}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {suggestions.slice(0, 5).map((p) => (
-                  <button
-                    key={p.customer_user_id}
-                    type="button"
-                    onClick={() => setInviteeId(p.customer_user_id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                      inviteeId === p.customer_user_id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <span className="font-medium">{p.customer_user_id.slice(0, 8)}...</span>
-                    {p.skills.length > 0 && (
-                      <span className="text-muted-foreground">{p.skills.slice(0, 2).join(', ')}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Email/Name search with autocomplete */}
           <div>
             <label className="block text-xs font-medium mb-1">
-              {t('teams.portal.myTeam.inviteeId', 'User ID')}
+              {t('teams.portal.myTeam.searchParticipant', 'Search by email or name')}
             </label>
-            <Input
-              type="text"
-              value={inviteeId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteeId(e.target.value)}
-              placeholder={t('teams.portal.myTeam.inviteeIdPlaceholder', 'Paste user ID...')}
-              className="text-xs"
-            />
+            {inviteeId ? (
+              <div className="flex items-center gap-2 rounded-md border border-input bg-muted/30 px-3 py-2">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
+                  {inviteeName.slice(0, 2).toUpperCase()}
+                </div>
+                <span className="text-sm flex-1 truncate">{inviteeName}</span>
+                <button
+                  type="button"
+                  onClick={handleClearSelection}
+                  className="text-muted-foreground hover:text-foreground text-xs"
+                  aria-label="Clear"
+                >
+                  &times;
+                </button>
+              </div>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearchQuery(e.target.value)
+                    setShowDropdown(true)
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder={t('teams.portal.myTeam.searchPlaceholder', 'Type email or name...')}
+                  className="text-sm"
+                  autoFocus
+                />
+                {showDropdown && searchQuery.length >= 2 && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg max-h-48 overflow-y-auto">
+                    {results.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        {t('teams.portal.myTeam.noResults', 'No participants found')}
+                      </div>
+                    ) : (
+                      results.map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => handleSelectUser(user)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                        >
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                            {(user.displayName || user.email)[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{user.displayName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
           <div>
             <label className="block text-xs font-medium mb-1">
               {t('teams.portal.myTeam.inviteMessage', 'Message (optional)')}
@@ -451,15 +513,15 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('teams.portal.myTeam.inviteMessagePlaceholder', 'Hey, want to join our team?')}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               rows={2}
             />
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleInvite} disabled={!inviteeId.trim() || sending}>
+            <Button size="sm" onClick={handleInvite} disabled={!inviteeId || sending}>
               {sending ? t('common.sending', 'Sending...') : t('teams.portal.myTeam.sendInvite', 'Send Invite')}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); setInviteeId(''); setMessage('') }}>
+            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); handleClearSelection(); setMessage('') }}>
               {t('common.cancel', 'Cancel')}
             </Button>
           </div>
