@@ -344,3 +344,71 @@ Add to the module scaffold skill and AGENTS.md:
 **Option A + B combined** — add the secondary table name lookup AND the warning log. This fixes the issue for existing code while making future misconfiguration immediately visible.
 
 ---
+
+## ISSUE-005: Customer role update fails with 400 when UI sends `name` for system roles
+
+**Severity:** Medium
+**Affects:** Admin panel → Customer Accounts → Roles → Edit system role (e.g., `participant`)
+**Discovered:** 2026-03-22 during HackOn portal permission setup
+
+### Problem
+
+The role edit page in the backend admin (`/backend/customer_accounts/roles/:id`) sends all form fields (including `name`) in a single `PUT /api/customer_accounts/admin/roles/:id` request, even when the `name` value hasn't changed.
+
+The endpoint at `@open-mercato/core/modules/customer_accounts/api/admin/roles/[id].ts` (line 101-103) rejects the request if the role is a **system role** and `name` is present in the payload:
+
+```typescript
+if (role.isSystem && parsed.data.name !== undefined) {
+  return NextResponse.json({ ok: false, error: 'Cannot change name of a system role' }, { status: 400 })
+}
+```
+
+Since the `updateRoleSchema` marks `name` as `z.string().optional()`, and the UI always sends it (even unchanged), system roles cannot be updated at all — not even their description, permissions, or `customerAssignable` flag.
+
+**Reproduction:**
+1. Go to `/backend/customer_accounts/roles`
+2. Click a system role (e.g., `participant`, `buyer`)
+3. Change any field (e.g., toggle a permission checkbox)
+4. Save → **400 "Cannot change name of a system role"**
+
+### Root Cause
+
+The role edit UI serializes the entire form including `name` on every save. The API endpoint treats the _presence_ of `name` in the payload as an attempted name change, even when the value is identical to the current name.
+
+**File:** `@open-mercato/core/modules/customer_accounts/api/admin/roles/[id].ts` lines 101-103
+
+### Proposed Fix
+
+**Option A (recommended): Compare with current value before rejecting**
+
+```typescript
+// Line 101-103, replace:
+if (role.isSystem && parsed.data.name !== undefined) {
+  return NextResponse.json({ ok: false, error: 'Cannot change name of a system role' }, { status: 400 })
+}
+
+// With:
+if (role.isSystem && parsed.data.name !== undefined && parsed.data.name !== role.name) {
+  return NextResponse.json({ ok: false, error: 'Cannot change name of a system role' }, { status: 400 })
+}
+```
+
+This allows the UI to send the unchanged `name` without triggering the guard. Only actual name changes are rejected.
+
+**Option B: Strip `name` from payload for system roles**
+
+```typescript
+if (role.isSystem) {
+  delete parsed.data.name
+}
+```
+
+**Option C: Fix the UI to omit unchanged fields**
+
+The role edit page should only include fields that were actually modified. This is a broader UI change.
+
+### Recommendation
+
+**Option A** — 1-line change, zero risk, preserves the system role protection while fixing the false positive.
+
+---
