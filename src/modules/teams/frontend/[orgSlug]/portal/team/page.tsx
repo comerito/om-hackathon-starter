@@ -540,27 +540,31 @@ function TeamView({
   membership,
   orgSlug,
   competitionId,
+  preloadedMembers,
 }: {
   team: Team
   membership: TeamMember
   orgSlug: string
   competitionId: string
+  preloadedMembers?: Array<TeamMember & { display_name: string; email: string }>
 }) {
   const t = useT()
   const queryClient = useQueryClient()
   const isOwner = membership.role === 'owner'
 
-  // Fetch all team members
-  const { data: allMembersData } = useQuery({
-    queryKey: ['portal-team-members', team.id],
-    queryFn: () => fetchCrudList<TeamMember>('teams/members', { team_id: team.id, pageSize: '50' }),
-    enabled: !!team.id,
-  })
-
   // Fetch tracks for selection
   const { data: tracksData } = useQuery({
     queryKey: ['portal-tracks', competitionId],
-    queryFn: () => fetchCrudList<Track>('tracks/tracks', { competition_id: competitionId, pageSize: '50' }),
+    queryFn: async () => {
+      const { ok, result } = await apiCall<{ items: Track[] }>(
+        `/api/competitions/portal/competition-data?competition_id=${competitionId}&type=tracks`,
+      )
+      // Fallback: try CRUD if portal endpoint doesn't support tracks
+      if (!ok) {
+        return fetchCrudList<Track>('tracks/tracks', { competition_id: competitionId, pageSize: '50' })
+      }
+      return result ?? { items: [] }
+    },
     enabled: !!competitionId && isOwner,
   })
 
@@ -577,45 +581,32 @@ function TeamView({
     enabled: !!competitionId,
   })
 
-  const members = allMembersData?.items ?? []
+  const members = preloadedMembers ?? []
   const tracks = tracksData?.items ?? []
   const teamRequests = invData?.team_requests ?? []
   const receivedInvitations = invData?.received ?? []
 
-  // Resolve member + invitation user IDs to display names
-  const allUserIds = React.useMemo(() => {
-    const ids = new Set<string>()
-    for (const m of members) ids.add(m.customer_user_id)
-    for (const inv of teamRequests) { ids.add(inv.inviter_id); ids.add(inv.invitee_id) }
-    for (const inv of receivedInvitations) { ids.add(inv.inviter_id); ids.add(inv.invitee_id) }
-    return Array.from(ids)
-  }, [members, teamRequests, receivedInvitations])
-
-  const { data: userNames } = useQuery({
-    queryKey: ['portal-user-names', allUserIds.join(',')],
-    queryFn: async () => {
-      if (allUserIds.length === 0) return {} as Record<string, { displayName: string; email: string }>
-      const { ok, result } = await apiCall<{ users: Record<string, { displayName: string; email: string }> }>(
-        `/api/competitions/portal/resolve-users?ids=${allUserIds.join(',')}`,
-      )
-      return ok && result ? result.users : {}
-    },
-    enabled: allUserIds.length > 0,
-  })
+  // Build name lookup from preloaded members + resolve for invitation users
+  const memberNameMap = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const m of members) {
+      map.set(m.customer_user_id, (m as any).display_name ?? m.customer_user_id.slice(0, 8) + '...')
+    }
+    return map
+  }, [members])
 
   const resolveUser = React.useCallback((id: string) => {
-    const u = userNames?.[id]
-    return u?.displayName ?? id.slice(0, 8) + '...'
-  }, [userNames])
+    return memberNameMap.get(id) ?? id.slice(0, 8) + '...'
+  }, [memberNameMap])
 
   const resolveInitials = React.useCallback((id: string) => {
-    const name = userNames?.[id]?.displayName
-    if (name) {
+    const name = memberNameMap.get(id)
+    if (name && !name.includes('...')) {
       const parts = name.split(/\s+/)
       return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
     }
     return id.slice(0, 2).toUpperCase()
-  }, [userNames])
+  }, [memberNameMap])
 
   // Track selection
   const [selectedTrackId, setSelectedTrackId] = React.useState(team.track_id ?? '')
@@ -844,39 +835,34 @@ function TeamView({
 
 /* ========== MyTeamContent ========== */
 
+type MyMembershipResponse = {
+  membership: TeamMember | null
+  team: Team | null
+  members: Array<TeamMember & { display_name: string; email: string }>
+}
+
 function MyTeamContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const { auth } = usePortalContext()
   const { selectedId } = useCompetitionContext()
   const userId = auth.user?.id
 
-  // Find my team membership
-  const { data: membersData, isLoading: membersLoading } = useQuery({
+  // Fetch membership, team, and members in one call via portal API
+  const { data: membershipData, isLoading } = useQuery({
     queryKey: ['portal-my-membership', selectedId, userId],
-    queryFn: () => {
-      if (!selectedId || !userId)
-        return { items: [] as TeamMember[], total: 0, page: 1, pageSize: 50, totalPages: 0 }
-      return fetchCrudList<TeamMember>('teams/members', {
-        pageSize: '10',
-        competition_id: selectedId,
-        customer_user_id: userId,
-      })
+    queryFn: async () => {
+      if (!selectedId) return { membership: null, team: null, members: [] } as MyMembershipResponse
+      const { ok, result } = await apiCall<MyMembershipResponse>(
+        `/api/teams/portal/my-membership?competition_id=${selectedId}`,
+      )
+      return ok && result ? result : { membership: null, team: null, members: [] }
     },
     enabled: !!selectedId && !!userId,
   })
 
-  const myMembership = membersData?.items?.[0]
-
-  // Fetch my team details
-  const { data: teamData, isLoading: teamLoading } = useQuery({
-    queryKey: ['portal-my-team', myMembership?.team_id],
-    queryFn: () => {
-      if (!myMembership?.team_id)
-        return { items: [] as Team[], total: 0, page: 1, pageSize: 50, totalPages: 0 }
-      return fetchCrudList<Team>('teams/teams', { id: myMembership.team_id, pageSize: '1' })
-    },
-    enabled: !!myMembership?.team_id,
-  })
+  const myMembership = membershipData?.membership
+  const team = membershipData?.team
+  const preloadedMembers = membershipData?.members
 
   if (!selectedId) {
     return (
@@ -890,7 +876,7 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
-  if (membersLoading || teamLoading) {
+  if (isLoading) {
     return (
       <PortalCard>
         <div className="p-6 text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</div>
@@ -898,19 +884,8 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
-  if (!myMembership) {
+  if (!myMembership || !team) {
     return <NoTeamView orgSlug={orgSlug} competitionId={selectedId} userId={userId!} />
-  }
-
-  const team = teamData?.items?.[0]
-  if (!team) {
-    return (
-      <PortalCard>
-        <div className="p-6 text-sm text-muted-foreground">
-          {t('teams.portal.myTeam.teamNotFound', 'Team not found.')}
-        </div>
-      </PortalCard>
-    )
   }
 
   return (
@@ -919,6 +894,7 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
       membership={myMembership}
       orgSlug={orgSlug}
       competitionId={selectedId}
+      preloadedMembers={preloadedMembers}
     />
   )
 }
