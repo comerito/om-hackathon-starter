@@ -52,6 +52,7 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'teams', from: '@app' },
   { id: 'projects', from: '@app' },
   { id: 'judging', from: '@app' },
+  { id: 'sponsors', from: '@app' },
   { id: 'example', from: '@app' },
 
 ]

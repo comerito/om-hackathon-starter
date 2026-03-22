@@ -28,6 +28,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   orm: { entity: JudgePanel, idField: 'id', orgField: 'organizationId', tenantField: 'tenantId', softDeleteField: 'deletedAt' },
   events: { module: 'judging', entity: 'panel', persistent: true },
   indexer: { entityType: ENTITY_ID },
+  enrichers: { entityId: ENTITY_ID },
   list: {
     schema: querySchema, entityId: ENTITY_ID,
     fields: ['id', 'competition_id', 'name', 'round', 'tenant_id', 'organization_id', 'created_at'],

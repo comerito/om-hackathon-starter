@@ -64,6 +64,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   },
   events: { module: 'projects', entity: 'project', persistent: true },
   indexer: { entityType: ENTITY_ID },
+  enrichers: { entityId: ENTITY_ID },
   list: {
     schema: querySchema,
     entityId: ENTITY_ID,

@@ -22,6 +22,7 @@ type TrackRow = {
   order: number
   is_active: boolean
   created_at: string
+  _competitions?: { name: string | null; stage: string | null }
 }
 
 type ListResponse = {
@@ -73,7 +74,12 @@ export default function TracksTable() {
         </span>
       ),
     },
-    { accessorKey: 'competition_id', header: t('tracks.table.competition', 'Competition'), meta: { priority: 3 } },
+    {
+      id: 'competition',
+      header: t('tracks.table.competition', 'Competition'),
+      meta: { priority: 3 },
+      cell: ({ row }) => row.original._competitions?.name ?? row.original.competition_id.substring(0, 8) + '...',
+    },
     {
       accessorKey: 'max_teams',
       header: t('tracks.table.maxTeams', 'Max Teams'),
