@@ -123,6 +123,9 @@ export class TeamMember {
   @Property({ type: 'text', default: 'member' })
   role: TeamRole = TeamRole.MEMBER
 
+  @Property({ type: 'varchar', length: 255, nullable: true })
+  title?: string | null
+
   @Property({ name: 'joined_at', type: 'timestamptz', onCreate: () => new Date() })
   joinedAt: Date = new Date()
 
@@ -186,4 +189,53 @@ export class TeamInvitation {
 
   @Property({ name: 'competition_id', type: 'uuid' })
   competitionId!: string
+}
+
+export const TeamResourceType = {
+  FILE: 'file',
+  LINK: 'link',
+  REPOSITORY: 'repository',
+} as const
+export type TeamResourceType = (typeof TeamResourceType)[keyof typeof TeamResourceType]
+
+@Entity({ tableName: 'teams_resource' })
+export class TeamResource {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'team_id', type: 'uuid' })
+  teamId!: string
+
+  @Property({ type: 'varchar', length: 255 })
+  name!: string
+
+  @Property({ type: 'text', default: 'link' })
+  type: TeamResourceType = TeamResourceType.LINK
+
+  @Property({ type: 'varchar', length: 1000, nullable: true })
+  url?: string | null
+
+  @Property({ name: 'file_id', type: 'uuid', nullable: true })
+  fileId?: string | null
+
+  @Property({ type: 'jsonb', default: '{}' })
+  metadata: Record<string, unknown> = {}
+
+  @Property({ name: 'added_by', type: 'uuid' })
+  addedBy!: string
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
 }

@@ -4,15 +4,16 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
-import { PortalCard, PortalCardHeader } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge } from '@/components/portal'
+import { cn } from '@open-mercato/shared/lib/utils'
+import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle } from 'lucide-react'
 import Link from 'next/link'
 
 /* ---------- types ---------- */
@@ -52,6 +53,14 @@ type MyProjectResponse = {
   hasTeam: boolean
   isOwner: boolean
 }
+
+/* ---------- helpers ---------- */
+
+const inputClass =
+  'rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full'
+const textareaClass =
+  'rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full min-h-[100px] resize-y'
+const labelClass = 'text-xs font-bold uppercase tracking-widest text-foreground block mb-1.5'
 
 /* ========== Project Editor ========== */
 
@@ -309,8 +318,20 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   ]
   const filledCount = requiredFields.filter(f => f.filled).length
   const totalRequired = requiredFields.length
+  const completionPercent = Math.round((filledCount / totalRequired) * 100)
 
-  /* ── No team state ── */
+  // Autosave label
+  const autosaveLabel = React.useMemo(() => {
+    if (saving) return t('projects.portal.saving', 'Saving...')
+    if (autoSaveFailed) return t('projects.portal.saveFailed', 'Auto-save failed -- backed up locally')
+    if (!lastSaved) return ''
+    const diff = Math.round((now.getTime() - new Date(lastSaved).getTime()) / 1000)
+    if (diff < 60) return t('projects.portal.autosavedJustNow', 'Autosaved just now')
+    const mins = Math.floor(diff / 60)
+    return `Autosaved ${mins}m ago`
+  }, [saving, autoSaveFailed, lastSaved, now, t])
+
+  /* -- No team state -- */
   if (!isLoading && !data?.hasTeam) {
     return (
       <PortalEmptyState
@@ -327,7 +348,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
-  /* ── No project yet ── */
+  /* -- No project yet -- */
   if (!isLoading && data?.hasTeam && !project) {
     return (
       <PortalEmptyState
@@ -341,50 +362,86 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
   }
 
-  /* ── Published state (read-only) ── */
+  /* ======== Published state (read-only) ======== */
   if (isPublished) {
     return (
       <div className="space-y-6">
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-          <div className="flex items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <span className="font-medium text-green-800">
+        {/* Submitted banner */}
+        <div className="rounded-xl border border-green-200 bg-green-50 p-5 flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
+            <Check className="size-4 text-green-600" />
+          </div>
+          <div>
+            <span className="font-semibold text-green-800">
               {t('projects.portal.submittedBanner', 'Your project has been submitted!')}
             </span>
+            <p className="text-sm text-green-700 mt-0.5">
+              {t('projects.portal.submittedDesc', 'Submitted on')} {project?.submitted_at ? new Date(project.submitted_at).toLocaleString() : ''}
+            </p>
           </div>
-          <p className="text-sm text-green-700 mt-1">
-            {t('projects.portal.submittedDesc', 'Submitted on')} {project?.submitted_at ? new Date(project.submitted_at).toLocaleString() : ''}
-          </p>
         </div>
 
-        <PortalCard>
-          <PortalCardHeader title={project?.title ?? ''} />
-          <div className="p-6 space-y-4">
-            {project?.tagline && <p className="text-lg text-muted-foreground italic">{project.tagline}</p>}
-            {project?.description && <div><h4 className="font-medium mb-1">{t('projects.fields.description', 'Description')}</h4><p className="text-sm whitespace-pre-wrap">{project.description}</p></div>}
-            {project?.problem_statement && <div><h4 className="font-medium mb-1">{t('projects.fields.problemStatement', 'Problem Statement')}</h4><p className="text-sm whitespace-pre-wrap">{project.problem_statement}</p></div>}
-            {project?.solution && <div><h4 className="font-medium mb-1">{t('projects.fields.solution', 'Solution')}</h4><p className="text-sm whitespace-pre-wrap">{project.solution}</p></div>}
-            {project?.tech_stack && project.tech_stack.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-1">{t('projects.fields.techStack', 'Tech Stack')}</h4>
-                <div className="flex flex-wrap gap-1.5">{project.tech_stack.map(tag => (
-                  <span key={tag} className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{tag}</span>
-                ))}</div>
-              </div>
-            )}
-            <div className="grid gap-2 sm:grid-cols-2">
-              {project?.demo_url && <a href={project.demo_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Demo</a>}
-              {project?.repo_url && <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Repository</a>}
-              {project?.video_url && <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Video</a>}
-              {project?.presentation_url && <a href={project.presentation_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">Presentation</a>}
+        {/* Project details card */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-5">
+          <h2 className="text-2xl font-bold text-foreground">{project?.title ?? ''}</h2>
+          {project?.tagline && <p className="text-lg text-portal-secondary italic">{project.tagline}</p>}
+
+          {project?.description && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.description', 'Description')}</h4>
+              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.description}</p>
             </div>
+          )}
+          {project?.problem_statement && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.problemStatement', 'Problem Statement')}</h4>
+              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.problem_statement}</p>
+            </div>
+          )}
+          {project?.solution && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.solution', 'Solution')}</h4>
+              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.solution}</p>
+            </div>
+          )}
+
+          {project?.tech_stack && project.tech_stack.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1.5">{t('projects.fields.techStack', 'Tech Stack')}</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {project.tech_stack.map(tag => (
+                  <span key={tag} className="inline-flex items-center rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-xs font-medium text-portal-primary">{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {project?.demo_url && (
+              <a href={project.demo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
+                <Link2 className="size-4" /> Demo
+              </a>
+            )}
+            {project?.repo_url && (
+              <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
+                <Code className="size-4" /> Repository
+              </a>
+            )}
+            {project?.video_url && (
+              <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
+                <Video className="size-4" /> Video
+              </a>
+            )}
+            {project?.presentation_url && (
+              <a href={project.presentation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
+                <Link2 className="size-4" /> Presentation
+              </a>
+            )}
           </div>
-        </PortalCard>
+        </div>
 
         {project?.flagged_for_reuse && (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
             <span className="font-medium text-orange-800">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
             {project.flagged_reason && <p className="text-sm text-orange-700 mt-1">{project.flagged_reason}</p>}
           </div>
@@ -393,179 +450,199 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
-  /* ── Draft editor ── */
+  /* ======== Draft editor (two-column layout) ======== */
   return (
     <div className="space-y-6">
-      {/* Deadline warning */}
+      {/* ---- Deadline Banner ---- */}
       {deadline && !deadlinePassed && (
-        <div className={`rounded-lg border p-4 ${isUrgent ? 'border-red-300 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-          <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isUrgent ? 'text-red-600' : 'text-yellow-600'}>
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span className={`font-medium ${isUrgent ? 'text-red-800 text-lg' : 'text-yellow-800 text-sm'}`}>
-              {t('projects.portal.deadline', 'Submission deadline')}: {deadline.toLocaleString()}
+        <div
+          className={cn(
+            'rounded-xl px-5 py-3.5 flex items-center justify-between gap-4',
+            isUrgent ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200',
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <Clock className={cn('size-4 shrink-0', isUrgent ? 'text-red-600' : 'text-amber-600')} />
+            <span className={cn('text-sm font-medium', isUrgent ? 'text-red-800' : 'text-amber-800')}>
+              {t('projects.portal.approachingDeadline', 'Approaching Deadline:')}
             </span>
             {secondsUntilDeadline !== null && (
-              <span className={`font-mono font-bold ${isUrgent ? 'text-red-900 text-xl' : 'text-yellow-900 text-sm'}`}>
+              <span className={cn('font-mono font-bold', isUrgent ? 'text-red-900 text-lg' : 'text-amber-900 text-sm')}>
                 {formatCountdown(secondsUntilDeadline)} {t('projects.portal.remaining', 'remaining')}
               </span>
             )}
           </div>
+          <PortalBadge variant={isUrgent ? 'danger' : 'warning'}>
+            {t('projects.portal.draftMode', 'DRAFT MODE')}
+          </PortalBadge>
         </div>
       )}
 
       {deadlinePassed && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+        <div className="rounded-xl border border-red-300 bg-red-50 px-5 py-3.5">
           <span className="text-sm font-medium text-red-800">
             {t('projects.portal.deadlinePassed', 'Submission deadline has passed. Contact an organizer for an extension.')}
           </span>
         </div>
       )}
 
-      {/* Completeness checklist */}
-      <div className="rounded-lg border bg-muted/30 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">{t('projects.portal.completeness', 'Completeness')}</span>
-          <span className="text-sm text-muted-foreground">{filledCount} / {totalRequired}</span>
-        </div>
-        <div className="h-1.5 rounded-full bg-muted mb-3">
-          <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${(filledCount / totalRequired) * 100}%` }} />
-        </div>
-        <ul className="space-y-1">
-          {requiredFields.map(f => (
-            <li key={f.label} className="flex items-center gap-2 text-xs">
-              {f.filled ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground"><circle cx="12" cy="12" r="10" /></svg>
-              )}
-              <span className={f.filled ? 'text-muted-foreground line-through' : ''}>{f.label}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Save indicator */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {saving ? t('projects.portal.saving', 'Saving...') : autoSaveFailed ? <span className="text-destructive">{t('projects.portal.saveFailed', 'Auto-save failed — your work is backed up locally')}</span> : lastSaved ? `${t('projects.portal.lastSaved', 'Last saved')}: ${new Date(lastSaved).toLocaleTimeString()}` : ''}
-        </span>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || isPublished}>
-            {t('projects.portal.saveBtn', 'Save Draft')}
-          </Button>
-        </div>
-      </div>
-
-      {/* Content section */}
-      <PortalCard>
-        <PortalCardHeader title={t('projects.portal.contentSection', 'Project Details')} />
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.title', 'Title')} *</label>
-            <Input value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} maxLength={255} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.tagline', 'Tagline')}</label>
-            <Input value={tagline} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTagline(e.target.value)} maxLength={140} placeholder="A short summary (max 140 chars)" />
-            <span className="text-xs text-muted-foreground">{tagline.length}/140</span>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.description', 'Description')} *</label>
-            <textarea className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.problemStatement', 'Problem Statement')}</label>
-            <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={problemStatement} onChange={(e) => setProblemStatement(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.solution', 'Solution')}</label>
-            <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={solution} onChange={(e) => setSolution(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.techStack', 'Tech Stack')}</label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {techStack.map(tag => (
-                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                  {tag}
-                  <button type="button" onClick={() => handleRemoveTech(tag)} className="ml-0.5 hover:text-destructive">×</button>
-                </span>
-              ))}
+      {/* ---- Two-column grid ---- */}
+      <div className="grid lg:grid-cols-[1fr_340px] gap-6">
+        {/* ======== LEFT COLUMN: Form ======== */}
+        <div className="space-y-6">
+          {/* Project Details header + autosave */}
+          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">{t('projects.portal.contentSection', 'Project Details')}</h2>
+              <span className={cn(
+                'text-xs',
+                autoSaveFailed ? 'text-red-500' : 'text-portal-secondary',
+              )}>
+                {autosaveLabel}
+              </span>
             </div>
-            <Input
-              value={techStackInput}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTechStackInput(e.target.value)}
-              onKeyDown={handleAddTech}
-              placeholder={t('projects.portal.techStackPlaceholder', 'Type a technology and press Enter')}
-            />
-          </div>
-        </div>
-      </PortalCard>
 
-      {/* Links section */}
-      <PortalCard>
-        <PortalCardHeader title={t('projects.portal.linksSection', 'Links')} />
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.demoUrl', 'Demo URL')}</label>
-            <Input value={demoUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDemoUrl(e.target.value)} placeholder="https://" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.repoUrl', 'Repository URL')}</label>
-            <Input value={repoUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepoUrl(e.target.value)} placeholder="https://github.com/..." />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.videoUrl', 'Video URL')}</label>
-            <Input value={videoUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVideoUrl(e.target.value)} placeholder="https://" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.presentationUrl', 'Presentation URL')}</label>
-            <Input value={presentationUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPresentationUrl(e.target.value)} placeholder="https://" />
-          </div>
-        </div>
-      </PortalCard>
+            {/* Title */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.title', 'Project Title')} *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={255}
+                className="rounded-xl bg-gray-900 text-white px-4 py-3 w-full text-sm focus:outline-none focus:ring-2 focus:ring-portal-primary/50"
+                placeholder="Enter your project name"
+              />
+            </div>
 
-      {/* Screenshots & Attachments section (3.4) */}
-      <PortalCard>
-        <PortalCardHeader title={t('projects.portal.mediaSection', 'Screenshots & Media')} />
-        <div className="p-6 space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {t('projects.portal.mediaHelp', 'Upload screenshots of your project. Images help judges understand your work. Accepted formats: PNG, JPG, GIF, WebP.')}
-          </p>
+            {/* Tagline */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.fields.tagline', 'Tagline')}</label>
+                <span className="text-xs text-portal-secondary">{tagline.length}/140</span>
+              </div>
+              <input
+                type="text"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                maxLength={140}
+                className="rounded-xl bg-gray-900 text-white px-4 py-3 w-full text-sm focus:outline-none focus:ring-2 focus:ring-portal-primary/50"
+                placeholder="A short summary (max 140 chars)"
+              />
+            </div>
 
-          {/* Uploaded screenshots */}
-          {screenshotIds.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {screenshotIds.map((id, idx) => (
-                <div key={id} className="group relative rounded-lg border bg-muted/30 p-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground truncate">
-                      {t('projects.portal.screenshot', 'Screenshot')} {idx + 1}
-                    </span>
+            {/* Description */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.description', 'Description')} *</label>
+              <textarea
+                className={textareaClass}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
+                placeholder="Describe your project in detail..."
+              />
+            </div>
+
+            {/* Problem / Solution - two-column row */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>{t('projects.fields.problemStatement', 'Problem')}</label>
+                <textarea
+                  className={cn(textareaClass, 'min-h-[100px]')}
+                  value={problemStatement}
+                  onChange={(e) => setProblemStatement(e.target.value)}
+                  placeholder="What problem does this solve?"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>{t('projects.fields.solution', 'Solution')}</label>
+                <textarea
+                  className={cn(textareaClass, 'min-h-[100px]')}
+                  value={solution}
+                  onChange={(e) => setSolution(e.target.value)}
+                  placeholder="How does your project solve it?"
+                />
+              </div>
+            </div>
+
+            {/* Tech Stack */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.techStack', 'Tech Stack')}</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {techStack.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full bg-portal-primary/10 px-2.5 py-1 text-xs font-medium text-portal-primary"
+                  >
+                    {tag}
                     <button
                       type="button"
-                      onClick={() => handleRemoveScreenshot(id)}
-                      className="text-xs text-muted-foreground hover:text-destructive"
-                      aria-label={t('projects.portal.removeScreenshot', 'Remove screenshot')}
+                      onClick={() => handleRemoveTech(tag)}
+                      className="ml-0.5 hover:text-red-500 transition-colors"
+                      aria-label={`Remove ${tag}`}
                     >
-                      ×
+                      &times;
                     </button>
-                  </div>
-                  <div className="mt-1 h-20 rounded bg-muted flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={techStackInput}
+                onChange={(e) => setTechStackInput(e.target.value)}
+                onKeyDown={handleAddTech}
+                className={inputClass}
+                placeholder={t('projects.portal.techStackPlaceholder', '+ Add Tool (press Enter)')}
+              />
+            </div>
+          </div>
+
+          {/* ---- Media Gallery ---- */}
+          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+            <h3 className="text-lg font-bold text-foreground">{t('projects.portal.mediaSection', 'Media Gallery')}</h3>
+            <p className="text-sm text-portal-secondary">
+              {t('projects.portal.mediaHelp', 'Upload screenshots of your project. Images help judges understand your work. Accepted formats: PNG, JPG, GIF, WebP.')}
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              {/* Upload slot */}
+              <button
+                type="button"
+                onClick={() => screenshotInputRef.current?.click()}
+                disabled={uploadingScreenshot || isPublished}
+                className="flex flex-col items-center justify-center w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 hover:border-portal-primary/50 hover:bg-portal-primary/5 transition-colors text-portal-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="size-5 mb-1" />
+                <span className="text-xs font-medium">
+                  {uploadingScreenshot ? t('projects.portal.uploading', 'Uploading...') : t('projects.portal.upload', 'Upload')}
+                </span>
+              </button>
+
+              {/* Screenshot thumbnails */}
+              {screenshotIds.map((id, idx) => (
+                <div key={id} className="relative group w-28 h-28 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                  <div className="flex flex-col items-center text-portal-secondary">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
                       <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                       <circle cx="9" cy="9" r="2" />
                       <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                     </svg>
+                    <span className="text-[10px] mt-1 text-gray-400">
+                      {t('projects.portal.screenshot', 'Screenshot')} {idx + 1}
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveScreenshot(id)}
+                    className="absolute top-1 right-1 size-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={t('projects.portal.removeScreenshot', 'Remove screenshot')}
+                  >
+                    &times;
+                  </button>
                 </div>
               ))}
             </div>
-          )}
 
-          {/* Upload button */}
-          <div className="flex items-center gap-3">
             <input
               ref={screenshotInputRef}
               type="file"
@@ -575,110 +652,225 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               className="hidden"
               id="screenshot-upload"
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => screenshotInputRef.current?.click()}
-              disabled={uploadingScreenshot || isPublished}
-            >
-              {uploadingScreenshot ? t('projects.portal.uploading', 'Uploading...') : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" x2="12" y1="3" y2="15" />
-                  </svg>
-                  {t('projects.portal.uploadScreenshots', 'Upload Screenshots')}
-                </>
-              )}
-            </Button>
-            <span className="text-xs text-muted-foreground">{screenshotIds.length} {t('projects.portal.filesUploaded', 'file(s) uploaded')}</span>
+            {screenshotIds.length > 0 && (
+              <span className="text-xs text-portal-secondary">{screenshotIds.length} {t('projects.portal.filesUploaded', 'file(s) uploaded')}</span>
+            )}
           </div>
-        </div>
-      </PortalCard>
 
-      {/* Originality Disclosure section (3.5) */}
-      <PortalCard>
-        <PortalCardHeader title={t('projects.portal.originalitySection', 'Originality Disclosure')} />
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-2 rounded-md bg-blue-50 border border-blue-100 p-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500 mt-0.5 shrink-0">
-              <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
-            </svg>
-            <p className="text-sm text-blue-800">
-              {t('projects.portal.originalityHelp', 'Transparency about pre-existing code is valued and does not penalize your team. Judges use this to assess what was built during the hackathon. Using existing code is allowed but must be declared.')}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={usesPreexistingCode}
-              onClick={() => setUsesPreexistingCode(!usesPreexistingCode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${usesPreexistingCode ? 'bg-primary' : 'bg-muted'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${usesPreexistingCode ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-            <span className="text-sm">{t('projects.fields.usesPreexistingCode', 'This project uses pre-existing code')}</span>
-          </div>
-          {usesPreexistingCode && (
+          {/* ---- Submission Assets (URLs) ---- */}
+          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+            <h3 className="text-lg font-bold text-foreground">{t('projects.portal.linksSection', 'Submission Assets')}</h3>
+
+            {/* Demo URL */}
             <div>
-              <label className="block text-sm font-medium mb-1">{t('projects.fields.preexistingCodeDesc', 'Describe the pre-existing code used')} *</label>
-              <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={preexistingCodeDescription} onChange={(e) => setPreexistingCodeDescription(e.target.value)} placeholder="e.g., Started from a React template, used open-source auth library..." />
+              <label className={labelClass}>{t('projects.fields.demoUrl', 'Demo URL')}</label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="url"
+                  value={demoUrl}
+                  onChange={(e) => setDemoUrl(e.target.value)}
+                  className={cn(inputClass, 'pl-10')}
+                  placeholder="https://"
+                />
+              </div>
+            </div>
+
+            {/* Repository URL */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.repoUrl', 'Repository URL')}</label>
+              <div className="relative">
+                <Code className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="url"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  className={cn(inputClass, 'pl-10')}
+                  placeholder="https://github.com/..."
+                />
+              </div>
+            </div>
+
+            {/* Video URL */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.videoUrl', 'Video Pitch')}</label>
+              <div className="relative">
+                <Video className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  className={cn(inputClass, 'pl-10')}
+                  placeholder="https://"
+                />
+              </div>
+            </div>
+
+            {/* Presentation URL */}
+            <div>
+              <label className={labelClass}>{t('projects.fields.presentationUrl', 'Presentation URL')}</label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="url"
+                  value={presentationUrl}
+                  onChange={(e) => setPresentationUrl(e.target.value)}
+                  className={cn(inputClass, 'pl-10')}
+                  placeholder="https://"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ---- Originality Disclosure ---- */}
+          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+            <h3 className="text-lg font-bold text-foreground">{t('projects.portal.originalitySection', 'Originality Disclosure')}</h3>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={usesPreexistingCode}
+                onChange={(e) => setUsesPreexistingCode(e.target.checked)}
+                className="mt-1 size-4 rounded border-gray-300 text-portal-primary focus:ring-portal-primary/50"
+              />
+              <div>
+                <span className="text-sm font-semibold text-foreground">
+                  {t('projects.fields.usesPreexistingCode', 'This project uses pre-existing code')}
+                </span>
+                <p className="text-xs text-portal-secondary mt-0.5">
+                  {t('projects.portal.originalityHelp', 'Transparency about pre-existing code is valued and does not penalize your team. Judges use this to assess what was built during the hackathon. Using existing code is allowed but must be declared.')}
+                </p>
+              </div>
+            </label>
+
+            {usesPreexistingCode && (
+              <div>
+                <label className={labelClass}>{t('projects.fields.preexistingCodeDesc', 'Describe the pre-existing code used')} *</label>
+                <textarea
+                  className={textareaClass}
+                  value={preexistingCodeDescription}
+                  onChange={(e) => setPreexistingCodeDescription(e.target.value)}
+                  placeholder="e.g., Started from a React template, used open-source auth library..."
+                />
+              </div>
+            )}
+
+            <div>
+              <label className={labelClass}>{t('projects.fields.builtDuringDesc', 'What was built during the hackathon')}</label>
+              <textarea
+                className={textareaClass}
+                value={builtDuringDescription}
+                onChange={(e) => setBuiltDuringDescription(e.target.value)}
+                placeholder="Describe what your team built from scratch during the event..."
+              />
+            </div>
+          </div>
+
+          {/* Flag warning */}
+          {project?.flagged_for_reuse && (
+            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <span className="font-medium text-orange-800">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
+              {project.flagged_reason && <p className="text-sm text-orange-700 mt-1">{project.flagged_reason}</p>}
             </div>
           )}
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('projects.fields.builtDuringDesc', 'What was built during the hackathon')}</label>
-            <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={builtDuringDescription} onChange={(e) => setBuiltDuringDescription(e.target.value)} placeholder="Describe what your team built from scratch during the event..." />
-          </div>
         </div>
-      </PortalCard>
 
-      {/* Flag warning */}
-      {project?.flagged_for_reuse && (
-        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-          <span className="font-medium text-orange-800">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
-          {project.flagged_reason && <p className="text-sm text-orange-700 mt-1">{project.flagged_reason}</p>}
-        </div>
-      )}
+        {/* ======== RIGHT COLUMN: Sticky sidebar ======== */}
+        <div className="lg:sticky lg:top-20 space-y-5 self-start">
+          {/* Submission Progress card */}
+          <div className="rounded-xl border border-gray-100 bg-white p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.submissionProgress', 'Submission Progress')}</h3>
 
-      {/* Submit section */}
-      <div className="rounded-lg border bg-card p-6">
-        <h3 className="font-semibold mb-2">{t('projects.portal.readyToSubmit', 'Ready to Submit?')}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t('projects.portal.submitWarning', 'Once submitted, your project will be locked and visible to judges. Make sure all fields are complete.')}
-        </p>
-
-        {!showSubmitConfirm ? (
-          <Button
-            onClick={() => setShowSubmitConfirm(true)}
-            disabled={deadlinePassed || filledCount < totalRequired || !data?.isOwner}
-            className="w-full sm:w-auto"
-          >
-            {t('projects.portal.submitBtn', 'Submit Project')}
-          </Button>
-        ) : (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-              <p className="text-sm text-yellow-800 font-medium">
-                {t('projects.portal.submitConfirmMsg', 'Are you sure? This action cannot be undone. Your project will be locked for editing.')}
-              </p>
+            {/* Progress bar with labels */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-green-600">{completionPercent}% {t('projects.portal.complete', 'COMPLETE')}</span>
+                <span className="text-xs text-portal-secondary">{filledCount}/{totalRequired} {t('projects.portal.required', 'REQUIRED')}</span>
+              </div>
+              <ProgressBar value={completionPercent} size="md" />
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSubmit} disabled={submitting} variant="default">
-                {submitting ? t('common.submitting', 'Submitting...') : t('projects.portal.confirmSubmit', 'Yes, Submit')}
-              </Button>
-              <Button variant="outline" onClick={() => setShowSubmitConfirm(false)}>
-                {t('common.cancel', 'Cancel')}
-              </Button>
-            </div>
+
+            {/* Checklist items */}
+            <ul className="space-y-2">
+              {requiredFields.map(f => (
+                <li key={f.label} className="flex items-center gap-2.5">
+                  {f.filled ? (
+                    <Check className="size-4 text-green-500 shrink-0" />
+                  ) : (
+                    <Circle className="size-4 text-gray-300 shrink-0" />
+                  )}
+                  <span className={cn('text-sm', f.filled ? 'text-portal-secondary line-through' : 'text-foreground')}>
+                    {f.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Submit button */}
+            {!showSubmitConfirm ? (
+              <div className="space-y-2">
+                <Button
+                  onClick={() => setShowSubmitConfirm(true)}
+                  disabled={deadlinePassed || filledCount < totalRequired || !data?.isOwner}
+                  className="w-full gap-2"
+                >
+                  <Lock className="size-3.5" />
+                  {t('projects.portal.submitBtn', 'Submit Final Project')}
+                </Button>
+                {(deadlinePassed || filledCount < totalRequired) && (
+                  <p className="text-xs text-red-500 text-center">
+                    {deadlinePassed
+                      ? t('projects.portal.deadlinePassedShort', 'Deadline has passed')
+                      : t('projects.portal.incompleteFields', 'Complete all required fields to submit')}
+                  </p>
+                )}
+                {!data?.isOwner && (
+                  <p className="text-xs text-portal-secondary text-center">
+                    {t('projects.portal.ownerOnly', 'Only the team owner can submit the project.')}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs text-amber-800 font-medium">
+                    {t('projects.portal.submitConfirmMsg', 'Are you sure? This action cannot be undone. Your project will be locked for editing.')}
+                  </p>
+                </div>
+                <Button onClick={handleSubmit} disabled={submitting} className="w-full">
+                  {submitting ? t('common.submitting', 'Submitting...') : t('projects.portal.confirmSubmit', 'Yes, Submit')}
+                </Button>
+                <Button variant="outline" onClick={() => setShowSubmitConfirm(false)} className="w-full">
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+              </div>
+            )}
+
+            {/* Preview / Save buttons */}
+            <Button variant="outline" className="w-full" onClick={handleSave} disabled={saving || isPublished}>
+              {t('projects.portal.saveBtn', 'Save Draft')}
+            </Button>
           </div>
-        )}
-        {!data?.isOwner && (
-          <p className="text-xs text-muted-foreground mt-2">
-            {t('projects.portal.ownerOnly', 'Only the team owner can submit the project.')}
-          </p>
-        )}
+
+          {/* YOUR TEAM card */}
+          {data?.team && (
+            <div className="rounded-xl border border-gray-100 bg-white p-5 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.yourTeam', 'Your Team')}</h3>
+              <div className="flex items-center gap-3">
+                <AvatarStack
+                  avatars={[{ name: data.team.name }]}
+                  size="md"
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{data.team.name}</p>
+                  {data.trackName && (
+                    <p className="text-xs text-portal-secondary">{data.trackName}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -698,15 +890,12 @@ export default function MyProjectPage({ params }: { params: { orgSlug: string } 
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader
-          title={t('projects.portal.title', 'My Project')}
-          label={t('projects.portal.label', 'Your team project')}
-        />
-        <ProjectEditorContent orgSlug={params.orgSlug} />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('projects.portal.label', 'Your team project')}
+        title={t('projects.portal.title', 'My Project')}
+      />
+      <ProjectEditorContent orgSlug={params.orgSlug} />
+    </PortalCompetitionLayout>
   )
 }

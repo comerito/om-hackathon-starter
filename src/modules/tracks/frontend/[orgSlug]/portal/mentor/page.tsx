@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
 import { PortalCard, PortalCardHeader } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { PortalPageTitle } from '@/components/portal'
 
 type Track = { id: string; name: string; description: string | null; color: string }
 type Team = { id: string; name: string; status: string; track_id: string | null; _teams?: { memberCount: number } }
@@ -52,8 +53,8 @@ export default function MentorTracksPage({ params }: { params: { orgSlug: string
   }, [teams])
 
   return (
-    <div className="flex flex-col gap-6">
-      <PortalPageHeader title={t('tracks.portal.mentor.title', 'Mentor Dashboard')} label={t('tracks.portal.mentor.label', 'Your Tracks')} />
+    <PortalCompetitionLayout>
+      <PortalPageTitle label={t('tracks.portal.mentor.label', 'Your Tracks')} title={t('tracks.portal.mentor.title', 'Mentor Dashboard')} />
 
       {isLoading ? (
         <PortalCard><div className="p-6 text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</div></PortalCard>
@@ -95,6 +96,6 @@ export default function MentorTracksPage({ params }: { params: { orgSlug: string
           })}
         </div>
       )}
-    </div>
+    </PortalCompetitionLayout>
   )
 }

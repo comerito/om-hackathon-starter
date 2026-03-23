@@ -24,6 +24,8 @@ type TrackFormValues = {
   description: string
   color: string
   icon_url: string
+  category: string
+  badge: string
   max_teams: number | null
   order: number
 }
@@ -83,12 +85,19 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
         </div>
       ),
     },
+    { id: 'category', label: t('tracks.fields.category', 'Category'), type: 'text' },
+    { id: 'badge', label: t('tracks.fields.badge', 'Badge'), type: 'select', options: [
+      { value: '', label: 'None' },
+      { value: 'new', label: 'NEW' },
+      { value: 'hot', label: 'HOT' },
+      { value: 'stability', label: 'STABILITY' },
+    ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
   ], [t, loadCompetitions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description'] },
+    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'badge'] },
     { id: 'appearance', title: t('tracks.groups.appearance', 'Appearance'), column: 2, fields: ['color', 'icon_url'] },
     { id: 'settings', title: t('tracks.groups.settings', 'Settings'), column: 1, fields: ['max_teams', 'order'] },
   ], [t])
@@ -111,6 +120,8 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
             description: String(item.description ?? ''),
             color: String(item.color ?? '#6366f1'),
             icon_url: String(item.icon_url ?? ''),
+            category: String(item.category ?? ''),
+            badge: String(item.badge ?? ''),
             max_teams: item.max_teams != null ? Number(item.max_teams) : null,
             order: Number(item.order ?? 0),
           })
@@ -127,7 +138,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
 
   const fallback = React.useMemo<TrackFormValues>(() => ({
     id: id ?? '', competition_id: '', name: '', description: '',
-    color: '#6366f1', icon_url: '', max_teams: null, order: 0,
+    color: '#6366f1', icon_url: '', category: '', badge: '', max_teams: null, order: 0,
   }), [id])
 
   if (!id) return null

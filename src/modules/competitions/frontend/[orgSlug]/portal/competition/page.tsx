@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
 import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { CompetitionProvider, useCompetitionContext } from '../../../../components/CompetitionContext'
-import { CompetitionSelector } from '../../../../components/CompetitionSelector'
+import { useCompetitionContext } from '../../../../components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
+import { PortalPageTitle } from '@/components/portal'
 
 type MyCompetition = {
   id: string; name: string; slug: string; stage: string; role: string
@@ -108,15 +108,12 @@ export default function MyCompetitionsPage({ params }: { params: { orgSlug: stri
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader
-          title={t('competitions.portal.myCompetitions.title', 'My Competitions')}
-          label={t('competitions.portal.myCompetitions.label', 'Click to select active competition')}
-        />
-        <CompetitionsContent />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('competitions.portal.myCompetitions.label', 'Click to select active competition')}
+        title={t('competitions.portal.myCompetitions.title', 'My Competitions')}
+      />
+      <CompetitionsContent />
+    </PortalCompetitionLayout>
   )
 }

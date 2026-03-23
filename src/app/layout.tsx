@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { bootstrap } from '@/bootstrap'
 import { AppProviders } from '@/components/AppProviders'
@@ -16,6 +16,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -54,7 +60,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning data-gramm="false">
+      <body className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} antialiased`} suppressHydrationWarning data-gramm="false">
         <AppProviders locale={locale} dict={dict} demoModeEnabled={demoModeEnabled}>
           {children}
         </AppProviders>

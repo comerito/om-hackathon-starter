@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
-import { AgendaItem, Announcement, CompetitionParticipation } from '../../../data/entities'
+import { AgendaItem, Announcement, CompetitionParticipation, Milestone } from '../../../data/entities'
+import { Track } from '../../../../tracks/data/entities'
+import { Project } from '../../../../projects/data/entities'
+import { Team } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -64,11 +67,66 @@ export async function GET(req: Request) {
         items: items.map(a => ({
           id: a.id, title: a.title, content: a.content, priority: a.priority,
           pinned: a.pinned, published_at: a.publishedAt, target_roles: a.targetRoles,
+          category: a.category, action_url: a.actionUrl, action_label: a.actionLabel,
         })),
       })
     }
 
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
+    if (dataType === 'tracks') {
+      const items = await em.find(Track, {
+        competitionId,
+        tenantId: auth.tenantId,
+      }, { orderBy: { order: 'asc' } })
+
+      return NextResponse.json({
+        items: items.map(t => ({
+          id: t.id, name: t.name, description: t.description, color: t.color,
+          icon_url: t.iconUrl, max_teams: t.maxTeams, order: t.order,
+          category: t.category, badge: t.badge,
+        })),
+      })
+    }
+
+    if (dataType === 'milestones') {
+      const items = await em.find(Milestone, {
+        competitionId,
+        tenantId: auth.tenantId,
+      }, { orderBy: { sortOrder: 'asc' } })
+      return NextResponse.json({
+        items: items.map(m => ({
+          id: m.id, name: m.name, description: m.description,
+          due_date: m.dueDate, status: m.status, sort_order: m.sortOrder,
+        })),
+      })
+    }
+
+    if (dataType === 'projects') {
+      const statusFilter = url.searchParams.get('status') ?? 'published'
+      const items = await em.find(Project, {
+        competitionId,
+        tenantId: auth.tenantId,
+        status: statusFilter,
+        deletedAt: null,
+      } as any, { orderBy: { title: 'asc' } })
+
+      // Resolve team names
+      const teamIds = [...new Set(items.map(p => p.teamId))]
+      let teamMap = new Map<string, string>()
+      if (teamIds.length > 0) {
+        const teams = await em.find(Team, { id: { $in: teamIds } } as any)
+        teamMap = new Map(teams.map(t => [t.id, t.name]))
+      }
+
+      return NextResponse.json({
+        items: items.map(p => ({
+          id: p.id, title: p.title, tagline: p.tagline,
+          team_id: p.teamId, track_id: p.trackId,
+          team_name: teamMap.get(p.teamId) ?? null,
+        })),
+      })
+    }
+
+    return NextResponse.json({ error: 'Invalid type parameter. Supported: agenda, announcements, tracks, milestones, projects' }, { status: 400 })
   } catch (error) {
     console.error('[portal/competition-data] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -79,6 +137,6 @@ export const openApi: OpenApiRouteDoc = {
   tag: 'Portal',
   summary: 'Competition data',
   methods: {
-    GET: { summary: 'Get agenda or announcements for a competition (portal)' },
+    GET: { summary: 'Get agenda, announcements, tracks, milestones, or projects for a competition (portal)' },
   },
 }

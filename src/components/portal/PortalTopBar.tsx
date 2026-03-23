@@ -1,0 +1,113 @@
+"use client"
+
+import * as React from 'react'
+import Link from 'next/link'
+import { Bell, Settings, ArrowLeft, Search } from 'lucide-react'
+import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
+import { cn } from '@open-mercato/shared/lib/utils'
+
+type PortalTopBarProps = {
+  variant?: 'full' | 'minimal' | 'topnav'
+  /** Competition/section title shown in the top bar */
+  title?: string
+  /** Search placeholder text */
+  searchPlaceholder?: string
+  /** User display name */
+  userName?: string
+  /** User role label */
+  userRole?: string
+  /** Back link for minimal variant */
+  backHref?: string
+  /** Inline nav links for topnav variant */
+  navLinks?: Array<{ label: string; href: string; active?: boolean }>
+}
+
+export function PortalTopBar({
+  variant = 'full',
+  title,
+  searchPlaceholder = 'Search resources...',
+  userName,
+  userRole,
+  backHref,
+  navLinks,
+}: PortalTopBarProps) {
+  const { auth, orgSlug } = usePortalContext()
+  const displayName = userName || auth.user?.displayName || auth.user?.email || ''
+  const displayRole = userRole || 'PARTICIPANT'
+  const prefix = `/${orgSlug}/portal`
+
+  return (
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-gray-100 bg-white px-6" data-portal-handle="section:portal:header">
+      {/* Left section */}
+      <div className="flex items-center gap-3">
+        {variant === 'minimal' && backHref && (
+          <Link href={backHref} className="text-portal-secondary hover:text-foreground transition-colors">
+            <ArrowLeft className="size-5" />
+          </Link>
+        )}
+        {title && (
+          <span className="text-sm font-semibold text-foreground">{title}</span>
+        )}
+        {variant === 'topnav' && navLinks && (
+          <nav className="flex items-center gap-1 ml-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors',
+                  link.active
+                    ? 'text-foreground border-b-2 border-foreground'
+                    : 'text-portal-secondary hover:text-foreground'
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      {/* Center: Search */}
+      {variant !== 'minimal' && (
+        <div className="flex-1 flex justify-center max-w-md mx-auto">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Right: Actions */}
+      <div className="ml-auto flex items-center gap-3">
+        {/* Notification bell */}
+        <button type="button" className="relative rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors">
+          <Bell className="size-[18px]" />
+          <span className="absolute top-1 right-1 size-2 rounded-full bg-portal-danger ring-2 ring-white" />
+        </button>
+
+        {/* Settings */}
+        <button type="button" className="rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors">
+          <Settings className="size-[18px]" />
+        </button>
+
+        {/* User avatar + info */}
+        <Link href={`${prefix}/profile`} className="flex items-center gap-2">
+          {variant === 'full' && displayName && (
+            <div className="text-right hidden sm:block">
+              <p className="text-xs font-medium text-foreground leading-tight">{displayName}</p>
+              <p className="text-[10px] uppercase tracking-wide text-portal-secondary">{displayRole}</p>
+            </div>
+          )}
+          <div className="size-8 rounded-full bg-portal-primary/10 border border-portal-primary/20 flex items-center justify-center text-xs font-bold text-portal-primary">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+        </Link>
+      </div>
+    </header>
+  )
+}

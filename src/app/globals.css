@@ -22,6 +22,18 @@ TODO: Fix that latter to have reference by the package names
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-playfair-display);
+
+  /* Portal design tokens */
+  --color-portal-primary: var(--portal-primary);
+  --color-portal-primary-light: var(--portal-primary-light);
+  --color-portal-secondary: var(--portal-secondary);
+  --color-portal-tertiary: var(--portal-tertiary);
+  --color-portal-bg: var(--portal-bg);
+  --color-portal-dark: var(--portal-dark);
+  --color-portal-success: var(--portal-success);
+  --color-portal-warning: var(--portal-warning);
+  --color-portal-danger: var(--portal-danger);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -60,6 +72,16 @@ TODO: Fix that latter to have reference by the package names
 :root {
   color-scheme: light;
   --radius: 0.625rem;
+  /* Portal design system */
+  --portal-primary: #4F46E5;
+  --portal-primary-light: #6366F1;
+  --portal-secondary: #64748B;
+  --portal-tertiary: #A54100;
+  --portal-bg: #F8FAFC;
+  --portal-dark: #0F172A;
+  --portal-success: #16A34A;
+  --portal-warning: #D97706;
+  --portal-danger: #DC2626;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

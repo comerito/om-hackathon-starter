@@ -53,6 +53,22 @@ export const AnnouncementPriority = {
 } as const
 export type AnnouncementPriority = (typeof AnnouncementPriority)[keyof typeof AnnouncementPriority]
 
+export const AnnouncementCategory = {
+  GENERAL: 'general',
+  LOGISTICS: 'logistics',
+  TECHNICAL: 'technical',
+  SCHEDULE: 'schedule',
+  JUDGING: 'judging',
+} as const
+export type AnnouncementCategory = (typeof AnnouncementCategory)[keyof typeof AnnouncementCategory]
+
+export const MilestoneStatus = {
+  UPCOMING: 'upcoming',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+} as const
+export type MilestoneStatus = (typeof MilestoneStatus)[keyof typeof MilestoneStatus]
+
 // ── JSONB Config Interfaces ─────────────────────────────────────────
 
 export interface StageConfig {
@@ -175,6 +191,9 @@ export class Competition {
     allowVoteChange: false,
   }
 
+  @Property({ name: 'info_cards', type: 'jsonb', default: '[]' })
+  infoCards: Array<{ key: string; label: string; value: string; icon?: string }> = []
+
   @Property({ name: 'code_of_conduct_url', type: 'varchar', length: 1000 })
   codeOfConductUrl!: string
 
@@ -289,11 +308,26 @@ export class ParticipantProfile {
   @Property({ type: 'varchar', length: 255, nullable: true })
   organization?: string | null
 
+  @Property({ name: 'avatar_url', type: 'varchar', length: 1000, nullable: true })
+  avatarUrl?: string | null
+
+  @Property({ name: 'portfolio_url', type: 'varchar', length: 1000, nullable: true })
+  portfolioUrl?: string | null
+
+  @Property({ name: 'office_hours_url', type: 'varchar', length: 1000, nullable: true })
+  officeHoursUrl?: string | null
+
+  @Property({ type: 'varchar', length: 100, nullable: true })
+  specialty?: string | null
+
   @Property({ type: 'jsonb', default: '[]' })
   skills: string[] = []
 
   @Property({ name: 'social_links', type: 'jsonb', default: '{}' })
   socialLinks: { github?: string; linkedin?: string; twitter?: string; website?: string } = {}
+
+  @Property({ name: 'notification_preferences', type: 'jsonb', default: '{}' })
+  notificationPreferences: { email_digest?: boolean; slack_alerts?: boolean; sms_urgent?: boolean } = {}
 
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
@@ -391,6 +425,15 @@ export class Announcement {
   @Property({ type: 'text', default: 'info' })
   priority: AnnouncementPriority = AnnouncementPriority.INFO
 
+  @Property({ type: 'text', default: 'general' })
+  category: AnnouncementCategory = AnnouncementCategory.GENERAL
+
+  @Property({ name: 'action_url', type: 'varchar', length: 1000, nullable: true })
+  actionUrl?: string | null
+
+  @Property({ name: 'action_label', type: 'varchar', length: 255, nullable: true })
+  actionLabel?: string | null
+
   @Property({ name: 'target_roles', type: 'jsonb', default: '[]' })
   targetRoles: string[] = []
 
@@ -419,4 +462,43 @@ export class Announcement {
 
   @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date | null
+}
+
+@Entity({ tableName: 'competitions_milestone' })
+export class Milestone {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ type: 'varchar', length: 255 })
+  name!: string
+
+  @Property({ type: 'text', nullable: true })
+  description?: string | null
+
+  @Property({ name: 'due_date', type: 'timestamptz' })
+  dueDate!: Date
+
+  @Property({ type: 'text', default: 'upcoming' })
+  status: MilestoneStatus = MilestoneStatus.UPCOMING
+
+  @Property({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder: number = 0
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
 }

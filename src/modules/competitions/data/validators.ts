@@ -86,9 +86,10 @@ export const updateCompetitionSchema = z.object({
   judging_config: judgingConfigSchema.optional(),
   peer_voting_config: peerVotingConfigSchema.optional(),
   code_of_conduct_url: z.string().url().max(1000).optional(),
-  rules_url: z.string().url().max(1000).nullable().optional(),
-  privacy_policy_url: z.string().url().max(1000).nullable().optional(),
-  cover_image_url: z.string().url().max(1000).nullable().optional(),
+  rules_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  info_cards: z.any().optional(),
 })
 
 export type CreateCompetitionInput = z.infer<typeof createCompetitionSchema>
@@ -180,3 +181,34 @@ export const createAnnouncementSchema = z.object({
 })
 
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>
+
+// ── Milestone ────────────────────────────────────────────────────────
+
+export const milestoneStatusValues = ['upcoming', 'active', 'completed'] as const
+
+// Preprocess to convert datetime-local ("2026-03-23T23:00") to ISO
+const toIsoDate = z.preprocess(
+  (v) => { if (typeof v === 'string' && v && !v.endsWith('Z')) { try { return new Date(v).toISOString() } catch { return v } } return v },
+  z.string().datetime(),
+)
+
+export const createMilestoneSchema = z.object({
+  competition_id: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  due_date: toIsoDate,
+  status: z.enum(milestoneStatusValues).default('upcoming'),
+  sort_order: z.number().int().default(0),
+})
+
+export const updateMilestoneSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  due_date: toIsoDate.optional(),
+  status: z.enum(milestoneStatusValues).optional(),
+  sort_order: z.number().int().optional(),
+})
+
+export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>
+export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>

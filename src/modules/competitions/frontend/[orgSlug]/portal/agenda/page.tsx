@@ -4,11 +4,12 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
-import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
+import { cn } from '@open-mercato/shared/lib/utils'
+import { MapPin, Zap, HelpCircle, Wifi } from 'lucide-react'
+import { PortalPageTitle, PortalBadge, ProgressBar } from '@/components/portal'
 
 type AgendaItem = {
   id: string; title: string; description: string | null; type: string
@@ -16,33 +17,103 @@ type AgendaItem = {
   speaker_bio: string | null; is_mandatory: boolean
 }
 
-const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  ceremony: { bg: 'bg-purple-50', text: 'text-purple-700' },
-  talk: { bg: 'bg-green-50', text: 'text-green-700' },
-  workshop: { bg: 'bg-blue-50', text: 'text-blue-700' },
-  break: { bg: 'bg-gray-50', text: 'text-gray-600' },
-  meal: { bg: 'bg-orange-50', text: 'text-orange-700' },
-  deadline: { bg: 'bg-red-50', text: 'text-red-700' },
-  demo_session: { bg: 'bg-yellow-50', text: 'text-yellow-700' },
-  custom: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+const TYPE_ICONS: Record<string, string> = {
+  ceremony: '⚡', talk: '🎙', workshop: '🔬', break: '☕',
+  meal: '🍽', deadline: '⏰', demo_session: '🎬', custom: '✦',
+}
+
+const TYPE_BADGE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted'> = {
+  ceremony: 'primary', talk: 'success', workshop: 'info',
+  break: 'muted', meal: 'warning', deadline: 'danger',
+  demo_session: 'warning', custom: 'primary',
+}
+
+const DOT_COLORS: Record<string, string> = {
+  happening: 'bg-portal-primary',
+  past: 'bg-gray-300',
+  future: 'bg-gray-200',
 }
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-}
-
-function formatTimeRange(startsAt: string, endsAt: string): string {
-  return `${formatTime(startsAt)}-${formatTime(endsAt)}`
+  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toUpperCase()
 }
 
 function getDayKey(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toISOString().split('T')[0]
+  return new Date(dateStr).toISOString().split('T')[0]
 }
 
 function getDayLabel(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString([], { weekday: 'long' })
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString([], { weekday: 'long' })
 }
+
+function isHappeningNow(startsAt: string, endsAt: string): boolean {
+  const now = Date.now()
+  return now >= new Date(startsAt).getTime() && now <= new Date(endsAt).getTime()
+}
+
+function getTimeStatus(startsAt: string, endsAt: string): 'happening' | 'past' | 'future' {
+  const now = Date.now()
+  if (now >= new Date(startsAt).getTime() && now <= new Date(endsAt).getTime()) return 'happening'
+  if (now > new Date(endsAt).getTime()) return 'past'
+  return 'future'
+}
+
+/* ---------- Timeline Event Card ---------- */
+
+function TimelineEventCard({ item }: { item: AgendaItem }) {
+  const status = getTimeStatus(item.starts_at, item.ends_at)
+  const happening = status === 'happening'
+  const typeLabel = item.type.replace(/_/g, ' ')
+
+  return (
+    <div className="flex gap-4">
+      {/* Timeline dot + line */}
+      <div className="flex flex-col items-center pt-1">
+        <div
+          className={cn(
+            'size-8 rounded-full flex items-center justify-center text-sm shrink-0',
+            happening ? 'bg-portal-primary text-white shadow-md shadow-portal-primary/30' : 'bg-gray-100 text-gray-400',
+          )}
+        >
+          {happening ? <Zap className="size-4" /> : <span className="text-xs">{TYPE_ICONS[item.type] ?? '●'}</span>}
+        </div>
+        <div className="flex-1 w-px bg-gray-100 mt-2" />
+      </div>
+
+      {/* Event content */}
+      <div className={cn('flex-1 rounded-xl border bg-white p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
+        <div className="flex items-center justify-between mb-2">
+          <span className={cn('text-sm font-semibold', happening ? 'text-portal-primary' : 'text-portal-secondary')}>
+            {formatTime(item.starts_at)} — {formatTime(item.ends_at)}
+          </span>
+          {happening && (
+            <PortalBadge variant="primary">Happening Now</PortalBadge>
+          )}
+        </div>
+
+        <h3 className="text-base font-bold text-foreground leading-snug">{item.title}</h3>
+
+        {item.description && (
+          <p className="mt-2 text-sm text-portal-secondary leading-relaxed">{item.description}</p>
+        )}
+
+        <div className="mt-3 flex items-center gap-4">
+          {item.location && (
+            <span className="flex items-center gap-1 text-xs text-portal-secondary">
+              <MapPin className="size-3" />
+              {item.location}
+            </span>
+          )}
+          <PortalBadge variant={TYPE_BADGE_VARIANTS[item.type] ?? 'muted'}>
+            {typeLabel}
+          </PortalBadge>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ---------- Agenda Content ---------- */
 
 function AgendaContent() {
   const t = useT()
@@ -64,7 +135,6 @@ function AgendaContent() {
 
   const items = data?.items ?? []
 
-  // Group items by day
   const days = React.useMemo(() => {
     const map = new Map<string, AgendaItem[]>()
     for (const item of items) {
@@ -73,118 +143,137 @@ function AgendaContent() {
       arr.push(item)
       map.set(key, arr)
     }
-    // Sort each day's items by start time
     for (const [, dayItems] of map) {
       dayItems.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
   }, [items])
 
-  // Auto-select first day
   React.useEffect(() => {
-    if (days.length > 0 && !selectedDay) {
-      setSelectedDay(days[0][0])
-    }
+    if (days.length > 0 && !selectedDay) setSelectedDay(days[0][0])
   }, [days, selectedDay])
 
   if (!selectedId) {
-    return <PortalEmptyState title={t('competitions.portal.agenda.noCompetition', 'Select a competition')} description={t('competitions.portal.agenda.noCompetitionDesc', 'Choose a competition to view its agenda.')} />
+    return (
+      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+        Select a competition to view its agenda.
+      </div>
+    )
   }
 
   if (isLoading) {
-    return <div className="py-12 text-center text-muted-foreground">{t('common.loading', 'Loading...')}</div>
+    return <div className="py-12 text-center text-portal-secondary">Loading...</div>
   }
 
   if (items.length === 0) {
-    return <PortalEmptyState title={t('competitions.portal.agenda.empty', 'No agenda items yet')} description={t('competitions.portal.agenda.emptyDesc', 'The schedule will be published soon.')} />
+    return (
+      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+        No agenda items yet. The schedule will be published soon.
+      </div>
+    )
   }
 
   const activeDayItems = days.find(([key]) => key === selectedDay)?.[1] ?? []
 
+  // Count completed sessions for progress
+  const mainSessions = activeDayItems.filter(i => i.type !== 'break' && i.type !== 'meal')
+  const completedSessions = mainSessions.filter(i => getTimeStatus(i.starts_at, i.ends_at) === 'past').length
+
   return (
-    <div className="space-y-0">
-      {/* Day tabs */}
-      {days.length > 1 && (
-        <div className="flex gap-0 border-b mb-6">
-          {days.map(([key]) => {
-            const label = getDayLabel(key + 'T00:00:00')
-            const isActive = key === selectedDay
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedDay(key)}
-                className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-foreground text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
+    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      {/* Left: Timeline */}
+      <div>
+        {/* Day tabs */}
+        {days.length > 1 && (
+          <div className="flex gap-1 mb-6">
+            {days.map(([key]) => {
+              const label = getDayLabel(key)
+              const isActive = key === selectedDay
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedDay(key)}
+                  className={cn(
+                    'px-6 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-portal-primary text-white shadow-sm'
+                      : 'text-portal-secondary hover:bg-gray-100'
+                  )}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Timeline events */}
+        <div>
+          {activeDayItems.map((item) => (
+            <TimelineEventCard key={item.id} item={item} />
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Day header */}
-      {selectedDay && (
-        <div className="mb-6">
-          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            {getDayLabel(selectedDay + 'T00:00:00')}
-          </span>
+      {/* Right: Sidebar widgets */}
+      <div className="space-y-4">
+        {/* Session completion */}
+        <div className="rounded-xl border border-gray-100 bg-white p-4">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
+            {selectedDay ? getDayLabel(selectedDay) : 'Day'} Completion
+          </h4>
+          <ProgressBar
+            value={mainSessions.length > 0 ? (completedSessions / mainSessions.length) * 100 : 0}
+            label={`${completedSessions} of ${mainSessions.length} main sessions completed`}
+            size="md"
+          />
         </div>
-      )}
 
-      {/* Timeline */}
-      <div className="divide-y divide-border">
-        {activeDayItems.map((item) => {
-          const typeColor = TYPE_COLORS[item.type] ?? TYPE_COLORS.custom
-          const typeLabel = item.type.replace(/_/g, ' ').toUpperCase()
-
+        {/* Featured curator — derived from first agenda item with a speaker */}
+        {(() => {
+          const featured = activeDayItems.find(i => i.speaker_name)
+          if (!featured) return null
           return (
-            <div key={item.id} className="flex items-start gap-6 py-5 group">
-              {/* Time column */}
-              <div className="w-[160px] shrink-0 pt-0.5">
-                <span className="text-sm font-mono text-muted-foreground whitespace-nowrap">
-                  {formatTimeRange(item.starts_at, item.ends_at)}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-semibold leading-snug">
-                      {item.title}
-                    </h3>
-                    {(item.description || item.speaker_name) && (
-                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                        {item.speaker_name && <>{item.speaker_name} — </>}
-                        {item.description}
-                      </p>
-                    )}
-                    {item.location && (
-                      <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                        {item.location}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Type badge */}
-                  <span className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${typeColor.bg} ${typeColor.text}`}
-                    style={{ borderColor: 'transparent' }}>
-                    {typeLabel}
-                  </span>
+            <div className="rounded-xl overflow-hidden">
+              <div className="relative h-48 bg-gradient-to-b from-gray-300 to-gray-400">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-portal-secondary mb-1">Featured Curator</p>
+                  <p className="text-sm font-bold text-white">{featured.speaker_name}</p>
+                  <p className="text-xs text-white/70">{featured.title}</p>
                 </div>
               </div>
             </div>
           )
-        })}
+        })()}
+
+        {/* Info cards */}
+        <div className="rounded-xl border border-gray-100 bg-white p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
+              <HelpCircle className="size-4 text-portal-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-foreground">Need help?</p>
+              <p className="text-[11px] text-portal-secondary">Curators are available in the Slack #help channel 24/7.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
+              <Wifi className="size-4 text-portal-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-foreground">Wi-Fi Network</p>
+              <p className="text-[11px] text-portal-secondary">SSID: HACKFEST_24<br />Pass: hackathon_2024</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
+
+/* ---------- Page component ---------- */
 
 export default function AgendaPortalPage({ params }: { params: { orgSlug: string } }) {
   const t = useT()
@@ -199,7 +288,7 @@ export default function AgendaPortalPage({ params }: { params: { orgSlug: string
 
   return (
     <PortalCompetitionLayout>
-      <PortalPageHeader title={t('competitions.portal.agenda.title', 'Agenda')} label={t('competitions.portal.agenda.label', 'Schedule')} />
+      <PortalPageTitle label="Event Timeline" title="The Agenda" />
       <AgendaContent />
     </PortalCompetitionLayout>
   )

@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
 import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Button } from '@open-mercato/ui/primitives/button'
@@ -12,8 +11,9 @@ import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { PortalPageTitle } from '@/components/portal'
 
 /* ---------- types ---------- */
 
@@ -416,13 +416,12 @@ export default function TeamBrowserPage({ params }: { params: { orgSlug: string 
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <PortalPageHeader
-        title={t('teams.portal.browse.title', 'Browse Teams')}
+    <PortalCompetitionLayout>
+      <PortalPageTitle
         label={t('teams.portal.browse.label', 'Find a Team')}
+        title={t('teams.portal.browse.title', 'Browse Teams')}
       />
       <TeamsContent />
-    </CompetitionProvider>
+    </PortalCompetitionLayout>
   )
 }

@@ -3,18 +3,24 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { cn } from '@open-mercato/shared/lib/utils'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
-import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
-import { PortalCardHeader } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import {
+  PortalPageTitle,
+  SectionLabel,
+  GradientCard,
+  PortalBadge,
+  ProgressBar,
+  ToggleSwitch,
+} from '@/components/portal'
 import Link from 'next/link'
 
 /* ---------- types ---------- */
@@ -176,33 +182,33 @@ function NoTeamView({
 
   return (
     <div className="space-y-8">
-      {/* ── Action Tiles ── */}
+      {/* Action Tiles */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Tile 1: Create Team */}
-        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-portal-primary/10 text-portal-primary mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
             </svg>
           </div>
           <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.createTeam', 'Create a Team')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-portal-secondary mb-4">
             {t('teams.portal.myTeam.noTeamDesc', 'Start your own team and invite others to join.')}
           </p>
-          <Button onClick={() => setShowCreateForm(true)} size="sm" className="w-full">
+          <Button onClick={() => setShowCreateForm(true)} size="sm" className="w-full bg-portal-primary hover:bg-portal-primary/90">
             {t('teams.portal.myTeam.createTeamBtn', 'Create Team')}
           </Button>
         </div>
 
         {/* Tile 2: Browse Teams */}
-        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
+        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
           </div>
           <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.browseTeams', 'Browse Teams')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-portal-secondary mb-4">
             {t('teams.portal.myTeam.browseTeamsDesc', 'Find an existing team to join or see who is looking for teammates.')}
           </p>
           <Button variant="outline" size="sm" asChild className="w-full">
@@ -213,44 +219,42 @@ function NoTeamView({
         </div>
 
         {/* Tile 3: Looking for Team */}
-        <div className="group relative rounded-xl border bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:shadow-md hover:border-primary/30">
+        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
           <h3 className="font-semibold mb-1">{t('teams.portal.myTeam.lookingForTeam', 'Looking for a Team')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-portal-secondary mb-4">
             {t('teams.portal.myTeam.lookingForTeamDesc', 'Let others know you are available to join a team.')}
           </p>
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted/50">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+            <ToggleSwitch
               checked={lookingForTeam}
-              onChange={(e) => handleToggleLooking(e.target.checked)}
+              onChange={handleToggleLooking}
               disabled={updatingLooking}
-              className="h-4 w-4 rounded border-gray-300 accent-primary"
             />
-            <span>{t('teams.portal.myTeam.markLooking', 'Mark me as looking')}</span>
-          </label>
+            <span className="text-sm text-foreground">{t('teams.portal.myTeam.markLooking', 'Mark me as looking')}</span>
+          </div>
         </div>
       </div>
 
-      {/* ── Create Team Expanded Form ── */}
+      {/* Create Team Expanded Form */}
       {showCreateForm && (
-        <PortalCard>
-          <PortalCardHeader title={t('teams.portal.myTeam.createTeamForm', 'New Team')} />
-          <div className="px-6 pb-6 space-y-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <h3 className="text-lg font-semibold mb-4">{t('teams.portal.myTeam.createTeamForm', 'New Team')}</h3>
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">
-                {t('teams.portal.myTeam.teamName', 'Team Name')} <span className="text-destructive">*</span>
+                {t('teams.portal.myTeam.teamName', 'Team Name')} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={teamName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTeamName(e.target.value)}
                 placeholder={t('teams.portal.myTeam.teamNamePlaceholder', 'Enter team name...')}
-                className="max-w-md"
+                className="max-w-md rounded-xl"
                 autoFocus
               />
             </div>
@@ -262,12 +266,12 @@ function NoTeamView({
                 value={teamDesc}
                 onChange={(e) => setTeamDesc(e.target.value)}
                 placeholder={t('teams.portal.myTeam.teamDescPlaceholder', 'Describe your team idea or project...')}
-                className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full max-w-md rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
                 rows={3}
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleCreateTeam} disabled={!teamName.trim() || creating}>
+              <Button onClick={handleCreateTeam} disabled={!teamName.trim() || creating} className="bg-portal-primary hover:bg-portal-primary/90">
                 {creating ? t('common.saving', 'Saving...') : t('teams.portal.myTeam.createTeamSubmit', 'Create Team')}
               </Button>
               <Button variant="outline" onClick={() => setShowCreateForm(false)}>
@@ -275,68 +279,69 @@ function NoTeamView({
               </Button>
             </div>
           </div>
-        </PortalCard>
+        </div>
       )}
 
-      {/* ── Looking for Team Description (expanded) ── */}
+      {/* Looking for Team Description (expanded) */}
       {lookingForTeam && (
-        <PortalCard>
-          <PortalCardHeader title={t('teams.portal.myTeam.lookingProfile', 'Your Looking-for-Team Profile')} />
-          <div className="px-6 pb-6 space-y-3">
-            <p className="text-sm text-muted-foreground">
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <h3 className="text-lg font-semibold mb-3">{t('teams.portal.myTeam.lookingProfile', 'Your Looking-for-Team Profile')}</h3>
+          <div className="space-y-3">
+            <p className="text-sm text-portal-secondary">
               {t('teams.portal.myTeam.lookingDesc', 'Describe what you are looking for (skills, project ideas, etc.)')}
             </p>
             <textarea
               value={lookingDescription}
               onChange={(e) => setLookingDescription(e.target.value)}
               placeholder={t('teams.portal.myTeam.lookingDescPlaceholder', 'I am interested in AI/ML projects, have experience with Python and React...')}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
               rows={3}
             />
             <Button variant="outline" size="sm" onClick={handleSaveLookingDescription} disabled={updatingLooking}>
               {t('common.save', 'Save')}
             </Button>
           </div>
-        </PortalCard>
+        </div>
       )}
 
-      {/* ── Received Invitations ── */}
+      {/* Received Invitations */}
       {receivedInvitations.length > 0 && (
-        <PortalCard>
-          <PortalCardHeader title={`${t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')} (${receivedInvitations.length})`} />
-          <div className="px-6 pb-6">
-            <div className="divide-y">
-              {receivedInvitations.map((inv) => (
-                <div key={inv.id} className="py-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-semibold">
-                      {(inv.team_name ?? 'T')[0].toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {inv.team_name ?? t('teams.portal.myTeam.aTeam', 'A team')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
-                      </p>
-                      {inv.message && (
-                        <p className="text-xs text-muted-foreground/80 mt-0.5 italic">&ldquo;{inv.message}&rdquo;</p>
-                      )}
-                    </div>
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <h3 className="text-lg font-semibold mb-4">
+            {t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')}{' '}
+            <PortalBadge variant="info">{receivedInvitations.length}</PortalBadge>
+          </h3>
+          <div className="divide-y divide-gray-50">
+            {receivedInvitations.map((inv) => (
+              <div key={inv.id} className="py-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-sm font-semibold">
+                    {(inv.team_name ?? 'T')[0].toUpperCase()}
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')}>
-                      {t('common.accept', 'Accept')}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleRespondInvitation(inv.id, 'decline')}>
-                      {t('common.decline', 'Decline')}
-                    </Button>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {inv.team_name ?? t('teams.portal.myTeam.aTeam', 'A team')}
+                    </p>
+                    <p className="text-xs text-portal-secondary">
+                      {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
+                    </p>
+                    {inv.message && (
+                      <p className="text-xs text-portal-secondary/80 mt-0.5 italic">&ldquo;{inv.message}&rdquo;</p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')} className="bg-portal-primary hover:bg-portal-primary/90">
+                    {t('common.accept', 'Accept')}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleRespondInvitation(inv.id, 'decline')}>
+                    {t('common.decline', 'Decline')}
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        </PortalCard>
+        </div>
       )}
     </div>
   )
@@ -428,9 +433,9 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
   }
 
   return (
-    <div className="pt-4 mt-4 border-t">
+    <div className="pt-4 mt-4 border-t border-gray-100">
       {!showForm ? (
-        <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="w-full">
+        <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="w-full rounded-xl">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
             <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
@@ -439,23 +444,23 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
         </Button>
       ) : (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium">{t('teams.portal.myTeam.inviteMember', 'Invite Member')}</h4>
+          <h4 className="text-sm font-semibold text-foreground">{t('teams.portal.myTeam.inviteMember', 'Invite Member')}</h4>
 
           {/* Email/Name search with autocomplete */}
           <div>
-            <label className="block text-xs font-medium mb-1">
+            <label className="block text-xs font-medium text-portal-secondary mb-1">
               {t('teams.portal.myTeam.searchParticipant', 'Search by email or name')}
             </label>
             {inviteeId ? (
-              <div className="flex items-center gap-2 rounded-md border border-input bg-muted/30 px-3 py-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-[10px] font-semibold">
                   {inviteeName.slice(0, 2).toUpperCase()}
                 </div>
                 <span className="text-sm flex-1 truncate">{inviteeName}</span>
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="text-muted-foreground hover:text-foreground text-xs"
+                  className="text-portal-secondary hover:text-foreground text-xs"
                   aria-label="Clear"
                 >
                   &times;
@@ -474,13 +479,13 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                   }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder={t('teams.portal.myTeam.searchPlaceholder', 'Type email or name...')}
-                  className="text-sm"
+                  className="text-sm rounded-xl"
                   autoFocus
                 />
                 {showDropdown && searchQuery.length >= 2 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white shadow-lg max-h-48 overflow-y-auto">
                     {results.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                      <div className="px-3 py-2 text-xs text-portal-secondary">
                         {t('teams.portal.myTeam.noResults', 'No participants found')}
                       </div>
                     ) : (
@@ -489,14 +494,14 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                           key={user.id}
                           type="button"
                           onClick={() => handleSelectUser(user)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-xs font-semibold">
                             {(user.displayName || user.email)[0].toUpperCase()}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{user.displayName}</p>
-                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                            <p className="text-xs text-portal-secondary truncate">{user.email}</p>
                           </div>
                         </button>
                       ))
@@ -508,19 +513,19 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1">
+            <label className="block text-xs font-medium text-portal-secondary mb-1">
               {t('teams.portal.myTeam.inviteMessage', 'Message (optional)')}
             </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('teams.portal.myTeam.inviteMessagePlaceholder', 'Hey, want to join our team?')}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
               rows={2}
             />
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleInvite} disabled={!inviteeId || sending}>
+            <Button size="sm" onClick={handleInvite} disabled={!inviteeId || sending} className="bg-portal-primary hover:bg-portal-primary/90">
               {sending ? t('common.sending', 'Sending...') : t('teams.portal.myTeam.sendInvite', 'Send Invite')}
             </Button>
             <Button size="sm" variant="outline" onClick={() => { setShowForm(false); handleClearSelection(); setMessage('') }}>
@@ -550,6 +555,7 @@ function TeamView({
 }) {
   const t = useT()
   const queryClient = useQueryClient()
+  const { selected } = useCompetitionContext()
   const isOwner = membership.role === 'owner'
 
   // Fetch tracks for selection
@@ -559,11 +565,8 @@ function TeamView({
       const { ok, result } = await apiCall<{ items: Track[] }>(
         `/api/competitions/portal/competition-data?competition_id=${competitionId}&type=tracks`,
       )
-      // Fallback: try CRUD if portal endpoint doesn't support tracks
-      if (!ok) {
-        return fetchCrudList<Track>('tracks/tracks', { competition_id: competitionId, pageSize: '50' })
-      }
-      return result ?? { items: [] }
+      if (!ok || !result) return { items: [] as Track[] }
+      return result
     },
     enabled: !!competitionId && isOwner,
   })
@@ -649,47 +652,74 @@ function TeamView({
     }
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Team Details */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <PortalCard>
-          <PortalCardHeader title={team.name} />
-          <div className="px-6 pb-6 space-y-3">
-            {team.description && (
-              <p className="text-sm text-muted-foreground">{team.description}</p>
-            )}
-            <div className="flex items-center gap-3 text-sm">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  team.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : team.status === 'disqualified'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {team.status}
-              </span>
-              <span className="text-muted-foreground">
-                {t('teams.portal.myTeam.yourRole', 'Your role')}:{' '}
-                <strong className="text-foreground capitalize">{membership.role}</strong>
-              </span>
-            </div>
+  // Compute selected track info
+  const selectedTrack = tracks.find((tr) => tr.id === (selectedTrackId || team.track_id))
 
-            {/* Track Selection (owner only) */}
+  // Milestones for the timeline
+  const milestones = [
+    { label: 'Team formed', done: true },
+    { label: 'Track selected', done: !!team.track_id },
+    { label: 'Project submitted', done: team.status === 'submitted' || team.status === 'presented' },
+    { label: 'Presentation done', done: team.status === 'presented' },
+  ]
+  const milestoneDoneCount = milestones.filter((m) => m.done).length
+  const milestoneProgress = Math.round((milestoneDoneCount / milestones.length) * 100)
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+      {/* ---- Left Column ---- */}
+      <div className="space-y-6">
+        {/* Active Collaborators */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionLabel>Active Collaborators</SectionLabel>
+            <PortalBadge variant="primary">{members.length}</PortalBadge>
+          </div>
+
+          {members.length === 0 ? (
+            <p className="text-sm text-portal-secondary">
+              {t('teams.portal.myTeam.noMembers', 'No members yet.')}
+            </p>
+          ) : (
+            <div>
+              {members.map((m) => (
+                <div key={m.id} className="flex items-center gap-4 py-4 border-b border-gray-50 last:border-0">
+                  <div className="size-12 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600">
+                    {resolveInitials(m.customer_user_id)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-foreground">{resolveUser(m.customer_user_id)}</p>
+                    <p className="text-xs text-portal-secondary capitalize">{m.role}</p>
+                  </div>
+                  <PortalBadge variant={m.role === 'owner' ? 'primary' : 'muted'}>
+                    {m.role}
+                  </PortalBadge>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Invite Member (owner only) */}
+          {isOwner && <InviteMemberSection teamId={team.id} competitionId={competitionId} />}
+        </div>
+
+        {/* Track Info */}
+        {(isOwner || team.track_id) && (
+          <div className="rounded-xl border border-gray-100 bg-white p-6">
+            <SectionLabel className="mb-3 block">Track</SectionLabel>
+
             {isOwner && tracks.length > 0 && (
-              <div className="pt-3 border-t">
-                <label className="block text-sm font-medium mb-1">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
                   {t('teams.portal.myTeam.selectTrack', 'Track')}
                 </label>
                 <select
                   value={selectedTrackId}
                   onChange={(e) => handleSelectTrack(e.target.value)}
-                  className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm w-full max-w-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="h-9 rounded-xl border border-gray-200 bg-background px-3 py-1 text-sm w-full max-w-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
                 >
                   <option value="">
-                    {t('teams.portal.myTeam.noTrack', '— No track selected —')}
+                    {t('teams.portal.myTeam.noTrack', '-- No track selected --')}
                   </option>
                   {tracks.map((track) => (
                     <option key={track.id} value={track.id}>
@@ -697,138 +727,187 @@ function TeamView({
                     </option>
                   ))}
                 </select>
+                {selectedTrack?.description && (
+                  <p className="mt-2 text-sm text-portal-secondary">{selectedTrack.description}</p>
+                )}
               </div>
             )}
 
             {/* Show selected track for non-owners */}
-            {!isOwner && team.track_id && tracks.length > 0 && (
-              <div className="pt-3 border-t">
-                <span className="text-sm text-muted-foreground">
+            {!isOwner && team.track_id && (
+              <div>
+                <p className="text-sm text-portal-secondary">
                   {t('teams.portal.myTeam.track', 'Track')}:{' '}
                   <strong className="text-foreground">
                     {tracks.find((tr) => tr.id === team.track_id)?.name ?? team.track_id}
                   </strong>
-                </span>
+                </p>
               </div>
             )}
           </div>
-        </PortalCard>
+        )}
 
-        {/* Members Card */}
-        <PortalCard>
-          <PortalCardHeader title={`${t('teams.portal.myTeam.members', 'Team Members')} (${members.length})`} />
-          <div className="px-6 pb-6">
-            {members.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t('teams.portal.myTeam.noMembers', 'No members yet.')}
-              </p>
-            ) : (
-              <div className="divide-y">
-                {members.map((m) => (
-                  <div key={m.id} className="py-2.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                        {resolveInitials(m.customer_user_id)}
+        {/* Invitations / Join Requests */}
+        {(teamRequests.length > 0 || receivedInvitations.length > 0) && (
+          <div className="rounded-xl border border-gray-100 bg-white p-6">
+            <SectionLabel className="mb-4 block">
+              {t('teams.portal.myTeam.invitations', 'Invitations & Requests')}
+            </SectionLabel>
+            <div className="space-y-4">
+              {/* Join requests to this team (visible to owner) */}
+              {isOwner && teamRequests.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">
+                    {t('teams.portal.myTeam.joinRequests', 'Join Requests')}
+                  </h4>
+                  <div className="divide-y divide-gray-50">
+                    {teamRequests.map((inv) => (
+                      <div key={inv.id} className="py-3 flex items-center justify-between">
+                        <div className="text-sm">
+                          <span className="font-semibold">{resolveUser(inv.inviter_id)}</span>
+                          {' '}
+                          {t('teams.portal.myTeam.wantsToJoin', 'wants to join')}
+                          {inv.message && (
+                            <p className="text-portal-secondary text-xs mt-0.5">{inv.message}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 ml-4 shrink-0">
+                          <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')} className="bg-portal-primary hover:bg-portal-primary/90">
+                            {t('common.approve', 'Approve')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRespondInvitation(inv.id, 'decline')}
+                          >
+                            {t('common.decline', 'Decline')}
+                          </Button>
+                        </div>
                       </div>
-                      <span className="text-sm font-medium">{resolveUser(m.customer_user_id)}</span>
-                    </div>
-                    <span
-                      className={`text-xs rounded px-1.5 py-0.5 capitalize ${
-                        m.role === 'owner'
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {m.role}
-                    </span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* Invite Member (owner only) */}
-            {isOwner && <InviteMemberSection teamId={team.id} competitionId={competitionId} />}
+              {/* Invitations I've received (from other teams) */}
+              {receivedInvitations.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">
+                    {t('teams.portal.myTeam.receivedInvitations', 'Invitations Received')}
+                  </h4>
+                  <div className="divide-y divide-gray-50">
+                    {receivedInvitations.map((inv) => (
+                      <div key={inv.id} className="py-3 flex items-center justify-between">
+                        <div className="text-sm">
+                          <span className="font-semibold">{inv.team_name ?? inv.team_id.slice(0, 8) + '...'}</span>
+                          {' '}
+                          {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
+                          {inv.message && (
+                            <p className="text-portal-secondary text-xs mt-0.5">{inv.message}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 ml-4 shrink-0">
+                          <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')} className="bg-portal-primary hover:bg-portal-primary/90">
+                            {t('common.accept', 'Accept')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRespondInvitation(inv.id, 'decline')}
+                          >
+                            {t('common.decline', 'Decline')}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </PortalCard>
+        )}
       </div>
 
-      {/* Invitations / Join Requests */}
-      {(teamRequests.length > 0 || receivedInvitations.length > 0) && (
-        <PortalCard>
-          <PortalCardHeader title={t('teams.portal.myTeam.invitations', 'Invitations & Requests')} />
-          <div className="px-6 pb-6 space-y-4">
-            {/* Join requests to this team (visible to owner) */}
-            {isOwner && teamRequests.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">
-                  {t('teams.portal.myTeam.joinRequests', 'Join Requests')}
-                </h4>
-                <div className="divide-y">
-                  {teamRequests.map((inv) => (
-                    <div key={inv.id} className="py-3 flex items-center justify-between">
-                      <div className="text-sm">
-                        <span className="font-medium">{resolveUser(inv.inviter_id)}</span>
-                        {' '}
-                        {t('teams.portal.myTeam.wantsToJoin', 'wants to join')}
-                        {inv.message && (
-                          <p className="text-muted-foreground text-xs mt-0.5">{inv.message}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 ml-4 shrink-0">
-                        <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')}>
-                          {t('common.approve', 'Approve')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRespondInvitation(inv.id, 'decline')}
-                        >
-                          {t('common.decline', 'Decline')}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* ---- Right Column (Sidebar) ---- */}
+      <div className="space-y-6">
+        {/* Hackathon Progress */}
+        <GradientCard>
+          <SectionLabel className="!text-white/70 mb-2 block">Hackathon Progress</SectionLabel>
+          {selected?.ends_at ? (
+            <>
+              <p className="font-mono text-4xl font-bold leading-none tracking-tight text-white">
+                {(() => {
+                  const diff = new Date(selected.ends_at).getTime() - Date.now()
+                  const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)))
+                  return String(hours).padStart(2, '0')
+                })()}h
+              </p>
+              <p className="mt-1 text-sm text-white/70">Remaining until final presentation</p>
+            </>
+          ) : (
+            <p className="text-sm text-white/70">No end date set</p>
+          )}
+        </GradientCard>
 
-            {/* Invitations I've received (from other teams) */}
-            {receivedInvitations.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">
-                  {t('teams.portal.myTeam.receivedInvitations', 'Invitations Received')}
-                </h4>
-                <div className="divide-y">
-                  {receivedInvitations.map((inv) => (
-                    <div key={inv.id} className="py-3 flex items-center justify-between">
-                      <div className="text-sm">
-                        <span className="font-medium">{inv.team_name ?? inv.team_id.slice(0, 8) + '...'}</span>
-                        {' '}
-                        {t('teams.portal.myTeam.invitedYou', 'invited you to join')}
-                        {inv.message && (
-                          <p className="text-muted-foreground text-xs mt-0.5">{inv.message}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 ml-4 shrink-0">
-                        <Button size="sm" onClick={() => handleRespondInvitation(inv.id, 'accept')}>
-                          {t('common.accept', 'Accept')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRespondInvitation(inv.id, 'decline')}
-                        >
-                          {t('common.decline', 'Decline')}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Team Info Card */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <SectionLabel className="mb-3 block">Team Info</SectionLabel>
+          {team.description && (
+            <p className="text-sm text-portal-secondary mb-3">{team.description}</p>
+          )}
+          <div className="flex items-center gap-2 text-sm">
+            <PortalBadge variant={
+              team.status === 'active' ? 'success'
+                : team.status === 'disqualified' ? 'danger'
+                  : 'muted'
+            }>
+              {team.status}
+            </PortalBadge>
+            <span className="text-portal-secondary">
+              {t('teams.portal.myTeam.yourRole', 'Your role')}:{' '}
+              <strong className="text-foreground capitalize">{membership.role}</strong>
+            </span>
           </div>
-        </PortalCard>
-      )}
+        </div>
+
+        {/* Milestones */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <SectionLabel className="mb-3 block">Milestones</SectionLabel>
+          <ProgressBar value={milestoneProgress} label={`${milestoneDoneCount} of ${milestones.length} complete`} size="sm" className="mb-4" />
+          <div className="space-y-0">
+            {milestones.map((ms, idx) => (
+              <div key={idx} className="flex items-start gap-3 relative">
+                {/* Connector line */}
+                {idx < milestones.length - 1 && (
+                  <div className={cn(
+                    'absolute left-[7px] top-4 w-0.5 h-full',
+                    ms.done ? 'bg-portal-primary' : 'bg-gray-200',
+                  )} />
+                )}
+                {/* Dot */}
+                <div className={cn(
+                  'relative z-10 mt-1 size-[15px] rounded-full border-2 shrink-0',
+                  ms.done
+                    ? 'border-portal-primary bg-portal-primary'
+                    : 'border-gray-300 bg-white',
+                )}>
+                  {ms.done && (
+                    <svg className="size-full text-white p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className={cn(
+                  'text-sm py-1.5',
+                  ms.done ? 'text-foreground font-medium' : 'text-portal-secondary',
+                )}>
+                  {ms.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -878,9 +957,9 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
 
   if (isLoading) {
     return (
-      <PortalCard>
-        <div className="p-6 text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</div>
-      </PortalCard>
+      <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <p className="text-sm text-portal-secondary">{t('common.loading', 'Loading...')}</p>
+      </div>
     )
   }
 
@@ -913,15 +992,13 @@ export default function MyTeamPage({ params }: { params: { orgSlug: string } }) 
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader
-          title={t('teams.portal.myTeam.title', 'My Team')}
-          label={t('teams.portal.myTeam.label', 'Your team')}
-        />
-        <MyTeamContent orgSlug={params.orgSlug} />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <PortalPageTitle
+        label="Workspace"
+        title={t('teams.portal.myTeam.title', 'My Team')}
+        rightElement={null}
+      />
+      <MyTeamContent orgSlug={params.orgSlug} />
+    </PortalCompetitionLayout>
   )
 }

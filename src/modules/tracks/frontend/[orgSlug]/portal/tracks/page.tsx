@@ -3,13 +3,21 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { cn } from '@open-mercato/shared/lib/utils'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
-import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
-import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import {
+  PortalPageTitle,
+  SectionLabel,
+  GradientCard,
+  PortalBadge,
+  AvatarStack,
+  ActionLink,
+  CountdownWidget,
+} from '@/components/portal'
 
 type Track = {
   id: string; name: string; description: string | null; color: string
@@ -39,14 +47,15 @@ const LUCIDE_PATHS: Record<string, React.ReactNode> = {
   wifi: <><path d="M12 20h.01" /><path d="M2 8.82a15 15 0 0 1 20 0" /><path d="M5 12.859a10 10 0 0 1 14 0" /><path d="M8.5 16.429a5 5 0 0 1 7 0" /></>,
 }
 
-function TrackIcon({ color, iconUrl }: { color: string; iconUrl: string | null }) {
+function TrackIcon({ color, iconUrl, size = 'md' }: { color: string; iconUrl: string | null; size?: 'sm' | 'md' | 'lg' }) {
   const iconName = iconUrl?.startsWith('lucide:') ? iconUrl.replace('lucide:', '') : null
   const paths = iconName ? LUCIDE_PATHS[iconName] : null
+  const dims = size === 'lg' ? { box: 'h-14 w-14', svg: 28 } : size === 'sm' ? { box: 'h-9 w-9', svg: 18 } : { box: 'h-11 w-11', svg: 24 }
 
   return (
-    <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: `${color}15` }}>
+    <div className={cn('flex items-center justify-center rounded-xl', dims.box)} style={{ backgroundColor: `${color}15` }}>
       {paths ? (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width={dims.svg} height={dims.svg} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {paths}
         </svg>
       ) : (
@@ -56,15 +65,48 @@ function TrackIcon({ color, iconUrl }: { color: string; iconUrl: string | null }
   )
 }
 
+/* ---------- Placeholder avatar data for track cards ---------- */
+const PLACEHOLDER_AVATARS = [
+  { name: 'Alice' },
+  { name: 'Bob' },
+  { name: 'Charlie' },
+  { name: 'Dana' },
+  { name: 'Eve' },
+]
+
+/* ---------- Filter pill button ---------- */
+function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+        active
+          ? 'bg-portal-primary text-white'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+/* ---------- Main content ---------- */
 function TracksContent() {
   const t = useT()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, selected } = useCompetitionContext()
+  const [activeFilter, setActiveFilter] = React.useState('all')
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-tracks', selectedId],
-    queryFn: () => {
-      if (!selectedId) return { items: [] as Track[], total: 0, page: 1, pageSize: 50, totalPages: 0 }
-      return fetchCrudList<Track>('tracks/tracks', { pageSize: '50', sortField: 'sort_order', sortDir: 'asc', competition_id: selectedId })
+    queryFn: async () => {
+      if (!selectedId) return { items: [] as Track[] }
+      const { ok, result } = await apiCall<{ items: Track[] }>(
+        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=tracks`,
+      )
+      if (!ok || !result) return { items: [] as Track[] }
+      return result
     },
     enabled: !!selectedId,
   })
@@ -76,70 +118,211 @@ function TracksContent() {
   const tracks = data?.items ?? []
 
   if (isLoading) {
-    return <PortalCard><div className="p-6 text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</div></PortalCard>
+    return (
+      <div className="flex flex-col gap-6">
+        <PortalPageTitle
+          label={t('tracks.portal.hubLabel', 'Competition Hub')}
+          title={t('tracks.portal.title', 'Competition Tracks')}
+        />
+        <div className="rounded-xl border border-gray-100 bg-white p-8">
+          <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
+        </div>
+      </div>
+    )
   }
 
   if (tracks.length === 0) {
-    return <PortalEmptyState title={t('tracks.portal.empty', 'No tracks available')} description={t('tracks.portal.emptyDesc', 'Tracks will be published by the organizers soon.')} />
+    return (
+      <div className="flex flex-col gap-6">
+        <PortalPageTitle
+          label={t('tracks.portal.hubLabel', 'Competition Hub')}
+          title={t('tracks.portal.title', 'Competition Tracks')}
+          rightElement={selected?.ends_at ? <CountdownWidget targetDate={selected.ends_at} /> : undefined}
+        />
+        <PortalEmptyState title={t('tracks.portal.empty', 'No tracks available')} description={t('tracks.portal.emptyDesc', 'Tracks will be published by the organizers soon.')} />
+      </div>
+    )
   }
 
+  // Use the first track as the "featured active" track
+  const featuredTrack = tracks[0]
+
+  // Derive unique category-like names from track names for filter pills
+  const filterLabels = ['All Tracks', ...tracks.map(tr => tr.name)]
+
+  // Filtered tracks for the grid
+  const filteredTracks = activeFilter === 'all'
+    ? tracks
+    : tracks.filter(tr => tr.name === activeFilter)
+
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {tracks.map((track, idx) => (
-        <div key={track.id} className="group relative flex flex-col rounded-xl border bg-card transition-all hover:shadow-lg hover:border-border/80">
-          {/* Header with track number */}
-          <div className="px-6 pt-5 pb-0">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                {t('tracks.portal.trackNumber', 'Track')} {String(idx + 1).padStart(2, '0')}
-              </span>
-              {track.max_teams && (
-                <span className="text-[10px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {track.max_teams} {t('tracks.portal.teams', 'teams max')}
-                </span>
-              )}
+    <div className="flex flex-col gap-8">
+      {/* ---- Page header ---- */}
+      <PortalPageTitle
+        label={t('tracks.portal.hubLabel', 'Competition Hub')}
+        title={t('tracks.portal.title', 'Competition Tracks')}
+        rightElement={selected?.ends_at ? <CountdownWidget targetDate={selected.ends_at} /> : undefined}
+      />
+
+      {/* ---- Top row: Featured track + Prize pool ---- */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* Featured active track card */}
+        <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div>
+            <PortalBadge variant="success" className="mb-4">
+              {t('tracks.portal.activeTrack', 'Active Track')}
+            </PortalBadge>
+            <div className="mb-3 flex items-center gap-3">
+              <TrackIcon color={featuredTrack.color} iconUrl={featuredTrack.icon_url} size="lg" />
+              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+                {featuredTrack.name}
+              </h2>
             </div>
-
-            {/* Icon */}
-            <div className="mb-4">
-              <TrackIcon color={track.color} iconUrl={track.icon_url} />
-            </div>
-
-            {/* Title */}
-            <h3 className="text-lg font-bold leading-tight mb-2">{track.name}</h3>
-
-            {/* Description */}
-            {track.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{track.description}</p>
+            {featuredTrack.description && (
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                {featuredTrack.description}
+              </p>
             )}
           </div>
-
-          {/* Footer with category badge */}
-          <div className="mt-auto px-6 pb-5 pt-2">
-            <span
-              className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider"
-              style={{
-                borderColor: track.color,
-                color: track.color,
-              }}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-3">
+              <AvatarStack avatars={PLACEHOLDER_AVATARS} max={3} size="sm" />
+              <span className="text-sm font-medium text-muted-foreground">
+                12 / {featuredTrack.max_teams ?? 15} {t('tracks.portal.teamsJoined', 'Teams Joined')}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="rounded-lg bg-portal-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90"
             >
-              {track.name}
-            </span>
+              {t('tracks.portal.viewDashboard', 'View Dashboard')}
+            </button>
           </div>
-
-          {/* Left color accent bar */}
-          <div
-            className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ backgroundColor: track.color }}
-          />
         </div>
-      ))}
+
+        {/* Prize pool gradient card */}
+        <GradientCard className="lg:col-span-2 flex flex-col justify-between">
+          <div>
+            <SectionLabel className="mb-2 !text-white/70">{t('tracks.portal.totalPrizePool', 'Total Prize Pool')}</SectionLabel>
+            <p className="font-display text-4xl font-bold tracking-tight">$25,000</p>
+          </div>
+          <div className="mt-6">
+            <ActionLink href="#" className="!text-white/90 hover:!text-white">
+              {t('tracks.portal.viewRewards', 'View Reward Breakdown')}
+            </ActionLink>
+          </div>
+        </GradientCard>
+      </div>
+
+      {/* ---- Track grid section ---- */}
+      <div className="flex flex-col gap-5">
+        {/* Section header with filter pills */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
+            {t('tracks.portal.availableTracks', 'Available Tracks')}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill
+              label={t('tracks.portal.allTracks', 'All Tracks')}
+              active={activeFilter === 'all'}
+              onClick={() => setActiveFilter('all')}
+            />
+            {tracks.map(tr => (
+              <FilterPill
+                key={tr.id}
+                label={tr.name}
+                active={activeFilter === tr.name}
+                onClick={() => setActiveFilter(tr.name)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Track cards grid */}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredTracks.map((track, idx) => {
+            const globalIdx = tracks.findIndex(tr => tr.id === track.id)
+            const teamCount = 4 + ((globalIdx * 3) % 12) // pseudo-random placeholder team count
+            const maxTeams = track.max_teams ?? 20
+
+            return (
+              <div
+                key={track.id}
+                className="group relative flex flex-col rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md"
+              >
+                <div className="flex flex-col gap-3 px-6 pt-5 pb-4">
+                  {/* Track number */}
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
+                    {t('tracks.portal.trackNumber', 'Track')} {String(globalIdx + 1).padStart(2, '0')}
+                  </span>
+
+                  {/* Icon */}
+                  <TrackIcon color={track.color} iconUrl={track.icon_url} />
+
+                  {/* Name */}
+                  <h3 className="text-lg font-bold leading-tight text-foreground">{track.name}</h3>
+
+                  {/* Description */}
+                  {track.description && (
+                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                      {track.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bottom accent bar */}
+                <div className="mx-6 h-1 rounded-full" style={{ backgroundColor: track.color }} />
+
+                {/* Footer */}
+                <div className="flex items-center justify-between gap-2 px-6 pb-5 pt-4">
+                  <div className="flex items-center gap-2">
+                    <AvatarStack
+                      avatars={PLACEHOLDER_AVATARS.slice(0, Math.min(teamCount, 5))}
+                      max={3}
+                      size="sm"
+                    />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <ActionLink href="#" className="text-[11px]">
+                      {t('tracks.portal.details', 'Details')}
+                    </ActionLink>
+                    <button
+                      type="button"
+                      className="rounded-lg bg-portal-primary px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90"
+                    >
+                      {t('tracks.portal.joinTrack', 'Join Track')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Suggestion card (always last) */}
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-foreground">
+              {t('tracks.portal.suggestTitle', "Don't see your track?")}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('tracks.portal.suggestDesc', 'Suggest a wild-card track to the admins')}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
+/* ---------- Page entry point ---------- */
 export default function TracksPortalPage({ params }: { params: { orgSlug: string } }) {
-  const t = useT()
   const router = useRouter()
   const { auth } = usePortalContext()
 
@@ -150,12 +333,8 @@ export default function TracksPortalPage({ params }: { params: { orgSlug: string
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader title={t('tracks.portal.title', 'Tracks')} label={t('tracks.portal.label', 'Competition Categories')} />
-        <TracksContent />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <TracksContent />
+    </PortalCompetitionLayout>
   )
 }

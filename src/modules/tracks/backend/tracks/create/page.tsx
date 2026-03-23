@@ -65,12 +65,19 @@ export default function CreateTrackPage() {
         </div>
       ),
     },
+    { id: 'category', label: t('tracks.fields.category', 'Category'), type: 'text' },
+    { id: 'badge', label: t('tracks.fields.badge', 'Badge'), type: 'select', options: [
+      { value: '', label: 'None' },
+      { value: 'new', label: 'NEW' },
+      { value: 'hot', label: 'HOT' },
+      { value: 'stability', label: 'STABILITY' },
+    ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
   ], [t, loadCompetitions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description'] },
+    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'badge'] },
     { id: 'appearance', title: t('tracks.groups.appearance', 'Appearance'), column: 2, fields: ['color', 'icon_url'] },
     { id: 'settings', title: t('tracks.groups.settings', 'Settings'), column: 1, fields: ['max_teams', 'order'] },
   ], [t])

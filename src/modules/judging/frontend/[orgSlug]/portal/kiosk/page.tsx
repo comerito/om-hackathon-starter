@@ -3,7 +3,10 @@ import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { cn } from '@open-mercato/shared/lib/utils'
+import { AvatarStack } from '@/components/portal'
 
 type DemoItem = {
   id: string; team_name: string | null; project_title: string | null
@@ -14,12 +17,6 @@ type DemoItem = {
 type QueueResponse = {
   presenting: DemoItem | null; on_deck: DemoItem | null
   queue: DemoItem[]; server_time: number
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 function KioskContent() {
@@ -46,7 +43,6 @@ function KioskContent() {
   const presenting = data?.presenting
   const onDeck = data?.on_deck
 
-  // Timer computation
   let timeRemaining: number | null = null
   let phase = ''
   if (presenting?.actual_start) {
@@ -65,11 +61,17 @@ function KioskContent() {
   }
 
   const isTimerUp = timeRemaining === 0
-  const timerColor = isTimerUp ? '#ef4444' : timeRemaining !== null && timeRemaining < 30 ? '#ef4444' : timeRemaining !== null && timeRemaining < 60 ? '#eab308' : '#22c55e'
+  const totalDuration = presenting ? (presenting.presentation_duration_minutes + presenting.qa_duration_minutes) * 60 : 0
+  const progress = totalDuration > 0 && timeRemaining !== null ? ((totalDuration - timeRemaining) / totalDuration) * 100 : 0
+
+  const minutes = timeRemaining !== null ? Math.floor(timeRemaining / 60) : 0
+  const seconds = timeRemaining !== null ? timeRemaining % 60 : 0
+
+  const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-portal-dark flex items-center justify-center">
         <p className="text-white/40 text-[3vh]">Loading...</p>
       </div>
     )
@@ -77,13 +79,13 @@ function KioskContent() {
 
   if (!presenting) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-portal-dark flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-[4vh] opacity-60">Waiting for next presentation...</p>
+          <p className="text-white/50 text-[4vh]">Waiting for next presentation...</p>
           {onDeck && (
             <div className="mt-8">
-              <p className="text-yellow-400 text-[3vh] uppercase tracking-wider">Up Next</p>
-              <p className="text-white text-[6vh] font-bold mt-2">{onDeck.team_name ?? 'Team'}</p>
+              <p className="text-portal-primary text-[2vh] uppercase tracking-[0.3em]">Up Next</p>
+              <p className="text-white text-[6vh] font-extrabold uppercase mt-2">{onDeck.team_name ?? 'Team'}</p>
             </div>
           )}
         </div>
@@ -92,39 +94,105 @@ function KioskContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-[4vh]">
-      {/* Phase indicator */}
-      <div className="text-[3vh] uppercase tracking-[0.3em] font-medium mb-[2vh]" style={{ color: timerColor }}>
-        {phase}
+    <div className="min-h-screen bg-portal-dark flex flex-col relative overflow-hidden">
+      {/* Top status bar */}
+      <div className="flex items-center justify-between px-8 py-4">
+        <div className="flex items-center gap-2">
+          <span className="size-2.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-[1.5vh] font-medium uppercase tracking-[0.2em] text-white/50">
+            Live Submissions Phase
+          </span>
+        </div>
+        <div className="flex items-center gap-6 text-white/40">
+          <div className="text-right">
+            <span className="text-[1.2vh] uppercase tracking-widest block">Local Time</span>
+            <span className="text-[2vh] font-mono font-bold text-white/60">{localTime}</span>
+          </div>
+          <div className="text-right">
+            <span className="text-[1.2vh] uppercase tracking-widest block">Status</span>
+            <span className="text-[2vh] font-bold text-green-400">Active</span>
+          </div>
+        </div>
       </div>
 
-      {/* Team name — minimum 8% viewport height */}
-      <h1 className="text-white font-bold text-center leading-tight mb-[2vh]" style={{ fontSize: 'max(8vh, 48px)' }}>
-        {presenting.team_name ?? 'Team'}
-      </h1>
-
-      {/* Project title */}
-      <p className="text-white/60 text-[3vh] text-center mb-[4vh]">
-        {presenting.project_title}
-      </p>
-
-      {/* Timer — minimum 20% viewport height */}
-      {timeRemaining !== null && (
-        <div
-          className="font-mono font-bold tabular-nums text-center leading-none"
-          style={{ fontSize: 'max(20vh, 120px)', color: timerColor }}
-          aria-label={`${Math.floor(timeRemaining / 60)} minutes ${timeRemaining % 60} seconds remaining`}
-          role="timer"
-        >
-          {isTimerUp ? "TIME'S UP" : formatTime(timeRemaining)}
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-8">
+        {/* Current team label */}
+        <div className="flex items-center gap-4 mb-4">
+          <span className="text-portal-primary text-[2vh] font-semibold uppercase tracking-[0.2em]">
+            Current Team
+          </span>
+          <div className="h-px w-12 bg-portal-primary" />
         </div>
-      )}
 
-      {/* On Deck */}
+        {/* Team name - giant */}
+        <h1
+          className="text-white font-extrabold text-center uppercase leading-none tracking-tight"
+          style={{ fontSize: 'clamp(48px, 10vw, 140px)' }}
+        >
+          {presenting.team_name ?? 'TEAM'}
+        </h1>
+
+        {/* Project tagline */}
+        <p className="text-white/40 text-[2.5vh] text-center mt-2 max-w-4xl">
+          {presenting.project_title}
+        </p>
+
+        {/* Timer */}
+        {timeRemaining !== null && (
+          <div className="mt-12" role="timer" aria-label={`${minutes} minutes ${seconds} seconds remaining`}>
+            <div className="flex items-baseline justify-center">
+              <span className="font-mono font-bold text-white tabular-nums" style={{ fontSize: 'clamp(80px, 18vw, 200px)' }}>
+                {String(minutes).padStart(2, '0')}
+              </span>
+              <span className="font-mono font-bold text-portal-primary mx-2" style={{ fontSize: 'clamp(60px, 14vw, 160px)' }}>
+                :
+              </span>
+              <span className={cn(
+                'font-mono font-bold tabular-nums',
+                isTimerUp ? 'text-portal-danger' : 'text-portal-primary',
+              )} style={{ fontSize: 'clamp(80px, 18vw, 200px)' }}>
+                {isTimerUp ? '!!' : String(seconds).padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-4 w-full max-w-2xl mx-auto h-2 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-portal-primary transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {/* Phase labels */}
+            <div className="flex items-center justify-between mt-2 text-[1.3vh] uppercase tracking-widest">
+              <span className="text-white/30">Phase Started</span>
+              <span className="text-portal-tertiary font-semibold">Hard Deadline: 00:00:00</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom: Up Next bar */}
       {onDeck && (
-        <div className="mt-[4vh] text-center">
-          <p className="text-yellow-400/80 text-[2vh] uppercase tracking-wider">Next</p>
-          <p className="text-white/70 text-[3vh]">{onDeck.team_name ?? 'Team'}</p>
+        <div className="flex items-center gap-6 px-8 py-4 bg-white/5 border-t border-white/10">
+          <span className="rounded-full bg-orange-100 px-4 py-1.5 text-xs font-bold uppercase text-orange-800">
+            → Up Next
+          </span>
+          <div className="flex-1">
+            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">Queue Position 02</span>
+            <span className="text-white font-extrabold uppercase text-[2.5vh] tracking-wide">
+              {onDeck.team_name ?? 'TEAM'}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">Track</span>
+            <span className="text-white font-bold uppercase text-[1.8vh]">Infrastructure</span>
+          </div>
+          <AvatarStack
+            avatars={[{ name: onDeck.team_name ?? 'T' }, { name: 'M' }, { name: 'A' }]}
+            size="sm"
+          />
         </div>
       )}
     </div>
@@ -133,11 +201,11 @@ function KioskContent() {
 
 export default function KioskPage({ params }: { params: { orgSlug: string } }) {
   const { auth } = usePortalContext()
-  if (auth.loading || !auth.user) return <div className="min-h-screen bg-black" />
+  if (auth.loading || !auth.user) return <div className="min-h-screen bg-portal-dark" />
 
   return (
-    <CompetitionProvider>
+    <PortalCompetitionLayout>
       <KioskContent />
-    </CompetitionProvider>
+    </PortalCompetitionLayout>
   )
 }
