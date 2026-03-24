@@ -19,15 +19,25 @@ export default function CreateAnnouncementPage() {
     { id: 'competition_id', label: t('competitions.announcements.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
     { id: 'title', label: 'Title', type: 'text', required: true },
     { id: 'content', label: 'Content', type: 'textarea', required: true },
+    { id: 'category', label: 'Category', type: 'select', defaultValue: 'general', options: [
+      { value: 'general', label: 'General' },
+      { value: 'logistics', label: 'Logistics' },
+      { value: 'technical', label: 'Technical' },
+      { value: 'schedule', label: 'Schedule' },
+      { value: 'judging', label: 'Judging' },
+    ]},
     { id: 'priority', label: 'Priority', type: 'select', options: [
       { value: 'info', label: 'Info' }, { value: 'warning', label: 'Warning' }, { value: 'urgent', label: 'Urgent' },
     ], defaultValue: 'info' },
     { id: 'pinned', label: 'Pinned', type: 'checkbox' },
+    { id: 'action_url', label: 'Action URL', type: 'text' },
+    { id: 'action_label', label: 'Action Label', type: 'text' },
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'content', title: t('competitions.announcements.groups.content', 'Content'), column: 1, fields: ['competition_id', 'title', 'content'] },
-    { id: 'settings', title: t('competitions.announcements.groups.settings', 'Settings'), column: 2, fields: ['priority', 'pinned'] },
+    { id: 'settings', title: t('competitions.announcements.groups.settings', 'Settings'), column: 2, fields: ['category', 'priority', 'pinned'] },
+    { id: 'action', title: 'Action Link', column: 2, fields: ['action_url', 'action_label'] },
   ], [t])
 
   return (

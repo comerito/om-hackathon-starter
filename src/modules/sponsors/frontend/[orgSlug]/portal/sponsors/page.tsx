@@ -4,18 +4,22 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
-import { PortalCard, PortalCardHeader } from '@open-mercato/ui/portal/components/PortalCard'
-import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { Trophy, Medal, Award, Star } from 'lucide-react'
+import { GradientCard, PortalBadge, SectionLabel } from '@/components/portal'
 
 type SponsorItem = { id: string; name: string; tier: string; logo_url: string; website_url: string | null; description: string | null; challenge_title: string | null; challenge_description: string | null }
 type PrizeItem = { id: string; name: string; description: string | null; category: string; value: string | null; rank: number | null; sponsor_id: string | null; winning_project_id: string | null; awarded_at: string | null }
 
 const tierOrder: Record<string, number> = { title: 0, gold: 1, silver: 2, partner: 3, in_kind: 4 }
-const tierLabels: Record<string, string> = { title: 'Title Sponsor', gold: 'Gold', silver: 'Silver', partner: 'Partner', in_kind: 'In-Kind' }
+const tierBadgeVariants: Record<string, 'primary' | 'warning' | 'muted' | 'info'> = {
+  title: 'primary', gold: 'warning', silver: 'muted', partner: 'info', in_kind: 'muted',
+}
+const tierLabels: Record<string, string> = { title: 'TITLE SPONSOR', gold: 'GOLD TIER', silver: 'SILVER TIER', partner: 'PARTNER', in_kind: 'IN-KIND' }
+
+const prizeIcons = [Trophy, Medal, Award, Star]
 
 function SponsorsContent() {
   const t = useT()
@@ -30,73 +34,122 @@ function SponsorsContent() {
     enabled: !!competitionId,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
+  if (isLoading) return <div className="text-center py-12 text-portal-secondary">Loading...</div>
 
   const sponsors = (data?.sponsors ?? []).sort((a, b) => (tierOrder[a.tier] ?? 99) - (tierOrder[b.tier] ?? 99))
   const prizes = data?.prizes ?? []
+  const totalPrizePool = prizes.reduce((sum, p) => {
+    const val = p.value ? parseFloat(p.value.replace(/[^0-9.]/g, '')) : 0
+    return sum + (isNaN(val) ? 0 : val)
+  }, 0)
 
   if (sponsors.length === 0 && prizes.length === 0) {
-    return <PortalEmptyState title={t('sponsors.portal.empty', 'No Sponsors Yet')} description={t('sponsors.portal.emptyDesc', 'Sponsor information will appear here.')} />
+    return (
+      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+        Sponsor information will appear here.
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8">
-      {/* Sponsors */}
+    <div className="space-y-10">
+      {/* Hero Section */}
+      <GradientCard className="relative overflow-hidden">
+        <SectionLabel className="text-white/80">Event Rewards</SectionLabel>
+        <h2 className="mt-2 font-display text-4xl font-bold text-white leading-tight">
+          Empowering<br />Innovation.
+        </h2>
+        <p className="mt-3 text-sm text-white/70 max-w-md">
+          Meet the partners making this editorial evolution possible and discover the rewards for the most impactful solutions.
+        </p>
+        {totalPrizePool > 0 && (
+          <div className="absolute top-6 right-6 rounded-xl bg-white/20 backdrop-blur-sm px-5 py-3">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">Total Pool</span>
+            <p className="text-2xl font-bold text-white">${totalPrizePool.toLocaleString()}</p>
+          </div>
+        )}
+      </GradientCard>
+
+      {/* Sponsors Section */}
       {sponsors.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold mb-4">{t('sponsors.portal.ourSponsors', 'Our Sponsors')}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-foreground">Our Sponsors</h2>
+            <SectionLabel>Industry Partners</SectionLabel>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             {sponsors.map(sponsor => (
-              <PortalCard key={sponsor.id}>
-                <div className="p-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                      <img src={sponsor.logo_url} alt={sponsor.name} className="h-full w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{sponsor.name}</h3>
-                      <span className="text-xs text-muted-foreground">{tierLabels[sponsor.tier] ?? sponsor.tier}</span>
-                    </div>
+              <div key={sponsor.id} className="rounded-xl border border-gray-100 bg-white p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="size-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                    <img
+                      src={sponsor.logo_url}
+                      alt={sponsor.name}
+                      className="size-full object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                   </div>
-                  {sponsor.description && <p className="text-sm text-muted-foreground mb-3">{sponsor.description}</p>}
-                  {sponsor.challenge_title && (
-                    <div className="rounded-md bg-primary/5 border border-primary/10 p-3 mt-2">
-                      <p className="text-xs uppercase tracking-wider text-primary font-medium mb-1">{t('sponsors.portal.challenge', 'Challenge')}</p>
-                      <p className="text-sm font-medium">{sponsor.challenge_title}</p>
-                      {sponsor.challenge_description && <p className="text-xs text-muted-foreground mt-1">{sponsor.challenge_description}</p>}
-                    </div>
-                  )}
-                  {sponsor.website_url && (
-                    <a href={sponsor.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-2 inline-block">
-                      {t('sponsors.portal.visitWebsite', 'Visit website')}
-                    </a>
-                  )}
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">{sponsor.name}</h3>
+                    <PortalBadge variant={tierBadgeVariants[sponsor.tier] ?? 'muted'}>
+                      {tierLabels[sponsor.tier] ?? sponsor.tier}
+                    </PortalBadge>
+                  </div>
                 </div>
-              </PortalCard>
+                {sponsor.description && (
+                  <p className="text-xs text-portal-secondary leading-relaxed mb-3">{sponsor.description}</p>
+                )}
+                {sponsor.challenge_title && (
+                  <div className="border-l-3 border-l-portal-primary bg-portal-primary/5 rounded-r-lg p-3 mt-3" style={{ borderLeftWidth: '3px' }}>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-primary">
+                      Sponsor Challenge
+                    </span>
+                    <p className="text-sm font-semibold text-foreground mt-1">{sponsor.challenge_title}</p>
+                    {sponsor.challenge_description && (
+                      <p className="text-xs text-portal-secondary mt-1">{sponsor.challenge_description}</p>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Prizes */}
+      {/* Prizes Section */}
       {prizes.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold mb-4">{t('sponsors.portal.prizes', 'Prizes')}</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {prizes.map(prize => (
-              <PortalCard key={prize.id}>
-                <div className="p-4 flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 text-yellow-700 text-lg shrink-0">
-                    {prize.rank ? `#${prize.rank}` : '🏆'}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-foreground">Prizes</h2>
+            <SectionLabel>Victory Rewards</SectionLabel>
+          </div>
+          <div className="space-y-3">
+            {prizes.map((prize, i) => {
+              const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
+              const iconColors = ['text-yellow-500', 'text-blue-500', 'text-amber-600', 'text-purple-500']
+              const iconBgColors = ['bg-yellow-50', 'bg-blue-50', 'bg-amber-50', 'bg-purple-50']
+              const colorIdx = Math.min(i, iconColors.length - 1)
+
+              return (
+                <div key={prize.id} className="flex items-center gap-5 rounded-xl border border-gray-100 bg-white p-5">
+                  <div className={`size-14 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
+                    <PrizeIcon className={`size-7 ${iconColors[colorIdx]}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium">{prize.name}</h3>
-                    {prize.description && <p className="text-xs text-muted-foreground truncate">{prize.description}</p>}
+                    <h3 className="text-sm font-bold text-foreground">{prize.name}</h3>
+                    {prize.description && (
+                      <p className="text-xs text-portal-secondary mt-0.5 line-clamp-1">{prize.description}</p>
+                    )}
                   </div>
-                  {prize.value && <span className="text-sm font-semibold text-primary shrink-0">{prize.value}</span>}
+                  {prize.value && (
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Value</span>
+                      <p className="text-xl font-bold text-portal-primary">{prize.value}</p>
+                    </div>
+                  )}
                 </div>
-              </PortalCard>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -116,12 +169,8 @@ export default function SponsorsPage({ params }: { params: { orgSlug: string } }
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader title={t('sponsors.portal.title', 'Sponsors & Prizes')} label={t('sponsors.portal.label', 'Our partners and awards')} />
-        <SponsorsContent />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <SponsorsContent />
+    </PortalCompetitionLayout>
   )
 }

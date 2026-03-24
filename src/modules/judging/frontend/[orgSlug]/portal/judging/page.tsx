@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
 import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { PortalPageTitle } from '@/components/portal'
 import Link from 'next/link'
 
 type ProjectAssignment = {
@@ -119,12 +119,12 @@ export default function JudgingDashboardPage({ params }: { params: { orgSlug: st
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader title={t('judging.portal.judgingTitle', 'Judging Dashboard')} label={t('judging.portal.judgingLabel', 'Score assigned projects')} />
-        <JudgingContent orgSlug={params.orgSlug} />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('judging.portal.judgingLabel', 'Score assigned projects')}
+        title={t('judging.portal.judgingTitle', 'Judging Dashboard')}
+      />
+      <JudgingContent orgSlug={params.orgSlug} />
+    </PortalCompetitionLayout>
   )
 }

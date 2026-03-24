@@ -1,6 +1,7 @@
 import './commands/teams'
 import './commands/members'
 import './commands/invitations'
+import './commands/resources'
 import type { ModuleInfo } from '@open-mercato/shared/modules/registry'
 
 export const metadata: ModuleInfo = {

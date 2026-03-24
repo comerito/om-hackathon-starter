@@ -1,4 +1,4 @@
-import { PortalLayoutShell } from '@open-mercato/ui/portal/PortalLayoutShell'
+import { PortalProvider } from '@open-mercato/ui/portal/PortalContext'
 import { getCustomerAuthFromCookies } from '@open-mercato/core/modules/customer_accounts/lib/customerAuthServer'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { Organization } from '@open-mercato/core/modules/directory/data/entities'
@@ -6,6 +6,7 @@ import { CustomerUser } from '@open-mercato/core/modules/customer_accounts/data/
 import { FeatureTogglesService } from '@open-mercato/core/modules/feature_toggles/lib/feature-flag-check'
 import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import type { EntityManager } from '@mikro-orm/postgresql'
+import { HackathonPortalLayout, type PortalLayoutVariant } from '@/components/portal/HackathonPortalLayout'
 
 type LayoutProps = {
   children: React.ReactNode
@@ -17,6 +18,13 @@ const PUBLIC_SUFFIXES = ['/portal/login', '/portal/signup']
 function isPublicPortalRoute(pathname: string): boolean {
   if (/^\/[^/]+\/portal\/?$/.test(pathname)) return true
   return PUBLIC_SUFFIXES.some((s) => pathname.endsWith(s))
+}
+
+/** Determine layout variant from the portal route path. */
+function getLayoutVariant(pathname: string): PortalLayoutVariant {
+  if (pathname.includes('/portal/kiosk')) return 'kiosk'
+  if (pathname.includes('/portal/incident')) return 'minimal'
+  return 'full'
 }
 
 /**
@@ -106,18 +114,32 @@ export default async function FrontendLayout({ children, params }: LayoutProps) 
     )
   }
 
+  const authenticated = !isPublic && !!customerAuth
+  const variant = isPublic ? 'full' as const : getLayoutVariant(pathname)
+
   return (
-    <PortalLayoutShell
+    <PortalProvider
       orgSlug={orgSlug}
-      organizationName={orgName}
-      tenantId={tenantId}
-      organizationId={organizationId}
-      authenticated={!isPublic && !!customerAuth}
-      userName={userName}
-      userEmail={userEmail}
-      customerAuth={customerAuth}
+      initialAuth={customerAuth}
+      initialTenant={{
+        tenantId: tenantId ?? undefined,
+        organizationId: organizationId ?? undefined,
+        organizationName: orgName ?? undefined,
+      }}
     >
-      {children}
-    </PortalLayoutShell>
+      {isPublic ? (
+        // Public routes (login/signup): no layout chrome
+        <>{children}</>
+      ) : (
+        <HackathonPortalLayout
+          variant={variant}
+          enableEventBridge={authenticated}
+          competitionName={orgName ?? undefined}
+          userName={userName ?? undefined}
+        >
+          {children}
+        </HackathonPortalLayout>
+      )}
+    </PortalProvider>
   )
 }

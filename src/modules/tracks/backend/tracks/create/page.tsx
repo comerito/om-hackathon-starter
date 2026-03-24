@@ -5,12 +5,33 @@ import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/b
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Input } from '@open-mercato/ui/primitives/input'
+import {
+  Cpu, Brain, Globe, Palette, Shield, Rocket, Heart, Zap, Database, Code,
+  Smartphone, Cloud, Lock, Music, Camera, Gamepad2, Leaf, Lightbulb, Microscope, Wifi,
+  type LucideIcon,
+} from 'lucide-react'
 
-const ICON_OPTIONS = [
-  'lucide:cpu', 'lucide:brain', 'lucide:globe', 'lucide:palette', 'lucide:shield',
-  'lucide:rocket', 'lucide:heart', 'lucide:zap', 'lucide:database', 'lucide:code',
-  'lucide:smartphone', 'lucide:cloud', 'lucide:lock', 'lucide:music', 'lucide:camera',
-  'lucide:gamepad-2', 'lucide:leaf', 'lucide:lightbulb', 'lucide:microscope', 'lucide:wifi',
+const ICON_OPTIONS: Array<{ value: string; name: string; Icon: LucideIcon }> = [
+  { value: 'lucide:cpu', name: 'cpu', Icon: Cpu },
+  { value: 'lucide:brain', name: 'brain', Icon: Brain },
+  { value: 'lucide:globe', name: 'globe', Icon: Globe },
+  { value: 'lucide:palette', name: 'palette', Icon: Palette },
+  { value: 'lucide:shield', name: 'shield', Icon: Shield },
+  { value: 'lucide:rocket', name: 'rocket', Icon: Rocket },
+  { value: 'lucide:heart', name: 'heart', Icon: Heart },
+  { value: 'lucide:zap', name: 'zap', Icon: Zap },
+  { value: 'lucide:database', name: 'database', Icon: Database },
+  { value: 'lucide:code', name: 'code', Icon: Code },
+  { value: 'lucide:smartphone', name: 'smartphone', Icon: Smartphone },
+  { value: 'lucide:cloud', name: 'cloud', Icon: Cloud },
+  { value: 'lucide:lock', name: 'lock', Icon: Lock },
+  { value: 'lucide:music', name: 'music', Icon: Music },
+  { value: 'lucide:camera', name: 'camera', Icon: Camera },
+  { value: 'lucide:gamepad-2', name: 'gamepad-2', Icon: Gamepad2 },
+  { value: 'lucide:leaf', name: 'leaf', Icon: Leaf },
+  { value: 'lucide:lightbulb', name: 'lightbulb', Icon: Lightbulb },
+  { value: 'lucide:microscope', name: 'microscope', Icon: Microscope },
+  { value: 'lucide:wifi', name: 'wifi', Icon: Wifi },
 ]
 
 type CompetitionOption = { id: string; name: string }
@@ -47,17 +68,14 @@ export default function CreateTrackPage() {
       component: ({ value, setValue }) => (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1.5">
-            {ICON_OPTIONS.map((icon) => {
-              const name = icon.replace('lucide:', '')
-              return (
-                <button key={icon} type="button" onClick={() => setValue(icon)} title={name}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md border text-sm transition-colors ${
-                    value === icon ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/30' : 'border-input hover:bg-muted'
-                  }`}>
-                  <span className="text-xs">{name.substring(0, 2).toUpperCase()}</span>
-                </button>
-              )
-            })}
+            {ICON_OPTIONS.map((opt) => (
+              <button key={opt.value} type="button" onClick={() => setValue(opt.value)} title={opt.name}
+                className={`flex h-9 w-9 items-center justify-center rounded-md border transition-colors ${
+                  value === opt.value ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/30' : 'border-input text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}>
+                <opt.Icon className="size-4" />
+              </button>
+            ))}
           </div>
           <Input value={String(value || '')}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
@@ -65,12 +83,19 @@ export default function CreateTrackPage() {
         </div>
       ),
     },
+    { id: 'category', label: t('tracks.fields.category', 'Category'), type: 'text' },
+    { id: 'badge', label: t('tracks.fields.badge', 'Badge'), type: 'select', options: [
+      { value: '', label: 'None' },
+      { value: 'new', label: 'NEW' },
+      { value: 'hot', label: 'HOT' },
+      { value: 'stability', label: 'STABILITY' },
+    ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
   ], [t, loadCompetitions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description'] },
+    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'badge'] },
     { id: 'appearance', title: t('tracks.groups.appearance', 'Appearance'), column: 2, fields: ['color', 'icon_url'] },
     { id: 'settings', title: t('tracks.groups.settings', 'Settings'), column: 1, fields: ['max_teams', 'order'] },
   ], [t])

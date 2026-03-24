@@ -8,6 +8,7 @@ export const features = [
   { id: 'competitions.announcements.manage', title: 'Manage announcements', module: 'competitions' },
   { id: 'competitions.participants.manage', title: 'Manage participants', module: 'competitions' },
   { id: 'competitions.checkin.manage', title: 'Manage check-in', module: 'competitions' },
+  { id: 'competitions.milestones.manage', title: 'Manage milestones', module: 'competitions' },
 ]
 
 export default features

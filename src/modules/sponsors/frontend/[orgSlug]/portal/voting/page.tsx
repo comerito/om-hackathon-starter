@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalPageHeader } from '@open-mercato/ui/portal/components/PortalPageHeader'
 import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
-import { CompetitionProvider, useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
-import { CompetitionSelector } from '../../../../../competitions/components/CompetitionSelector'
+import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { PortalPageTitle } from '@/components/portal'
 
 type ProjectForVote = { id: string; title: string; tagline: string | null; team_name: string | null; track_id: string }
 type MyVote = { id: string; project_id: string; created_at: string }
@@ -26,12 +26,12 @@ function VotingContent() {
   const { data: projectsData, isLoading: projectsLoading } = useQuery({
     queryKey: ['portal-voting-projects', competitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; title: string; tagline: string | null; team_id: string; track_id: string; _projects?: { teamName: string | null } }> }>(
-        `/api/projects/projects?competition_id=${competitionId}&status=published&pageSize=100`,
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; title: string; tagline: string | null; team_id: string; track_id: string; team_name: string | null }> }>(
+        `/api/competitions/portal/competition-data?competition_id=${competitionId}&type=projects&status=published`,
       )
       return ok && result ? result.items.map(p => ({
         id: p.id, title: p.title, tagline: p.tagline,
-        team_name: p._projects?.teamName ?? null, track_id: p.track_id,
+        team_name: p.team_name ?? null, track_id: p.track_id,
       })) : []
     },
     enabled: !!competitionId,
@@ -176,12 +176,12 @@ export default function VotingPage({ params }: { params: { orgSlug: string } }) 
   if (auth.loading || !auth.user) return null
 
   return (
-    <CompetitionProvider>
-      <CompetitionSelector />
-      <div className="flex flex-col gap-6">
-        <PortalPageHeader title={t('sponsors.portal.votingTitle', "People's Choice")} label={t('sponsors.portal.votingLabel', 'Vote for your favorite projects')} />
-        <VotingContent />
-      </div>
-    </CompetitionProvider>
+    <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('sponsors.portal.votingLabel', 'Vote for your favorite projects')}
+        title={t('sponsors.portal.votingTitle', "People's Choice")}
+      />
+      <VotingContent />
+    </PortalCompetitionLayout>
   )
 }

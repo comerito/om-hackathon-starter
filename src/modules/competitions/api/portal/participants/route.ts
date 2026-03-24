@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url)
     const competitionId = url.searchParams.get('competition_id')
     const search = url.searchParams.get('search') ?? ''
+    const specialty = url.searchParams.get('specialty') ?? ''
 
     if (!competitionId) {
       return NextResponse.json({ error: 'competition_id is required' }, { status: 400 })
@@ -58,12 +59,24 @@ export async function GET(req: Request) {
     })
     const profileMap = new Map(profiles.map(p => [p.customerUserId, p]))
 
+    // If specialty filter is provided, narrow down to matching user IDs
+    let filteredUserIds = participantUserIds
+    if (specialty) {
+      filteredUserIds = participantUserIds.filter(uid => {
+        const profile = profileMap.get(uid)
+        return profile?.specialty?.toLowerCase() === specialty.toLowerCase()
+      })
+      if (filteredUserIds.length === 0) {
+        return NextResponse.json({ items: [] })
+      }
+    }
+
     // Load customer_users for display names and emails
     const knex = (em as any).getConnection().getKnex()
 
     let usersQuery = knex('customer_users')
       .select('id', 'display_name', 'email')
-      .whereIn('id', participantUserIds)
+      .whereIn('id', filteredUserIds)
 
     if (search.length >= 2) {
       const searchPattern = `%${search}%`
@@ -88,7 +101,7 @@ export async function GET(req: Request) {
     // Build response items -- only include users that matched the search
     const matchedUserIds = search.length >= 2
       ? userRows.map((row: any) => row.id as string)
-      : participantUserIds
+      : filteredUserIds
 
     const items = matchedUserIds.map((userId: string) => {
       const participation = participationMap.get(userId)
@@ -100,6 +113,7 @@ export async function GET(req: Request) {
         display_name: user?.display_name ?? userId.slice(0, 8) + '...',
         email: user?.email ?? '',
         role: participation?.role ?? 'participant',
+        specialty: profile?.specialty ?? null,
         organization: profile?.organization ?? null,
         skills: profile?.skills ?? [],
         looking_for_team: participation?.lookingForTeam ?? false,
