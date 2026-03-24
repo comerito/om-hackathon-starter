@@ -46,6 +46,14 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'sync_akeneo', from: '@open-mercato/sync-akeneo' },
   { id: 'shipping_carriers', from: '@open-mercato/core' },
   { id: 'customer_accounts', from: '@open-mercato/core' },
+  // App modules BEFORE portal so app pages override core portal defaults
+  { id: 'competitions', from: '@app' },
+  { id: 'tracks', from: '@app' },
+  { id: 'teams', from: '@app' },
+  { id: 'projects', from: '@app' },
+  { id: 'judging', from: '@app' },
+  { id: 'sponsors', from: '@app' },
+  { id: 'incidents', from: '@app' },
   { id: 'portal', from: '@open-mercato/core' },
   { id: 'example', from: '@app' },
 
