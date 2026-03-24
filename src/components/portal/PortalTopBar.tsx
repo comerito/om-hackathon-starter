@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Bell, Settings, ArrowLeft, Search } from 'lucide-react'
+import { Bell, Settings, ArrowLeft, Search, LogOut } from 'lucide-react'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { cn } from '@open-mercato/shared/lib/utils'
 
@@ -95,18 +95,39 @@ export function PortalTopBar({
           <Settings className="size-[18px]" />
         </button>
 
-        {/* User avatar + info */}
-        <Link href={`${prefix}/profile`} className="flex items-center gap-2">
-          {variant === 'full' && displayName && (
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-medium text-foreground leading-tight">{displayName}</p>
-              <p className="text-[10px] uppercase tracking-wide text-portal-secondary">{displayRole}</p>
+        {/* User avatar + dropdown */}
+        <div className="relative group">
+          <button type="button" className="flex items-center gap-2">
+            {variant === 'full' && displayName && (
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-medium text-foreground leading-tight">{displayName}</p>
+                <p className="text-[10px] uppercase tracking-wide text-portal-secondary">{displayRole}</p>
+              </div>
+            )}
+            <div className="size-8 rounded-full bg-portal-primary/10 border border-portal-primary/20 flex items-center justify-center text-xs font-bold text-portal-primary">
+              {displayName.charAt(0).toUpperCase()}
             </div>
-          )}
-          <div className="size-8 rounded-full bg-portal-primary/10 border border-portal-primary/20 flex items-center justify-center text-xs font-bold text-portal-primary">
-            {displayName.charAt(0).toUpperCase()}
+          </button>
+          {/* Dropdown */}
+          <div className="invisible group-focus-within:visible absolute right-0 top-full mt-1 w-48 rounded-xl border border-gray-100 bg-white py-1 shadow-lg z-50">
+            <Link
+              href={`${prefix}/profile`}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
+            >
+              <Settings className="size-4 text-portal-secondary" />
+              My Profile
+            </Link>
+            <div className="mx-3 h-px bg-gray-100" />
+            <button
+              type="button"
+              onClick={() => auth.logout()}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="size-4" />
+              Sign Out
+            </button>
           </div>
-        </Link>
+        </div>
       </div>
     </header>
   )

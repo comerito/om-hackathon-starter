@@ -17,6 +17,9 @@ import {
   ChevronRight,
   Rocket,
   Copy,
+  Info,
+  AlertTriangle,
+  AlertCircle,
 } from 'lucide-react'
 import {
   SectionLabel,
@@ -66,10 +69,10 @@ const stageDisplayTitles: Record<string, string> = {
   archived: 'Competition Archived',
 }
 
-const priorityBorderColors: Record<string, string> = {
-  info: 'border-l-blue-400',
-  warning: 'border-l-portal-tertiary',
-  urgent: 'border-l-portal-danger',
+const priorityIcons: Record<string, { icon: 'info' | 'warning' | 'urgent'; bg: string; fg: string }> = {
+  info: { icon: 'info', bg: 'bg-blue-50', fg: 'text-blue-500' },
+  warning: { icon: 'warning', bg: 'bg-amber-50', fg: 'text-amber-500' },
+  urgent: { icon: 'urgent', bg: 'bg-red-50', fg: 'text-red-500' },
 }
 
 const categoryBadgeVariants: Record<string, 'info' | 'warning' | 'danger' | 'primary' | 'muted'> = {
@@ -104,20 +107,23 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const actionLabel = announcement.action_label
   const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
 
+  const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
+  const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
+
   return (
-    <div className={`rounded-xl border border-gray-100 bg-white p-5 border-l-4 ${priorityBorderColors[announcement.priority] ?? 'border-l-gray-200'}`}>
+    <div className="rounded-xl border border-gray-100 bg-white p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50">
-            <Rocket className="size-4 text-portal-secondary" />
-          </div>
           <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
             {category}
           </PortalBadge>
+          <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
+            {formatTimeAgo(announcement.published_at)}
+          </span>
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
-          {formatTimeAgo(announcement.published_at)}
-        </span>
+        <div className={`size-8 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
+          <PriorityIcon className={`size-4 ${priority.fg}`} />
+        </div>
       </div>
       <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
       {isCode ? (
