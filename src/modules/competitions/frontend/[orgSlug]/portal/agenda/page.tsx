@@ -8,7 +8,10 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { MapPin, Zap, HelpCircle, Wifi } from 'lucide-react'
+import {
+  MapPin, Zap, HelpCircle, Wifi, Award, Mic, Wrench, Coffee,
+  UtensilsCrossed, Clock, Clapperboard, Sparkles, type LucideIcon,
+} from 'lucide-react'
 import { PortalPageTitle, PortalBadge, ProgressBar } from '@/components/portal'
 
 type AgendaItem = {
@@ -17,9 +20,9 @@ type AgendaItem = {
   speaker_bio: string | null; is_mandatory: boolean
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  ceremony: '⚡', talk: '🎙', workshop: '🔬', break: '☕',
-  meal: '🍽', deadline: '⏰', demo_session: '🎬', custom: '✦',
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  ceremony: Award, talk: Mic, workshop: Wrench, break: Coffee,
+  meal: UtensilsCrossed, deadline: Clock, demo_session: Clapperboard, custom: Sparkles,
 }
 
 const TYPE_BADGE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted'> = {
@@ -75,7 +78,10 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
             happening ? 'bg-portal-primary text-white shadow-md shadow-portal-primary/30' : 'bg-gray-100 text-gray-400',
           )}
         >
-          {happening ? <Zap className="size-4" /> : <span className="text-xs">{TYPE_ICONS[item.type] ?? '●'}</span>}
+          {(() => {
+            const Icon = happening ? Zap : (TYPE_ICONS[item.type] ?? Sparkles)
+            return <Icon className="size-4" />
+          })()}
         </div>
         <div className="flex-1 w-px bg-gray-100 mt-2" />
       </div>

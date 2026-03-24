@@ -14,7 +14,6 @@ import {
   SectionLabel,
   GradientCard,
   PortalBadge,
-  AvatarStack,
   ActionLink,
   CountdownWidget,
 } from '@/components/portal'
@@ -23,6 +22,8 @@ type Track = {
   id: string; name: string; description: string | null; color: string
   icon_url: string | null; max_teams: number | null; order: number
 }
+
+type TeamsByTrack = Record<string, number>
 
 const LUCIDE_PATHS: Record<string, React.ReactNode> = {
   cpu: <><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></>,
@@ -65,14 +66,7 @@ function TrackIcon({ color, iconUrl, size = 'md' }: { color: string; iconUrl: st
   )
 }
 
-/* ---------- Placeholder avatar data for track cards ---------- */
-const PLACEHOLDER_AVATARS = [
-  { name: 'Alice' },
-  { name: 'Bob' },
-  { name: 'Charlie' },
-  { name: 'Dana' },
-  { name: 'Eve' },
-]
+/* ---------- (placeholder avatars removed — using real team counts) ---------- */
 
 /* ---------- Filter pill button ---------- */
 function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -95,6 +89,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 /* ---------- Main content ---------- */
 function TracksContent() {
   const t = useT()
+  const { orgSlug } = usePortalContext()
   const { selectedId, selected } = useCompetitionContext()
   const [activeFilter, setActiveFilter] = React.useState('all')
 
@@ -110,6 +105,66 @@ function TracksContent() {
     },
     enabled: !!selectedId,
   })
+
+  // Fetch team counts per track from stats
+  const { data: statsData } = useQuery({
+    queryKey: ['portal-tracks-stats', selectedId],
+    queryFn: async () => {
+      if (!selectedId) return null
+      const { ok, result } = await apiCall<{
+        participant_count: number; track_count: number; team_count: number
+      }>(`/api/competitions/portal/competition-stats?competition_id=${selectedId}`)
+      return ok && result ? result : null
+    },
+    enabled: !!selectedId,
+  })
+
+  // Fetch teams to count per track
+  const { data: teamsData } = useQuery({
+    queryKey: ['portal-tracks-teams', selectedId],
+    queryFn: async () => {
+      if (!selectedId) return { items: [] }
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; track_id: string | null; name: string }> }>(
+        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=projects`,
+      )
+      return ok && result ? result : { items: [] }
+    },
+    enabled: !!selectedId,
+  })
+
+  // Fetch prize pool from sponsors
+  const { data: sponsorsData } = useQuery({
+    queryKey: ['portal-tracks-sponsors', selectedId],
+    queryFn: async () => {
+      if (!selectedId) return { sponsors: [], prizes: [] }
+      const { ok, result } = await apiCall<{ sponsors: unknown[]; prizes: Array<{ value: string | null }> }>(
+        `/api/sponsors/portal/sponsors-view?competition_id=${selectedId}`,
+      )
+      return ok && result ? result : { sponsors: [], prizes: [] }
+    },
+    enabled: !!selectedId,
+  })
+
+  // Compute team counts per track
+  const teamCountByTrack = React.useMemo<TeamsByTrack>(() => {
+    const counts: TeamsByTrack = {}
+    for (const project of teamsData?.items ?? []) {
+      if (project.track_id) {
+        counts[project.track_id] = (counts[project.track_id] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [teamsData])
+
+  // Compute total prize pool
+  const totalPrizePool = React.useMemo(() => {
+    return (sponsorsData?.prizes ?? []).reduce((sum, p) => {
+      const val = p.value ? parseFloat(p.value.replace(/[^0-9.]/g, '')) : 0
+      return sum + (isNaN(val) ? 0 : val)
+    }, 0)
+  }, [sponsorsData])
+
+  const totalTeams = statsData?.team_count ?? 0
 
   if (!selectedId) {
     return <PortalEmptyState title={t('tracks.portal.noCompetition', 'Select a competition')} description={t('tracks.portal.noCompetitionDesc', 'Choose a competition to view its tracks.')} />
@@ -186,9 +241,8 @@ function TracksContent() {
           </div>
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-3">
-              <AvatarStack avatars={PLACEHOLDER_AVATARS} max={3} size="sm" />
               <span className="text-sm font-medium text-muted-foreground">
-                12 / {featuredTrack.max_teams ?? 15} {t('tracks.portal.teamsJoined', 'Teams Joined')}
+                {teamCountByTrack[featuredTrack.id] ?? 0} / {featuredTrack.max_teams ?? '∞'} {t('tracks.portal.teamsJoined', 'Teams Joined')}
               </span>
             </div>
             <button
@@ -204,10 +258,12 @@ function TracksContent() {
         <GradientCard className="lg:col-span-2 flex flex-col justify-between">
           <div>
             <SectionLabel className="mb-2 !text-white/70">{t('tracks.portal.totalPrizePool', 'Total Prize Pool')}</SectionLabel>
-            <p className="font-display text-4xl font-bold tracking-tight">$25,000</p>
+            <p className="font-display text-4xl font-bold tracking-tight">
+              {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : t('tracks.portal.tbd', 'TBD')}
+            </p>
           </div>
           <div className="mt-6">
-            <ActionLink href="#" className="!text-white/90 hover:!text-white">
+            <ActionLink href={`/${orgSlug}/portal/sponsors`} className="!text-white/90 hover:!text-white">
               {t('tracks.portal.viewRewards', 'View Reward Breakdown')}
             </ActionLink>
           </div>
@@ -242,8 +298,8 @@ function TracksContent() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTracks.map((track, idx) => {
             const globalIdx = tracks.findIndex(tr => tr.id === track.id)
-            const teamCount = 4 + ((globalIdx * 3) % 12) // pseudo-random placeholder team count
-            const maxTeams = track.max_teams ?? 20
+            const teamCount = teamCountByTrack[track.id] ?? 0
+            const maxTeams = track.max_teams ?? '∞'
 
             return (
               <div
@@ -275,18 +331,11 @@ function TracksContent() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between gap-2 px-6 pb-5 pt-4">
-                  <div className="flex items-center gap-2">
-                    <AvatarStack
-                      avatars={PLACEHOLDER_AVATARS.slice(0, Math.min(teamCount, 5))}
-                      max={3}
-                      size="sm"
-                    />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
-                    </span>
-                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
+                  </span>
                   <div className="flex items-center gap-3">
-                    <ActionLink href="#" className="text-[11px]">
+                    <ActionLink href={`/${orgSlug}/portal/team`} className="text-[11px]">
                       {t('tracks.portal.details', 'Details')}
                     </ActionLink>
                     <button

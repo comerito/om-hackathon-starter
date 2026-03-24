@@ -40,6 +40,13 @@ export default function JudgingDashboard() {
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
   const scopeVersion = useOrganizationScopeVersion()
   const [tab, setTab] = React.useState<'panels' | 'criteria' | 'demos' | 'scores' | 'leaderboard'>('panels')
+  const [selectedCompetitionId, setSelectedCompetitionId] = React.useState('')
+
+  // Competitions for the demo queue selector
+  const { data: competitionsData } = useQuery({
+    queryKey: ['judging-competitions', scopeVersion],
+    queryFn: () => fetchCrudList<{ id: string; name: string; stage: string }>('competitions/competitions', { pageSize: '20' }),
+  })
 
   // Panels
   const { data: panelsData, isLoading: panelsLoading } = useQuery({
@@ -107,9 +114,10 @@ export default function JudgingDashboard() {
   ], [t])
 
   async function handleGenerateQueue() {
+    if (!selectedCompetitionId) { flash('Please select a competition first', 'error'); return }
     const confirmed = await confirm({ title: t('judging.confirmGenerate', 'Generate demo queue from published projects?') })
     if (!confirmed) return
-    const { ok } = await apiCall('/api/judging/demos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'generate' }) })
+    const { ok } = await apiCall('/api/judging/demos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'generate', competition_id: selectedCompetitionId }) })
     if (ok) { flash(t('judging.flash.queueGenerated', 'Demo queue generated'), 'success'); queryClient.invalidateQueries({ queryKey: ['judging-demos'] }) }
     else flash(t('judging.flash.error', 'Failed to generate queue'), 'error')
   }
@@ -178,8 +186,18 @@ export default function JudgingDashboard() {
 
       {tab === 'demos' && (
         <>
-          <div className="flex gap-2 mb-4">
-            <Button onClick={handleGenerateQueue} variant="outline">{t('judging.demos.generateQueue', 'Generate Queue')}</Button>
+          <div className="flex items-center gap-3 mb-4">
+            <select
+              value={selectedCompetitionId}
+              onChange={(e) => setSelectedCompetitionId(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Select competition...</option>
+              {(competitionsData?.items ?? []).map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.stage})</option>
+              ))}
+            </select>
+            <Button onClick={handleGenerateQueue} variant="outline" disabled={!selectedCompetitionId}>{t('judging.demos.generateQueue', 'Generate Queue')}</Button>
           </div>
           <DataTable title={t('judging.demos.title', 'Demo Sessions')}
             columns={demoColumns} data={demosData?.items ?? []}

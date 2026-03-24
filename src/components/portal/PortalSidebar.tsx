@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { usePortalInjectedMenuItems } from '@open-mercato/ui/portal/hooks/usePortalInjectedMenuItems'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { useQuery } from '@tanstack/react-query'
-import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import dynamic from 'next/dynamic'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
-import { MilestonesDrawer } from './MilestonesDrawer'
 import { cn } from '@open-mercato/shared/lib/utils'
+
+const MilestonesDrawer = dynamic(() => import('./MilestonesDrawer').then(m => ({ default: m.MilestonesDrawer })), { ssr: false })
 
 type PortalSidebarProps = {
   variant?: 'full' | 'minimal'
@@ -64,20 +64,6 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     const stored = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null
     setSelectedCompetitionId(stored)
   }, [])
-
-  // Fetch competition for rules URL
-  const { data: competitionData } = useQuery({
-    queryKey: ['sidebar-competition', selectedCompetitionId],
-    queryFn: async () => {
-      if (!selectedCompetitionId) return null
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; rules_url?: string }> }>(
-        `/api/competitions/portal/my-competitions`,
-      )
-      if (!ok || !result?.items) return null
-      return result.items.find(c => c.id === selectedCompetitionId) ?? null
-    },
-    enabled: !!selectedCompetitionId,
-  })
   const { items: mainItems } = usePortalInjectedMenuItems('menu:portal:sidebar:main')
   const { items: accountItems } = usePortalInjectedMenuItems('menu:portal:sidebar:account')
 
@@ -175,14 +161,15 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         )}
       </div>
 
-      {/* Milestones Drawer */}
-      <MilestonesDrawer
-        competitionId={selectedCompetitionId}
-        open={milestonesOpen}
-        onClose={() => setMilestonesOpen(false)}
-        orgSlug={orgSlug}
-        rulesUrl={(competitionData as any)?.rules_url}
-      />
+      {/* Milestones Drawer — only mount when open to avoid useQuery issues */}
+      {milestonesOpen && (
+        <MilestonesDrawer
+          competitionId={selectedCompetitionId}
+          open={milestonesOpen}
+          onClose={() => setMilestonesOpen(false)}
+          orgSlug={orgSlug}
+        />
+      )}
     </aside>
   )
 }

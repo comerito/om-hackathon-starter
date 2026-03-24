@@ -60,6 +60,7 @@ type Track = {
   id: string
   name: string
   description: string | null
+  color: string
 }
 
 /* ========== NoTeamView ========== */
@@ -703,46 +704,72 @@ function TeamView({
           {isOwner && <InviteMemberSection teamId={team.id} competitionId={competitionId} />}
         </div>
 
-        {/* Track Info */}
-        {(isOwner || team.track_id) && (
+        {/* Track Selection */}
+        {(isOwner || team.track_id) && tracks.length > 0 && (
           <div className="rounded-xl border border-gray-100 bg-white p-6">
-            <SectionLabel className="mb-3 block">Track</SectionLabel>
+            <SectionLabel className="mb-4 block">Track</SectionLabel>
 
-            {isOwner && tracks.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  {t('teams.portal.myTeam.selectTrack', 'Track')}
-                </label>
-                <select
-                  value={selectedTrackId}
-                  onChange={(e) => handleSelectTrack(e.target.value)}
-                  className="h-9 rounded-xl border border-gray-200 bg-background px-3 py-1 text-sm w-full max-w-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
-                >
-                  <option value="">
-                    {t('teams.portal.myTeam.noTrack', '-- No track selected --')}
-                  </option>
-                  {tracks.map((track) => (
-                    <option key={track.id} value={track.id}>
-                      {track.name}
-                    </option>
-                  ))}
-                </select>
-                {selectedTrack?.description && (
-                  <p className="mt-2 text-sm text-portal-secondary">{selectedTrack.description}</p>
-                )}
+            {isOwner ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tracks.map((track) => {
+                  const isSelected = selectedTrackId === track.id
+                  return (
+                    <button
+                      key={track.id}
+                      type="button"
+                      onClick={() => handleSelectTrack(track.id)}
+                      className={cn(
+                        'flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all',
+                        isSelected
+                          ? 'border-portal-primary bg-portal-primary/5 shadow-sm'
+                          : 'border-gray-100 hover:border-gray-200 hover:shadow-sm',
+                      )}
+                    >
+                      <div
+                        className="size-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${track.color || '#6366f1'}15` }}
+                      >
+                        <div className="size-4 rounded-full" style={{ backgroundColor: track.color || '#6366f1' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={cn('text-sm font-bold', isSelected ? 'text-portal-primary' : 'text-foreground')}>
+                            {track.name}
+                          </p>
+                          {isSelected && (
+                            <span className="size-5 rounded-full bg-portal-primary flex items-center justify-center">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                            </span>
+                          )}
+                        </div>
+                        {track.description && (
+                          <p className="text-xs text-portal-secondary mt-0.5 line-clamp-2">{track.description}</p>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
-            )}
-
-            {/* Show selected track for non-owners */}
-            {!isOwner && team.track_id && (
-              <div>
-                <p className="text-sm text-portal-secondary">
-                  {t('teams.portal.myTeam.track', 'Track')}:{' '}
-                  <strong className="text-foreground">
-                    {tracks.find((tr) => tr.id === team.track_id)?.name ?? team.track_id}
-                  </strong>
-                </p>
-              </div>
+            ) : (
+              /* Non-owner: show selected track as a card */
+              (() => {
+                const t2 = tracks.find((tr) => tr.id === team.track_id)
+                if (!t2) return null
+                return (
+                  <div className="flex items-start gap-3 rounded-xl border-2 border-portal-primary/30 bg-portal-primary/5 p-4">
+                    <div
+                      className="size-10 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${t2.color || '#6366f1'}15` }}
+                    >
+                      <div className="size-4 rounded-full" style={{ backgroundColor: t2.color || '#6366f1' }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{t2.name}</p>
+                      {t2.description && <p className="text-xs text-portal-secondary mt-0.5">{t2.description}</p>}
+                    </div>
+                  </div>
+                )
+              })()
             )}
           </div>
         )}
