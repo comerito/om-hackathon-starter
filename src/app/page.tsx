@@ -1,139 +1,124 @@
-import { modules } from '@/.mercato/generated/modules.generated'
-import { StartPageContent } from '@/components/StartPageContent'
 import type { Metadata } from 'next'
 import { resolveLocalizedAppMetadata } from '@/lib/metadata'
-import { cookies } from 'next/headers'
-import Image from 'next/image'
 import Link from 'next/link'
-import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
-
-function FeatureBadge({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center rounded border px-2 py-0.5 text-xs text-muted-foreground">
-      {label}
-    </span>
-  )
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   return resolveLocalizedAppMetadata()
 }
 
 export default async function Home() {
-  const { t } = await resolveTranslations()
-  
-  // Check if user wants to see the start page
-  const cookieStore = await cookies()
-  const showStartPageCookie = cookieStore.get('show_start_page')
-  const showStartPage = showStartPageCookie?.value !== 'false'
-
-  // Database status and counts
-  let dbStatus = t('app.page.dbStatus.unknown', 'Unknown')
-  let usersCount = 0
-  let tenantsCount = 0
-  let orgsCount = 0
+  let orgSlug = 'portal'
+  let orgName = 'Hackathon'
   try {
     const container = await createRequestContainer()
     const em = container.resolve<EntityManager>('em')
-    usersCount = await em.count('User', {})
-    tenantsCount = await em.count('Tenant', {})
-    orgsCount = await em.count('Organization', {})
-    dbStatus = t('app.page.dbStatus.connected', 'Connected')
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : t('app.page.dbStatus.noConnection', 'no connection')
-    dbStatus = t('app.page.dbStatus.error', 'Error: {message}', { message })
+    const org = await em.findOne('Organization' as any, { deletedAt: null } as any)
+    if (org) {
+      orgSlug = (org as any).slug ?? orgSlug
+      orgName = (org as any).name ?? orgName
+    }
+  } catch {
+    // Fallback
   }
 
-  const onboardingAvailable =
-    process.env.SELF_SERVICE_ONBOARDING_ENABLED === 'true' &&
-    Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) &&
-    Boolean(process.env.APP_URL && process.env.APP_URL.trim())
+  const portalHref = `/${orgSlug}/portal/login`
 
   return (
-    <main className="min-h-svh w-full p-8 flex flex-col gap-8">
-      <header className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-        <Image
-          src="/open-mercato.svg"
-          alt={t('app.page.logoAlt', 'Open Mercato')}
-          width={40}
-          height={40}
-          priority
-        />
-        <div className="flex-1">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('app.page.title', 'Open Mercato')}</h1>
-          <p className="text-sm text-muted-foreground">{t('app.page.subtitle', 'AI‑supportive, modular ERP foundation for product & service companies')}</p>
-        </div>
-      </header>
+    <main className="flex min-h-svh">
+      {/* Left panel — branding */}
+      <div className="relative hidden w-[55%] overflow-hidden bg-gradient-to-br from-portal-primary via-portal-primary to-portal-primary-light lg:flex">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        <div className="absolute -bottom-24 -left-24 size-96 rounded-full bg-white/5" />
+        <div className="absolute -top-16 right-1/4 size-72 rounded-full bg-white/5" />
+        <div className="absolute bottom-1/3 right-0 h-40 w-40 rounded-full bg-white/[0.03]" />
 
-      <StartPageContent showStartPage={showStartPage} showOnboardingCta={onboardingAvailable} />
-
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="text-sm font-medium mb-2">{t('app.page.dbStatus.title', 'Database Status')}</div>
-          <div className="text-sm text-muted-foreground">{t('app.page.dbStatus.label', 'Status:')} <span className="font-medium text-foreground">{dbStatus}</span></div>
-          <div className="mt-3 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('app.page.dbStatus.users', 'Users:')}</span>
-              <span className="font-mono font-medium">{usersCount}</span>
+        <div className="relative z-10 flex flex-1 flex-col justify-between p-14">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-white/20">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+              </svg>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('app.page.dbStatus.tenants', 'Tenants:')}</span>
-              <span className="font-mono font-medium">{tenantsCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('app.page.dbStatus.organizations', 'Organizations:')}</span>
-              <span className="font-mono font-medium">{orgsCount}</span>
-            </div>
+            <span className="text-sm font-bold uppercase tracking-[0.2em] text-white/80">Hackathon Portal</span>
           </div>
-        </div>
 
-        <div className="rounded-lg border bg-card p-4 md:col-span-2">
-          <div className="text-sm font-medium mb-3">{t('app.page.activeModules.title', 'Active Modules')}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[200px] overflow-y-auto pr-2">
-            {modules.map((m) => {
-              const fe = m.frontendRoutes?.length || 0
-              const be = m.backendRoutes?.length || 0
-              const api = m.apis?.length || 0
-              const cli = m.cli?.length || 0
-              const i18n = m.translations ? Object.keys(m.translations).length : 0
-              return (
-                <div key={m.id} className="rounded border p-3 bg-background">
-                  <div className="text-sm font-medium">{m.info?.title || m.id}{m.info?.version ? <span className="ml-2 text-xs text-muted-foreground">v{m.info.version}</span> : null}</div>
-                  {m.info?.description ? <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.info.description}</div> : null}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {fe ? <FeatureBadge label={`FE:${fe}`} /> : null}
-                    {be ? <FeatureBadge label={`BE:${be}`} /> : null}
-                    {api ? <FeatureBadge label={`API:${api}`} /> : null}
-                    {cli ? <FeatureBadge label={`CLI:${cli}`} /> : null}
-                    {i18n ? <FeatureBadge label={`i18n:${i18n}`} /> : null}
-                  </div>
-                </div>
-              )
-            })}
+          {/* Hero text */}
+          <div>
+            <h1 className="font-display text-6xl font-bold leading-[1.1] text-white xl:text-7xl">
+              Build.<br />
+              Ship.<br />
+              Win.
+            </h1>
+            <p className="mt-8 max-w-sm text-lg leading-relaxed text-white/60">
+              Join the most exciting hackathon experience. Collaborate with talented developers, designers, and innovators to create something extraordinary.
+            </p>
           </div>
-        </div>
-      </section>
 
-      <section className="rounded-lg border bg-card p-4">
-        <div className="text-sm font-medium mb-2">{t('app.page.quickLinks.title', 'Quick Links')}</div>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <Link className="underline hover:text-primary transition-colors" href="/login">{t('app.page.quickLinks.login', 'Login')}</Link>
-          <span className="text-muted-foreground">·</span>
-          <Link className="underline hover:text-primary transition-colors" href="/example">{t('app.page.quickLinks.examplePage', 'Example Page')}</Link>
-          <span className="text-muted-foreground">·</span>
-          <Link className="underline hover:text-primary transition-colors" href="/backend/example">{t('app.page.quickLinks.exampleAdmin', 'Example Admin')}</Link>
-          <span className="text-muted-foreground">·</span>
-          <Link className="underline hover:text-primary transition-colors" href="/backend/todos">{t('app.page.quickLinks.exampleTodos', 'Example Todos with Custom Fields')}</Link>
-          <span className="text-muted-foreground">·</span>
-          <Link className="underline hover:text-primary transition-colors" href="/blog/123">{t('app.page.quickLinks.exampleBlog', 'Example Blog Post')}</Link>
+          {/* Footer */}
+          <p className="text-xs text-white/25">
+            &copy; {new Date().getFullYear()} {orgName}. Powered by Open Mercato.
+          </p>
         </div>
-      </section>
+      </div>
 
-      <footer className="text-xs text-muted-foreground text-center">
-        {t('app.page.footer', 'Built with Next.js, MikroORM, and Awilix — modular by design.')}
-      </footer>
+      {/* Right panel — portal entry */}
+      <div className="flex flex-1 flex-col items-center justify-center bg-portal-bg px-6 py-12">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="mb-10 flex items-center gap-2 lg:hidden">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-portal-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold uppercase tracking-[0.15em] text-portal-primary">Hackathon Portal</span>
+          </div>
+
+          {/* Heading */}
+          <div className="mb-10">
+            <h2 className="font-display text-3xl font-bold text-foreground">
+              Welcome to {orgName}
+            </h2>
+            <p className="mt-2 text-sm text-portal-secondary">
+              The hackathon portal for participants, mentors, and judges.
+            </p>
+          </div>
+
+          {/* Portal CTA */}
+          <Link
+            href={portalHref}
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-portal-primary px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-portal-primary-light hover:shadow-md"
+          >
+            Enter Portal
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
+              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+            </svg>
+          </Link>
+
+          {/* Divider */}
+          <div className="mt-8 mb-8 flex items-center gap-4">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-[10px] font-medium uppercase tracking-widest text-gray-300">or</span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          {/* Admin login — secondary */}
+          <Link
+            href="/login"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-medium text-portal-secondary transition-colors hover:border-gray-300 hover:text-foreground"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Admin Backoffice
+          </Link>
+        </div>
+      </div>
     </main>
   )
 }
