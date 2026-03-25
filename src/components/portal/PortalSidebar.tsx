@@ -20,22 +20,36 @@ type PortalSidebarProps = {
 
 /** Navigation item ordering — sidebar shows items in this priority */
 const NAV_ORDER: string[] = [
+  // Main (no group header)
   'competitions.portal-dashboard',
   'competitions.portal-agenda',
-  'tracks.portal-tracks',
-  'competitions.portal-competition',
-  'sponsors.portal-sponsors',
-  'teams.portal-my-team',
-  'competitions.portal-participants',
-  'judging.portal-results',
-  'judging.portal-presentations',
-  'projects.portal-my-project',
-  'judging.portal-judging',
   'competitions.portal-announcements',
-  'sponsors.portal-voting',
-  'competitions.portal-qr',
+  // Hackathon
+  'competitions.portal-competition',
+  'tracks.portal-tracks',
+  'teams.portal-my-team',
+  'projects.portal-my-project',
+  // Community
+  'competitions.portal-participants',
   'teams.portal-browse-teams',
+  'sponsors.portal-sponsors',
+  // Judging & Results
+  'judging.portal-presentations',
+  'judging.portal-results',
+  'sponsors.portal-voting',
+  'judging.portal-judging',
+  // Tools
+  'competitions.portal-qr',
   'incidents.portal-report',
+]
+
+/** Group definitions for rendering separators */
+type NavGroup = { id: string; label: string; itemIds: string[] }
+const NAV_GROUPS: NavGroup[] = [
+  { id: 'main', label: '', itemIds: ['competitions.portal-dashboard', 'competitions.portal-agenda', 'competitions.portal-announcements'] },
+  { id: 'hackathon', label: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
+  { id: 'results', label: 'Judging & Results', itemIds: ['judging.portal-presentations', 'judging.portal-results', 'sponsors.portal-voting', 'judging.portal-judging'] },
+  { id: 'tools', label: 'Tools', itemIds: ['competitions.portal-qr', 'incidents.portal-report'] },
 ]
 
 /** Items to show in minimal (incident/support) sidebar variant */
@@ -101,32 +115,49 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         </Link>
       </div>
 
-      {/* Navigation items */}
-      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-        {sortedItems.map((item) => {
-          const Icon = resolveIcon(item.icon)
-          const isActive = item.href ? pathname === item.href || pathname.startsWith(item.href + '/') : false
-          // Remap label for the design nav style
-          const label = item.label
+      {/* Navigation items — grouped */}
+      <nav className="flex-1 px-2 py-2 overflow-y-auto">
+        {NAV_GROUPS.map((group) => {
+          // Filter to items that exist in injected items
+          const groupItems = group.itemIds
+            .map(id => sortedItems.find(item => item.id === id))
+            .filter(Boolean) as typeof sortedItems
+
+          if (groupItems.length === 0) return null
 
           return (
-            <Link
-              key={item.id}
-              href={item.href ?? '#'}
-              className={cn(
-                'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors',
-                isActive
-                  ? 'bg-portal-primary/5 text-portal-primary'
-                  : 'text-portal-secondary hover:bg-gray-50 hover:text-foreground'
+            <div key={group.id} className={group.label ? 'mt-4 first:mt-0' : ''}>
+              {group.label && (
+                <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-portal-secondary/50">
+                  {group.label}
+                </p>
               )}
-            >
-              {/* Active indicator bar */}
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-portal-primary" />
-              )}
-              <Icon className="size-[18px] shrink-0" />
-              <span className="uppercase tracking-wide">{label}</span>
-            </Link>
+              <div className="space-y-0.5">
+                {groupItems.map((item) => {
+                  const Icon = resolveIcon(item.icon)
+                  const isActive = item.href ? pathname === item.href || pathname.startsWith(item.href + '/') : false
+
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href ?? '#'}
+                      className={cn(
+                        'group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium transition-colors',
+                        isActive
+                          ? 'bg-portal-primary/5 text-portal-primary'
+                          : 'text-portal-secondary hover:bg-gray-50 hover:text-foreground'
+                      )}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-portal-primary" />
+                      )}
+                      <Icon className="size-[18px] shrink-0" />
+                      <span className="uppercase tracking-wide">{item.label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </nav>

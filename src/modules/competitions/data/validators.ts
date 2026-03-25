@@ -212,3 +212,20 @@ export const updateMilestoneSchema = z.object({
 
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>
 export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>
+
+// ── Bulk Invite ─────────────────────────────────────────────────────
+
+export const bulkInviteRowSchema = z.object({
+  email: z.string().email().max(255),
+  display_name: z.string().min(1).max(255),
+  role: z.enum(participationRoleValues).default('participant'),
+})
+
+export const bulkInviteSchema = z.object({
+  competition_id: z.string().uuid(),
+  org_slug: z.string().min(1).max(255),
+  invitees: z.array(bulkInviteRowSchema).min(1).max(500),
+})
+
+export type BulkInviteRow = z.infer<typeof bulkInviteRowSchema>
+export type BulkInviteInput = z.infer<typeof bulkInviteSchema>

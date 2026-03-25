@@ -13,6 +13,7 @@ const querySchema = z
     sortField: z.string().optional().default('joined_at'),
     sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
     team_id: z.string().uuid().optional(),
+    customer_user_id: z.string().uuid().optional(),
     competition_id: z.string().uuid().optional(),
     organizationId: z.string().uuid().optional(),
   })
@@ -44,6 +45,7 @@ export const { metadata, GET, POST, DELETE } = makeCrudRoute({
       const filters: Record<string, unknown> = {}
       if (q.id) filters.id = q.id
       if (q.team_id) filters.team_id = q.team_id
+      if (q.customer_user_id) filters.customer_user_id = q.customer_user_id
       if (q.competition_id) filters.competition_id = q.competition_id
       if (q.organizationId) filters.organization_id = q.organizationId
       return filters

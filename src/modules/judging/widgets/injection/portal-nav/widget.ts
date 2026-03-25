@@ -14,9 +14,9 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'judging.portal-presentations', label: 'Presentations', labelKey: 'judging.portal.nav.presentations', icon: 'lucide:presentation', href: `${prefix}/presentations` },
-      { id: 'judging.portal-judging', label: 'Judging', labelKey: 'judging.portal.nav.judging', icon: 'lucide:clipboard-check', href: `${prefix}/judging` },
-      { id: 'judging.portal-results', label: 'Results', labelKey: 'judging.portal.nav.results', icon: 'lucide:trophy', href: `${prefix}/results` },
+      { id: 'judging.portal-presentations', label: 'Presentations', labelKey: 'judging.portal.nav.presentations', icon: 'lucide:presentation', href: `${prefix}/presentations`, features: ['portal.judging.demos.view'], groupId: 'results', groupLabel: 'Judging & Results', groupOrder: 4 },
+      { id: 'judging.portal-results', label: 'Results', labelKey: 'judging.portal.nav.results', icon: 'lucide:trophy', href: `${prefix}/results`, features: ['portal.judging.results.view'], groupId: 'results', groupOrder: 4 },
+      { id: 'judging.portal-judging', label: 'Judging Panel', labelKey: 'judging.portal.nav.judging', icon: 'lucide:clipboard-check', href: `${prefix}/judging`, features: ['portal.judging.score'], groupId: 'results', groupOrder: 4 },
     ]
   },
 }
