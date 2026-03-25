@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { ProjectScore, CriterionScore, JudgingCriterion } from '../../../data/entities'
+import { ProjectScore, CriterionScore, JudgingCriterion, JudgePanelJudge } from '../../../data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { saveScoreSchema } from '../../../data/validators'
 import { z } from 'zod'
@@ -91,6 +91,16 @@ export async function POST(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
+    // Resolve 'auto' judge_panel_id to the judge's actual panel
+    let judgePanelId = parsed.judge_panel_id
+    if (judgePanelId === 'auto') {
+      const panelJudge = await em.findOne(JudgePanelJudge, {
+        judgeId: auth.sub,
+        tenantId: auth.tenantId,
+      } as FilterQuery<JudgePanelJudge>)
+      judgePanelId = panelJudge?.panelId ?? '00000000-0000-0000-0000-000000000000'
+    }
+
     // Wrap multi-step write in a transaction for atomicity
     const scoreId = await em.transactional(async (txEm) => {
       const now = new Date()
@@ -102,7 +112,7 @@ export async function POST(req: Request) {
 
       if (!projectScore) {
         projectScore = txEm.create(ProjectScore, {
-          projectId: parsed.project_id, judgeId: auth.sub!, judgePanelId: parsed.judge_panel_id,
+          projectId: parsed.project_id, judgeId: auth.sub!, judgePanelId,
           round: parsed.round, competitionId: parsed.competition_id,
           comment: parsed.comment ?? null, privateNotes: parsed.private_notes ?? null,
           conflictOfInterest: parsed.conflict_of_interest, isSubmitted: parsed.is_submitted,

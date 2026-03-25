@@ -195,6 +195,7 @@ export default function JudgingDashboard() {
           isLoading={panelsLoading}
           rowActions={(row) => (
             <RowActions items={[
+              { id: 'edit', label: t('common.edit', 'Edit'), onSelect: () => { window.location.href = `/backend/judging/panels/${row.id}/edit` } },
               { id: 'delete', label: t('common.delete', 'Delete'), destructive: true, onSelect: async () => {
                 const ok = await confirm({ title: t('judging.panels.confirmDelete', 'Delete this panel?'), variant: 'destructive' })
                 if (!ok) return

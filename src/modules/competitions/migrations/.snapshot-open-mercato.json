@@ -6926,6 +6926,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "datetime"
+        },
+        "speaker_photo_url": {
+          "name": "speaker_photo_url",
+          "type": "varchar(1000)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 1000,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "name": "competitions_agenda_item",

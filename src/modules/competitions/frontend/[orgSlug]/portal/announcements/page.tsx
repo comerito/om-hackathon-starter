@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { usePortalAppEvent } from '@open-mercato/ui/portal/hooks/usePortalAppEvent'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
-import { PortalPageTitle, PortalBadge } from '@/components/portal'
+import { PortalPageTitle, PortalBadge, ActionLink } from '@/components/portal'
+import { Info, AlertTriangle, AlertCircle, Copy, Pin } from 'lucide-react'
 
 type Announcement = {
   id: string; title: string; content: string; priority: string
@@ -18,24 +18,89 @@ type Announcement = {
   action_url?: string | null; action_label?: string | null
 }
 
-const categoryVariants: Record<string, 'primary' | 'warning' | 'success' | 'danger' | 'muted'> = {
-  general: 'muted',
-  logistics: 'primary',
-  technical: 'success',
-  judging: 'warning',
-  sponsor: 'danger',
+const priorityIcons: Record<string, { bg: string; fg: string }> = {
+  info: { bg: 'bg-blue-50', fg: 'text-blue-500' },
+  warning: { bg: 'bg-amber-50', fg: 'text-amber-500' },
+  urgent: { bg: 'bg-red-50', fg: 'text-red-500' },
 }
 
-const priorityStyles: Record<string, string> = {
-  info: 'border-l-4 border-l-blue-400',
-  warning: 'border-l-4 border-l-yellow-400 bg-yellow-50/50',
-  urgent: 'border-l-4 border-l-red-500 bg-red-50/50',
+const categoryBadgeVariants: Record<string, 'info' | 'warning' | 'danger' | 'primary' | 'success' | 'muted'> = {
+  logistics: 'info',
+  technical: 'warning',
+  general: 'muted',
+  schedule: 'primary',
+  judging: 'danger',
+  sponsor: 'success',
+}
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins} minutes ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} hours ago`
+  const days = Math.floor(hours / 24)
+  return `${days} day${days !== 1 ? 's' : ''} ago`
+}
+
+function AnnouncementCard({ announcement, showPinned }: { announcement: Announcement; showPinned?: boolean }) {
+  const category = announcement.category || 'general'
+  const actionUrl = announcement.action_url
+  const actionLabel = announcement.action_label
+  const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
+  const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
+  const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
+
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-5">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {showPinned && announcement.pinned && (
+            <span className="flex items-center gap-1 rounded-full bg-portal-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-portal-primary">
+              <Pin className="size-2.5" />
+              Pinned
+            </span>
+          )}
+          <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
+            {category}
+          </PortalBadge>
+          <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
+            {formatTimeAgo(announcement.published_at)}
+          </span>
+        </div>
+        <div className={`size-8 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
+          <PriorityIcon className={`size-4 ${priority.fg}`} />
+        </div>
+      </div>
+      <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
+      {isCode ? (
+        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 font-mono text-xs text-portal-secondary">
+          <span className="flex-1 truncate">{announcement.content}</span>
+          <button
+            type="button"
+            onClick={() => { navigator.clipboard.writeText(announcement.content) }}
+            className="shrink-0 text-gray-400 hover:text-foreground"
+          >
+            <Copy className="size-3.5" />
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-portal-secondary whitespace-pre-wrap">{announcement.content}</p>
+      )}
+      {actionUrl && actionLabel && (
+        <div className="mt-3">
+          <ActionLink href={actionUrl}>{actionLabel}</ActionLink>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function AnnouncementsContent() {
   const t = useT()
   const { selectedId } = useCompetitionContext()
   const [refreshKey, setRefreshKey] = React.useState(0)
+  const [filter, setFilter] = React.useState<'all' | 'pinned'>('all')
 
   usePortalAppEvent('competitions.announcement.created', () => {
     setRefreshKey((k) => k + 1)
@@ -61,58 +126,54 @@ function AnnouncementsContent() {
   }
 
   if (isLoading) {
-    return <PortalCard><div className="p-6 text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</div></PortalCard>
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-28 rounded-xl border border-gray-100 bg-white animate-pulse" />
+        ))}
+      </div>
+    )
   }
 
   if (items.length === 0) {
     return <PortalEmptyState title={t('competitions.portal.announcements.empty', 'No announcements yet')} description={t('competitions.portal.announcements.emptyDesc', 'Check back soon for updates from the organizers.')} />
   }
 
-  const pinned = items.filter((a) => a.pinned)
-  const regular = items.filter((a) => !a.pinned)
+  const pinnedCount = items.filter(a => a.pinned).length
+  const filtered = filter === 'pinned' ? items.filter(a => a.pinned) : items
 
   return (
-    <div className="space-y-3">
-      {pinned.map((a) => (
-        <PortalCard key={a.id} className={priorityStyles[a.priority] ?? ''}>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium bg-primary/10 text-primary rounded px-1.5 py-0.5">{t('competitions.portal.announcements.pinned', 'Pinned')}</span>
-              {a.category && a.category !== 'general' && (
-                <PortalBadge variant={categoryVariants[a.category] ?? 'muted'}>{a.category}</PortalBadge>
-              )}
-              <span className="text-xs text-muted-foreground">{new Date(a.published_at).toLocaleDateString()}</span>
-            </div>
-            <h3 className="font-medium">{a.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{a.content}</p>
-            {a.action_url && (
-              <a href={a.action_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm font-medium text-primary hover:underline">
-                {a.action_label || 'Learn more'}
-              </a>
-            )}
-          </div>
-        </PortalCard>
-      ))}
-      {regular.map((a) => (
-        <PortalCard key={a.id} className={priorityStyles[a.priority] ?? ''}>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-muted-foreground">{new Date(a.published_at).toLocaleDateString()}</span>
-              {a.category && a.category !== 'general' && (
-                <PortalBadge variant={categoryVariants[a.category] ?? 'muted'}>{a.category}</PortalBadge>
-              )}
-              {a.priority === 'urgent' && <span className="text-xs font-medium bg-red-100 text-red-700 rounded px-1.5 py-0.5">{t('competitions.portal.announcements.urgent', 'Urgent')}</span>}
-            </div>
-            <h3 className="font-medium">{a.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{a.content}</p>
-            {a.action_url && (
-              <a href={a.action_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm font-medium text-primary hover:underline">
-                {a.action_label || 'Learn more'}
-              </a>
-            )}
-          </div>
-        </PortalCard>
-      ))}
+    <div className="space-y-4">
+      {/* Filter tabs */}
+      {pinnedCount > 0 && (
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => setFilter('all')}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
+              filter === 'all' ? 'bg-portal-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            All ({items.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('pinned')}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
+              filter === 'pinned' ? 'bg-portal-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Pinned ({pinnedCount})
+          </button>
+        </div>
+      )}
+
+      {/* Announcement cards */}
+      <div className="space-y-3">
+        {filtered.map((a) => (
+          <AnnouncementCard key={a.id} announcement={a} showPinned={filter === 'all'} />
+        ))}
+      </div>
     </div>
   )
 }

@@ -64,6 +64,7 @@ const createAgendaItemCommand: CommandHandler<Record<string, unknown>, AgendaIte
         location: parsed.location ?? null,
         speakerName: parsed.speaker_name ?? null,
         speakerBio: parsed.speaker_bio ?? null,
+        speakerPhotoUrl: parsed.speaker_photo_url ?? null,
         trackId: parsed.track_id ?? null,
         isMandatory: parsed.is_mandatory,
         order: parsed.order,
@@ -108,6 +109,7 @@ const updateAgendaItemCommand: CommandHandler<Record<string, unknown>, AgendaIte
         if (parsed.location !== undefined) entity.location = parsed.location
         if (parsed.speaker_name !== undefined) entity.speakerName = parsed.speaker_name
         if (parsed.speaker_bio !== undefined) entity.speakerBio = parsed.speaker_bio
+        if (parsed.speaker_photo_url !== undefined) entity.speakerPhotoUrl = parsed.speaker_photo_url
         if (parsed.track_id !== undefined) entity.trackId = parsed.track_id
         if (parsed.is_mandatory !== undefined) entity.isMandatory = parsed.is_mandatory
         if (parsed.order !== undefined) entity.order = parsed.order

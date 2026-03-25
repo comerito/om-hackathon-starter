@@ -54,7 +54,7 @@ export const updateCriterionSchema = z.object({
 // ── ProjectScore (save/submit) ──────────────────────────────────────
 export const saveScoreSchema = z.object({
   project_id: z.string().uuid(),
-  judge_panel_id: z.string().uuid(),
+  judge_panel_id: z.union([z.string().uuid(), z.literal('auto')]),
   competition_id: z.string().uuid(),
   round: z.enum(judgingRoundValues).default('preliminary'),
   comment: z.string().nullable().optional(),

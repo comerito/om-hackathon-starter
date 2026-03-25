@@ -17,7 +17,7 @@ import { PortalPageTitle, PortalBadge, ProgressBar } from '@/components/portal'
 type AgendaItem = {
   id: string; title: string; description: string | null; type: string
   starts_at: string; ends_at: string; location: string | null; speaker_name: string | null
-  speaker_bio: string | null; is_mandatory: boolean
+  speaker_bio: string | null; speaker_photo_url: string | null; is_mandatory: boolean
 }
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
@@ -242,11 +242,16 @@ function AgendaContent() {
           if (!featured) return null
           return (
             <div className="rounded-xl overflow-hidden">
-              <div className="relative h-48 bg-gradient-to-b from-gray-300 to-gray-400">
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-portal-secondary mb-1">Featured Curator</p>
+              <div
+                className="relative h-48 bg-cover bg-center"
+                style={featured.speaker_photo_url
+                  ? { backgroundImage: `url(${featured.speaker_photo_url})` }
+                  : { background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)' }}
+              >
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-1">Featured Curator</p>
                   <p className="text-sm font-bold text-white">{featured.speaker_name}</p>
-                  <p className="text-xs text-white/70">{featured.title}</p>
+                  <p className="text-xs text-white/70">{featured.speaker_bio || featured.title}</p>
                 </div>
               </div>
             </div>

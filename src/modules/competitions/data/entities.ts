@@ -377,6 +377,9 @@ export class AgendaItem {
   @Property({ name: 'speaker_bio', type: 'text', nullable: true })
   speakerBio?: string | null
 
+  @Property({ name: 'speaker_photo_url', type: 'varchar', length: 1000, nullable: true })
+  speakerPhotoUrl?: string | null
+
   @Property({ name: 'track_id', type: 'uuid', nullable: true })
   trackId?: string | null
 
