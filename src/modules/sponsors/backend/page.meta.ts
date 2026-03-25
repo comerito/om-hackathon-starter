@@ -14,7 +14,7 @@ export const metadata = {
   pageTitleKey: 'sponsors.list.title',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 105,
+  pageOrder: 6,
   icon: awardIcon,
   breadcrumb: [{ label: 'Sponsors & Prizes', labelKey: 'sponsors.list.title' }],
 }

@@ -1,4 +1,5 @@
 import type { EntityManager } from '@mikro-orm/postgresql'
+import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
 
 export const metadata = {
   event: 'teams.invitation.created',
@@ -21,7 +22,7 @@ export default async function handler(
   ctx: { resolve: <T = unknown>(name: string) => T },
 ) {
   const em = ctx.resolve('em') as EntityManager
-  const notificationService = ctx.resolve('notificationService') as any
+  const notificationService = resolveNotificationService(ctx)
   const knex = (em as any).getConnection().getKnex()
 
   // Get team name

@@ -1,4 +1,5 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
+import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
 import { CompetitionParticipation, Competition } from '../data/entities'
 
 const stageLabels: Record<string, string> = {
@@ -15,8 +16,8 @@ export const metadata = {
 
 type Payload = {
   id: string
-  stage: string
-  previousStage: string
+  stage?: string
+  previousStage?: string
   tenantId: string
   organizationId: string
 }
@@ -26,12 +27,14 @@ export default async function handler(
   ctx: { resolve: <T = unknown>(name: string) => T },
 ) {
   const em = ctx.resolve('em') as EntityManager
-  const notificationService = ctx.resolve('notificationService') as any
+  const notificationService = resolveNotificationService(ctx)
 
-  // Get competition name
+  // Get competition from DB (payload.stage may not be present)
   const competition = await em.findOne(Competition, { id: payload.id } as FilterQuery<Competition>)
-  const compName = competition?.name ?? 'Competition'
-  const stageName = stageLabels[payload.stage] ?? payload.stage
+  if (!competition) return
+  const compName = competition.name ?? 'Competition'
+  const stage = payload.stage ?? competition.stage
+  const stageName = stageLabels[stage] ?? stage
 
   // Find all participants
   const participations = await em.find(CompetitionParticipation, {

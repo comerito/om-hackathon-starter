@@ -1,5 +1,6 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { CompetitionParticipation } from '../data/entities'
+import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
+import { Announcement, CompetitionParticipation } from '../data/entities'
 
 export const metadata = {
   event: 'competitions.announcement.created',
@@ -9,8 +10,6 @@ export const metadata = {
 
 type Payload = {
   id: string
-  title: string
-  competitionId: string
   tenantId: string
   organizationId: string
 }
@@ -19,34 +18,54 @@ export default async function handler(
   payload: Payload,
   ctx: { resolve: <T = unknown>(name: string) => T },
 ) {
-  const em = ctx.resolve('em') as EntityManager
-  const notificationService = ctx.resolve('notificationService') as any
+  console.log('[competitions:notify-announcement] Invoked with:', JSON.stringify(payload))
 
-  // Find all participants in this competition
-  const participations = await em.find(CompetitionParticipation, {
-    competitionId: payload.competitionId,
-    tenantId: payload.tenantId,
-    deletedAt: null,
-  } as FilterQuery<CompetitionParticipation>)
+  try {
+    const em = ctx.resolve('em') as EntityManager
 
-  if (participations.length === 0) return
+    // Load the announcement to get title + competitionId
+    const announcement = await em.findOne(Announcement, {
+      id: payload.id,
+      tenantId: payload.tenantId,
+    } as FilterQuery<Announcement>)
+    if (!announcement) {
+      console.log('[competitions:notify-announcement] Announcement not found for id:', payload.id)
+      return
+    }
 
-  const recipientUserIds = participations.map(p => p.customerUserId)
+    // Find all participants in this competition
+    const participations = await em.find(CompetitionParticipation, {
+      competitionId: announcement.competitionId,
+      tenantId: payload.tenantId,
+      deletedAt: null,
+    } as FilterQuery<CompetitionParticipation>)
 
-  await notificationService.createBatch(
-    {
-      recipientUserIds,
-      type: 'competitions.announcement.published',
-      title: `New announcement: ${payload.title}`,
-      titleKey: 'competitions.notifications.announcement.title',
-      titleVariables: { title: payload.title },
-      body: payload.title,
-      icon: 'megaphone',
-      severity: 'info',
-      sourceModule: 'competitions',
-      sourceEntityType: 'competitions:announcement',
-      sourceEntityId: payload.id,
-    },
-    { tenantId: payload.tenantId, organizationId: payload.organizationId },
-  )
+    console.log('[competitions:notify-announcement] Found', participations.length, 'participants for competition', announcement.competitionId)
+
+    if (participations.length === 0) return
+
+    const recipientUserIds = participations.map(p => p.customerUserId)
+
+    const notificationService = resolveNotificationService(ctx)
+    await notificationService.createBatch(
+      {
+        recipientUserIds,
+        type: 'competitions.announcement.published',
+        title: `New announcement: ${announcement.title}`,
+        titleKey: 'competitions.notifications.announcement.title',
+        titleVariables: { title: announcement.title },
+        body: announcement.content?.slice(0, 200) ?? announcement.title,
+        icon: 'megaphone',
+        severity: announcement.priority === 'urgent' ? 'error' as const : 'info' as const,
+        sourceModule: 'competitions',
+        sourceEntityType: 'competitions:announcement',
+        sourceEntityId: payload.id,
+      },
+      { tenantId: payload.tenantId, organizationId: payload.organizationId },
+    )
+
+    console.log('[competitions:notify-announcement] Notifications created for', recipientUserIds.length, 'users')
+  } catch (err) {
+    console.error('[competitions:notify-announcement] Error:', err)
+  }
 }

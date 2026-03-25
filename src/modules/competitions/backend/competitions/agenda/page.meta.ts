@@ -19,7 +19,7 @@ export const metadata = {
   pageTitleKey: 'competitions.agenda.pageTitle',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 110,
+  pageOrder: 9,
   icon,
   breadcrumb: [
     { label: 'Agenda', labelKey: 'competitions.agenda.pageTitle' },

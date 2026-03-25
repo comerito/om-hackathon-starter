@@ -17,7 +17,7 @@ export const metadata = {
   pageTitleKey: 'teams.list.title',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 102,
+  pageOrder: 3,
   icon: usersIcon,
   breadcrumb: [
     { label: 'Teams', labelKey: 'teams.list.title' },

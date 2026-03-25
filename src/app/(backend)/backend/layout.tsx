@@ -232,6 +232,8 @@ export default async function BackendLayout({ children, params }: { children: Re
     items: group.items.map(mapItem),
   }))
   const defaultGroupOrder = [
+    'competitions.nav.group',
+    'customer_accounts.nav.group',
     'customers.nav.group',
     'catalog.nav.group',
     'customers~sales.nav.group',

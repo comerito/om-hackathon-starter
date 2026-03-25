@@ -26,7 +26,7 @@ export default function AnnouncementsListPage() {
   const t = useT()
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: 'created_at', desc: true }])
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: 'published_at', desc: true }])
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
 
