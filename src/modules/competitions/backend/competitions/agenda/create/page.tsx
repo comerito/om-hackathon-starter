@@ -29,12 +29,16 @@ export default function CreateAgendaItemPage() {
     { id: 'ends_at', label: t('competitions.agenda.endsAt', 'End Time'), type: 'datetime', required: true },
     { id: 'location', label: t('competitions.agenda.location', 'Location'), type: 'text' },
     { id: 'speaker_name', label: t('competitions.agenda.speakerName', 'Speaker Name'), type: 'text' },
+    { id: 'speaker_bio', label: t('competitions.agenda.speakerBio', 'Speaker Bio'), type: 'text', placeholder: 'Short bio or title' },
+    { id: 'speaker_photo_url', label: t('competitions.agenda.speakerPhotoUrl', 'Speaker Photo URL'), type: 'text', placeholder: 'https://...' },
     { id: 'is_mandatory', label: t('competitions.agenda.isMandatory', 'Mandatory'), type: 'checkbox' },
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('competitions.agenda.groups.details', 'Details'), column: 1, fields: ['competition_id', 'title', 'description', 'type'] },
-    { id: 'schedule', title: t('competitions.agenda.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'location', 'speaker_name', 'is_mandatory'] },
+    { id: 'schedule', title: t('competitions.agenda.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'location'] },
+    { id: 'speaker', title: t('competitions.agenda.groups.speaker', 'Speaker'), column: 2, fields: ['speaker_name', 'speaker_bio', 'speaker_photo_url'] },
+    { id: 'settings', title: t('competitions.agenda.groups.settings', 'Settings'), column: 1, fields: ['is_mandatory'] },
   ], [t])
 
   return (

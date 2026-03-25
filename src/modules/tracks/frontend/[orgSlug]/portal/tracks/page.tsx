@@ -86,12 +86,30 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
   )
 }
 
+type MembershipData = {
+  membership: { team_id: string; role: string } | null
+  team: { id: string; track_id: string | null } | null
+}
+
+// Frontend stage check — optimistic. The backend enforces the real rules.
+// We allow the UI buttons during team_formation, track_selection, and hacking.
+// If the backend rejects (e.g. allowTrackChange=false), the error is shown to the user.
+const ALLOWED_STAGES_FOR_TRACK_UI = ['team_formation', 'track_selection', 'hacking']
+
+function canSelectTrackUI(stage: string | undefined): boolean {
+  if (!stage) return false
+  return ALLOWED_STAGES_FOR_TRACK_UI.includes(stage)
+}
+
 /* ---------- Main content ---------- */
 function TracksContent() {
   const t = useT()
   const { orgSlug } = usePortalContext()
   const { selectedId, selected } = useCompetitionContext()
   const [activeFilter, setActiveFilter] = React.useState('all')
+  const [selectingTrackId, setSelectingTrackId] = React.useState<string | null>(null)
+  const [trackError, setTrackError] = React.useState<string | null>(null)
+  const errorRef = React.useRef<HTMLDivElement>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-tracks', selectedId],
@@ -105,6 +123,27 @@ function TracksContent() {
     },
     enabled: !!selectedId,
   })
+
+  // Fetch user's team membership (to know current track)
+  const { data: membershipData, isLoading: membershipLoading, refetch: refetchMembership } = useQuery({
+    queryKey: ['portal-my-membership-tracks', selectedId],
+    queryFn: async () => {
+      if (!selectedId) return null
+      const { ok, result } = await apiCall<MembershipData>(
+        `/api/teams/portal/my-membership?competition_id=${selectedId}`,
+      )
+      if (!ok) return null
+      return result ?? null
+    },
+    enabled: !!selectedId,
+  })
+
+  const myTeamId = membershipData?.team?.id ?? membershipData?.membership?.team_id ?? null
+  const myTrackId = membershipData?.team?.track_id ?? null
+  const membershipReady = !membershipLoading
+
+  // Determine if track selection UI should be enabled based on competition stage
+  const trackSelectionAllowed = canSelectTrackUI(selected?.stage)
 
   // Fetch team counts per track from stats
   const { data: statsData } = useQuery({
@@ -144,6 +183,27 @@ function TracksContent() {
     },
     enabled: !!selectedId,
   })
+
+  async function handleSelectTrack(trackId: string) {
+    if (!myTeamId || selectingTrackId) return
+    setTrackError(null)
+    setSelectingTrackId(trackId)
+    try {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/select-track', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ team_id: myTeamId, track_id: trackId }),
+      })
+      if (!ok || !(result as any)?.ok) {
+        setTrackError((result as any)?.error ?? 'Failed to select track')
+        setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+      } else {
+        refetchMembership()
+      }
+    } finally {
+      setSelectingTrackId(null)
+    }
+  }
 
   // Compute team counts per track
   const teamCountByTrack = React.useMemo<TeamsByTrack>(() => {
@@ -199,11 +259,9 @@ function TracksContent() {
     )
   }
 
-  // Use the first track as the "featured active" track
-  const featuredTrack = tracks[0]
-
-  // Derive unique category-like names from track names for filter pills
-  const filterLabels = ['All Tracks', ...tracks.map(tr => tr.name)]
+  // Use the user's current track as featured, or fall back to first track
+  const featuredTrack = (myTrackId ? tracks.find(tr => tr.id === myTrackId) : null) ?? tracks[0]
+  const hasSelectedTrack = !!myTrackId
 
   // Filtered tracks for the grid
   const filteredTracks = activeFilter === 'all'
@@ -219,13 +277,43 @@ function TracksContent() {
         rightElement={selected?.ends_at ? <CountdownWidget targetDate={selected.ends_at} /> : undefined}
       />
 
+      {/* ---- Error banner ---- */}
+      {trackError && (
+        <div ref={errorRef} className="flex items-center justify-between gap-3 rounded-xl border border-portal-danger/20 bg-portal-danger/5 px-5 py-3" style={{ animation: 'slideDown 250ms ease-out' }}>
+          <div className="flex items-center gap-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-portal-danger">
+              <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
+            </svg>
+            <p className="text-sm text-portal-danger">{trackError}</p>
+          </div>
+          <button type="button" onClick={() => setTrackError(null)} className="shrink-0 rounded-md p-1 text-portal-danger/50 hover:bg-portal-danger/10 hover:text-portal-danger transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" /></svg>
+          </button>
+          <style>{`@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+        </div>
+      )}
+
+      {/* ---- Stage banner when track selection is locked ---- */}
+      {!trackSelectionAllowed && myTeamId && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-amber-600">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <p className="text-sm text-amber-800">
+            {t('tracks.portal.selectionLocked', 'Track selection is currently locked. Changes are not allowed at this stage of the competition.')}
+          </p>
+        </div>
+      )}
+
       {/* ---- Top row: Featured track + Prize pool ---- */}
       <div className="grid gap-5 lg:grid-cols-5">
-        {/* Featured active track card */}
+        {/* Featured / current track card */}
         <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div>
-            <PortalBadge variant="success" className="mb-4">
-              {t('tracks.portal.activeTrack', 'Active Track')}
+            <PortalBadge variant={hasSelectedTrack ? 'success' : 'default'} className="mb-4">
+              {hasSelectedTrack
+                ? t('tracks.portal.yourTrack', 'Your Track')
+                : t('tracks.portal.featuredTrack', 'Featured Track')}
             </PortalBadge>
             <div className="mb-3 flex items-center gap-3">
               <TrackIcon color={featuredTrack.color} iconUrl={featuredTrack.icon_url} size="lg" />
@@ -245,12 +333,9 @@ function TracksContent() {
                 {teamCountByTrack[featuredTrack.id] ?? 0} / {featuredTrack.max_teams ?? '∞'} {t('tracks.portal.teamsJoined', 'Teams Joined')}
               </span>
             </div>
-            <button
-              type="button"
-              className="rounded-lg bg-portal-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90"
-            >
-              {t('tracks.portal.viewDashboard', 'View Dashboard')}
-            </button>
+            <ActionLink href={`/${orgSlug}/portal/tracks/${featuredTrack.id}`}>
+              {t('tracks.portal.viewDetails', 'View Details')}
+            </ActionLink>
           </div>
         </div>
 
@@ -296,16 +381,31 @@ function TracksContent() {
 
         {/* Track cards grid */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredTracks.map((track, idx) => {
+          {filteredTracks.map((track) => {
             const globalIdx = tracks.findIndex(tr => tr.id === track.id)
             const teamCount = teamCountByTrack[track.id] ?? 0
             const maxTeams = track.max_teams ?? '∞'
+            const isMyTrack = myTrackId === track.id
+            const isFull = track.max_teams != null && teamCount >= track.max_teams
+            const isSelecting = selectingTrackId === track.id
 
             return (
               <div
                 key={track.id}
-                className="group relative flex flex-col rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md"
+                className={cn(
+                  'group relative flex flex-col rounded-xl border bg-white shadow-sm transition-all hover:shadow-md',
+                  isMyTrack ? 'border-2 ring-1' : 'border-gray-100',
+                )}
+                style={isMyTrack ? { borderColor: track.color, ringColor: `${track.color}30` } : undefined}
               >
+                {/* Selected indicator */}
+                {isMyTrack && (
+                  <div className="absolute -top-2.5 left-5 z-10 flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm" style={{ backgroundColor: track.color }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    {t('tracks.portal.yourTrackBadge', 'Your Track')}
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-3 px-6 pt-5 pb-4">
                   {/* Track number */}
                   <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
@@ -335,15 +435,54 @@ function TracksContent() {
                     {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
                   </span>
                   <div className="flex items-center gap-3">
-                    <ActionLink href={`/${orgSlug}/portal/team`} className="text-[11px]">
+                    <ActionLink href={`/${orgSlug}/portal/tracks/${track.id}`} className="text-[11px]">
                       {t('tracks.portal.details', 'Details')}
                     </ActionLink>
-                    <button
-                      type="button"
-                      className="rounded-lg bg-portal-primary px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90"
-                    >
-                      {t('tracks.portal.joinTrack', 'Join Track')}
-                    </button>
+
+                    {isMyTrack ? (
+                      /* Already selected — no button, badge + border is the indicator */
+                      null
+                    ) : !membershipReady ? (
+                      /* Still loading membership */
+                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-300 animate-pulse">...</span>
+                    ) : isFull ? (
+                      /* Track is full */
+                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-400 cursor-not-allowed">
+                        {t('tracks.portal.trackFull', 'Full')}
+                      </span>
+                    ) : !trackSelectionAllowed ? (
+                      /* Stage doesn't allow selection */
+                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-400 cursor-not-allowed">
+                        {t('tracks.portal.locked', 'Locked')}
+                      </span>
+                    ) : !myTeamId ? (
+                      /* No team — link to team page */
+                      <a
+                        href={`/${orgSlug}/portal/team`}
+                        className="rounded-lg border border-portal-primary/30 bg-portal-primary/5 px-3 py-1.5 text-[11px] font-semibold text-portal-primary transition-colors hover:bg-portal-primary/10"
+                      >
+                        {t('tracks.portal.createTeamFirst', 'Create a Team to Join')}
+                      </a>
+                    ) : (
+                      /* Has team + stage allows + not full → active button */
+                      <button
+                        type="button"
+                        disabled={isSelecting}
+                        onClick={() => handleSelectTrack(track.id)}
+                        className={cn(
+                          'rounded-lg px-3 py-1.5 text-[11px] font-semibold shadow-sm transition-colors disabled:opacity-60',
+                          hasSelectedTrack
+                            ? 'border border-portal-primary bg-white text-portal-primary hover:bg-portal-primary/5'
+                            : 'bg-portal-primary text-white hover:bg-portal-primary/90',
+                        )}
+                      >
+                        {isSelecting
+                          ? t('common.saving', 'Saving...')
+                          : hasSelectedTrack
+                            ? t('tracks.portal.switchTrack', 'Switch Track')
+                            : t('tracks.portal.joinTrack', 'Join Track')}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

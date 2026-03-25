@@ -43,7 +43,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   list: {
     schema: querySchema,
     entityId: ENTITY_ID,
-    fields: ['id', 'competition_id', 'name', 'description', 'color', 'icon_url', 'max_teams', 'sort_order', 'mentor_ids', 'is_active', 'tenant_id', 'organization_id', 'created_at'],
+    fields: ['id', 'competition_id', 'name', 'short_description', 'description', 'attachment_ids', 'color', 'icon_url', 'max_teams', 'sort_order', 'mentor_ids', 'category', 'badge', 'is_active', 'tenant_id', 'organization_id', 'created_at'],
     sortFieldMap: { id: 'id', name: 'name', sort_order: 'sort_order', created_at: 'created_at' },
     buildFilters: async (q: Query) => {
       const filters: Record<string, unknown> = {}
@@ -59,11 +59,15 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
         id: String(r.id),
         competition_id: String(r.competition_id),
         name: String(r.name),
+        short_description: r.short_description ?? null,
         description: r.description ?? null,
+        attachment_ids: r.attachment_ids ?? [],
         color: String(r.color ?? '#6366f1'),
         icon_url: r.icon_url ?? null,
         max_teams: r.max_teams ?? null,
         order: Number(r.sort_order ?? 0),
+        category: r.category ?? null,
+        badge: r.badge ?? null,
         mentor_ids: r.mentor_ids ?? [],
         is_active: Boolean(r.is_active),
         created_at: r.created_at,

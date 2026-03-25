@@ -2,8 +2,10 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Bell, Settings, ArrowLeft, Search, LogOut } from 'lucide-react'
+import { Settings, ArrowLeft, Search, LogOut } from 'lucide-react'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
+import { PortalNotificationBell } from '@open-mercato/ui/portal/components/PortalNotificationBell'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 
 type PortalTopBarProps = {
@@ -32,6 +34,7 @@ export function PortalTopBar({
   navLinks,
 }: PortalTopBarProps) {
   const { auth, orgSlug } = usePortalContext()
+  const t = useT()
   const displayName = userName || auth.user?.displayName || auth.user?.email || ''
   const displayRole = userRole || 'PARTICIPANT'
   const prefix = `/${orgSlug}/portal`
@@ -84,11 +87,8 @@ export function PortalTopBar({
 
       {/* Right: Actions */}
       <div className="ml-auto flex items-center gap-3">
-        {/* Notification bell */}
-        <button type="button" className="relative rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors">
-          <Bell className="size-[18px]" />
-          <span className="absolute top-1 right-1 size-2 rounded-full bg-portal-danger ring-2 ring-white" />
-        </button>
+        {/* Notification bell + panel */}
+        <PortalNotificationBell t={t} />
 
         {/* Settings */}
         <button type="button" className="rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors">

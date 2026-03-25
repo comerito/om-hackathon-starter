@@ -16,7 +16,7 @@ export const metadata = {
   pageTitleKey: 'projects.list.title',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 103,
+  pageOrder: 4,
   icon: folderCodeIcon,
   breadcrumb: [
     { label: 'Projects', labelKey: 'projects.list.title' },

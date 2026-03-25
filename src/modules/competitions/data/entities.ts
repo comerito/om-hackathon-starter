@@ -377,6 +377,9 @@ export class AgendaItem {
   @Property({ name: 'speaker_bio', type: 'text', nullable: true })
   speakerBio?: string | null
 
+  @Property({ name: 'speaker_photo_url', type: 'varchar', length: 1000, nullable: true })
+  speakerPhotoUrl?: string | null
+
   @Property({ name: 'track_id', type: 'uuid', nullable: true })
   trackId?: string | null
 
@@ -501,4 +504,35 @@ export class Milestone {
 
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
+}
+
+// ── Competition Invitation (maps framework invitation → competition + role) ──
+
+@Entity({ tableName: 'competitions_invitation' })
+@Unique({ properties: ['customerInvitationId'] })
+export class CompetitionInvitation {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'customer_invitation_id', type: 'uuid' })
+  customerInvitationId!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ name: 'participation_role', type: 'text', default: 'participant' })
+  participationRole: ParticipationRole = ParticipationRole.PARTICIPANT
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
 }

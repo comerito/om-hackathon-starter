@@ -18,7 +18,7 @@ export const metadata = {
   pageTitleKey: 'judging.list.title',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 104,
+  pageOrder: 5,
   icon: gavelIcon,
   breadcrumb: [
     { label: 'Demos & Judging', labelKey: 'judging.list.title' },

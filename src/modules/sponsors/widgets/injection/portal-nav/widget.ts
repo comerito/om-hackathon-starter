@@ -12,8 +12,8 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'sponsors.portal-sponsors', label: 'Sponsors & Prizes', labelKey: 'sponsors.portal.nav.sponsors', icon: 'lucide:award', href: `${prefix}/sponsors` },
-      { id: 'sponsors.portal-voting', label: 'Vote', labelKey: 'sponsors.portal.nav.voting', icon: 'lucide:heart', href: `${prefix}/voting` },
+      { id: 'sponsors.portal-sponsors', label: 'Sponsors & Prizes', labelKey: 'sponsors.portal.nav.sponsors', icon: 'lucide:award', href: `${prefix}/sponsors`, groupId: 'community', groupLabel: 'Community', groupOrder: 3 },
+      { id: 'sponsors.portal-voting', label: 'Vote', labelKey: 'sponsors.portal.nav.voting', icon: 'lucide:heart', href: `${prefix}/voting`, groupId: 'results', groupLabel: 'Judging & Results', groupOrder: 4 },
     ]
   },
 }

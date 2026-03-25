@@ -77,6 +77,7 @@ const updateCriterionCommand: CommandHandler<Record<string, unknown>, JudgingCri
       entity: JudgingCriterion,
       where: { id: parsed.id, tenantId: scope.tenantId, organizationId: scope.organizationId, deletedAt: null } as FilterQuery<JudgingCriterion>,
       apply: (e) => {
+        if (parsed.track_id !== undefined) e.trackId = parsed.track_id
         if (parsed.name !== undefined) e.name = parsed.name
         if (parsed.description !== undefined) e.description = parsed.description
         if (parsed.max_score !== undefined) e.maxScore = parsed.max_score

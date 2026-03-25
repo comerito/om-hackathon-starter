@@ -40,7 +40,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   list: {
     schema: querySchema,
     entityId: ENTITY_ID,
-    fields: ['id', 'competition_id', 'title', 'description', 'type', 'starts_at', 'ends_at', 'location', 'speaker_name', 'is_mandatory', 'sort_order', 'track_id', 'tenant_id', 'organization_id', 'created_at'],
+    fields: ['id', 'competition_id', 'title', 'description', 'type', 'starts_at', 'ends_at', 'location', 'speaker_name', 'speaker_bio', 'speaker_photo_url', 'is_mandatory', 'sort_order', 'track_id', 'tenant_id', 'organization_id', 'created_at'],
     sortFieldMap: { id: 'id', title: 'title', starts_at: 'starts_at', ends_at: 'ends_at', sort_order: 'sort_order', type: 'type', created_at: 'created_at' },
     buildFilters: async (q) => {
       const filters: Record<string, unknown> = {}
@@ -62,6 +62,8 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
         ends_at: r.ends_at,
         location: r.location ?? null,
         speaker_name: r.speaker_name ?? null,
+        speaker_bio: r.speaker_bio ?? null,
+        speaker_photo_url: r.speaker_photo_url ?? null,
         is_mandatory: Boolean(r.is_mandatory),
         order: Number(r.sort_order ?? 0),
         track_id: r.track_id ?? null,

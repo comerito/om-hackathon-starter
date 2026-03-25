@@ -51,7 +51,8 @@ export async function GET(req: Request) {
         items: items.map(i => ({
           id: i.id, title: i.title, description: i.description, type: i.type,
           starts_at: i.startsAt, ends_at: i.endsAt, location: i.location,
-          speaker_name: i.speakerName, is_mandatory: i.isMandatory,
+          speaker_name: i.speakerName, speaker_bio: i.speakerBio ?? null,
+          speaker_photo_url: i.speakerPhotoUrl ?? null, is_mandatory: i.isMandatory,
         })),
       })
     }

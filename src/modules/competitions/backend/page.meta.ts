@@ -15,7 +15,7 @@ export const metadata = {
   pageTitleKey: 'competitions.list.title',
   pageGroup: 'HackOn',
   pageGroupKey: 'competitions.nav.group',
-  pageOrder: 100,
+  pageOrder: 1,
   icon: trophyIcon,
   breadcrumb: [
     { label: 'Competitions', labelKey: 'competitions.list.title' },

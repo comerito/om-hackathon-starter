@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
+import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const selectTrackSchema = z.object({
@@ -47,6 +48,32 @@ export async function POST(req: Request) {
     } as FilterQuery<Team>)
     if (!team) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
+    }
+
+    // Enforce competition stage — track selection only allowed during permitted windows
+    const competition = await em.findOne(Competition, {
+      id: team.competitionId,
+      tenantId: auth.tenantId,
+    } as FilterQuery<Competition>)
+    if (!competition) {
+      return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+    }
+
+    const stageIdx = STAGE_ORDER.indexOf(competition.stage)
+    const trackSelectionIdx = STAGE_ORDER.indexOf(CompetitionStage.TRACK_SELECTION)
+
+    if (stageIdx < trackSelectionIdx) {
+      // Before track selection — only allow if simultaneous formation+track is enabled and stage is team_formation
+      const allowEarly = competition.stage === CompetitionStage.TEAM_FORMATION
+        && competition.stageConfig?.allowSimultaneousFormationAndTrack
+      if (!allowEarly) {
+        return NextResponse.json({ error: 'Track selection has not started yet' }, { status: 403 })
+      }
+    } else if (stageIdx > trackSelectionIdx) {
+      // After track selection — only allow if allowTrackChange is true
+      if (!competition.allowTrackChange) {
+        return NextResponse.json({ error: 'Track selection is closed. Track changes are not allowed.' }, { status: 403 })
+      }
     }
 
     // Verify track belongs to same competition (if not null)

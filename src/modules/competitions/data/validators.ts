@@ -143,6 +143,7 @@ export const createAgendaItemSchema = z.object({
   location: z.string().max(255).optional(),
   speaker_name: z.string().max(255).optional(),
   speaker_bio: z.string().optional(),
+  speaker_photo_url: z.string().max(1000).optional(),
   track_id: z.string().uuid().optional(),
   is_mandatory: z.boolean().default(false),
   order: z.number().int().default(0),
@@ -158,6 +159,7 @@ export const updateAgendaItemSchema = z.object({
   location: z.string().max(255).nullable().optional(),
   speaker_name: z.string().max(255).nullable().optional(),
   speaker_bio: z.string().nullable().optional(),
+  speaker_photo_url: z.string().max(1000).nullable().optional(),
   track_id: z.string().uuid().nullable().optional(),
   is_mandatory: z.boolean().optional(),
   order: z.number().int().optional(),
@@ -212,3 +214,20 @@ export const updateMilestoneSchema = z.object({
 
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>
 export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>
+
+// ── Bulk Invite ─────────────────────────────────────────────────────
+
+export const bulkInviteRowSchema = z.object({
+  email: z.string().email().max(255),
+  display_name: z.string().min(1).max(255),
+  role: z.enum(participationRoleValues).default('participant'),
+})
+
+export const bulkInviteSchema = z.object({
+  competition_id: z.string().uuid(),
+  org_slug: z.string().min(1).max(255),
+  invitees: z.array(bulkInviteRowSchema).min(1).max(500),
+})
+
+export type BulkInviteRow = z.infer<typeof bulkInviteRowSchema>
+export type BulkInviteInput = z.infer<typeof bulkInviteSchema>
