@@ -2,14 +2,22 @@
 
 import * as React from 'react'
 import { usePortalEventBridge } from '@open-mercato/ui/portal/hooks/usePortalEventBridge'
+import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalSidebar } from './PortalSidebar'
 import { PortalTopBar } from './PortalTopBar'
 import { PortalFooter } from './PortalFooter'
 
 export type PortalLayoutVariant = 'full' | 'minimal' | 'topnav' | 'kiosk'
 
-/** Tiny component to mount event bridge hook (can't conditionally call hooks) */
+/** Only mount event bridge when user is actually authenticated */
 function EventBridge() {
+  const { auth } = usePortalContext()
+  // Skip SSE connection if no user — prevents 401 spam
+  if (!auth.user) return null
+  return <EventBridgeInner />
+}
+
+function EventBridgeInner() {
   usePortalEventBridge()
   return null
 }

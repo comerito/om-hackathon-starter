@@ -4,13 +4,11 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole } from '../../../data/entities'
-import { Track } from '../../../../tracks/data/entities'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const selectTrackSchema = z.object({
+const leaveTeamSchema = z.object({
   team_id: z.string().uuid(),
-  track_id: z.string().uuid().nullable(),
 })
 
 export const metadata = {
@@ -25,22 +23,22 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const parsed = selectTrackSchema.parse(body)
+    const parsed = leaveTeamSchema.parse(body)
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
-    // Verify caller is team owner
-    const ownership = await em.findOne(TeamMember, {
+    // Find the member record
+    const membership = await em.findOne(TeamMember, {
       teamId: parsed.team_id,
       customerUserId: auth.sub,
-      role: TeamRole.OWNER,
       deletedAt: null,
       tenantId: auth.tenantId,
     } as FilterQuery<TeamMember>)
-    if (!ownership) {
-      return NextResponse.json({ error: 'Only the team owner can select a track' }, { status: 403 })
+    if (!membership) {
+      return NextResponse.json({ error: 'You are not a member of this team' }, { status: 404 })
     }
 
+    // Load team to get competition
     const team = await em.findOne(Team, {
       id: parsed.team_id,
       tenantId: auth.tenantId,
@@ -50,7 +48,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
-    // Enforce competition stage — track selection only allowed during permitted windows
+    // Check competition stage — only allow leaving during early stages
     const competition = await em.findOne(Competition, {
       id: team.competitionId,
       tenantId: auth.tenantId,
@@ -60,49 +58,54 @@ export async function POST(req: Request) {
     }
 
     const stageIdx = STAGE_ORDER.indexOf(competition.stage)
-    const trackSelectionIdx = STAGE_ORDER.indexOf(CompetitionStage.TRACK_SELECTION)
-
-    if (stageIdx < trackSelectionIdx) {
-      // Before track selection — only allow if simultaneous formation+track is enabled and stage is team_formation
-      const allowEarly = competition.stage === CompetitionStage.TEAM_FORMATION
-        && competition.stageConfig?.allowSimultaneousFormationAndTrack
-      if (!allowEarly) {
-        return NextResponse.json({ error: 'Track selection has not started yet' }, { status: 403 })
-      }
-    } else if (stageIdx > trackSelectionIdx) {
-      // After track selection — only allow if allowTrackChange is true
-      if (!competition.allowTrackChange) {
-        return NextResponse.json({ error: 'Track selection is closed. Track changes are not allowed.' }, { status: 403 })
-      }
+    const hackingIdx = STAGE_ORDER.indexOf(CompetitionStage.HACKING)
+    if (stageIdx >= hackingIdx) {
+      return NextResponse.json(
+        { error: 'You cannot leave your team after hacking has started.' },
+        { status: 403 },
+      )
     }
 
-    // Verify track belongs to same competition (if not null)
-    if (parsed.track_id) {
-      const track = await em.findOne(Track, {
-        id: parsed.track_id,
-        competitionId: team.competitionId,
+    // Owners cannot leave — they must transfer ownership or disband
+    if (membership.role === TeamRole.OWNER) {
+      // Count remaining members
+      const memberCount = await em.count(TeamMember, {
+        teamId: parsed.team_id,
+        deletedAt: null,
         tenantId: auth.tenantId,
-      } as FilterQuery<Track>)
-      if (!track) {
-        return NextResponse.json({ error: 'Track not found in this competition' }, { status: 404 })
+      } as FilterQuery<TeamMember>)
+
+      if (memberCount > 1) {
+        return NextResponse.json(
+          { error: 'As the team owner, you must transfer ownership before leaving, or remove all other members first.' },
+          { status: 403 },
+        )
       }
+
+      // Solo owner — soft-delete the team entirely
+      team.deletedAt = new Date()
+      em.persist(team)
     }
 
-    team.trackId = parsed.track_id
-    await em.persistAndFlush(team)
+    // Soft-delete the membership
+    membership.deletedAt = new Date()
+    membership.leftAt = new Date()
+    em.persist(membership)
 
-    return NextResponse.json({ ok: true, track_id: parsed.track_id })
+    await em.flush()
+
+    return NextResponse.json({ ok: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
     }
-    console.error('[portal/select-track] POST error:', error)
+    console.error('[portal/leave-team] POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export const openApi: OpenApiRouteDoc = {
   tag: 'Portal',
-  summary: 'Select track (portal)',
-  methods: { POST: { summary: 'Team owner selects a track for their team' } },
+  summary: 'Leave team (portal)',
+  methods: { POST: { summary: 'Current user leaves their team' } },
 }

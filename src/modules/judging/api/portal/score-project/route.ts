@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { ProjectScore, CriterionScore, JudgingCriterion } from '../../../data/entities'
+import { Project } from '../../../../projects/data/entities'
 import { saveScoreSchema } from '../../../data/validators'
 import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
@@ -30,11 +31,20 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
-    // Load criteria for this competition
-    const criteria = await em.find(JudgingCriterion, {
+    // Load project to get its trackId for criteria filtering
+    const project = await em.findOne(Project, {
+      id: projectId, competitionId, deletedAt: null,
+    } as FilterQuery<Project>)
+
+    // Load criteria for this competition — filtered by track (track-specific + global)
+    const criteriaFilter: FilterQuery<JudgingCriterion> = {
       competitionId, deletedAt: null,
-      $or: [{ round }, { round: 'both' }],
-    } as FilterQuery<JudgingCriterion>, { orderBy: { order: 'ASC' } })
+      $and: [
+        { $or: [{ round }, { round: 'both' }] },
+        { $or: [{ trackId: null }, ...(project?.trackId ? [{ trackId: project.trackId }] : [])] },
+      ],
+    } as FilterQuery<JudgingCriterion>
+    const criteria = await em.find(JudgingCriterion, criteriaFilter, { orderBy: { order: 'ASC' } })
 
     // Load existing score
     const projectScore = await em.findOne(ProjectScore, {

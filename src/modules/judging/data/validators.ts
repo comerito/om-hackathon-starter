@@ -42,6 +42,7 @@ export const createCriterionSchema = z.object({
 
 export const updateCriterionSchema = z.object({
   id: z.string().uuid(),
+  track_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(255).optional(),
   description: z.string().nullable().optional(),
   max_score: z.number().int().min(1).optional(),

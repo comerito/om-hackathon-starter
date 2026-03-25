@@ -5,8 +5,10 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
+import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Input } from '@open-mercato/ui/primitives/input'
+import { Button } from '@open-mercato/ui/primitives/button'
 
 import {
   Cpu, Brain, Globe, Palette, Shield, Rocket, Heart, Zap, Database, Code,
@@ -39,11 +41,15 @@ const ICON_OPTIONS: Array<{ value: string; name: string; Icon: LucideIcon }> = [
 
 type CompetitionOption = { id: string; name: string }
 
+type Attachment = { id: string; file_name: string; file_size: number; url: string; mime_type: string }
+
 type TrackFormValues = {
   id: string
   competition_id: string
   name: string
+  short_description: string
   description: string
+  attachment_ids: string[]
   color: string
   icon_url: string
   category: string
@@ -67,10 +73,93 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
     return (data?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
   }, [])
 
+  // Attachment management state
+  const [attachments, setAttachments] = React.useState<Attachment[]>([])
+  const [uploading, setUploading] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Load attachments when track loads
+  React.useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    async function loadAttachments() {
+      const { ok, result } = await apiCall<{ items: Attachment[] }>(
+        `/api/attachments?entityId=tracks:track&recordId=${id}`,
+      )
+      if (!cancelled && ok && result?.items) setAttachments(result.items)
+    }
+    loadAttachments()
+    return () => { cancelled = true }
+  }, [id])
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !id) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.set('entityId', 'tracks:track')
+      formData.set('recordId', id)
+      formData.set('fieldKey', 'attachments')
+      formData.set('file', file)
+      const { ok, result } = await apiCall<{ item: Attachment }>('/api/attachments', {
+        method: 'POST',
+        body: formData,
+      })
+      if (ok && result?.item) {
+        setAttachments((prev) => [...prev, result.item])
+      }
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleRemoveAttachment(attachmentId: string) {
+    await apiCall(`/api/attachments?id=${attachmentId}`, { method: 'DELETE' })
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'competition_id', label: t('tracks.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
     { id: 'name', label: t('tracks.fields.name', 'Name'), type: 'text', required: true },
-    { id: 'description', label: t('tracks.fields.description', 'Description'), type: 'textarea' },
+    { id: 'short_description', label: t('tracks.fields.shortDescription', 'Short Description'), type: 'text', placeholder: 'A brief tagline for this track' },
+    { id: 'description', label: t('tracks.fields.description', 'Full Description'), type: 'textarea' },
+    {
+      id: 'attachment_ids', label: t('tracks.fields.attachments', 'Attachments'), type: 'custom',
+      component: () => (
+        <div className="space-y-3">
+          {attachments.length > 0 && (
+            <ul className="divide-y rounded-md border">
+              {attachments.map((att) => (
+                <li key={att.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span className="truncate text-sm">{att.file_name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">({formatFileSize(att.file_size)})</span>
+                  </div>
+                  <button type="button" onClick={() => handleRemoveAttachment(att.id)} className="shrink-0 text-xs text-red-500 hover:text-red-700">Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex items-center gap-2">
+            <input ref={fileInputRef} type="file" onChange={handleUpload} className="hidden" />
+            <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+              {uploading ? 'Uploading...' : 'Upload File'}
+            </Button>
+          </div>
+        </div>
+      ),
+    },
     {
       id: 'color', label: t('tracks.fields.color', 'Color'), type: 'custom',
       component: ({ value, setValue }) => (
@@ -116,8 +205,9 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   ], [t, loadCompetitions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'badge'] },
+    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'short_description', 'description', 'category', 'badge'] },
     { id: 'appearance', title: t('tracks.groups.appearance', 'Appearance'), column: 2, fields: ['color', 'icon_url'] },
+    { id: 'attachments', title: t('tracks.groups.attachments', 'Attachments'), column: 2, fields: ['attachment_ids'] },
     { id: 'settings', title: t('tracks.groups.settings', 'Settings'), column: 1, fields: ['max_teams', 'order'] },
   ], [t])
 
@@ -136,7 +226,9 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
             id: String(item.id),
             competition_id: String(item.competition_id ?? ''),
             name: String(item.name ?? ''),
+            short_description: String(item.short_description ?? ''),
             description: String(item.description ?? ''),
+            attachment_ids: Array.isArray(item.attachment_ids) ? item.attachment_ids as string[] : [],
             color: String(item.color ?? '#6366f1'),
             icon_url: String(item.icon_url ?? ''),
             category: String(item.category ?? ''),
@@ -156,8 +248,8 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   }, [id])
 
   const fallback = React.useMemo<TrackFormValues>(() => ({
-    id: id ?? '', competition_id: '', name: '', description: '',
-    color: '#6366f1', icon_url: '', category: '', badge: '', max_teams: null, order: 0,
+    id: id ?? '', competition_id: '', name: '', short_description: '', description: '',
+    attachment_ids: [], color: '#6366f1', icon_url: '', category: '', badge: '', max_teams: null, order: 0,
   }), [id])
 
   if (!id) return null
@@ -180,7 +272,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
             successRedirect={`/backend/tracks?flash=${encodeURIComponent(t('tracks.flash.saved', 'Track saved'))}&type=success`}
             isLoading={loading}
             loadingMessage={t('tracks.edit.loading', 'Loading track...')}
-            onSubmit={async (vals) => { await updateCrud('tracks/tracks', vals) }}
+            onSubmit={async (vals) => { await updateCrud('tracks/tracks', { ...vals, attachment_ids: attachments.map((a) => a.id) }) }}
             onDelete={async () => {
               if (!id) return
               try {

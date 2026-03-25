@@ -57,7 +57,9 @@ const createTrackCommand: CommandHandler<Record<string, unknown>, Track> = {
       data: {
         competitionId: parsed.competition_id,
         name: parsed.name,
+        shortDescription: parsed.short_description ?? null,
         description: parsed.description ?? null,
+        attachmentIds: parsed.attachment_ids,
         color: parsed.color,
         iconUrl: parsed.icon_url ?? null,
         maxTeams: parsed.max_teams ?? null,
@@ -99,7 +101,9 @@ const updateTrackCommand: CommandHandler<Record<string, unknown>, Track> = {
       apply: (entity) => {
         if (parsed.competition_id !== undefined) entity.competitionId = parsed.competition_id
         if (parsed.name !== undefined) entity.name = parsed.name
+        if (parsed.short_description !== undefined) entity.shortDescription = parsed.short_description
         if (parsed.description !== undefined) entity.description = parsed.description
+        if (parsed.attachment_ids !== undefined) entity.attachmentIds = parsed.attachment_ids
         if (parsed.color !== undefined) entity.color = parsed.color
         if (parsed.icon_url !== undefined) entity.iconUrl = parsed.icon_url
         if (parsed.max_teams !== undefined) entity.maxTeams = parsed.max_teams

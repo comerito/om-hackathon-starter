@@ -541,6 +541,92 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
 
 /* ========== TeamView ========== */
 
+/* ---------- Leave Team button component ---------- */
+function LeaveTeamButton({ teamId, isOwner, memberCount, orgSlug, competitionStage }: {
+  teamId: string; isOwner: boolean; memberCount: number; orgSlug: string; competitionStage?: string
+}) {
+  const t = useT()
+  const router = useRouter()
+  const [confirming, setConfirming] = React.useState(false)
+  const [leaving, setLeaving] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  // Only allow during early stages
+  const ALLOWED_LEAVE_STAGES = ['open', 'team_formation', 'track_selection']
+  const canLeave = competitionStage ? ALLOWED_LEAVE_STAGES.includes(competitionStage) : false
+
+  if (!canLeave) return null
+
+  async function handleLeave() {
+    setLeaving(true)
+    setError(null)
+    const { ok, result } = await apiCall<{ ok?: boolean; error?: string }>('/api/teams/portal/leave-team', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ team_id: teamId }),
+    })
+    setLeaving(false)
+    if (ok && (result as any)?.ok) {
+      flash(t('teams.portal.myTeam.leftTeam', 'You have left the team.'), 'success')
+      router.refresh()
+      window.location.reload()
+    } else {
+      setError((result as any)?.error ?? 'Failed to leave team')
+    }
+  }
+
+  const actionLabel = isOwner && memberCount <= 1
+    ? t('teams.portal.myTeam.disbandTeam', 'Disband Team')
+    : t('teams.portal.myTeam.leaveTeam', 'Leave Team')
+
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100">
+      {!confirming ? (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-portal-danger/20 bg-white px-3 py-2 text-xs font-semibold text-portal-danger transition-colors hover:bg-portal-danger/5"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+          {actionLabel}
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-portal-danger">
+            {isOwner && memberCount > 1
+              ? t('teams.portal.myTeam.ownerCannotLeave', 'As the owner, remove all members first or transfer ownership.')
+              : isOwner
+                ? t('teams.portal.myTeam.confirmDisband', 'This will permanently disband the team. Are you sure?')
+                : t('teams.portal.myTeam.confirmLeave', 'Are you sure you want to leave this team?')}
+          </p>
+          {error && (
+            <p className="text-xs text-portal-danger bg-portal-danger/5 rounded px-2 py-1">{error}</p>
+          )}
+          <div className="flex gap-2">
+            {!(isOwner && memberCount > 1) && (
+              <button
+                type="button"
+                disabled={leaving}
+                onClick={handleLeave}
+                className="flex-1 rounded-lg bg-portal-danger px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-portal-danger/90 disabled:opacity-60"
+              >
+                {leaving ? t('common.saving', 'Saving...') : t('common.confirm', 'Confirm')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { setConfirming(false); setError(null) }}
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {t('common.cancel', 'Cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TeamView({
   team,
   membership,
@@ -877,23 +963,88 @@ function TeamView({
         </GradientCard>
 
         {/* Team Info Card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
-          <SectionLabel className="mb-3 block">Team Info</SectionLabel>
-          {team.description && (
-            <p className="text-sm text-portal-secondary mb-3">{team.description}</p>
-          )}
-          <div className="flex items-center gap-2 text-sm">
-            <PortalBadge variant={
-              team.status === 'active' ? 'success'
-                : team.status === 'disqualified' ? 'danger'
-                  : 'muted'
-            }>
-              {team.status}
-            </PortalBadge>
-            <span className="text-portal-secondary">
-              {t('teams.portal.myTeam.yourRole', 'Your role')}:{' '}
-              <strong className="text-foreground capitalize">{membership.role}</strong>
-            </span>
+        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+          {/* Team header with colored accent */}
+          <div className="relative px-6 pt-5 pb-4">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-portal-primary via-portal-primary-light to-portal-primary" />
+            <SectionLabel className="mb-2 block">Team Info</SectionLabel>
+            <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{team.name}</h3>
+            {team.description && (
+              <p className="mt-1 text-xs leading-relaxed text-portal-secondary">{team.description}</p>
+            )}
+          </div>
+
+          {/* Info rows */}
+          <div className="border-t border-gray-50 divide-y divide-gray-50">
+            {/* Status */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.statusLabel', 'Status')}</span>
+              <PortalBadge variant={
+                team.status === 'active' ? 'success'
+                  : team.status === 'disqualified' ? 'danger'
+                    : 'muted'
+              }>
+                {team.status}
+              </PortalBadge>
+            </div>
+
+            {/* Your role */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.yourRole', 'Your role')}</span>
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground capitalize">
+                {isOwner && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                    <path d="M5.865 17 4 22h16l-1.865-5" />
+                  </svg>
+                )}
+                {membership.role}
+              </span>
+            </div>
+
+            {/* Members */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.membersLabel', 'Members')}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="flex -space-x-1.5">
+                  {members.slice(0, 4).map((m) => (
+                    <div key={m.id} className="size-5 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[8px] font-bold text-gray-500">
+                      {resolveInitials(m.customer_user_id)}
+                    </div>
+                  ))}
+                  {members.length > 4 && (
+                    <div className="size-5 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[8px] font-bold text-gray-400">
+                      +{members.length - 4}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-foreground">{members.length}</span>
+              </div>
+            </div>
+
+            {/* Track */}
+            {selectedTrack && (
+              <div className="flex items-center justify-between px-6 py-3">
+                <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.trackLabel', 'Track')}</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="size-2.5 rounded-full" style={{ backgroundColor: selectedTrack.color || '#6366f1' }} />
+                  <span className="text-xs font-semibold text-foreground">{selectedTrack.name}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Created */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.joinedLabel', 'Joined')}</span>
+              <span className="text-xs font-medium text-foreground">
+                {new Date(membership.joined_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+
+          {/* Leave Team */}
+          <div className="px-6 pb-5">
+            <LeaveTeamButton teamId={team.id} isOwner={isOwner} memberCount={members.length} orgSlug={orgSlug} competitionStage={selected?.stage} />
           </div>
         </div>
 

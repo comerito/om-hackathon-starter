@@ -49,7 +49,8 @@ export default function CreateTrackPage() {
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'competition_id', label: t('tracks.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
     { id: 'name', label: t('tracks.fields.name', 'Name'), type: 'text', required: true },
-    { id: 'description', label: t('tracks.fields.description', 'Description'), type: 'textarea' },
+    { id: 'short_description', label: t('tracks.fields.shortDescription', 'Short Description'), type: 'text', placeholder: 'A brief tagline for this track' },
+    { id: 'description', label: t('tracks.fields.description', 'Full Description'), type: 'textarea' },
     {
       id: 'color', label: t('tracks.fields.color', 'Color'), type: 'custom',
       component: ({ value, setValue }) => (
@@ -95,7 +96,7 @@ export default function CreateTrackPage() {
   ], [t, loadCompetitions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'badge'] },
+    { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'short_description', 'description', 'category', 'badge'] },
     { id: 'appearance', title: t('tracks.groups.appearance', 'Appearance'), column: 2, fields: ['color', 'icon_url'] },
     { id: 'settings', title: t('tracks.groups.settings', 'Settings'), column: 1, fields: ['max_teams', 'order'] },
   ], [t])

@@ -15,7 +15,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 
 type PanelRow = { id: string; name: string; competition_id: string; round: string; created_at: string; _judging?: { judgeCount: number; trackCount: number } }
-type CriterionRow = { id: string; name: string; weight: number; max_score: number; round: string; order: number }
+type CriterionRow = { id: string; name: string; track_id: string | null; weight: number; max_score: number; round: string; order: number }
 type DemoRow = { id: string; team_id: string; project_id: string; status: string; presentation_order: number; actual_start: string | null; round: string }
 type ScoreProgress = { project_id: string; judge_id: string; is_submitted: boolean; total_score: number | null; round: string }
 
@@ -55,12 +55,53 @@ export default function JudgingDashboard() {
     enabled: tab === 'panels',
   })
 
+  // Tracks (for name lookup in criteria tab)
+  const { data: tracksData } = useQuery({
+    queryKey: ['judging-tracks', scopeVersion],
+    queryFn: () => fetchCrudList<{ id: string; name: string }>('tracks/tracks', { pageSize: '100' }),
+    enabled: tab === 'criteria',
+  })
+  const trackNameMap = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of tracksData?.items ?? []) map.set(t.id, t.name)
+    return map
+  }, [tracksData])
+
   // Criteria
   const { data: criteriaData, isLoading: criteriaLoading } = useQuery({
     queryKey: ['judging-criteria', scopeVersion],
     queryFn: () => fetchCrudList<CriterionRow>('judging/criteria', { pageSize: '50', sortField: 'order', sortDir: 'asc' }),
     enabled: tab === 'criteria',
   })
+
+  // Copy criteria dialog state
+  const [showCopyDialog, setShowCopyDialog] = React.useState(false)
+  const [copySourceTrack, setCopySourceTrack] = React.useState<string>('')
+  const [copyTargetTrack, setCopyTargetTrack] = React.useState<string>('')
+  const [copyCompetitionId, setCopyCompetitionId] = React.useState<string>('')
+  const [copying, setCopying] = React.useState(false)
+
+  async function handleCopyCriteria() {
+    if (!copyCompetitionId || !copyTargetTrack) { flash('Select competition and target track', 'error'); return }
+    setCopying(true)
+    const { ok, result } = await apiCall<{ count: number }>('/api/judging/copy-criteria', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        competition_id: copyCompetitionId,
+        source_track_id: copySourceTrack || null,
+        target_track_id: copyTargetTrack,
+      }),
+    })
+    setCopying(false)
+    if (ok) {
+      flash(`Copied ${result?.count ?? 0} criteria`, 'success')
+      queryClient.invalidateQueries({ queryKey: ['judging-criteria'] })
+      setShowCopyDialog(false)
+    } else {
+      flash('Failed to copy criteria', 'error')
+    }
+  }
 
   // Demos
   const { data: demosData, isLoading: demosLoading } = useQuery({
@@ -101,10 +142,11 @@ export default function JudgingDashboard() {
 
   const criterionColumns = React.useMemo<ColumnDef<CriterionRow>[]>(() => [
     { accessorKey: 'name', header: t('judging.table.name', 'Name'), meta: { priority: 1 } },
+    { accessorKey: 'track_id', header: t('judging.table.track', 'Track'), meta: { priority: 2 }, cell: ({ getValue }) => { const v = getValue() as string | null; return v ? (trackNameMap.get(v) ?? v.substring(0, 8)) : 'All' } },
     { accessorKey: 'weight', header: t('judging.table.weight', 'Weight'), meta: { priority: 2 }, cell: ({ getValue }) => `${(Number(getValue()) * 100).toFixed(0)}%` },
     { accessorKey: 'max_score', header: t('judging.table.maxScore', 'Max'), meta: { priority: 2 } },
     { accessorKey: 'round', header: t('judging.table.round', 'Round'), meta: { priority: 3 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={roundPreset} /> },
-  ], [t])
+  ], [t, trackNameMap])
 
   const demoColumns = React.useMemo<ColumnDef<DemoRow>[]>(() => [
     { accessorKey: 'presentation_order', header: '#', meta: { priority: 1 } },
@@ -166,22 +208,69 @@ export default function JudgingDashboard() {
       )}
 
       {tab === 'criteria' && (
-        <DataTable title={t('judging.criteria.title', 'Judging Criteria')}
-          actions={<Button asChild><Link href="/backend/judging/criteria/create">{t('judging.criteria.create', 'Create Criterion')}</Link></Button>}
-          columns={criterionColumns} data={criteriaData?.items ?? []}
-          isLoading={criteriaLoading}
-          rowActions={(row) => (
-            <RowActions items={[
-              { id: 'delete', label: t('common.delete', 'Delete'), destructive: true, onSelect: async () => {
-                const ok = await confirm({ title: t('judging.criteria.confirmDelete', 'Delete this criterion?'), variant: 'destructive' })
-                if (!ok) return
-                await deleteCrud('judging/criteria', row.id)
-                flash(t('judging.flash.criterionDeleted', 'Criterion deleted'), 'success')
-                queryClient.invalidateQueries({ queryKey: ['judging-criteria'] })
-              }},
-            ]} />
+        <>
+          <DataTable title={t('judging.criteria.title', 'Judging Criteria')}
+            actions={
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowCopyDialog(true)}>{t('judging.criteria.copy', 'Copy Criteria')}</Button>
+                <Button asChild><Link href="/backend/judging/criteria/create">{t('judging.criteria.create', 'Create Criterion')}</Link></Button>
+              </div>
+            }
+            columns={criterionColumns} data={criteriaData?.items ?? []}
+            isLoading={criteriaLoading}
+            rowActions={(row) => (
+              <RowActions items={[
+                { id: 'edit', label: t('common.edit', 'Edit'), onSelect: () => { window.location.href = `/backend/judging/criteria/${row.id}/edit` } },
+                { id: 'delete', label: t('common.delete', 'Delete'), destructive: true, onSelect: async () => {
+                  const ok = await confirm({ title: t('judging.criteria.confirmDelete', 'Delete this criterion?'), variant: 'destructive' })
+                  if (!ok) return
+                  await deleteCrud('judging/criteria', row.id)
+                  flash(t('judging.flash.criterionDeleted', 'Criterion deleted'), 'success')
+                  queryClient.invalidateQueries({ queryKey: ['judging-criteria'] })
+                }},
+              ]} />
+            )}
+          />
+          {showCopyDialog && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCopyDialog(false)}>
+              <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <h3 className="mb-4 text-lg font-semibold">{t('judging.criteria.copyTitle', 'Copy Criteria to Another Track')}</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">{t('judging.fields.competition', 'Competition')}</label>
+                    <select value={copyCompetitionId} onChange={(e) => setCopyCompetitionId(e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">Select...</option>
+                      {(competitionsData?.items ?? []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">{t('judging.criteria.sourceTrack', 'Source Track')}</label>
+                    <select value={copySourceTrack} onChange={(e) => setCopySourceTrack(e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">Global (all tracks)</option>
+                      {(tracksData?.items ?? []).map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">{t('judging.criteria.targetTrack', 'Target Track')}</label>
+                    <select value={copyTargetTrack} onChange={(e) => setCopyTargetTrack(e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">Select...</option>
+                      {(tracksData?.items ?? []).map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowCopyDialog(false)}>Cancel</Button>
+                  <Button onClick={handleCopyCriteria} disabled={copying || !copyCompetitionId || !copyTargetTrack}>
+                    {copying ? 'Copying...' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
-        />
+        </>
       )}
 
       {tab === 'demos' && (

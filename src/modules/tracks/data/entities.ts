@@ -12,8 +12,14 @@ export class Track {
   @Property({ type: 'varchar', length: 255 })
   name!: string
 
+  @Property({ name: 'short_description', type: 'text', nullable: true })
+  shortDescription?: string | null
+
   @Property({ type: 'text', nullable: true })
   description?: string | null
+
+  @Property({ name: 'attachment_ids', type: 'jsonb', default: "'[]'" })
+  attachmentIds: string[] = []
 
   @Property({ type: 'varchar', length: 7, default: "'#6366f1'" })
   color: string = '#6366f1'
