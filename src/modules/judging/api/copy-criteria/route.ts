@@ -60,6 +60,7 @@ export async function POST(req: Request) {
         order: criterion.order,
         tenantId: criterion.tenantId,
         organizationId: criterion.organizationId,
+        createdAt: new Date(),
       })
       em.persist(clone)
     }

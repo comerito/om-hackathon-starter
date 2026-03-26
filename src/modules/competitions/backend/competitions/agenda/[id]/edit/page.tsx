@@ -96,7 +96,7 @@ export default function EditAgendaItemPage({ params }: { params?: { id?: string 
 
   const fallback = React.useMemo<AgendaFormValues>(() => ({
     id: id ?? '', competition_id: '', title: '', description: '', type: 'custom',
-    starts_at: '', ends_at: '', location: '', speaker_name: '', is_mandatory: false, order: 0,
+    starts_at: '', ends_at: '', location: '', speaker_name: '', speaker_bio: '', speaker_photo_url: '', is_mandatory: false, order: 0,
   }), [id])
 
   if (!id) return null
