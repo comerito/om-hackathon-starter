@@ -215,6 +215,47 @@ export const updateMilestoneSchema = z.object({
 export type CreateMilestoneInput = z.infer<typeof createMilestoneSchema>
 export type UpdateMilestoneInput = z.infer<typeof updateMilestoneSchema>
 
+// ── Bulk Import Agenda ──────────────────────────────────────────────
+
+export const bulkAgendaItemRowSchema = z.object({
+  title: z.string().min(1).max(255),
+  type: z.enum(agendaItemTypeValues).default('custom'),
+  starts_at: z.string().datetime(),
+  ends_at: z.string().datetime(),
+  description: z.string().optional(),
+  location: z.string().max(255).optional(),
+  speaker_name: z.string().max(255).optional(),
+  speaker_bio: z.string().optional(),
+  is_mandatory: z.preprocess(v => v === 'true' || v === '1' || v === true, z.boolean()).default(false),
+  order: z.preprocess(v => (typeof v === 'string' && v !== '' ? parseInt(v, 10) : v), z.number().int()).default(0),
+})
+
+export const bulkAgendaImportSchema = z.object({
+  competition_id: z.string().uuid(),
+  items: z.array(bulkAgendaItemRowSchema).min(1).max(200),
+})
+
+export type BulkAgendaItemRow = z.infer<typeof bulkAgendaItemRowSchema>
+export type BulkAgendaImportInput = z.infer<typeof bulkAgendaImportSchema>
+
+// ── Bulk Import Milestones ──────────────────────────────────────────
+
+export const bulkMilestoneRowSchema = z.object({
+  name: z.string().min(1).max(255),
+  due_date: toIsoDate,
+  description: z.string().optional(),
+  status: z.enum(milestoneStatusValues).default('upcoming'),
+  sort_order: z.preprocess(v => (typeof v === 'string' && v !== '' ? parseInt(v, 10) : v), z.number().int()).default(0),
+})
+
+export const bulkMilestoneImportSchema = z.object({
+  competition_id: z.string().uuid(),
+  items: z.array(bulkMilestoneRowSchema).min(1).max(100),
+})
+
+export type BulkMilestoneRow = z.infer<typeof bulkMilestoneRowSchema>
+export type BulkMilestoneImportInput = z.infer<typeof bulkMilestoneImportSchema>
+
 // ── Bulk Invite ─────────────────────────────────────────────────────
 
 export const bulkInviteRowSchema = z.object({

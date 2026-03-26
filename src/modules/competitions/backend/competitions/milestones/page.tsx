@@ -13,6 +13,7 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
+import { BulkImportMilestonesDialog } from '../../../components/BulkImportMilestonesDialog'
 
 type MilestoneRow = { id: string; name: string; due_date: string; status: string; competition_id: string; sort_order: number }
 
@@ -26,6 +27,7 @@ export default function MilestonesListPage() {
   const t = useT()
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
+  const [showImport, setShowImport] = React.useState(false)
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'sort_order', desc: false }])
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
@@ -57,7 +59,7 @@ export default function MilestonesListPage() {
       <PageBody>
         <DataTable
           title={t('competitions.milestones.pageTitle', 'Milestones')}
-          actions={<Button asChild><Link href="/backend/competitions/milestones/create">{t('competitions.milestones.create', 'New Milestone')}</Link></Button>}
+          actions={<div className="flex gap-2"><Button variant="outline" onClick={() => setShowImport(true)}>{t('competitions.milestones.import', 'Import CSV')}</Button><Button asChild><Link href="/backend/competitions/milestones/create">{t('competitions.milestones.create', 'New Milestone')}</Link></Button></div>}
           columns={columns} data={data?.items ?? []}
           sortable sorting={sorting} onSortingChange={(s) => { setSorting(s); setPage(1) }}
           rowActions={(row) => (
@@ -80,6 +82,7 @@ export default function MilestonesListPage() {
           isLoading={isLoading}
         />
         {ConfirmDialogElement}
+        {showImport && <BulkImportMilestonesDialog onClose={() => { setShowImport(false); queryClient.invalidateQueries({ queryKey: ['milestones'] }) }} />}
       </PageBody>
     </Page>
   )

@@ -1,0 +1,9 @@
+title,type,starts_at,ends_at,description,location,speaker_name,is_mandatory,order
+Opening Ceremony,ceremony,2026-04-01T09:00:00Z,2026-04-01T09:30:00Z,Welcome and kickoff,Main Hall,,true,1
+"Keynote: AI in 2026",talk,2026-04-01T09:30:00Z,2026-04-01T10:15:00Z,Industry insights,Main Hall,Dr. Jane Smith,false,2
+Coffee Break,break,2026-04-01T10:15:00Z,2026-04-01T10:45:00Z,,Lobby,,false,3
+Hacking Begins,deadline,2026-04-01T10:45:00Z,2026-04-01T11:00:00Z,Start building!,All Rooms,,true,4
+Lunch,meal,2026-04-01T12:30:00Z,2026-04-01T13:30:00Z,,Cafeteria,,false,5
+"Workshop: API Design",workshop,2026-04-01T14:00:00Z,2026-04-01T15:00:00Z,Hands-on session,Room B,Alex Chen,false,6
+Demo Session,demo_session,2026-04-02T14:00:00Z,2026-04-02T16:00:00Z,Team presentations,Main Hall,,true,7
+Closing Ceremony,ceremony,2026-04-02T16:30:00Z,2026-04-02T17:00:00Z,Awards and wrap-up,Main Hall,,true,8
