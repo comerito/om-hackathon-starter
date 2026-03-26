@@ -94,6 +94,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // Flush all created entities to the database
+    await em.flush()
+
     const created = results.filter(r => r.status === 'created').length
     const errors = results.filter(r => r.status === 'error')
 
