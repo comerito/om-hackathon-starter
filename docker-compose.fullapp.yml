@@ -9,7 +9,7 @@ services:
     command: >
       sh -c "if [ ! -f /tmp/init-marker/.seeded ]; then
         echo 'First run: full initialization...';
-        yarn initialize && mkdir -p /tmp/init-marker && touch /tmp/init-marker/.seeded;
+        yarn initialize --orgName=\"$$OM_INIT_ORG_NAME\" && mkdir -p /tmp/init-marker && touch /tmp/init-marker/.seeded;
       else
         echo 'Subsequent run: migrations only...';
         yarn db:migrate;
@@ -46,8 +46,13 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-}
       TENANT_DATA_ENCRYPTION_KEY: ${TENANT_DATA_ENCRYPTION_KEY:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-      OM_INIT_SUPERADMIN_EMAIL: ${OM_INIT_SUPERADMIN_EMAIL:-}
+      OM_INIT_SUPERADMIN_EMAIL: ${OM_INIT_SUPERADMIN_EMAIL:-admin@example.com}
       OM_INIT_SUPERADMIN_PASSWORD: ${OM_INIT_SUPERADMIN_PASSWORD:-password}
+      OM_INIT_ADMIN_EMAIL: ${OM_INIT_ADMIN_EMAIL:-}
+      OM_INIT_ADMIN_PASSWORD: ${OM_INIT_ADMIN_PASSWORD:-}
+      OM_INIT_EMPLOYEE_EMAIL: ${OM_INIT_EMPLOYEE_EMAIL:-}
+      OM_INIT_EMPLOYEE_PASSWORD: ${OM_INIT_EMPLOYEE_PASSWORD:-}
+      OM_INIT_ORG_NAME: ${OM_INIT_ORG_NAME:-Acme Corp}
     depends_on:
       postgres:
         condition: service_healthy
