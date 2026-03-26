@@ -41,8 +41,16 @@ export default async function handler(
     competitionId: competitionInvitation.competitionId,
     customerUserId: payload.userId,
     role: competitionInvitation.participationRole,
+    checkedIn: false,
+    badgePrinted: false,
+    cocAccepted: false,
+    privacyPolicyAccepted: false,
+    profileComplete: false,
+    lookingForTeam: false,
     tenantId: competitionInvitation.tenantId,
     organizationId: competitionInvitation.organizationId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   })
   await em.persistAndFlush(participation)
 }

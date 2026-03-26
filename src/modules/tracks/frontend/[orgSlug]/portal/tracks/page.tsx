@@ -396,7 +396,7 @@ function TracksContent() {
                   'group relative flex flex-col rounded-xl border bg-white shadow-sm transition-all hover:shadow-md',
                   isMyTrack ? 'border-2 ring-1' : 'border-gray-100',
                 )}
-                style={isMyTrack ? { borderColor: track.color, ringColor: `${track.color}30` } : undefined}
+                style={isMyTrack ? { borderColor: track.color, '--tw-ring-color': `${track.color}30` } as React.CSSProperties : undefined}
               >
                 {/* Selected indicator */}
                 {isMyTrack && (
