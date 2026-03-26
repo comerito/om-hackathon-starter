@@ -52,7 +52,7 @@ RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install --production=true
 
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.mercato/next ./.mercato/next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/types ./types
