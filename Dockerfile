@@ -1,7 +1,6 @@
 FROM node:24-alpine AS builder
 
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
@@ -12,6 +11,8 @@ COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install
 
 COPY . .
+RUN yarn generate
+ENV NODE_ENV=production
 RUN yarn build
 
 FROM node:24-alpine AS dev
