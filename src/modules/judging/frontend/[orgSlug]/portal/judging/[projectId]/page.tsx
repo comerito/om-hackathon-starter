@@ -146,8 +146,8 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
   return (
     <div className="space-y-6">
       {isSubmitted && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
-          <span className="text-sm font-medium text-green-800">{t('judging.portal.alreadySubmitted', 'This score has been submitted.')}</span>
+        <div className="rounded-lg border border-green-200 dark:border-green-500/20 bg-green-50 dark:bg-green-500/10 p-3 text-center">
+          <span className="text-sm font-medium text-green-800 dark:text-green-400">{t('judging.portal.alreadySubmitted', 'This score has been submitted.')}</span>
         </div>
       )}
 

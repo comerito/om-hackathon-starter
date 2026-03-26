@@ -186,7 +186,7 @@ function NoTeamView({
       {/* Action Tiles */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Tile 1: Create Team */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-portal-primary/10 text-portal-primary mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
@@ -202,7 +202,7 @@ function NoTeamView({
         </div>
 
         {/* Tile 2: Browse Teams */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
@@ -220,7 +220,7 @@ function NoTeamView({
         </div>
 
         {/* Tile 3: Looking for Team */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
@@ -230,7 +230,7 @@ function NoTeamView({
           <p className="text-sm text-portal-secondary mb-4">
             {t('teams.portal.myTeam.lookingForTeamDesc', 'Let others know you are available to join a team.')}
           </p>
-          <div className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-white/10 px-3 py-2.5">
             <ToggleSwitch
               checked={lookingForTeam}
               onChange={handleToggleLooking}
@@ -243,7 +243,7 @@ function NoTeamView({
 
       {/* Create Team Expanded Form */}
       {showCreateForm && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">{t('teams.portal.myTeam.createTeamForm', 'New Team')}</h3>
           <div className="space-y-4">
             <div>
@@ -267,7 +267,7 @@ function NoTeamView({
                 value={teamDesc}
                 onChange={(e) => setTeamDesc(e.target.value)}
                 placeholder={t('teams.portal.myTeam.teamDescPlaceholder', 'Describe your team idea or project...')}
-                className="w-full max-w-md rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
+                className="w-full max-w-md rounded-xl border border-gray-200 dark:border-white/10 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary dark:placeholder:text-slate-500"
                 rows={3}
               />
             </div>
@@ -285,7 +285,7 @@ function NoTeamView({
 
       {/* Looking for Team Description (expanded) */}
       {lookingForTeam && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-3">{t('teams.portal.myTeam.lookingProfile', 'Your Looking-for-Team Profile')}</h3>
           <div className="space-y-3">
             <p className="text-sm text-portal-secondary">
@@ -295,7 +295,7 @@ function NoTeamView({
               value={lookingDescription}
               onChange={(e) => setLookingDescription(e.target.value)}
               placeholder={t('teams.portal.myTeam.lookingDescPlaceholder', 'I am interested in AI/ML projects, have experience with Python and React...')}
-              className="w-full rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
+              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary dark:placeholder:text-slate-500"
               rows={3}
             />
             <Button variant="outline" size="sm" onClick={handleSaveLookingDescription} disabled={updatingLooking}>
@@ -307,12 +307,12 @@ function NoTeamView({
 
       {/* Received Invitations */}
       {receivedInvitations.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">
             {t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')}{' '}
             <PortalBadge variant="info">{receivedInvitations.length}</PortalBadge>
           </h3>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {receivedInvitations.map((inv) => (
               <div key={inv.id} className="py-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -434,7 +434,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
   }
 
   return (
-    <div className="pt-4 mt-4 border-t border-gray-100">
+    <div className="pt-4 mt-4 border-t border-gray-100 dark:border-white/10">
       {!showForm ? (
         <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="w-full rounded-xl">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
@@ -453,7 +453,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
               {t('teams.portal.myTeam.searchParticipant', 'Search by email or name')}
             </label>
             {inviteeId ? (
-              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-3 py-2">
                 <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-[10px] font-semibold">
                   {inviteeName.slice(0, 2).toUpperCase()}
                 </div>
@@ -484,7 +484,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                   autoFocus
                 />
                 {showDropdown && searchQuery.length >= 2 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 shadow-lg max-h-48 overflow-y-auto">
                     {results.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-portal-secondary">
                         {t('teams.portal.myTeam.noResults', 'No participants found')}
@@ -495,7 +495,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                           key={user.id}
                           type="button"
                           onClick={() => handleSelectUser(user)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                         >
                           <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-xs font-semibold">
                             {(user.displayName || user.email)[0].toUpperCase()}
@@ -521,7 +521,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('teams.portal.myTeam.inviteMessagePlaceholder', 'Hey, want to join our team?')}
-              className="w-full rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary"
+              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-background px-3 py-2 text-sm min-h-[50px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary dark:placeholder:text-slate-500"
               rows={2}
             />
           </div>
@@ -580,7 +580,7 @@ function LeaveTeamButton({ teamId, isOwner, memberCount, orgSlug, competitionSta
     : t('teams.portal.myTeam.leaveTeam', 'Leave Team')
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-100">
+    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
       {!confirming ? (
         <button
           type="button"
@@ -616,7 +616,7 @@ function LeaveTeamButton({ teamId, isOwner, memberCount, orgSlug, competitionSta
             <button
               type="button"
               onClick={() => { setConfirming(false); setError(null) }}
-              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+              className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2 text-xs font-semibold text-gray-600 dark:text-slate-400 transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
             >
               {t('common.cancel', 'Cancel')}
             </button>
@@ -757,7 +757,7 @@ function TeamView({
       {/* ---- Left Column ---- */}
       <div className="space-y-6">
         {/* Active Collaborators */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionLabel>Active Collaborators</SectionLabel>
             <PortalBadge variant="primary">{members.length}</PortalBadge>
@@ -770,8 +770,8 @@ function TeamView({
           ) : (
             <div>
               {members.map((m) => (
-                <div key={m.id} className="flex items-center gap-4 py-4 border-b border-gray-50 last:border-0">
-                  <div className="size-12 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600">
+                <div key={m.id} className="flex items-center gap-4 py-4 border-b border-gray-50 dark:border-white/5 last:border-0">
+                  <div className="size-12 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-400">
                     {resolveInitials(m.customer_user_id)}
                   </div>
                   <div className="flex-1">
@@ -792,7 +792,7 @@ function TeamView({
 
         {/* Track Selection */}
         {(isOwner || team.track_id) && tracks.length > 0 && (
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
             <SectionLabel className="mb-4 block">Track</SectionLabel>
 
             {isOwner ? (
@@ -808,7 +808,7 @@ function TeamView({
                         'flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all',
                         isSelected
                           ? 'border-portal-primary bg-portal-primary/5 shadow-sm'
-                          : 'border-gray-100 hover:border-gray-200 hover:shadow-sm',
+                          : 'border-gray-100 dark:border-white/10 hover:border-gray-200 dark:hover:border-white/20 hover:shadow-sm',
                       )}
                     >
                       <div
@@ -862,7 +862,7 @@ function TeamView({
 
         {/* Invitations / Join Requests */}
         {(teamRequests.length > 0 || receivedInvitations.length > 0) && (
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
             <SectionLabel className="mb-4 block">
               {t('teams.portal.myTeam.invitations', 'Invitations & Requests')}
             </SectionLabel>
@@ -873,7 +873,7 @@ function TeamView({
                   <h4 className="text-sm font-semibold text-foreground mb-2">
                     {t('teams.portal.myTeam.joinRequests', 'Join Requests')}
                   </h4>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-gray-50 dark:divide-white/5">
                     {teamRequests.map((inv) => (
                       <div key={inv.id} className="py-3 flex items-center justify-between">
                         <div className="text-sm">
@@ -908,7 +908,7 @@ function TeamView({
                   <h4 className="text-sm font-semibold text-foreground mb-2">
                     {t('teams.portal.myTeam.receivedInvitations', 'Invitations Received')}
                   </h4>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-gray-50 dark:divide-white/5">
                     {receivedInvitations.map((inv) => (
                       <div key={inv.id} className="py-3 flex items-center justify-between">
                         <div className="text-sm">
@@ -963,7 +963,7 @@ function TeamView({
         </GradientCard>
 
         {/* Team Info Card */}
-        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
           {/* Team header with colored accent */}
           <div className="relative px-6 pt-5 pb-4">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-portal-primary via-portal-primary-light to-portal-primary" />
@@ -975,7 +975,7 @@ function TeamView({
           </div>
 
           {/* Info rows */}
-          <div className="border-t border-gray-50 divide-y divide-gray-50">
+          <div className="border-t border-gray-50 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5">
             {/* Status */}
             <div className="flex items-center justify-between px-6 py-3">
               <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.statusLabel', 'Status')}</span>
@@ -1008,12 +1008,12 @@ function TeamView({
               <div className="flex items-center gap-1.5">
                 <div className="flex -space-x-1.5">
                   {members.slice(0, 4).map((m) => (
-                    <div key={m.id} className="size-5 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[8px] font-bold text-gray-500">
+                    <div key={m.id} className="size-5 rounded-full bg-gray-200 dark:bg-white/10 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold text-gray-500 dark:text-slate-400">
                       {resolveInitials(m.customer_user_id)}
                     </div>
                   ))}
                   {members.length > 4 && (
-                    <div className="size-5 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[8px] font-bold text-gray-400">
+                    <div className="size-5 rounded-full bg-gray-100 dark:bg-white/10 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[8px] font-bold text-gray-400 dark:text-slate-500">
                       +{members.length - 4}
                     </div>
                   )}
@@ -1049,7 +1049,7 @@ function TeamView({
         </div>
 
         {/* Milestones */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel className="mb-3 block">Milestones</SectionLabel>
           <ProgressBar value={milestoneProgress} label={`${milestoneDoneCount} of ${milestones.length} complete`} size="sm" className="mb-4" />
           <div className="space-y-0">
@@ -1059,7 +1059,7 @@ function TeamView({
                 {idx < milestones.length - 1 && (
                   <div className={cn(
                     'absolute left-[7px] top-4 w-0.5 h-full',
-                    ms.done ? 'bg-portal-primary' : 'bg-gray-200',
+                    ms.done ? 'bg-portal-primary' : 'bg-gray-200 dark:bg-white/10',
                   )} />
                 )}
                 {/* Dot */}
@@ -1067,7 +1067,7 @@ function TeamView({
                   'relative z-10 mt-1 size-[15px] rounded-full border-2 shrink-0',
                   ms.done
                     ? 'border-portal-primary bg-portal-primary'
-                    : 'border-gray-300 bg-white',
+                    : 'border-gray-300 dark:border-white/20 bg-white dark:bg-white/5',
                 )}>
                   {ms.done && (
                     <svg className="size-full text-white p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -1135,7 +1135,7 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
         <p className="text-sm text-portal-secondary">{t('common.loading', 'Loading...')}</p>
       </div>
     )

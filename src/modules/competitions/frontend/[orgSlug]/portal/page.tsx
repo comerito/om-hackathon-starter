@@ -109,7 +109,7 @@ export default function HackathonLandingPage({ params }: Props) {
 
         <div className="grid gap-6 sm:grid-cols-3">
           {features.map((feature) => (
-            <div key={feature.title} className="rounded-2xl border border-gray-100 bg-white p-5 sm:p-7 transition-all hover:shadow-lg hover:border-portal-primary/20">
+            <div key={feature.title} className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-7 transition-all hover:shadow-lg hover:border-portal-primary/20">
               <div className="size-12 rounded-xl bg-portal-primary/10 flex items-center justify-center mb-5">
                 <feature.icon className="size-6 text-portal-primary" />
               </div>
@@ -139,7 +139,7 @@ export default function HackathonLandingPage({ params }: Props) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-6 text-center text-xs text-portal-secondary">
+      <footer className="border-t border-gray-100 dark:border-white/10 py-6 text-center text-xs text-portal-secondary">
         &copy; {new Date().getFullYear()} Hackathon Portal &middot; Powered by Open Mercato
       </footer>
     </div>

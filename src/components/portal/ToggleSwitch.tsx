@@ -22,7 +22,7 @@ export function ToggleSwitch({ checked, onChange, disabled = false, className }:
       onClick={() => onChange(!checked)}
       className={cn(
         'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal-primary/50',
-        checked ? 'bg-portal-primary' : 'bg-gray-200',
+        checked ? 'bg-portal-primary' : 'bg-gray-200 dark:bg-white/20',
         disabled && 'cursor-not-allowed opacity-50',
         className,
       )}

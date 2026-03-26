@@ -37,9 +37,9 @@ type Participant = {
 /* ---------- avatar colors by role ---------- */
 
 const avatarColorsByRole: Record<string, string> = {
-  participant: 'bg-blue-100 text-blue-700',
-  mentor: 'bg-purple-100 text-purple-700',
-  judge: 'bg-amber-100 text-amber-700',
+  participant: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  mentor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400',
+  judge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
 }
 
 const roleBadgeVariant: Record<string, 'primary' | 'info' | 'warning'> = {
@@ -62,7 +62,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
   invitingId: string | null
 }) {
   const initials = p.display_name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
-  const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 text-gray-700'
+  const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
   const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
   const canInvite = p.looking_for_team && myTeamId
 
@@ -87,7 +87,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div
-        className="relative z-10 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative z-10 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Compact header with avatar inline */}
@@ -154,7 +154,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
               <p className="text-[10px] font-bold uppercase tracking-widest text-portal-secondary mb-2">Skills</p>
               <div className="flex flex-wrap gap-1.5">
                 {p.skills.map((skill) => (
-                  <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                  <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">
                     {skill}
                   </span>
                 ))}
@@ -170,7 +170,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
                   href={p.portfolio_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <ExternalLink className="size-4 text-portal-primary shrink-0" />
                   View Portfolio
@@ -182,7 +182,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
                   href={p.office_hours_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <ExternalLink className="size-4 text-portal-primary shrink-0" />
                   Book Office Hours
@@ -194,7 +194,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-white/10 flex gap-2">
           {canInvite && (
             <button
               type="button"
@@ -210,7 +210,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
             type="button"
             onClick={onClose}
             className={cn(
-              'rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-portal-secondary hover:bg-gray-50 transition-colors',
+              'rounded-lg border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors',
               !canInvite && 'flex-1',
             )}
           >
@@ -232,11 +232,11 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
     .toUpperCase()
     .slice(0, 2)
 
-  const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 text-gray-700'
+  const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
   const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-5">
+    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5">
       {/* Header: Avatar + Name + Email */}
       <div className="flex items-start gap-3 mb-3">
         <div className="shrink-0">
@@ -267,7 +267,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
         <PortalBadge variant={badgeVariant}>{p.role}</PortalBadge>
         {p.organization && (
           <>
-            <span className="text-gray-300">&middot;</span>
+            <span className="text-gray-300 dark:text-slate-600">&middot;</span>
             <span className="text-xs text-portal-secondary truncate">{p.organization}</span>
           </>
         )}
@@ -277,12 +277,12 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
       {p.skills.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {p.skills.slice(0, 4).map((skill) => (
-            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-600 dark:text-slate-400">
               {skill}
             </span>
           ))}
           {p.skills.length > 4 && (
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
+            <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-500 dark:text-slate-400">
               +{p.skills.length - 4}
             </span>
           )}
@@ -290,7 +290,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
       )}
 
       {/* Bottom Row */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+      <div className="flex items-center justify-between pt-3 border-t border-gray-50 dark:border-white/5">
         <button
           type="button"
           onClick={onViewProfile}
@@ -301,7 +301,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
         </button>
         <button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
           aria-label={`Message ${p.display_name}`}
         >
           <MessageCircle className="size-4" />
@@ -342,13 +342,13 @@ function FilterPills({
               'shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
               activeFilter === f.id
                 ? 'bg-portal-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15',
             )}
           >
             {f.label}
             <span className={cn(
               'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold',
-              activeFilter === f.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500',
+              activeFilter === f.id ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-slate-400',
             )}>
               {f.count}
             </span>
@@ -503,7 +503,7 @@ function ParticipantsContent() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500" />
         <Input
           placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name or email...')}
           value={search}
@@ -528,7 +528,7 @@ function ParticipantsContent() {
       {isLoading && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="h-48 rounded-xl border border-gray-100 bg-white animate-pulse" />
+            <div key={i} className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
           ))}
         </div>
       )}
@@ -559,7 +559,7 @@ function ParticipantsContent() {
               <button
                 type="button"
                 onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
-                className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 Load More Participants
               </button>

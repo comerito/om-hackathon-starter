@@ -33,8 +33,8 @@ const TYPE_BADGE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'd
 
 const DOT_COLORS: Record<string, string> = {
   happening: 'bg-portal-primary',
-  past: 'bg-gray-300',
-  future: 'bg-gray-200',
+  past: 'bg-gray-300 dark:bg-slate-600',
+  future: 'bg-gray-200 dark:bg-slate-700',
 }
 
 function formatTime(dateStr: string): string {
@@ -75,7 +75,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
         <div
           className={cn(
             'size-8 rounded-full flex items-center justify-center text-sm shrink-0',
-            happening ? 'bg-portal-primary text-white shadow-md shadow-portal-primary/30' : 'bg-gray-100 text-gray-400',
+            happening ? 'bg-portal-primary text-white shadow-md shadow-portal-primary/30' : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-slate-500',
           )}
         >
           {(() => {
@@ -83,11 +83,11 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
             return <Icon className="size-4" />
           })()}
         </div>
-        <div className="flex-1 w-px bg-gray-100 mt-2" />
+        <div className="flex-1 w-px bg-gray-100 dark:bg-white/10 mt-2" />
       </div>
 
       {/* Event content */}
-      <div className={cn('flex-1 rounded-xl border bg-white p-3 sm:p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
+      <div className={cn('flex-1 rounded-xl border dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
         <div className="flex items-center justify-between mb-2">
           <span className={cn('text-sm font-semibold', happening ? 'text-portal-primary' : 'text-portal-secondary')}>
             {formatTime(item.starts_at)} — {formatTime(item.ends_at)}
@@ -161,7 +161,7 @@ function AgendaContent() {
 
   if (!selectedId) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         Select a competition to view its agenda.
       </div>
     )
@@ -173,7 +173,7 @@ function AgendaContent() {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         No agenda items yet. The schedule will be published soon.
       </div>
     )
@@ -205,7 +205,7 @@ function AgendaContent() {
                       'shrink-0 px-6 py-2 rounded-lg text-sm font-medium transition-colors',
                       isActive
                         ? 'bg-portal-primary text-white shadow-sm'
-                        : 'text-portal-secondary hover:bg-gray-100'
+                        : 'text-portal-secondary hover:bg-gray-100 dark:hover:bg-white/10'
                     )}
                   >
                     {label}
@@ -227,7 +227,7 @@ function AgendaContent() {
       {/* Right: Sidebar widgets */}
       <div className="space-y-4">
         {/* Session completion */}
-        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">
             {selectedDay ? getDayLabel(selectedDay) : 'Day'} Completion
           </h4>
@@ -261,7 +261,7 @@ function AgendaContent() {
         })()}
 
         {/* Info cards */}
-        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
               <HelpCircle className="size-4 text-portal-primary" />

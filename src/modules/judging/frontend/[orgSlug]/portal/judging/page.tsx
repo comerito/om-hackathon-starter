@@ -71,9 +71,9 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
           const score = scoreMap.get(project.id + ':preliminary')
           const status = score?.is_submitted ? 'submitted' : score ? 'draft' : 'unscored'
           const statusStyles = {
-            submitted: 'bg-green-100 text-green-800',
-            draft: 'bg-yellow-100 text-yellow-800',
-            unscored: 'bg-gray-100 text-gray-600',
+            submitted: 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400',
+            draft: 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-800 dark:text-yellow-400',
+            unscored: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400',
           }
 
           return (
@@ -84,7 +84,7 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium truncate">{project.title}</h3>
                       {project.flagged_for_reuse && (
-                        <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-800">Flagged</span>
+                        <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-800 dark:text-orange-400">Flagged</span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{project.team_name}</p>

@@ -59,10 +59,10 @@ function IncidentReportContent() {
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center space-y-4">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center space-y-4">
         <div className="flex justify-center">
-          <div className="size-16 rounded-full bg-green-50 flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
+          <div className="size-16 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 dark:text-green-400">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
@@ -97,7 +97,7 @@ function IncidentReportContent() {
       </div>
 
       {/* Main Form Card */}
-      <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-6">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-6">
         <div>
           <h2 className="text-xl font-bold text-foreground">Incident Report</h2>
           <p className="text-sm text-portal-secondary mt-1">
@@ -114,7 +114,7 @@ function IncidentReportContent() {
             <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">Required</span>
           </div>
           <textarea
-            className="flex min-h-[160px] w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30 resize-y"
+            className="flex min-h-[160px] w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-3 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30 resize-y"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the incident in detail... Include dates, times, and specific actions."
@@ -136,7 +136,7 @@ function IncidentReportContent() {
                   'rounded-xl border-2 p-3 text-left transition-all',
                   severity === opt.value
                     ? 'border-portal-primary bg-portal-primary/5'
-                    : 'border-gray-100 bg-white hover:border-gray-200',
+                    : 'border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 hover:border-gray-200 dark:hover:border-white/20',
                 )}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -160,14 +160,14 @@ function IncidentReportContent() {
               value={reportedUserId}
               onChange={(e) => setReportedUserId(e.target.value)}
               placeholder="Full name or User ID"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
+              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
             />
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
               Privacy Preference
             </label>
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-2.5">
               <div>
                 <p className="text-sm font-medium text-foreground">Report Anonymously</p>
                 <p className="text-[11px] text-portal-secondary">Your name will not be shared with the reported party.</p>
@@ -189,7 +189,7 @@ function IncidentReportContent() {
               'flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition-colors',
               description.trim() && competitionId
                 ? 'bg-portal-primary text-white hover:bg-portal-primary-light'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed',
+                : 'bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-slate-500 cursor-not-allowed',
             )}
           >
             <Lock className="size-4" />
@@ -202,7 +202,7 @@ function IncidentReportContent() {
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
           <h3 className="text-lg font-bold text-foreground">Final Confirmation</h3>
           <p className="text-xs text-portal-secondary uppercase tracking-wide">Step 2 of 2: Submission Intent</p>
           <div className="rounded-lg bg-portal-primary/5 border border-portal-primary/10 p-4">

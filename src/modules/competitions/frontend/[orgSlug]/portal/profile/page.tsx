@@ -92,7 +92,7 @@ function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: stri
         <button
           type="button"
           onClick={addSkill}
-          className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 transition-colors"
+          className="shrink-0 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           <Plus className="size-4" />
         </button>
@@ -241,7 +241,7 @@ function ProfileContent() {
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="rounded-lg border border-gray-200 px-3 py-2 text-xs sm:text-sm font-medium text-portal-secondary hover:bg-gray-50 transition-colors"
+                className="rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2 text-xs sm:text-sm font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>
@@ -268,7 +268,7 @@ function ProfileContent() {
       />
 
       {isLoading ? (
-        <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
           Loading profile...
         </div>
       ) : (
@@ -276,7 +276,7 @@ function ProfileContent() {
           {/* ---------- Left Column ---------- */}
           <div className="space-y-4">
             {/* Profile Hero Card */}
-            <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
               <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-5">
                 {/* Avatar */}
                 <div className="relative shrink-0">
@@ -295,7 +295,7 @@ function ProfileContent() {
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={uploadingAvatar}
-                    className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-white bg-portal-primary text-white shadow-sm transition-colors hover:bg-portal-primary/90 disabled:opacity-60"
+                    className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-portal-primary text-white shadow-sm transition-colors hover:bg-portal-primary/90 disabled:opacity-60"
                   >
                     {uploadingAvatar ? <Loader2 className="size-3 animate-spin" /> : <Camera className="size-3" />}
                   </button>
@@ -327,7 +327,7 @@ function ProfileContent() {
                         onChange={(e) => setBio(e.target.value)}
                         placeholder="Write a short bio about yourself..."
                         rows={3}
-                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30 resize-none"
+                        className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30 resize-none"
                       />
                     </div>
                   ) : (
@@ -340,22 +340,22 @@ function ProfileContent() {
                   {!editing && (socialLinks.github || socialLinks.linkedin || socialLinks.twitter || socialLinks.website) && (
                     <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
                       {socialLinks.github && (
-                        <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100 hover:text-foreground">
+                        <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Github className="size-4" />
                         </a>
                       )}
                       {socialLinks.linkedin && (
-                        <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100 hover:text-foreground">
+                        <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Linkedin className="size-4" />
                         </a>
                       )}
                       {socialLinks.twitter && (
-                        <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100 hover:text-foreground">
+                        <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Twitter className="size-4" />
                         </a>
                       )}
                       {socialLinks.website && (
-                        <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100 hover:text-foreground">
+                        <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Globe className="size-4" />
                         </a>
                       )}
@@ -369,7 +369,7 @@ function ProfileContent() {
             {editing && (
               <div className="space-y-4">
                 {/* Organization & Specialty */}
-                <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground">About You</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -384,13 +384,13 @@ function ProfileContent() {
                 </div>
 
                 {/* Skills */}
-                <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-3">
+                <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-3">
                   <h3 className="text-sm font-bold text-foreground">Skills</h3>
                   <SkillInput skills={skills} onChange={setSkills} />
                 </div>
 
                 {/* Social Links */}
-                <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground">Social Links</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -429,7 +429,7 @@ function ProfileContent() {
                 </div>
 
                 {/* Portfolio & Office Hours */}
-                <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground">Links</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -447,7 +447,7 @@ function ProfileContent() {
 
             {/* Read-only: Organization + Skills + Links */}
             {!editing && (organization || skills.length > 0 || portfolioUrl) && (
-              <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
                 {organization && (
                   <div>
                     <SectionLabel>Organization</SectionLabel>
@@ -459,7 +459,7 @@ function ProfileContent() {
                     <SectionLabel>Skills</SectionLabel>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {skills.map((skill) => (
-                        <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">{skill}</span>
+                        <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">{skill}</span>
                       ))}
                     </div>
                   </div>
@@ -477,10 +477,10 @@ function ProfileContent() {
             )}
 
             {/* Access Permissions Card */}
-            <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5">
                     <Shield className="size-4 text-portal-secondary" />
                   </div>
                   <h3 className="text-sm font-bold text-foreground">Access Permissions</h3>
@@ -489,7 +489,7 @@ function ProfileContent() {
               {features.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {features.map((feature) => (
-                    <span key={feature} className="inline-flex items-center rounded-md bg-gray-50 px-3 py-1.5 font-mono text-[11px] text-portal-secondary">{feature}</span>
+                    <span key={feature} className="inline-flex items-center rounded-md bg-gray-50 dark:bg-white/5 px-3 py-1.5 font-mono text-[11px] text-portal-secondary">{feature}</span>
                   ))}
                 </div>
               ) : (
@@ -501,20 +501,20 @@ function ProfileContent() {
           {/* ---------- Right Column ---------- */}
           <div className="space-y-4">
             {/* Assigned Roles Card */}
-            <div className="rounded-xl border border-gray-100 bg-white">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5">
               <div className="flex items-center justify-between px-4 sm:px-5 py-4">
                 <h3 className="text-sm font-bold text-foreground">Assigned Roles</h3>
                 <span className="inline-flex items-center justify-center rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-portal-primary">
                   {String(roles.length).padStart(2, '0')}
                 </span>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-white/5">
                 {roles.length > 0 ? (
                   roles.map((role, idx) => (
-                    <div key={role.id} className="flex items-center gap-3 px-4 sm:px-5 py-3 transition-colors hover:bg-gray-50">
+                    <div key={role.id} className="flex items-center gap-3 px-4 sm:px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
                       <div className={cn('size-2 shrink-0 rounded-full', roleDotColors[idx % roleDotColors.length])} />
                       <span className="flex-1 text-sm font-medium text-foreground truncate">{role.name}</span>
-                      <ChevronRight className="size-4 text-gray-300" />
+                      <ChevronRight className="size-4 text-gray-300 dark:text-slate-600" />
                     </div>
                   ))
                 ) : (
@@ -524,7 +524,7 @@ function ProfileContent() {
             </div>
 
             {/* Engagement Controls Card */}
-            <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
               <h3 className="text-sm font-bold text-foreground mb-4">Notifications</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

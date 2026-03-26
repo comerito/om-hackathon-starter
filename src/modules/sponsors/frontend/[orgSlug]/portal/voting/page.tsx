@@ -99,9 +99,9 @@ function VotingContent() {
     <div className="space-y-6">
       {/* Voting closed banner */}
       {votingClosed && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center">
-          <p className="font-medium text-blue-800">{t('sponsors.portal.votingEnded', 'Voting has ended.')}</p>
-          <p className="text-sm text-blue-700 mt-1">{t('sponsors.portal.votesRecorded', `Your ${votesUsed} vote(s) have been recorded.`)}</p>
+        <div className="rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-4 text-center">
+          <p className="font-medium text-blue-800 dark:text-blue-300">{t('sponsors.portal.votingEnded', 'Voting has ended.')}</p>
+          <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{t('sponsors.portal.votesRecorded', `Your ${votesUsed} vote(s) have been recorded.`)}</p>
         </div>
       )}
 
@@ -134,7 +134,7 @@ function VotingContent() {
                       variant="outline" size="sm"
                       onClick={() => vote && handleUnvote(vote.id)}
                       disabled={!!votingClosed}
-                      className="shrink-0 border-green-500 text-green-700"
+                      className="shrink-0 border-green-500 text-green-700 dark:text-green-400"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="mr-1">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />

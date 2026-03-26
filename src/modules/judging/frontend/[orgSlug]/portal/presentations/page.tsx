@@ -33,12 +33,12 @@ function formatTime(seconds: number): string {
 }
 
 const STATUS_STYLES: Record<string, { badge: 'danger' | 'primary' | 'muted' | 'success'; dot: string }> = {
-  presenting: { badge: 'danger', dot: 'bg-red-500' },
-  qa: { badge: 'danger', dot: 'bg-red-500' },
+  presenting: { badge: 'danger', dot: 'bg-red-500 dark:bg-red-400' },
+  qa: { badge: 'danger', dot: 'bg-red-500 dark:bg-red-400' },
   on_deck: { badge: 'primary', dot: 'bg-portal-primary' },
-  waiting: { badge: 'muted', dot: 'bg-gray-400' },
-  completed: { badge: 'muted', dot: 'bg-gray-300' },
-  skipped: { badge: 'danger', dot: 'bg-red-300' },
+  waiting: { badge: 'muted', dot: 'bg-gray-400 dark:bg-slate-500' },
+  completed: { badge: 'muted', dot: 'bg-gray-300 dark:bg-slate-600' },
+  skipped: { badge: 'danger', dot: 'bg-red-300 dark:bg-red-400' },
 }
 
 function PresentationsContent({ orgSlug }: { orgSlug: string }) {
@@ -93,7 +93,7 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
 
   if (queue.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         The presentation queue has not been generated yet.
       </div>
     )
@@ -105,12 +105,12 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Now Presenting Hero */}
         {presenting && (
-          <div className="rounded-xl border-2 border-dashed border-portal-primary/30 bg-white p-4 sm:p-6">
+          <div className="rounded-xl border-2 border-dashed border-portal-primary/30 bg-white dark:bg-white/5 p-4 sm:p-6">
             <PortalBadge variant="danger">Now Presenting</PortalBadge>
             <h2 className="mt-2 sm:mt-3 font-display text-xl sm:text-2xl font-bold text-foreground">{presenting.project_title ?? 'Untitled'}</h2>
             <p className="text-sm text-portal-secondary mt-1">Team: {presenting.team_name}</p>
             {timeRemaining !== null && (
-              <div className="mt-3 sm:mt-4 inline-flex flex-col items-center rounded-xl bg-gray-50 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="mt-3 sm:mt-4 inline-flex flex-col items-center rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 sm:px-6 sm:py-4">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">
                   Time Remaining
                 </span>
@@ -129,7 +129,7 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
         {/* Right side: On Deck + Logistics */}
         <div className="space-y-4">
           {onDeck && (
-            <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
                 Next Up (On Deck)
               </span>
@@ -161,16 +161,16 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground">Presentation Schedule</h2>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" /> Presenting</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500 dark:bg-red-400" /> Presenting</span>
             <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-portal-primary" /> On Deck</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-gray-400" /> Waiting</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-gray-400 dark:bg-slate-500" /> Waiting</span>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
           {isMobile ? (
             /* Mobile: card-based list */
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-white/5">
               {queue.map((demo) => {
                 const status = demo.status === 'qa' ? 'presenting' : demo.status
                 const styles = STATUS_STYLES[status] ?? STATUS_STYLES.waiting
@@ -178,7 +178,7 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
                 return (
                   <div key={demo.id} className={cn('px-4 py-3', isCompleted && 'opacity-40')}>
                     <div className="flex items-start gap-3">
-                      <span className={cn('font-mono text-lg font-bold shrink-0', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300')}>
+                      <span className={cn('font-mono text-lg font-bold shrink-0', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300 dark:text-slate-600')}>
                         {String(demo.presentation_order + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -199,7 +199,7 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
           ) : (
             /* Desktop: grid table */
             <>
-              <div className="grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
+              <div className="grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-white/10 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
                 <span>Rank</span>
                 <span>Team Name</span>
                 <span>Project Concept</span>
@@ -214,11 +214,11 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
                   <div
                     key={demo.id}
                     className={cn(
-                      'grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-50 last:border-0 items-center',
+                      'grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-50 dark:border-white/5 last:border-0 items-center',
                       isCompleted && 'opacity-40',
                     )}
                   >
-                    <span className={cn('font-mono text-lg font-bold', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300')}>
+                    <span className={cn('font-mono text-lg font-bold', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300 dark:text-slate-600')}>
                       {String(demo.presentation_order + 1).padStart(2, '0')}
                     </span>
                     <p className="text-sm font-semibold text-foreground truncate">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
