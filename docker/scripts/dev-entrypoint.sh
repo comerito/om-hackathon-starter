@@ -10,7 +10,7 @@ fi
 
 if [ ! -f /tmp/init-marker/.seeded ]; then
   echo "First run: full initialization..."
-  yarn initialize
+  yarn initialize --orgName="$OM_INIT_ORG_NAME"
   mkdir -p /tmp/init-marker
   touch /tmp/init-marker/.seeded
 else
