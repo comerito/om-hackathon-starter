@@ -120,7 +120,7 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
 
       {/* Card */}
       <div
-        className="relative z-10 mx-auto w-full max-w-[480px] overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative z-10 mx-auto w-full max-w-[480px] overflow-hidden rounded-2xl bg-white dark:bg-slate-800 shadow-2xl"
         style={{ animation: 'slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         {/* Top accent strip */}

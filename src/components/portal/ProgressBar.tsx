@@ -22,7 +22,7 @@ export function ProgressBar({ value, label, size = 'md', className }: ProgressBa
     <div className={cn('w-full', className)}>
       <div
         className={cn(
-          'w-full overflow-hidden rounded-full bg-gray-100',
+          'w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10',
           size === 'sm' ? 'h-1.5' : 'h-2.5',
         )}
       >

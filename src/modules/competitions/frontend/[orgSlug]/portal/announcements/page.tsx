@@ -19,9 +19,9 @@ type Announcement = {
 }
 
 const priorityIcons: Record<string, { bg: string; fg: string }> = {
-  info: { bg: 'bg-blue-50', fg: 'text-blue-500' },
-  warning: { bg: 'bg-amber-50', fg: 'text-amber-500' },
-  urgent: { bg: 'bg-red-50', fg: 'text-red-500' },
+  info: { bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-500 dark:text-blue-400' },
+  warning: { bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-500 dark:text-amber-400' },
+  urgent: { bg: 'bg-red-50 dark:bg-red-500/10', fg: 'text-red-500 dark:text-red-400' },
 }
 
 const categoryBadgeVariants: Record<string, 'info' | 'warning' | 'danger' | 'primary' | 'success' | 'muted'> = {
@@ -52,7 +52,7 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-5">
+    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
           {showPinned && announcement.pinned && (
@@ -74,12 +74,12 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
       </div>
       <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
       {isCode ? (
-        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 font-mono text-xs text-portal-secondary">
+        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-xs text-portal-secondary">
           <span className="flex-1 truncate">{announcement.content}</span>
           <button
             type="button"
             onClick={() => { navigator.clipboard.writeText(announcement.content) }}
-            className="shrink-0 text-gray-400 hover:text-foreground"
+            className="shrink-0 text-gray-400 dark:text-slate-500 hover:text-foreground"
           >
             <Copy className="size-3.5" />
           </button>
@@ -129,7 +129,7 @@ function AnnouncementsContent() {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-28 rounded-xl border border-gray-100 bg-white animate-pulse" />
+          <div key={i} className="h-28 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
         ))}
       </div>
     )
@@ -151,7 +151,7 @@ function AnnouncementsContent() {
             type="button"
             onClick={() => setFilter('all')}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
-              filter === 'all' ? 'bg-portal-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filter === 'all' ? 'bg-portal-primary text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15'
             }`}
           >
             All ({items.length})
@@ -160,7 +160,7 @@ function AnnouncementsContent() {
             type="button"
             onClick={() => setFilter('pinned')}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
-              filter === 'pinned' ? 'bg-portal-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filter === 'pinned' ? 'bg-portal-primary text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15'
             }`}
           >
             Pinned ({pinnedCount})

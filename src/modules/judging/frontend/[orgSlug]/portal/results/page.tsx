@@ -38,7 +38,7 @@ function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 
         <PortalBadge variant="primary" className="mt-2">{entry.average_score.toFixed(1)}</PortalBadge>
       )}
       {/* Pedestal */}
-      <div className={cn('w-24 sm:w-32 mt-3 rounded-t-lg bg-gradient-to-b from-gray-100 to-gray-50 flex items-end justify-center pb-2', heights[place])}>
+      <div className={cn('w-24 sm:w-32 mt-3 rounded-t-lg bg-gradient-to-b from-gray-100 to-gray-50 dark:from-white/10 dark:to-white/5 flex items-end justify-center pb-2', heights[place])}>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
           {placeLabels[place]}
         </span>
@@ -86,7 +86,7 @@ function ResultsContent() {
 
   if (selected && selected.stage !== 'finished' && selected.stage !== 'archived') {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         Results will be available after the judging phase.
       </div>
     )
@@ -97,7 +97,7 @@ function ResultsContent() {
   const entries = data?.items ?? []
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         Results have not been published yet.
       </div>
     )
@@ -135,7 +135,7 @@ function ResultsContent() {
                 'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
                 selectedTrackId
                   ? 'border-portal-primary bg-portal-primary/5 text-portal-primary'
-                  : 'border-gray-200 text-portal-secondary hover:bg-gray-50',
+                  : 'border-gray-200 dark:border-white/10 text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5',
               )}
             >
               <Filter className="size-3.5" /> Filter
@@ -143,7 +143,7 @@ function ResultsContent() {
             <button
               type="button"
               onClick={() => window.open(`/api/judging/portal/export-results?competition_id=${competitionId}`, '_blank')}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-portal-secondary hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-1.5 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <Download className="size-3.5" /> Export
             </button>
@@ -160,7 +160,7 @@ function ResultsContent() {
                 'rounded-full px-3 py-1 text-xs font-medium border transition-colors',
                 !selectedTrackId
                   ? 'border-portal-primary bg-portal-primary text-white'
-                  : 'border-gray-200 text-portal-secondary hover:bg-gray-50',
+                  : 'border-gray-200 dark:border-white/10 text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5',
               )}
             >
               All Tracks
@@ -174,7 +174,7 @@ function ResultsContent() {
                   'rounded-full px-3 py-1 text-xs font-medium border transition-colors',
                   selectedTrackId === track.id
                     ? 'border-portal-primary bg-portal-primary text-white'
-                    : 'border-gray-200 text-portal-secondary hover:bg-gray-50',
+                    : 'border-gray-200 dark:border-white/10 text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5',
                 )}
               >
                 {track.name}
@@ -183,10 +183,10 @@ function ResultsContent() {
           </div>
         )}
 
-        <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
           {isMobile ? (
             /* Mobile: card-based list */
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-white/5">
               {allEntries.map((entry, i) => {
                 const isDisqualified = entry.team_status === 'disqualified'
                 const rank = entry.rank ?? i + 1
@@ -224,7 +224,7 @@ function ResultsContent() {
           ) : (
             /* Desktop: grid table */
             <>
-              <div className="grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
+              <div className="grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-white/10 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
                 <span>Rank</span>
                 <span>Project & Team</span>
                 <span>Avg Score</span>
@@ -238,7 +238,7 @@ function ResultsContent() {
                   <div
                     key={entry.project_id}
                     className={cn(
-                      'grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3.5 border-b border-gray-50 last:border-0 items-center',
+                      'grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3.5 border-b border-gray-50 dark:border-white/5 last:border-0 items-center',
                       isDisqualified && 'opacity-40',
                     )}
                   >
@@ -275,20 +275,20 @@ function ResultsContent() {
 
       {/* Bottom stats row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{totalSubmissions}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Total Submissions</p>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{avgScore.toFixed(1)}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Avg Competition Score</p>
           <ProgressBar value={avgScore * 10} size="sm" className="mt-2" />
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{totalVotes.toLocaleString()}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Community Engagement</p>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-portal-dark p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-portal-dark p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-white">Verified</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">Judging Panel Status</p>
         </div>

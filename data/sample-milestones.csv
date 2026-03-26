@@ -1,0 +1,6 @@
+name,due_date,description,status,sort_order
+Registration Opens,2026-03-15T09:00:00Z,Open registration for all participants,completed,1
+Team Formation Deadline,2026-03-28T23:59:00Z,All teams must be formed,upcoming,2
+Project Submission,2026-04-01T18:00:00Z,Submit your project for judging,upcoming,3
+Judging Period,2026-04-01T19:00:00Z,Judges review all submissions,upcoming,4
+Winners Announced,2026-04-02T16:00:00Z,Award ceremony,upcoming,5

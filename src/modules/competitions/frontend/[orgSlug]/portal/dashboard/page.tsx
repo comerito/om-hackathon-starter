@@ -70,9 +70,9 @@ const stageDisplayTitles: Record<string, string> = {
 }
 
 const priorityIcons: Record<string, { icon: 'info' | 'warning' | 'urgent'; bg: string; fg: string }> = {
-  info: { icon: 'info', bg: 'bg-blue-50', fg: 'text-blue-500' },
-  warning: { icon: 'warning', bg: 'bg-amber-50', fg: 'text-amber-500' },
-  urgent: { icon: 'urgent', bg: 'bg-red-50', fg: 'text-red-500' },
+  info: { icon: 'info', bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-500 dark:text-blue-400' },
+  warning: { icon: 'warning', bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-500 dark:text-amber-400' },
+  urgent: { icon: 'urgent', bg: 'bg-red-50 dark:bg-red-500/10', fg: 'text-red-500 dark:text-red-400' },
 }
 
 const categoryBadgeVariants: Record<string, 'info' | 'warning' | 'danger' | 'primary' | 'muted'> = {
@@ -111,7 +111,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
+    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
@@ -127,9 +127,9 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
       </div>
       <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
       {isCode ? (
-        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 font-mono text-xs text-portal-secondary">
+        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-xs text-portal-secondary">
           <span className="flex-1 truncate">{announcement.content}</span>
-          <button type="button" className="shrink-0 text-gray-400 hover:text-foreground">
+          <button type="button" className="shrink-0 text-gray-400 dark:text-slate-500 hover:text-foreground">
             <Copy className="size-3.5" />
           </button>
         </div>
@@ -233,7 +233,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
 
   if (!selectedId || !selected) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         {t('competitions.portal.dashboard.noCompetition', 'Select a competition to view your dashboard.')}
       </div>
     )
@@ -277,7 +277,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
       {/* ===== Top Row: Hero (left) + Stats & Deadline (right) ===== */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Hero Status Section */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel>Hackathon Status</SectionLabel>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             {stageDisplayTitles[stage] ?? 'In Progress'}
@@ -325,7 +325,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event('open-milestones-drawer'))}
-              className="flex-1 flex flex-col justify-center rounded-xl border border-gray-100 bg-white px-4 py-3 sm:px-5 sm:py-4 text-left cursor-pointer hover:border-portal-primary/30 hover:shadow-sm transition-all"
+              className="flex-1 flex flex-col justify-center rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 sm:px-5 sm:py-4 text-left cursor-pointer hover:border-portal-primary/30 hover:shadow-sm transition-all"
             >
               <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Next Deadline</span>
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mt-1 gap-1">
@@ -362,7 +362,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
                 <AnnouncementCard key={a.id} announcement={a} />
               ))
             ) : (
-              <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-sm text-portal-secondary">
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-6 text-center text-sm text-portal-secondary">
                 No announcements yet.
               </div>
             )}
@@ -384,16 +384,16 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
               Quick Actions
             </span>
-            <div className="mt-2 rounded-xl border border-gray-100 bg-white divide-y divide-gray-50">
+            <div className="mt-2 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 divide-y divide-gray-50 dark:divide-white/5">
               {quickActions.map((action) => (
                 <Link
                   key={action.id}
                   href={`${prefix}${action.path}`}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gray-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors first:rounded-t-xl last:rounded-b-xl"
                 >
                   <action.icon className="size-4 text-portal-primary" />
                   <span className="flex-1 font-medium">{action.label}</span>
-                  <ChevronRight className="size-4 text-gray-300" />
+                  <ChevronRight className="size-4 text-gray-300 dark:text-slate-600" />
                 </Link>
               ))}
             </div>
@@ -401,7 +401,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
 
           {/* Team Summary */}
           {team && (
-            <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-3">
                 <div className="size-2 rounded-full bg-portal-primary" />
                 <span className="text-sm font-bold text-foreground">My Team: {team.name}</span>

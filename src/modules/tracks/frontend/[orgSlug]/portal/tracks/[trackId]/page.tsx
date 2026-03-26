@@ -85,7 +85,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
     return (
       <div className="flex flex-col gap-6">
         <PortalPageTitle label={t('tracks.portal.detailLabel', 'Track Details')} title={t('common.loading', 'Loading...')} />
-        <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8">
           <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
@@ -119,7 +119,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
               <p className="mt-2 text-lg text-muted-foreground">{track.short_description}</p>
             )}
             {track.category && (
-              <span className="mt-2 inline-block rounded-full bg-gray-100 px-3 py-0.5 text-xs font-medium text-gray-600">{track.category}</span>
+              <span className="mt-2 inline-block rounded-full bg-gray-100 dark:bg-white/10 px-3 py-0.5 text-xs font-medium text-gray-600 dark:text-slate-400">{track.category}</span>
             )}
           </div>
         </div>
@@ -128,7 +128,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Description */}
       {track.description && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel className="mb-3">{t('tracks.portal.about', 'About This Track')}</SectionLabel>
           <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
             {track.description}
@@ -138,13 +138,13 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel className="mb-3">{t('tracks.portal.resources', 'Resources & Files')}</SectionLabel>
           <ul className="divide-y">
             {attachments.map((att) => (
               <li key={att.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
                       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" />
                     </svg>
@@ -172,7 +172,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Judging Criteria */}
       {criteria.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel className="mb-4">{t('tracks.portal.judgingCriteria', 'Judging Criteria')}</SectionLabel>
           <p className="mb-5 text-sm text-muted-foreground">
             {t('tracks.portal.criteriaDesc', 'Projects in this track will be evaluated on the following criteria.')}
@@ -209,7 +209,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
 function CriterionCard({ criterion, color }: { criterion: Criterion; color: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 p-4">
+    <div className="rounded-lg border border-gray-100 dark:border-white/10 p-4">
       <div className="flex items-start justify-between gap-2">
         <h5 className="text-sm font-semibold text-foreground">{criterion.name}</h5>
         <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: `${color}15`, color }}>

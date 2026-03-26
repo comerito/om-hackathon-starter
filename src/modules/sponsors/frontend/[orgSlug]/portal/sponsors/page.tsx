@@ -45,7 +45,7 @@ function SponsorsContent() {
 
   if (sponsors.length === 0 && prizes.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
         Sponsor information will appear here.
       </div>
     )
@@ -79,9 +79,9 @@ function SponsorsContent() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {sponsors.map(sponsor => (
-              <div key={sponsor.id} className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
+              <div key={sponsor.id} className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="size-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="size-10 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
                     <img
                       src={sponsor.logo_url}
                       alt={sponsor.name}
@@ -126,12 +126,12 @@ function SponsorsContent() {
           <div className="space-y-3">
             {prizes.map((prize, i) => {
               const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
-              const iconColors = ['text-yellow-500', 'text-blue-500', 'text-amber-600', 'text-purple-500']
-              const iconBgColors = ['bg-yellow-50', 'bg-blue-50', 'bg-amber-50', 'bg-purple-50']
+              const iconColors = ['text-yellow-500 dark:text-yellow-400', 'text-blue-500 dark:text-blue-400', 'text-amber-600 dark:text-amber-400', 'text-purple-500 dark:text-purple-400']
+              const iconBgColors = ['bg-yellow-50 dark:bg-yellow-500/10', 'bg-blue-50 dark:bg-blue-500/10', 'bg-amber-50 dark:bg-amber-500/10', 'bg-purple-50 dark:bg-purple-500/10']
               const colorIdx = Math.min(i, iconColors.length - 1)
 
               return (
-                <div key={prize.id} className="flex items-center gap-5 rounded-xl border border-gray-100 bg-white p-5">
+                <div key={prize.id} className="flex items-center gap-5 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
                   <div className={`size-14 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
                     <PrizeIcon className={`size-7 ${iconColors[colorIdx]}`} />
                   </div>

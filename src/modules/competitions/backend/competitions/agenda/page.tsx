@@ -14,6 +14,7 @@ import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/u
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BulkImportAgendaDialog } from '../../../components/BulkImportAgendaDialog'
 
 type AgendaRow = { id: string; title: string; type: string; starts_at: string; ends_at: string; location: string | null; is_mandatory: boolean }
 
@@ -33,6 +34,7 @@ export default function AgendaListPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
+  const [showImport, setShowImport] = React.useState(false)
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'starts_at', desc: false }])
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
@@ -65,7 +67,7 @@ export default function AgendaListPage() {
       <PageBody>
         <DataTable
           title={t('competitions.agenda.pageTitle', 'Agenda')}
-          actions={<Button asChild><Link href="/backend/competitions/agenda/create">{t('competitions.agenda.create', 'Add Item')}</Link></Button>}
+          actions={<div className="flex gap-2"><Button variant="outline" onClick={() => setShowImport(true)}>{t('competitions.agenda.import', 'Import CSV')}</Button><Button asChild><Link href="/backend/competitions/agenda/create">{t('competitions.agenda.create', 'Add Item')}</Link></Button></div>}
           columns={columns} data={data?.items ?? []}
           sortable sorting={sorting} onSortingChange={(s) => { setSorting(s); setPage(1) }}
           rowActions={(row) => (
@@ -86,6 +88,7 @@ export default function AgendaListPage() {
           onRowClick={(row) => router.push(`/backend/competitions/agenda/${row.id}/edit`)}
         />
         {ConfirmDialogElement}
+        {showImport && <BulkImportAgendaDialog onClose={() => { setShowImport(false); queryClient.invalidateQueries({ queryKey: ['agenda'] }) }} />}
       </PageBody>
     </Page>
   )

@@ -31,7 +31,7 @@ export function AvatarStack({ avatars, max = 3, size = 'md', className }: Avatar
         <div
           key={i}
           className={cn(
-            'relative flex items-center justify-center rounded-full bg-portal-primary/10 ring-white font-medium text-portal-primary',
+            'relative flex items-center justify-center rounded-full bg-portal-primary/10 ring-white dark:ring-slate-800 font-medium text-portal-primary',
             sizeStyles[size],
             i === 0 && 'ml-0',
           )}
@@ -47,7 +47,7 @@ export function AvatarStack({ avatars, max = 3, size = 'md', className }: Avatar
       {overflow > 0 && (
         <div
           className={cn(
-            'relative flex items-center justify-center rounded-full bg-gray-100 ring-white font-medium text-gray-600',
+            'relative flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 ring-white dark:ring-slate-800 font-medium text-gray-600 dark:text-gray-400',
             sizeStyles[size],
           )}
         >

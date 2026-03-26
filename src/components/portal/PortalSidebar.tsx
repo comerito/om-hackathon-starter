@@ -102,7 +102,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
   const prefix = `/${orgSlug}/portal`
 
   return (
-    <aside className="flex h-full w-[220px] flex-col border-r border-gray-100 bg-white">
+    <aside className="flex h-full w-[220px] flex-col border-r border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900">
       {/* Logo / competition name */}
       <div className="px-5 pt-6 pb-4">
         <Link href={`${prefix}/dashboard`} className="block">
@@ -148,7 +148,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
                         'group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium transition-colors',
                         isActive
                           ? 'bg-portal-primary/5 text-portal-primary'
-                          : 'text-portal-secondary hover:bg-gray-50 hover:text-foreground'
+                          : 'text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 hover:text-foreground'
                       )}
                     >
                       {isActive && (
@@ -171,7 +171,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
           <button
             type="button"
             onClick={() => { setMilestonesOpen(true); onClose?.() }}
-            className="flex w-full items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2 rounded-lg border border-gray-100 dark:border-white/10 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 hover:text-foreground transition-colors"
           >
             <Milestone className="size-4" />
             <span>Milestones</span>

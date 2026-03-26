@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Settings, ArrowLeft, Search, LogOut, Menu, X } from 'lucide-react'
+import { PortalThemeToggle } from './PortalThemeToggle'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalNotificationBell } from '@open-mercato/ui/portal/components/PortalNotificationBell'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -46,13 +47,13 @@ export function PortalTopBar({
   const prefix = `/${orgSlug}/portal`
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 bg-white px-3 sm:px-6" data-portal-handle="section:portal:header">
+    <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900 px-3 sm:px-6" data-portal-handle="section:portal:header">
       {/* Hamburger toggle — visible below lg */}
       {onMenuToggle && (
         <button
           type="button"
           onClick={onMenuToggle}
-          className="lg:hidden rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors"
+          className="lg:hidden rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
           {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -97,7 +98,7 @@ export function PortalTopBar({
             <input
               type="text"
               placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
+              className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
             />
           </div>
         </div>
@@ -108,10 +109,8 @@ export function PortalTopBar({
         {/* Notification bell + panel */}
         <PortalNotificationBell t={t} />
 
-        {/* Settings */}
-        <button type="button" className="rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors">
-          <Settings className="size-[18px]" />
-        </button>
+        {/* Theme toggle */}
+        <PortalThemeToggle />
 
         {/* User avatar + dropdown */}
         <div className="relative group">
@@ -127,19 +126,19 @@ export function PortalTopBar({
             </div>
           </button>
           {/* Dropdown */}
-          <div className="invisible group-focus-within:visible absolute right-0 top-full mt-1 w-48 rounded-xl border border-gray-100 bg-white py-1 shadow-lg z-50">
+          <div className="invisible group-focus-within:visible absolute right-0 top-full mt-1 w-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-slate-800 py-1 shadow-lg z-50">
             <Link
               href={`${prefix}/profile`}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <Settings className="size-4 text-portal-secondary" />
               My Profile
             </Link>
-            <div className="mx-3 h-px bg-gray-100" />
+            <div className="mx-3 h-px bg-gray-100 dark:bg-white/10" />
             <button
               type="button"
               onClick={() => auth.logout()}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="size-4" />
               Sign Out

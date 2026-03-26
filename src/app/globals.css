@@ -128,6 +128,13 @@ TODO: Fix that latter to have reference by the package names
 
 .dark {
   color-scheme: dark;
+  /* Portal design system — dark overrides */
+  --portal-bg: #0F172A;
+  --portal-dark: #020617;
+  --portal-secondary: #94A3B8;
+  --portal-success: #34D399;
+  --portal-warning: #FBBF24;
+  --portal-danger: #FB7185;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

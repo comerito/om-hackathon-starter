@@ -176,7 +176,7 @@ function KioskContent() {
       {/* Bottom: Up Next bar */}
       {onDeck && (
         <div className="flex items-center gap-6 px-8 py-4 bg-white/5 border-t border-white/10">
-          <span className="rounded-full bg-orange-100 px-4 py-1.5 text-xs font-bold uppercase text-orange-800">
+          <span className="rounded-full bg-orange-100 dark:bg-orange-500/10 px-4 py-1.5 text-xs font-bold uppercase text-orange-800 dark:text-orange-400">
             → Up Next
           </span>
           <div className="flex-1">

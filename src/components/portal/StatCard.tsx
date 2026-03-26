@@ -25,7 +25,7 @@ export function StatCard({ icon: Icon, value, label, variant = 'default', classN
         'rounded-xl border p-3 sm:p-5',
         isPrimary
           ? 'border-portal-primary/20 bg-portal-primary/5'
-          : 'border-gray-100 bg-white',
+          : 'border-gray-100 dark:border-white/10 bg-white dark:bg-white/5',
         className,
       )}
     >

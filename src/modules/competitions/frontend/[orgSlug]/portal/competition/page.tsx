@@ -83,12 +83,12 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const completionPct = milestones.length > 0 ? Math.round((completedMilestones / milestones.length) * 100) : 0
 
   if (isLoading) {
-    return <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center text-portal-secondary">Loading...</div>
+    return <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center text-portal-secondary">Loading...</div>
   }
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center">
         <p className="text-lg font-bold text-foreground mb-2">No competitions yet</p>
         <p className="text-sm text-portal-secondary">You haven't been registered in any competition. Contact the organizer to get started.</p>
       </div>
@@ -105,7 +105,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
       {/* ===== Active Competition Hero ===== */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Left: Active competition card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-3">
             <PortalBadge variant="primary">{stageLabels[activeComp.stage] ?? activeComp.stage}</PortalBadge>
             <span className="flex items-center gap-1 text-xs text-portal-secondary">
@@ -151,7 +151,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
         {/* Right: Upcoming Deadlines + Need a Teammate */}
         <div className="flex flex-col gap-4">
           {/* Upcoming Deadlines */}
-          <div className="rounded-xl border border-gray-100 bg-white p-5">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
             <h3 className="text-xs font-bold uppercase tracking-widest text-foreground mb-3">Upcoming Deadlines</h3>
             {upcomingMilestones.length > 0 ? (
               <div className="space-y-3">
@@ -213,10 +213,10 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
                   key={comp.id}
                   type="button"
                   onClick={() => setSelectedId(comp.id)}
-                  className="text-left rounded-xl border border-gray-100 bg-white p-5 hover:border-portal-primary/30 hover:shadow-sm transition-all"
+                  className="text-left rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 hover:border-portal-primary/30 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="size-9 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <div className="size-9 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center">
                       <Compass className="size-4 text-portal-secondary" />
                     </div>
                     <PortalBadge variant={isFinished ? 'success' : 'muted'}>
@@ -236,7 +236,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
             })}
 
             {/* Explore Open Tracks card */}
-            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-5 flex flex-col items-center justify-center text-center">
+            <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 p-5 flex flex-col items-center justify-center text-center">
               <div className="size-10 rounded-full bg-portal-primary/10 flex items-center justify-center mb-3">
                 <Compass className="size-5 text-portal-primary" />
               </div>

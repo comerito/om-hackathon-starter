@@ -136,7 +136,7 @@ export default function HackathonLoginPage({ params }: Props) {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-white/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -154,7 +154,7 @@ export default function HackathonLoginPage({ params }: Props) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={submitting}
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-foreground placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-2 focus:ring-portal-primary/20 disabled:opacity-50 transition-colors"
+                className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-2 focus:ring-portal-primary/20 disabled:opacity-50 transition-colors"
               />
             </div>
 
@@ -172,12 +172,12 @@ export default function HackathonLoginPage({ params }: Props) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 pr-11 text-sm text-foreground placeholder:text-gray-400 focus:border-portal-primary focus:outline-none focus:ring-2 focus:ring-portal-primary/20 disabled:opacity-50 transition-colors"
+                  className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-2 focus:ring-portal-primary/20 disabled:opacity-50 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

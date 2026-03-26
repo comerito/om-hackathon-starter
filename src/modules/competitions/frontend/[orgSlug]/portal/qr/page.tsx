@@ -27,7 +27,7 @@ function QRContent() {
 
   if (!selectedId || !data) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-6 text-sm text-portal-secondary text-center">
+      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-6 text-sm text-portal-secondary text-center">
         {t('competitions.portal.qr.selectCompetition', 'Select a competition to see your QR code.')}
       </div>
     )
@@ -38,7 +38,7 @@ function QRContent() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-5 sm:p-8 flex flex-col items-center max-w-md w-full">
+      <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 flex flex-col items-center max-w-md w-full">
         <h3 className="text-lg font-bold text-foreground">
           {selected?.name ?? 'Competition'}
         </h3>
@@ -47,7 +47,7 @@ function QRContent() {
         </p>
 
         {/* QR Code */}
-        <div className="mt-6 rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+        <div className="mt-6 rounded-xl bg-white dark:bg-white p-4 shadow-sm border border-gray-100 dark:border-white/10">
           <QRCodeSVG
             value={qrValue}
             size={220}
@@ -63,7 +63,7 @@ function QRContent() {
         </p>
 
         {/* Fallback code for manual entry */}
-        <div className="mt-4 rounded-lg bg-gray-50 px-4 py-2">
+        <div className="mt-4 rounded-lg bg-gray-50 dark:bg-white/5 px-4 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">Manual Code</p>
           <p className="font-mono text-xs text-foreground select-all">{data.id}</p>
         </div>

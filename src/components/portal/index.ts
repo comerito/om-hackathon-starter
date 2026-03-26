@@ -21,5 +21,8 @@ export { AvatarStack } from './AvatarStack'
 export { ToggleSwitch } from './ToggleSwitch'
 export { ActionLink } from './ActionLink'
 
+// Theme
+export { PortalThemeToggle } from './PortalThemeToggle'
+
 // Utilities
 export { resolveIcon } from './icons'

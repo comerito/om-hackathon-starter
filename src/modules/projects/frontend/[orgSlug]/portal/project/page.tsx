@@ -57,9 +57,9 @@ type MyProjectResponse = {
 /* ---------- helpers ---------- */
 
 const inputClass =
-  'rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full'
+  'rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full dark:placeholder:text-slate-500'
 const textareaClass =
-  'rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full min-h-[100px] resize-y'
+  'rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm focus:border-portal-primary focus:ring-1 focus:ring-portal-primary/30 focus:outline-none w-full min-h-[100px] resize-y dark:placeholder:text-slate-500'
 const labelClass = 'text-xs font-bold uppercase tracking-widest text-foreground block mb-1.5'
 
 /* ========== Project Editor ========== */
@@ -367,41 +367,41 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return (
       <div className="space-y-6">
         {/* Submitted banner */}
-        <div className="rounded-xl border border-green-200 bg-green-50 p-5 flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
-            <Check className="size-4 text-green-600" />
+        <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-5 flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+            <Check className="size-4 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <span className="font-semibold text-green-800">
+            <span className="font-semibold text-green-800 dark:text-green-300">
               {t('projects.portal.submittedBanner', 'Your project has been submitted!')}
             </span>
-            <p className="text-sm text-green-700 mt-0.5">
+            <p className="text-sm text-green-700 dark:text-green-400 mt-0.5">
               {t('projects.portal.submittedDesc', 'Submitted on')} {project?.submitted_at ? new Date(project.submitted_at).toLocaleString() : ''}
             </p>
           </div>
         </div>
 
         {/* Project details card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-5">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-5">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">{project?.title ?? ''}</h2>
           {project?.tagline && <p className="text-lg text-portal-secondary italic">{project.tagline}</p>}
 
           {project?.description && (
             <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.description', 'Description')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.description}</p>
+              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.description}</p>
             </div>
           )}
           {project?.problem_statement && (
             <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.problemStatement', 'Problem Statement')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.problem_statement}</p>
+              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.problem_statement}</p>
             </div>
           )}
           {project?.solution && (
             <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.solution', 'Solution')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700">{project.solution}</p>
+              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.solution}</p>
             </div>
           )}
 
@@ -441,9 +441,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         </div>
 
         {project?.flagged_for_reuse && (
-          <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-            <span className="font-medium text-orange-800">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
-            {project.flagged_reason && <p className="text-sm text-orange-700 mt-1">{project.flagged_reason}</p>}
+          <div className="rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 p-4">
+            <span className="font-medium text-orange-800 dark:text-orange-300">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
+            {project.flagged_reason && <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">{project.flagged_reason}</p>}
           </div>
         )}
       </div>
@@ -458,16 +458,16 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         <div
           className={cn(
             'rounded-xl px-5 py-3.5 flex items-center justify-between gap-4',
-            isUrgent ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200',
+            isUrgent ? 'bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30' : 'bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30',
           )}
         >
           <div className="flex items-center gap-2.5">
-            <Clock className={cn('size-4 shrink-0', isUrgent ? 'text-red-600' : 'text-amber-600')} />
-            <span className={cn('text-sm font-medium', isUrgent ? 'text-red-800' : 'text-amber-800')}>
+            <Clock className={cn('size-4 shrink-0', isUrgent ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400')} />
+            <span className={cn('text-sm font-medium', isUrgent ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300')}>
               {t('projects.portal.approachingDeadline', 'Approaching Deadline:')}
             </span>
             {secondsUntilDeadline !== null && (
-              <span className={cn('font-mono font-bold', isUrgent ? 'text-red-900 text-lg' : 'text-amber-900 text-sm')}>
+              <span className={cn('font-mono font-bold', isUrgent ? 'text-red-900 dark:text-red-300 text-lg' : 'text-amber-900 dark:text-amber-300 text-sm')}>
                 {formatCountdown(secondsUntilDeadline)} {t('projects.portal.remaining', 'remaining')}
               </span>
             )}
@@ -479,8 +479,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
       )}
 
       {deadlinePassed && (
-        <div className="rounded-xl border border-red-300 bg-red-50 px-5 py-3.5">
-          <span className="text-sm font-medium text-red-800">
+        <div className="rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-3.5">
+          <span className="text-sm font-medium text-red-800 dark:text-red-300">
             {t('projects.portal.deadlinePassed', 'Submission deadline has passed. Contact an organizer for an extension.')}
           </span>
         </div>
@@ -491,12 +491,12 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         {/* ======== LEFT COLUMN: Form ======== */}
         <div className="space-y-6">
           {/* Project Details header + autosave */}
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-5">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-foreground">{t('projects.portal.contentSection', 'Project Details')}</h2>
               <span className={cn(
                 'text-xs',
-                autoSaveFailed ? 'text-red-500' : 'text-portal-secondary',
+                autoSaveFailed ? 'text-red-500 dark:text-red-400' : 'text-portal-secondary',
               )}>
                 {autosaveLabel}
               </span>
@@ -598,7 +598,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Media Gallery ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.mediaSection', 'Media Gallery')}</h3>
             <p className="text-sm text-portal-secondary">
               {t('projects.portal.mediaHelp', 'Upload screenshots of your project. Images help judges understand your work. Accepted formats: PNG, JPG, GIF, WebP.')}
@@ -610,7 +610,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 type="button"
                 onClick={() => screenshotInputRef.current?.click()}
                 disabled={uploadingScreenshot || isPublished}
-                className="flex flex-col items-center justify-center w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 hover:border-portal-primary/50 hover:bg-portal-primary/5 transition-colors text-portal-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center justify-center w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-portal-primary/50 hover:bg-portal-primary/5 transition-colors text-portal-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload className="size-5 mb-1" />
                 <span className="text-xs font-medium">
@@ -620,14 +620,14 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
               {/* Screenshot thumbnails */}
               {screenshotIds.map((id, idx) => (
-                <div key={id} className="relative group w-28 h-28 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                <div key={id} className="relative group w-28 h-28 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 overflow-hidden flex items-center justify-center">
                   <div className="flex flex-col items-center text-portal-secondary">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400 dark:text-slate-500">
                       <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                       <circle cx="9" cy="9" r="2" />
                       <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                     </svg>
-                    <span className="text-[10px] mt-1 text-gray-400">
+                    <span className="text-[10px] mt-1 text-gray-400 dark:text-slate-500">
                       {t('projects.portal.screenshot', 'Screenshot')} {idx + 1}
                     </span>
                   </div>
@@ -658,14 +658,14 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Submission Assets (URLs) ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.linksSection', 'Submission Assets')}</h3>
 
             {/* Demo URL */}
             <div>
               <label className={labelClass}>{t('projects.fields.demoUrl', 'Demo URL')}</label>
               <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="url"
                   value={demoUrl}
@@ -680,7 +680,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             <div>
               <label className={labelClass}>{t('projects.fields.repoUrl', 'Repository URL')}</label>
               <div className="relative">
-                <Code className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <Code className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="url"
                   value={repoUrl}
@@ -695,7 +695,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             <div>
               <label className={labelClass}>{t('projects.fields.videoUrl', 'Video Pitch')}</label>
               <div className="relative">
-                <Video className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <Video className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="url"
                   value={videoUrl}
@@ -710,7 +710,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             <div>
               <label className={labelClass}>{t('projects.fields.presentationUrl', 'Presentation URL')}</label>
               <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="url"
                   value={presentationUrl}
@@ -723,7 +723,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Originality Disclosure ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.originalitySection', 'Originality Disclosure')}</h3>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -731,7 +731,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 type="checkbox"
                 checked={usesPreexistingCode}
                 onChange={(e) => setUsesPreexistingCode(e.target.checked)}
-                className="mt-1 size-4 rounded border-gray-300 text-portal-primary focus:ring-portal-primary/50"
+                className="mt-1 size-4 rounded border-gray-300 dark:border-white/20 text-portal-primary focus:ring-portal-primary/50"
               />
               <div>
                 <span className="text-sm font-semibold text-foreground">
@@ -768,9 +768,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
           {/* Flag warning */}
           {project?.flagged_for_reuse && (
-            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-              <span className="font-medium text-orange-800">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
-              {project.flagged_reason && <p className="text-sm text-orange-700 mt-1">{project.flagged_reason}</p>}
+            <div className="rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 p-4">
+              <span className="font-medium text-orange-800 dark:text-orange-300">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
+              {project.flagged_reason && <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">{project.flagged_reason}</p>}
             </div>
           )}
         </div>
@@ -778,13 +778,13 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         {/* ======== RIGHT COLUMN: Sticky sidebar ======== */}
         <div className="lg:sticky lg:top-20 space-y-5 self-start">
           {/* Submission Progress card */}
-          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 space-y-4">
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.submissionProgress', 'Submission Progress')}</h3>
 
             {/* Progress bar with labels */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold text-green-600">{completionPercent}% {t('projects.portal.complete', 'COMPLETE')}</span>
+                <span className="text-sm font-bold text-green-600 dark:text-green-400">{completionPercent}% {t('projects.portal.complete', 'COMPLETE')}</span>
                 <span className="text-xs text-portal-secondary">{filledCount}/{totalRequired} {t('projects.portal.required', 'REQUIRED')}</span>
               </div>
               <ProgressBar value={completionPercent} size="md" />
@@ -795,9 +795,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               {requiredFields.map(f => (
                 <li key={f.label} className="flex items-center gap-2.5">
                   {f.filled ? (
-                    <Check className="size-4 text-green-500 shrink-0" />
+                    <Check className="size-4 text-green-500 dark:text-green-400 shrink-0" />
                   ) : (
-                    <Circle className="size-4 text-gray-300 shrink-0" />
+                    <Circle className="size-4 text-gray-300 dark:text-slate-600 shrink-0" />
                   )}
                   <span className={cn('text-sm', f.filled ? 'text-portal-secondary line-through' : 'text-foreground')}>
                     {f.label}
@@ -818,7 +818,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   {t('projects.portal.submitBtn', 'Submit Final Project')}
                 </Button>
                 {(deadlinePassed || filledCount < totalRequired) && (
-                  <p className="text-xs text-red-500 text-center">
+                  <p className="text-xs text-red-500 dark:text-red-400 text-center">
                     {deadlinePassed
                       ? t('projects.portal.deadlinePassedShort', 'Deadline has passed')
                       : t('projects.portal.incompleteFields', 'Complete all required fields to submit')}
@@ -832,8 +832,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               </div>
             ) : (
               <div className="space-y-2.5">
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-xs text-amber-800 font-medium">
+                <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
+                  <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
                     {t('projects.portal.submitConfirmMsg', 'Are you sure? This action cannot be undone. Your project will be locked for editing.')}
                   </p>
                 </div>
@@ -854,7 +854,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
           {/* YOUR TEAM card */}
           {data?.team && (
-            <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 space-y-3">
+            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.yourTeam', 'Your Team')}</h3>
               <div className="flex items-center gap-3">
                 <AvatarStack

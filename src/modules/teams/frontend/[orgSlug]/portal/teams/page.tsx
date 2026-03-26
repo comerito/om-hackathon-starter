@@ -42,9 +42,9 @@ type Invitation = {
 }
 
 const statusStyles: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  disqualified: 'bg-red-100 text-red-700',
-  withdrawn: 'bg-gray-100 text-gray-500',
+  active: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400',
+  disqualified: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400',
+  withdrawn: 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-slate-400',
 }
 
 type TeamMembership = { teamId: string; role: string } | null

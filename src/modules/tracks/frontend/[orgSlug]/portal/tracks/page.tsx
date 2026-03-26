@@ -78,7 +78,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
         'rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide transition-colors',
         active
           ? 'bg-portal-primary text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+          : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15',
       )}
     >
       {label}
@@ -239,7 +239,7 @@ function TracksContent() {
           label={t('tracks.portal.hubLabel', 'Competition Hub')}
           title={t('tracks.portal.title', 'Competition Tracks')}
         />
-        <div className="rounded-xl border border-gray-100 bg-white p-8">
+        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8">
           <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
@@ -295,11 +295,11 @@ function TracksContent() {
 
       {/* ---- Stage banner when track selection is locked ---- */}
       {!trackSelectionAllowed && myTeamId && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-amber-600">
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-amber-600 dark:text-amber-400">
             <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <p className="text-sm text-amber-800">
+          <p className="text-sm text-amber-800 dark:text-amber-300">
             {t('tracks.portal.selectionLocked', 'Track selection is currently locked. Changes are not allowed at this stage of the competition.')}
           </p>
         </div>
@@ -308,7 +308,7 @@ function TracksContent() {
       {/* ---- Top row: Featured track + Prize pool ---- */}
       <div className="grid gap-5 lg:grid-cols-5">
         {/* Featured / current track card */}
-        <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
+        <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 shadow-sm">
           <div>
             <PortalBadge variant={hasSelectedTrack ? 'success' : 'default'} className="mb-4">
               {hasSelectedTrack
@@ -393,8 +393,8 @@ function TracksContent() {
               <div
                 key={track.id}
                 className={cn(
-                  'group relative flex flex-col rounded-xl border bg-white shadow-sm transition-all hover:shadow-md',
-                  isMyTrack ? 'border-2 ring-1' : 'border-gray-100',
+                  'group relative flex flex-col rounded-xl border bg-white dark:bg-white/5 shadow-sm transition-all hover:shadow-md',
+                  isMyTrack ? 'border-2 ring-1' : 'border-gray-100 dark:border-white/10',
                 )}
                 style={isMyTrack ? { borderColor: track.color, '--tw-ring-color': `${track.color}30` } as React.CSSProperties : undefined}
               >
@@ -444,15 +444,15 @@ function TracksContent() {
                       null
                     ) : !membershipReady ? (
                       /* Still loading membership */
-                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-300 animate-pulse">...</span>
+                      <span className="rounded-lg bg-gray-100 dark:bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-gray-300 dark:text-slate-500 animate-pulse">...</span>
                     ) : isFull ? (
                       /* Track is full */
-                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-400 cursor-not-allowed">
+                      <span className="rounded-lg bg-gray-100 dark:bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-gray-400 dark:text-slate-500 cursor-not-allowed">
                         {t('tracks.portal.trackFull', 'Full')}
                       </span>
                     ) : !trackSelectionAllowed ? (
                       /* Stage doesn't allow selection */
-                      <span className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-400 cursor-not-allowed">
+                      <span className="rounded-lg bg-gray-100 dark:bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-gray-400 dark:text-slate-500 cursor-not-allowed">
                         {t('tracks.portal.locked', 'Locked')}
                       </span>
                     ) : !myTeamId ? (
@@ -472,7 +472,7 @@ function TracksContent() {
                         className={cn(
                           'rounded-lg px-3 py-1.5 text-[11px] font-semibold shadow-sm transition-colors disabled:opacity-60',
                           hasSelectedTrack
-                            ? 'border border-portal-primary bg-white text-portal-primary hover:bg-portal-primary/5'
+                            ? 'border border-portal-primary bg-white dark:bg-white/5 text-portal-primary hover:bg-portal-primary/5'
                             : 'bg-portal-primary text-white hover:bg-portal-primary/90',
                         )}
                       >
@@ -490,9 +490,9 @@ function TracksContent() {
           })}
 
           {/* Suggestion card (always last) */}
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 p-6 text-center">
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-slate-500">
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </div>
