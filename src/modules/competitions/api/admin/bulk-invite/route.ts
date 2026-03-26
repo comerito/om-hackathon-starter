@@ -126,6 +126,7 @@ export async function POST(req: Request) {
           participationRole: invitee.role,
           tenantId,
           organizationId,
+          createdAt: new Date(),
         })
         em.persist(competitionInvitation)
 
