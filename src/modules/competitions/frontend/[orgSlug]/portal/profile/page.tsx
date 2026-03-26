@@ -77,10 +77,10 @@ function ProfileContent() {
         <div className="space-y-4">
           {/* Profile Hero Card */}
           <div className="rounded-xl border border-gray-100 bg-white p-6">
-            <div className="flex items-start gap-5">
+            <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-5">
               {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="flex size-24 items-center justify-center rounded-xl bg-portal-primary/10 text-2xl font-bold text-portal-primary">
+                <div className="flex size-20 sm:size-24 items-center justify-center rounded-xl bg-portal-primary/10 text-2xl font-bold text-portal-primary">
                   {getInitials(user.displayName)}
                 </div>
                 <button

@@ -16,6 +16,8 @@ type PortalSidebarProps = {
   variant?: 'full' | 'minimal'
   competitionName?: string
   competitionSubtitle?: string
+  /** Called when a nav item is tapped in the mobile drawer */
+  onClose?: () => void
 }
 
 /** Navigation item ordering — sidebar shows items in this priority */
@@ -60,7 +62,7 @@ const MINIMAL_IDS = new Set([
   'competitions.portal-agenda',
 ])
 
-export function PortalSidebar({ variant = 'full', competitionName, competitionSubtitle }: PortalSidebarProps) {
+export function PortalSidebar({ variant = 'full', competitionName, competitionSubtitle, onClose }: PortalSidebarProps) {
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
   const [milestonesOpen, setMilestonesOpen] = React.useState(false)
@@ -141,6 +143,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
                     <Link
                       key={item.id}
                       href={item.href ?? '#'}
+                      onClick={onClose}
                       className={cn(
                         'group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium transition-colors',
                         isActive
@@ -167,7 +170,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         {variant === 'full' && selectedCompetitionId && (
           <button
             type="button"
-            onClick={() => setMilestonesOpen(true)}
+            onClick={() => { setMilestonesOpen(true); onClose?.() }}
             className="flex w-full items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 hover:text-foreground transition-colors"
           >
             <Milestone className="size-4" />
@@ -185,6 +188,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         ) : (
           <Link
             href={`${prefix}/competition`}
+            onClick={onClose}
             className="flex w-full items-center justify-center rounded-lg bg-portal-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary-light"
           >
             Join Hackathon

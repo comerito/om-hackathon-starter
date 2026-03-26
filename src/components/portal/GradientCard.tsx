@@ -15,7 +15,7 @@ export function GradientCard({ children, className }: GradientCardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl bg-gradient-to-br from-portal-primary to-portal-primary-light p-6 text-white shadow-sm',
+        'rounded-xl bg-gradient-to-br from-portal-primary to-portal-primary-light p-4 sm:p-6 text-white shadow-sm',
         className,
       )}
     >

@@ -111,7 +111,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5">
+    <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
@@ -277,23 +277,23 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
       {/* ===== Top Row: Hero (left) + Stats & Deadline (right) ===== */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Hero Status Section */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <SectionLabel>Hackathon Status</SectionLabel>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             {stageDisplayTitles[stage] ?? 'In Progress'}
           </h1>
-          <div className="mt-4 flex items-end gap-8">
+          <div className="mt-3 sm:mt-4 flex flex-wrap items-end gap-3 sm:gap-8">
             <div>
-              <span className="text-4xl font-bold tracking-tight text-foreground">{timeLeft.hours}</span>
-              <span className="text-lg font-bold text-portal-secondary">h </span>
-              <span className="text-4xl font-bold tracking-tight text-foreground">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="text-lg font-bold text-portal-secondary">m</span>
-              <span className="ml-2 text-xs font-semibold uppercase tracking-widest text-portal-secondary">Remaining</span>
+              <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{timeLeft.hours}</span>
+              <span className="text-sm sm:text-lg font-bold text-portal-secondary">h </span>
+              <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <span className="text-sm sm:text-lg font-bold text-portal-secondary">m</span>
+              <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">Remaining</span>
             </div>
             {milestones.length > 0 && (
               <div>
-                <span className="text-4xl font-bold tracking-tight text-foreground">{String(milestones.length).padStart(2, '0')}</span>
-                <span className="ml-1 text-xs font-semibold uppercase tracking-widest text-portal-secondary">Milestones</span>
+                <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{String(milestones.length).padStart(2, '0')}</span>
+                <span className="ml-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">Milestones</span>
               </div>
             )}
           </div>
@@ -325,13 +325,13 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event('open-milestones-drawer'))}
-              className="flex-1 flex flex-col justify-center rounded-xl border border-gray-100 bg-white px-5 py-4 text-left cursor-pointer hover:border-portal-primary/30 hover:shadow-sm transition-all"
+              className="flex-1 flex flex-col justify-center rounded-xl border border-gray-100 bg-white px-4 py-3 sm:px-5 sm:py-4 text-left cursor-pointer hover:border-portal-primary/30 hover:shadow-sm transition-all"
             >
               <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Next Deadline</span>
-              <div className="flex items-end justify-between mt-1">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mt-1 gap-1">
                 <p className="text-sm font-bold text-foreground">{nextDeadline.title}</p>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-portal-primary">
+                <div className="sm:text-right">
+                  <p className="text-xs sm:text-sm font-bold text-portal-primary">
                     {new Date(nextDeadline.date).toLocaleDateString([], { weekday: 'long' })},{' '}
                     {new Date(nextDeadline.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -401,7 +401,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
 
           {/* Team Summary */}
           {team && (
-            <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-3">
                 <div className="size-2 rounded-full bg-portal-primary" />
                 <span className="text-sm font-bold text-foreground">My Team: {team.name}</span>

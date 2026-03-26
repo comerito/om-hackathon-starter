@@ -79,7 +79,7 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
           return (
             <Link key={project.id} href={`/${orgSlug}/portal/judging/${project.id}`}>
               <PortalCard>
-                <div className="p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors">
+                <div className="p-4 flex items-center gap-2 sm:gap-4 hover:bg-muted/30 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium truncate">{project.title}</h3>

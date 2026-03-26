@@ -52,9 +52,9 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-5">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
           {showPinned && announcement.pinned && (
             <span className="flex items-center gap-1 rounded-full bg-portal-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-portal-primary">
               <Pin className="size-2.5" />
@@ -68,8 +68,8 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
             {formatTimeAgo(announcement.published_at)}
           </span>
         </div>
-        <div className={`size-8 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
-          <PriorityIcon className={`size-4 ${priority.fg}`} />
+        <div className={`size-7 sm:size-8 shrink-0 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
+          <PriorityIcon className={`size-3.5 sm:size-4 ${priority.fg}`} />
         </div>
       </div>
       <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>

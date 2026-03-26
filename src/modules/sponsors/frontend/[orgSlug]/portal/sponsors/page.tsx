@@ -56,14 +56,14 @@ function SponsorsContent() {
       {/* Hero Section */}
       <GradientCard className="relative overflow-hidden">
         <SectionLabel className="text-white/80">Event Rewards</SectionLabel>
-        <h2 className="mt-2 font-display text-4xl font-bold text-white leading-tight">
+        <h2 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
           Empowering<br />Innovation.
         </h2>
         <p className="mt-3 text-sm text-white/70 max-w-md">
           Meet the partners making this editorial evolution possible and discover the rewards for the most impactful solutions.
         </p>
         {totalPrizePool > 0 && (
-          <div className="absolute top-6 right-6 rounded-xl bg-white/20 backdrop-blur-sm px-5 py-3">
+          <div className="mt-4 sm:mt-0 sm:absolute sm:top-6 sm:right-6 rounded-xl bg-white/20 backdrop-blur-sm px-5 py-3 w-fit">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">Total Pool</span>
             <p className="text-2xl font-bold text-white">${totalPrizePool.toLocaleString()}</p>
           </div>
@@ -79,7 +79,7 @@ function SponsorsContent() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {sponsors.map(sponsor => (
-              <div key={sponsor.id} className="rounded-xl border border-gray-100 bg-white p-5">
+              <div key={sponsor.id} className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="size-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
                     <img

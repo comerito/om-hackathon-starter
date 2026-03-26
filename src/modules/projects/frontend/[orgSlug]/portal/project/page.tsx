@@ -382,8 +382,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         </div>
 
         {/* Project details card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-5">
-          <h2 className="text-2xl font-bold text-foreground">{project?.title ?? ''}</h2>
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-5">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">{project?.title ?? ''}</h2>
           {project?.tagline && <p className="text-lg text-portal-secondary italic">{project.tagline}</p>}
 
           {project?.description && (
@@ -491,7 +491,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         {/* ======== LEFT COLUMN: Form ======== */}
         <div className="space-y-6">
           {/* Project Details header + autosave */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-5">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-foreground">{t('projects.portal.contentSection', 'Project Details')}</h2>
               <span className={cn(
@@ -598,7 +598,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Media Gallery ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.mediaSection', 'Media Gallery')}</h3>
             <p className="text-sm text-portal-secondary">
               {t('projects.portal.mediaHelp', 'Upload screenshots of your project. Images help judges understand your work. Accepted formats: PNG, JPG, GIF, WebP.')}
@@ -658,7 +658,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Submission Assets (URLs) ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.linksSection', 'Submission Assets')}</h3>
 
             {/* Demo URL */}
@@ -723,7 +723,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </div>
 
           {/* ---- Originality Disclosure ---- */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{t('projects.portal.originalitySection', 'Originality Disclosure')}</h3>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -778,7 +778,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         {/* ======== RIGHT COLUMN: Sticky sidebar ======== */}
         <div className="lg:sticky lg:top-20 space-y-5 self-start">
           {/* Submission Progress card */}
-          <div className="rounded-xl border border-gray-100 bg-white p-5 space-y-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.submissionProgress', 'Submission Progress')}</h3>
 
             {/* Progress bar with labels */}
@@ -854,7 +854,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
           {/* YOUR TEAM card */}
           {data?.team && (
-            <div className="rounded-xl border border-gray-100 bg-white p-5 space-y-3">
+            <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{t('projects.portal.yourTeam', 'Your Team')}</h3>
               <div className="flex items-center gap-3">
                 <AvatarStack

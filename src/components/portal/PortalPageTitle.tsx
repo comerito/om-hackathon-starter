@@ -22,7 +22,7 @@ export function PortalPageTitle({ label, title, rightElement, className }: Porta
     <div className={cn('flex items-start justify-between gap-4', className)}>
       <div>
         {label && <SectionLabel className="mb-1 block">{label}</SectionLabel>}
-        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
           {title}
         </h1>
       </div>

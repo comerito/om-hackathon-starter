@@ -59,7 +59,7 @@ function IncidentReportContent() {
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center space-y-4">
+      <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center space-y-4">
         <div className="flex justify-center">
           <div className="size-16 rounded-full bg-green-50 flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
@@ -97,7 +97,7 @@ function IncidentReportContent() {
       </div>
 
       {/* Main Form Card */}
-      <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-6">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-6">
         <div>
           <h2 className="text-xl font-bold text-foreground">Incident Report</h2>
           <p className="text-sm text-portal-secondary mt-1">
@@ -126,7 +126,7 @@ function IncidentReportContent() {
           <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-3">
             Severity Level
           </label>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SEVERITY_OPTIONS.map(opt => (
               <button
                 key={opt.value}
@@ -202,7 +202,7 @@ function IncidentReportContent() {
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 space-y-4">
           <h3 className="text-lg font-bold text-foreground">Final Confirmation</h3>
           <p className="text-xs text-portal-secondary uppercase tracking-wide">Step 2 of 2: Submission Intent</p>
           <div className="rounded-lg bg-portal-primary/5 border border-portal-primary/10 p-4">

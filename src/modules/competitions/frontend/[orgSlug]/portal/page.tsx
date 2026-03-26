@@ -51,22 +51,22 @@ export default function HackathonLandingPage({ params }: Props) {
         <div className="absolute -bottom-32 -right-32 size-96 rounded-full bg-white/5" />
         <div className="absolute -top-20 -left-20 size-72 rounded-full bg-white/5" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 py-20 text-center text-white">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20 text-center text-white">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 backdrop-blur-sm mb-6">
             <Zap className="size-4" />
             <span className="text-xs font-bold uppercase tracking-widest">Hackathon Portal</span>
           </div>
 
-          <h1 className="font-display text-5xl font-bold leading-tight sm:text-6xl lg:text-7xl">
+          <h1 className="font-display text-3xl font-bold leading-tight sm:text-5xl lg:text-7xl">
             Where Ideas<br />Become Reality
           </h1>
 
-          <p className="mx-auto mt-6 max-w-xl text-lg text-white/70 leading-relaxed">
+          <p className="mx-auto mt-4 sm:mt-6 max-w-xl text-sm sm:text-lg text-white/70 leading-relaxed">
             Join the hackathon, form your team, build something amazing, and compete for prizes.
             Everything you need in one portal.
           </p>
 
-          <div className="mt-10 flex items-center justify-center gap-4">
+          <div className="mt-6 sm:mt-10 flex items-center justify-center gap-4">
             {isLoggedIn ? (
               <Link
                 href={`/${orgSlug}/portal/dashboard`}
@@ -89,7 +89,7 @@ export default function HackathonLandingPage({ params }: Props) {
           </div>
 
           {/* Stats bar */}
-          <div className="mt-16 flex items-center justify-center gap-8 sm:gap-12">
+          <div className="mt-16 grid grid-cols-2 gap-6 sm:flex sm:items-center sm:justify-center sm:gap-12">
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
                 <p className="text-3xl font-bold sm:text-4xl">{stat.value}</p>
@@ -101,15 +101,15 @@ export default function HackathonLandingPage({ params }: Props) {
       </div>
 
       {/* Features */}
-      <div className="mx-auto max-w-5xl px-6 py-20">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
         <div className="text-center mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-portal-primary">Everything You Need</span>
-          <h2 className="mt-2 font-display text-3xl font-bold text-foreground">One Portal, Full Experience</h2>
+          <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-foreground">One Portal, Full Experience</h2>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-3">
           {features.map((feature) => (
-            <div key={feature.title} className="rounded-2xl border border-gray-100 bg-white p-7 transition-all hover:shadow-lg hover:border-portal-primary/20">
+            <div key={feature.title} className="rounded-2xl border border-gray-100 bg-white p-5 sm:p-7 transition-all hover:shadow-lg hover:border-portal-primary/20">
               <div className="size-12 rounded-xl bg-portal-primary/10 flex items-center justify-center mb-5">
                 <feature.icon className="size-6 text-portal-primary" />
               </div>
@@ -121,10 +121,10 @@ export default function HackathonLandingPage({ params }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="mx-auto max-w-5xl px-6 pb-20">
-        <div className="rounded-2xl bg-gradient-to-r from-portal-primary to-portal-primary-light p-10 text-center text-white">
-          <Rocket className="size-8 mx-auto mb-4 opacity-80" />
-          <h2 className="font-display text-2xl font-bold">Ready to Build?</h2>
+      <div className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-20">
+        <div className="rounded-2xl bg-gradient-to-r from-portal-primary to-portal-primary-light p-6 sm:p-10 text-center text-white">
+          <Rocket className="size-6 sm:size-8 mx-auto mb-3 sm:mb-4 opacity-80" />
+          <h2 className="font-display text-xl sm:text-2xl font-bold">Ready to Build?</h2>
           <p className="mt-2 text-sm text-white/70 max-w-md mx-auto">
             Sign in to access the hackathon dashboard, form your team, and start building.
           </p>

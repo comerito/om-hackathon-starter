@@ -22,7 +22,7 @@ export function StatCard({ icon: Icon, value, label, variant = 'default', classN
   return (
     <div
       className={cn(
-        'rounded-xl border p-5',
+        'rounded-xl border p-3 sm:p-5',
         isPrimary
           ? 'border-portal-primary/20 bg-portal-primary/5'
           : 'border-gray-100 bg-white',
@@ -35,7 +35,7 @@ export function StatCard({ icon: Icon, value, label, variant = 'default', classN
           isPrimary ? 'text-portal-primary' : 'text-portal-secondary',
         )}
       />
-      <p className="text-3xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{value}</p>
       <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-portal-secondary">
         {label}
       </p>

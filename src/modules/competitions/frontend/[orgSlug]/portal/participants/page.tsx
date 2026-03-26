@@ -81,7 +81,7 @@ function ParticipantCard({ p }: { p: Participant }) {
   const actionLabel = roleActionLabel[p.role] ?? 'View Profile'
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5">
+    <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-5">
       {/* Header: Avatar + Name + Email */}
       <div className="relative flex items-start gap-3 mb-3">
         <div className="relative shrink-0">
@@ -164,40 +164,42 @@ function FilterTabs({ totalCount }: { totalCount: number }) {
   }, [totalCount])
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            disabled={tab.disabled}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              activeTab === tab.id
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
-              tab.disabled && 'opacity-50 cursor-not-allowed',
-            )}
-          >
-            {tab.label}
-            {tab.count != null && (
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-                  activeTab === tab.id
-                    ? 'bg-portal-primary/10 text-portal-primary'
-                    : 'bg-gray-200 text-gray-500',
-                )}
-              >
-                {tab.count.toLocaleString()}
-              </span>
-            )}
-          </button>
-        ))}
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              disabled={tab.disabled}
+              className={cn(
+                'shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                activeTab === tab.id
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700',
+                tab.disabled && 'opacity-50 cursor-not-allowed',
+              )}
+            >
+              {tab.label}
+              {tab.count != null && (
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                    activeTab === tab.id
+                      ? 'bg-portal-primary/10 text-portal-primary'
+                      : 'bg-gray-200 text-gray-500',
+                  )}
+                >
+                  {tab.count.toLocaleString()}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
       >
         <SlidersHorizontal className="size-3.5" />
         Advanced Filters

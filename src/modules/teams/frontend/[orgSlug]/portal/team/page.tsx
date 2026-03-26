@@ -186,7 +186,7 @@ function NoTeamView({
       {/* Action Tiles */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Tile 1: Create Team */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-portal-primary/10 text-portal-primary mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
@@ -202,7 +202,7 @@ function NoTeamView({
         </div>
 
         {/* Tile 2: Browse Teams */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
@@ -220,7 +220,7 @@ function NoTeamView({
         </div>
 
         {/* Tile 3: Looking for Team */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 transition-all hover:shadow-md">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6 transition-all hover:shadow-md">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
@@ -243,7 +243,7 @@ function NoTeamView({
 
       {/* Create Team Expanded Form */}
       {showCreateForm && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">{t('teams.portal.myTeam.createTeamForm', 'New Team')}</h3>
           <div className="space-y-4">
             <div>
@@ -285,7 +285,7 @@ function NoTeamView({
 
       {/* Looking for Team Description (expanded) */}
       {lookingForTeam && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-3">{t('teams.portal.myTeam.lookingProfile', 'Your Looking-for-Team Profile')}</h3>
           <div className="space-y-3">
             <p className="text-sm text-portal-secondary">
@@ -307,7 +307,7 @@ function NoTeamView({
 
       {/* Received Invitations */}
       {receivedInvitations.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">
             {t('teams.portal.myTeam.pendingInvitations', 'Pending Invitations')}{' '}
             <PortalBadge variant="info">{receivedInvitations.length}</PortalBadge>
@@ -757,7 +757,7 @@ function TeamView({
       {/* ---- Left Column ---- */}
       <div className="space-y-6">
         {/* Active Collaborators */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionLabel>Active Collaborators</SectionLabel>
             <PortalBadge variant="primary">{members.length}</PortalBadge>
@@ -792,7 +792,7 @@ function TeamView({
 
         {/* Track Selection */}
         {(isOwner || team.track_id) && tracks.length > 0 && (
-          <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
             <SectionLabel className="mb-4 block">Track</SectionLabel>
 
             {isOwner ? (
@@ -862,7 +862,7 @@ function TeamView({
 
         {/* Invitations / Join Requests */}
         {(teamRequests.length > 0 || receivedInvitations.length > 0) && (
-          <div className="rounded-xl border border-gray-100 bg-white p-6">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
             <SectionLabel className="mb-4 block">
               {t('teams.portal.myTeam.invitations', 'Invitations & Requests')}
             </SectionLabel>
@@ -1049,7 +1049,7 @@ function TeamView({
         </div>
 
         {/* Milestones */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <SectionLabel className="mb-3 block">Milestones</SectionLabel>
           <ProgressBar value={milestoneProgress} label={`${milestoneDoneCount} of ${milestones.length} complete`} size="sm" className="mb-4" />
           <div className="space-y-0">
@@ -1135,7 +1135,7 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-6">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
         <p className="text-sm text-portal-secondary">{t('common.loading', 'Loading...')}</p>
       </div>
     )

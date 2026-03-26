@@ -87,7 +87,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
       </div>
 
       {/* Event content */}
-      <div className={cn('flex-1 rounded-xl border bg-white p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
+      <div className={cn('flex-1 rounded-xl border bg-white p-3 sm:p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
         <div className="flex items-center justify-between mb-2">
           <span className={cn('text-sm font-semibold', happening ? 'text-portal-primary' : 'text-portal-secondary')}>
             {formatTime(item.starts_at)} — {formatTime(item.ends_at)}
@@ -191,26 +191,28 @@ function AgendaContent() {
       <div>
         {/* Day tabs */}
         {days.length > 1 && (
-          <div className="flex gap-1 mb-6">
-            {days.map(([key]) => {
-              const label = getDayLabel(key)
-              const isActive = key === selectedDay
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedDay(key)}
-                  className={cn(
-                    'px-6 py-2 rounded-lg text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-portal-primary text-white shadow-sm'
-                      : 'text-portal-secondary hover:bg-gray-100'
-                  )}
-                >
-                  {label}
-                </button>
-              )
-            })}
+          <div className="-mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto mb-6">
+            <div className="flex gap-1 flex-nowrap">
+              {days.map(([key]) => {
+                const label = getDayLabel(key)
+                const isActive = key === selectedDay
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedDay(key)}
+                    className={cn(
+                      'shrink-0 px-6 py-2 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-portal-primary text-white shadow-sm'
+                        : 'text-portal-secondary hover:bg-gray-100'
+                    )}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
 
@@ -225,7 +227,7 @@ function AgendaContent() {
       {/* Right: Sidebar widgets */}
       <div className="space-y-4">
         {/* Session completion */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">
             {selectedDay ? getDayLabel(selectedDay) : 'Day'} Completion
           </h4>
@@ -259,7 +261,7 @@ function AgendaContent() {
         })()}
 
         {/* Info cards */}
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
               <HelpCircle className="size-4 text-portal-primary" />
