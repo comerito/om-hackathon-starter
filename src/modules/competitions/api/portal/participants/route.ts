@@ -118,6 +118,9 @@ export async function GET(req: Request) {
         skills: profile?.skills ?? [],
         looking_for_team: participation?.lookingForTeam ?? false,
         bio: profile?.bio ?? null,
+        avatar_url: profile?.avatarUrl ?? null,
+        portfolio_url: profile?.portfolioUrl ?? null,
+        office_hours_url: profile?.officeHoursUrl ?? null,
       }
     })
 

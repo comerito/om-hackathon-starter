@@ -176,6 +176,9 @@ TODO: Fix that latter to have reference by the package names
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-padding-top: 3.5rem; /* Offset for sticky portal top bar (h-14 = 3.5rem) */
+  }
   body {
     @apply bg-background text-foreground;
   }

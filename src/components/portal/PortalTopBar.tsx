@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Settings, ArrowLeft, Search, LogOut } from 'lucide-react'
+import { Settings, ArrowLeft, Search, LogOut, Menu, X } from 'lucide-react'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalNotificationBell } from '@open-mercato/ui/portal/components/PortalNotificationBell'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -22,6 +22,10 @@ type PortalTopBarProps = {
   backHref?: string
   /** Inline nav links for topnav variant */
   navLinks?: Array<{ label: string; href: string; active?: boolean }>
+  /** Toggle mobile menu */
+  onMenuToggle?: () => void
+  /** Whether mobile menu is open */
+  mobileMenuOpen?: boolean
 }
 
 export function PortalTopBar({
@@ -32,6 +36,8 @@ export function PortalTopBar({
   userRole,
   backHref,
   navLinks,
+  onMenuToggle,
+  mobileMenuOpen,
 }: PortalTopBarProps) {
   const { auth, orgSlug } = usePortalContext()
   const t = useT()
@@ -40,9 +46,21 @@ export function PortalTopBar({
   const prefix = `/${orgSlug}/portal`
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-gray-100 bg-white px-6" data-portal-handle="section:portal:header">
+    <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 bg-white px-3 sm:px-6" data-portal-handle="section:portal:header">
+      {/* Hamburger toggle — visible below lg */}
+      {onMenuToggle && (
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          className="lg:hidden rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 transition-colors"
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+      )}
+
       {/* Left section */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         {variant === 'minimal' && backHref && (
           <Link href={backHref} className="text-portal-secondary hover:text-foreground transition-colors">
             <ArrowLeft className="size-5" />
@@ -71,9 +89,9 @@ export function PortalTopBar({
         )}
       </div>
 
-      {/* Center: Search */}
+      {/* Center: Search — hidden on mobile */}
       {variant !== 'minimal' && (
-        <div className="flex-1 flex justify-center max-w-md mx-auto">
+        <div className="hidden sm:flex flex-1 justify-center max-w-md mx-auto">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
             <input
@@ -86,7 +104,7 @@ export function PortalTopBar({
       )}
 
       {/* Right: Actions */}
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex shrink-0 items-center gap-3" data-portal-handle="section:portal:header:actions">
         {/* Notification bell + panel */}
         <PortalNotificationBell t={t} />
 

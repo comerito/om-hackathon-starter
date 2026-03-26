@@ -1,17 +1,21 @@
 "use client"
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { MessageCircle, SlidersHorizontal } from 'lucide-react'
+import {
+  MessageCircle, Search, Users, X,
+  ExternalLink, Briefcase, Loader2,
+} from 'lucide-react'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
-import { PortalPageTitle, PortalBadge, ActionLink } from '@/components/portal'
+import { PortalPageTitle, PortalBadge } from '@/components/portal'
 
 /* ---------- types ---------- */
 
@@ -21,9 +25,13 @@ type Participant = {
   email: string
   role: string
   organization: string | null
+  specialty: string | null
   skills: string[]
   looking_for_team: boolean
   bio: string | null
+  avatar_url: string | null
+  portfolio_url: string | null
+  office_hours_url: string | null
 }
 
 /* ---------- avatar colors by role ---------- */
@@ -40,35 +48,183 @@ const roleBadgeVariant: Record<string, 'primary' | 'info' | 'warning'> = {
   judge: 'warning',
 }
 
-const roleActionLabel: Record<string, string> = {
-  participant: 'View Portfolio',
-  mentor: 'Book Office Hours',
-  judge: 'View Profile',
-}
-
-/* ---------- filter tab data ---------- */
-
-type FilterTab = {
-  id: string
-  label: string
-  count?: number
-  disabled?: boolean
-}
-
-const FILTER_TABS: FilterTab[] = [
-  { id: 'all', label: 'All', count: 1248 },
-  { id: 'designers', label: 'Designers', disabled: true },
-  { id: 'developers', label: 'Developers', disabled: true },
-  { id: 'strategists', label: 'Strategists', disabled: true },
-]
-
-/* ---------- page size ---------- */
+/* ---------- constants ---------- */
 
 const PAGE_SIZE = 24
 
+/* ---------- profile modal ---------- */
+
+function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId }: {
+  participant: Participant
+  onClose: () => void
+  myTeamId: string | null
+  onInvite: (userId: string) => void
+  invitingId: string | null
+}) {
+  const initials = p.display_name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
+  const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 text-gray-700'
+  const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
+  const canInvite = p.looking_for_team && myTeamId
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  // Safe hostname extraction
+  function getHostname(url: string): string {
+    try { return new URL(url).hostname } catch { return url }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+      <div
+        className="relative z-10 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Compact header with avatar inline */}
+        <div className="relative bg-gradient-to-br from-portal-primary to-portal-primary-light px-5 pt-4 pb-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 flex size-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+
+          <div className="flex items-center gap-4">
+            {p.avatar_url ? (
+              <img src={p.avatar_url} alt={p.display_name} className="size-16 rounded-full object-cover border-2 border-white/30 shadow-md" />
+            ) : (
+              <div className={cn('flex size-16 items-center justify-center rounded-full text-xl font-bold border-2 border-white/30 shadow-md', avatarColors)}>
+                {initials}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-white truncate">{p.display_name}</h2>
+              <p className="text-sm text-white/70 truncate">{p.email}</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                  {p.role}
+                </span>
+                {p.specialty && (
+                  <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/80">
+                    {p.specialty}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Looking for team + Organization */}
+          <div className="flex flex-wrap items-center gap-2">
+            {p.looking_for_team && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-green-700">
+                <Users className="size-3" />
+                Looking for Team
+              </span>
+            )}
+            {p.organization && (
+              <span className="inline-flex items-center gap-1.5 text-sm text-portal-secondary">
+                <Briefcase className="size-3.5" />
+                {p.organization}
+              </span>
+            )}
+          </div>
+
+          {/* Bio */}
+          {p.bio && (
+            <p className="text-sm leading-relaxed text-portal-secondary">{p.bio}</p>
+          )}
+
+          {/* Skills */}
+          {p.skills.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-portal-secondary mb-2">Skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {p.skills.map((skill) => (
+                  <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Links */}
+          {(p.portfolio_url || p.office_hours_url) && (
+            <div className="space-y-2">
+              {p.portfolio_url && (
+                <a
+                  href={p.portfolio_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                >
+                  <ExternalLink className="size-4 text-portal-primary shrink-0" />
+                  View Portfolio
+                  <span className="ml-auto text-xs text-portal-secondary truncate max-w-[140px]">{getHostname(p.portfolio_url)}</span>
+                </a>
+              )}
+              {p.office_hours_url && (
+                <a
+                  href={p.office_hours_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                >
+                  <ExternalLink className="size-4 text-portal-primary shrink-0" />
+                  Book Office Hours
+                  <span className="ml-auto text-xs text-portal-secondary truncate max-w-[140px]">{getHostname(p.office_hours_url)}</span>
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+          {canInvite && (
+            <button
+              type="button"
+              onClick={() => onInvite(p.customer_user_id)}
+              disabled={invitingId === p.customer_user_id}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors disabled:opacity-60"
+            >
+              <Users className="size-4" />
+              {invitingId === p.customer_user_id ? 'Sending...' : 'Invite to Team'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn(
+              'rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-portal-secondary hover:bg-gray-50 transition-colors',
+              !canInvite && 'flex-1',
+            )}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ---------- participant card ---------- */
 
-function ParticipantCard({ p }: { p: Participant }) {
+function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: () => void }) {
   const initials = p.display_name
     .split(' ')
     .map((n) => n.charAt(0))
@@ -77,30 +233,31 @@ function ParticipantCard({ p }: { p: Participant }) {
     .slice(0, 2)
 
   const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 text-gray-700'
-  const badgeVariant = roleBadgeVariant[p.role] ?? 'default'
-  const actionLabel = roleActionLabel[p.role] ?? 'View Profile'
+  const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5">
+    <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-5">
       {/* Header: Avatar + Name + Email */}
-      <div className="relative flex items-start gap-3 mb-3">
-        <div className="relative shrink-0">
-          <div
-            className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold',
-              avatarColors,
-            )}
-          >
-            {initials}
-          </div>
-          {p.looking_for_team && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-700 whitespace-nowrap">
-              Looking for team
-            </span>
+      <div className="flex items-start gap-3 mb-3">
+        <div className="shrink-0">
+          {p.avatar_url ? (
+            <img src={p.avatar_url} alt={p.display_name} className="size-11 rounded-full object-cover" />
+          ) : (
+            <div className={cn('flex size-11 items-center justify-center rounded-full text-sm font-bold', avatarColors)}>
+              {initials}
+            </div>
           )}
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="font-semibold text-sm truncate text-foreground">{p.display_name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm truncate text-foreground">{p.display_name}</h3>
+            {p.looking_for_team && (
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
+                <Users className="size-2.5" />
+                LFT
+              </span>
+            )}
+          </div>
           <p className="text-xs text-portal-secondary truncate">{p.email}</p>
         </div>
       </div>
@@ -118,28 +275,30 @@ function ParticipantCard({ p }: { p: Participant }) {
 
       {/* Skills Tags */}
       {p.skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {p.skills.slice(0, 5).map((skill) => (
-            <span
-              key={skill}
-              className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600"
-            >
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {p.skills.slice(0, 4).map((skill) => (
+            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
               {skill}
             </span>
           ))}
-          {p.skills.length > 5 && (
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500">
-              +{p.skills.length - 5}
+          {p.skills.length > 4 && (
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
+              +{p.skills.length - 4}
             </span>
           )}
         </div>
       )}
 
-      {/* Bottom Row: Action Link + Message Button */}
+      {/* Bottom Row */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-        <ActionLink href="#" arrow>
-          {actionLabel}
-        </ActionLink>
+        <button
+          type="button"
+          onClick={onViewProfile}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-portal-primary hover:text-portal-primary-light transition-colors"
+        >
+          View Profile
+          <span className="text-xs">&rarr;</span>
+        </button>
         <button
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -152,56 +311,71 @@ function ParticipantCard({ p }: { p: Participant }) {
   )
 }
 
-/* ---------- filter tabs bar ---------- */
+/* ---------- filter pills ---------- */
 
-function FilterTabs({ totalCount }: { totalCount: number }) {
-  const [activeTab] = React.useState('all')
+type FilterOption = { id: string; label: string; count: number }
 
-  const tabs = React.useMemo(() => {
-    return FILTER_TABS.map((tab) =>
-      tab.id === 'all' ? { ...tab, count: totalCount } : tab,
-    )
-  }, [totalCount])
-
+function FilterPills({
+  filters,
+  activeFilter,
+  onFilterChange,
+  lookingForTeamCount,
+  showLookingForTeam,
+  onToggleLookingForTeam,
+}: {
+  filters: FilterOption[]
+  activeFilter: string
+  onFilterChange: (id: string) => void
+  lookingForTeamCount: number
+  showLookingForTeam: boolean
+  onToggleLookingForTeam: () => void
+}) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
-        {tabs.map((tab) => (
+    <div className="overflow-x-auto">
+      <div className="flex items-center gap-1.5 flex-nowrap">
+        {filters.map((f) => (
           <button
-            key={tab.id}
+            key={f.id}
             type="button"
-            disabled={tab.disabled}
+            onClick={() => onFilterChange(f.id)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              activeTab === tab.id
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
-              tab.disabled && 'opacity-50 cursor-not-allowed',
+              'shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+              activeFilter === f.id
+                ? 'bg-portal-primary text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
             )}
           >
-            {tab.label}
-            {tab.count != null && (
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-                  activeTab === tab.id
-                    ? 'bg-portal-primary/10 text-portal-primary'
-                    : 'bg-gray-200 text-gray-500',
-                )}
-              >
-                {tab.count.toLocaleString()}
-              </span>
-            )}
+            {f.label}
+            <span className={cn(
+              'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+              activeFilter === f.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500',
+            )}>
+              {f.count}
+            </span>
           </button>
         ))}
+        {lookingForTeamCount > 0 && (
+          <button
+            type="button"
+            onClick={onToggleLookingForTeam}
+            className={cn(
+              'shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+              showLookingForTeam
+                ? 'bg-green-600 text-white'
+                : 'bg-green-50 text-green-700 hover:bg-green-100',
+            )}
+          >
+            <Users className="size-3" />
+            Looking for Team
+            <span className={cn(
+              'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+              showLookingForTeam ? 'bg-white/20 text-white' : 'bg-green-100 text-green-600',
+            )}>
+              {lookingForTeamCount}
+            </span>
+          </button>
+        )}
       </div>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-      >
-        <SlidersHorizontal className="size-3.5" />
-        Advanced Filters
-      </button>
     </div>
   )
 }
@@ -210,21 +384,59 @@ function FilterTabs({ totalCount }: { totalCount: number }) {
 
 function ParticipantsContent() {
   const t = useT()
+  const queryClient = useQueryClient()
+  const { auth } = usePortalContext()
   const { selectedId } = useCompetitionContext()
   const [search, setSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
   const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE)
+  const [roleFilter, setRoleFilter] = React.useState('all')
+  const [showLookingForTeam, setShowLookingForTeam] = React.useState(false)
+  const [selectedParticipant, setSelectedParticipant] = React.useState<Participant | null>(null)
+  const [invitingId, setInvitingId] = React.useState<string | null>(null)
 
-  // Debounce search input
+  // Fetch my team membership for invite functionality
+  const { data: membershipData } = useQuery({
+    queryKey: ['portal-my-membership-participants', selectedId],
+    queryFn: async () => {
+      if (!selectedId) return null
+      const { ok, result } = await apiCall<{ membership: { team_id: string; role: string } | null }>(
+        `/api/teams/portal/my-membership?competition_id=${selectedId}`,
+      )
+      return ok && result?.membership ? result.membership : null
+    },
+    enabled: !!selectedId,
+  })
+
+  const myTeamId = membershipData?.team_id ?? null
+  const isTeamOwner = membershipData?.role === 'owner'
+
+  async function handleInvite(userId: string) {
+    if (!myTeamId) return
+    setInvitingId(userId)
+    try {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/invite-member', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ team_id: myTeamId, invitee_id: userId }),
+      })
+      if (ok) {
+        flash('Invitation sent!', 'success')
+        setSelectedParticipant(null)
+      } else {
+        flash(result?.error ?? 'Failed to send invitation', 'error')
+      }
+    } finally {
+      setInvitingId(null)
+    }
+  }
+
   React.useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(timer)
   }, [search])
 
-  // Reset visible count when search changes
-  React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
-  }, [debouncedSearch])
+  React.useEffect(() => { setVisibleCount(PAGE_SIZE) }, [debouncedSearch, roleFilter, showLookingForTeam])
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-participants', selectedId, debouncedSearch],
@@ -240,76 +452,121 @@ function ParticipantsContent() {
     enabled: !!selectedId,
   })
 
-  const participants = data?.items ?? []
-  const visibleParticipants = participants.slice(0, visibleCount)
-  const hasMore = visibleCount < participants.length
+  const allParticipants = data?.items ?? []
+
+  const roleFilters = React.useMemo<FilterOption[]>(() => {
+    const roleCounts: Record<string, number> = {}
+    for (const p of allParticipants) {
+      const role = p.role || 'participant'
+      roleCounts[role] = (roleCounts[role] ?? 0) + 1
+    }
+    const filters: FilterOption[] = [{ id: 'all', label: 'All', count: allParticipants.length }]
+    const sortedRoles = Object.keys(roleCounts).sort((a, b) => {
+      if (a === 'participant') return -1
+      if (b === 'participant') return 1
+      return a.localeCompare(b)
+    })
+    for (const role of sortedRoles) {
+      filters.push({ id: role, label: role.charAt(0).toUpperCase() + role.slice(1) + 's', count: roleCounts[role] })
+    }
+    return filters
+  }, [allParticipants])
+
+  const lookingForTeamCount = React.useMemo(() => allParticipants.filter(p => p.looking_for_team).length, [allParticipants])
+
+  const filteredParticipants = React.useMemo(() => {
+    let result = allParticipants
+    if (roleFilter !== 'all') result = result.filter(p => p.role === roleFilter)
+    if (showLookingForTeam) result = result.filter(p => p.looking_for_team)
+    return result
+  }, [allParticipants, roleFilter, showLookingForTeam])
+
+  const visibleParticipants = filteredParticipants.slice(0, visibleCount)
+  const hasMore = visibleCount < filteredParticipants.length
 
   if (!selectedId) {
-    return (
-      <PortalEmptyState
-        title={t('competitions.portal.participants.noCompetition', 'Select a competition')}
-        description={t('competitions.portal.participants.noCompetitionDesc', 'Choose a competition to view its participants.')}
-      />
-    )
+    return <PortalEmptyState title={t('competitions.portal.participants.noCompetition', 'Select a competition')} description={t('competitions.portal.participants.noCompetitionDesc', 'Choose a competition to view its participants.')} />
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search + Filters */}
-      <div className="space-y-4">
-        <div className="max-w-md">
-          <Input
-            placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name or email...')}
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-          />
-        </div>
-        <FilterTabs totalCount={participants.length} />
+    <div className="space-y-5">
+      {/* Profile Modal */}
+      {selectedParticipant && (
+        <ProfileModal
+          participant={selectedParticipant}
+          onClose={() => setSelectedParticipant(null)}
+          myTeamId={isTeamOwner ? myTeamId : null}
+          onInvite={handleInvite}
+          invitingId={invitingId}
+        />
+      )}
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+        <Input
+          placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name or email...')}
+          value={search}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
-      {/* Loading State */}
+      {/* Dynamic Filters */}
+      {!isLoading && allParticipants.length > 0 && (
+        <FilterPills
+          filters={roleFilters}
+          activeFilter={roleFilter}
+          onFilterChange={setRoleFilter}
+          lookingForTeamCount={lookingForTeamCount}
+          showLookingForTeam={showLookingForTeam}
+          onToggleLookingForTeam={() => setShowLookingForTeam(prev => !prev)}
+        />
+      )}
+
+      {/* Loading */}
       {isLoading && (
-        <div className="rounded-xl border border-gray-100 bg-white p-8 text-center">
-          <div className="text-sm text-portal-secondary">
-            {t('common.loading', 'Loading...')}
-          </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="h-48 rounded-xl border border-gray-100 bg-white animate-pulse" />
+          ))}
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && participants.length === 0 && (
+      {/* Empty */}
+      {!isLoading && filteredParticipants.length === 0 && (
         <PortalEmptyState
           title={t('competitions.portal.participants.empty', 'No participants found')}
           description={
-            debouncedSearch
-              ? t('competitions.portal.participants.emptySearch', 'Try a different search term.')
+            debouncedSearch || roleFilter !== 'all' || showLookingForTeam
+              ? t('competitions.portal.participants.emptySearch', 'Try adjusting your search or filters.')
               : t('competitions.portal.participants.emptyDesc', 'No one has joined this competition yet.')
           }
         />
       )}
 
-      {/* Participant Cards Grid */}
-      {!isLoading && participants.length > 0 && (
+      {/* Cards Grid */}
+      {!isLoading && filteredParticipants.length > 0 && (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {visibleParticipants.map((p) => (
-              <ParticipantCard key={p.customer_user_id} p={p} />
+              <ParticipantCard key={p.customer_user_id} p={p} onViewProfile={() => setSelectedParticipant(p)} />
             ))}
           </div>
 
-          {/* Load More + Count */}
           <div className="flex flex-col items-center gap-2 pt-2">
             {hasMore && (
               <button
                 type="button"
-                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
                 className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
               >
                 Load More Participants
               </button>
             )}
             <p className="text-xs text-portal-secondary">
-              Showing {visibleParticipants.length} of {participants.length} participants
+              Showing {visibleParticipants.length} of {filteredParticipants.length} participants
+              {filteredParticipants.length !== allParticipants.length && ` (${allParticipants.length} total)`}
             </p>
           </div>
         </>
@@ -333,10 +590,7 @@ export default function ParticipantsPortalPage({ params }: { params: { orgSlug: 
 
   return (
     <PortalCompetitionLayout>
-      <PortalPageTitle
-        label="Network Hub"
-        title="Participants Directory"
-      />
+      <PortalPageTitle label="Network Hub" title="Participants Directory" />
       <ParticipantsContent />
     </PortalCompetitionLayout>
   )

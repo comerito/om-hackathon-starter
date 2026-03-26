@@ -23,10 +23,12 @@ export function CompetitionSelector() {
   const ref = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    const header = document.querySelector('[data-portal-handle="section:portal:header"]')
-    if (header) {
-      const right = header.querySelector('.flex.items-center.gap-3:last-child')
-      setHeaderEl(right ?? header)
+    const right = document.querySelector('[data-portal-handle="section:portal:header:actions"]')
+    if (right) {
+      setHeaderEl(right)
+    } else {
+      const header = document.querySelector('[data-portal-handle="section:portal:header"]')
+      if (header) setHeaderEl(header)
     }
   }, [])
 
@@ -60,7 +62,7 @@ export function CompetitionSelector() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-40" style={{ backgroundColor: dot }} />
           <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: dot }} />
         </span>
-        <span className="max-w-[120px] truncate font-medium text-foreground">{selected?.name ?? 'Select...'}</span>
+        <span className="hidden sm:inline max-w-[120px] truncate font-medium text-foreground">{selected?.name ?? 'Select...'}</span>
         <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: dot }}>
           {stageLabels[stage] ?? stage}
         </span>

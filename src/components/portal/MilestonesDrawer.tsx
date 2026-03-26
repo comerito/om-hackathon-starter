@@ -56,14 +56,14 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
       {/* Drawer panel */}
       <div
         className={cn(
-          'fixed top-0 right-0 z-50 flex h-full w-[340px] flex-col bg-portal-dark text-white shadow-2xl transition-transform duration-300',
+          'fixed top-0 right-0 z-50 flex h-full w-[calc(100vw-48px)] sm:w-[340px] flex-col bg-portal-dark text-white shadow-2xl transition-transform duration-300',
           open ? 'translate-x-0' : 'translate-x-full',
         )}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-8 pb-4">
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-6 sm:pt-8 pb-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Milestones</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Milestones</h2>
             <p className="text-sm text-gray-400 mt-1">Hackathon Progress Journey</p>
           </div>
           <button
@@ -76,7 +76,7 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
         </div>
 
         {/* Timeline */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {milestones.length === 0 ? (
             <p className="text-sm text-gray-500">No milestones configured yet.</p>
           ) : (

@@ -117,7 +117,7 @@ export default function HackathonLoginPage({ params }: Props) {
       </div>
 
       {/* Right panel — login form */}
-      <div className="flex flex-1 items-center justify-center bg-portal-bg px-6 py-12">
+      <div className="flex flex-1 items-center justify-center bg-portal-bg px-4 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 flex items-center gap-2">

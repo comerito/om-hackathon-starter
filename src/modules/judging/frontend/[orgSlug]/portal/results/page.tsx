@@ -8,6 +8,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
+import { useIsMobile } from '@open-mercato/ui/hooks/useIsMobile'
 import { ThumbsUp, Download, Filter } from 'lucide-react'
 import { PortalPageTitle, PortalBadge, StatCard, ProgressBar } from '@/components/portal'
 
@@ -27,17 +28,17 @@ function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 
   return (
     <div className={cn('flex flex-col items-center', place === 1 && 'order-2', place === 2 && 'order-1', place === 3 && 'order-3')}>
       {/* Medal */}
-      <div className={cn('size-16 rounded-full bg-gradient-to-b flex items-center justify-center text-white text-2xl font-bold shadow-lg mb-3', medalColors[place])}>
+      <div className={cn('size-12 sm:size-16 rounded-full bg-gradient-to-b flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg mb-3', medalColors[place])}>
         {place}
       </div>
       {/* Project info */}
-      <p className="text-sm font-bold text-foreground text-center">{entry.project_title}</p>
-      <p className="text-xs text-portal-secondary text-center">{entry.team_name}</p>
+      <p className="text-xs sm:text-sm font-bold text-foreground text-center">{entry.project_title}</p>
+      <p className="text-[11px] sm:text-xs text-portal-secondary text-center">{entry.team_name}</p>
       {entry.average_score != null && (
         <PortalBadge variant="primary" className="mt-2">{entry.average_score.toFixed(1)}</PortalBadge>
       )}
       {/* Pedestal */}
-      <div className={cn('w-32 mt-3 rounded-t-lg bg-gradient-to-b from-gray-100 to-gray-50 flex items-end justify-center pb-2', heights[place])}>
+      <div className={cn('w-24 sm:w-32 mt-3 rounded-t-lg bg-gradient-to-b from-gray-100 to-gray-50 flex items-end justify-center pb-2', heights[place])}>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
           {placeLabels[place]}
         </span>
@@ -52,6 +53,7 @@ type Track = { id: string; name: string }
 
 function ResultsContent() {
   const t = useT()
+  const isMobile = useIsMobile()
   const { selectedId: competitionId, selected } = useCompetitionContext()
   const [selectedTrackId, setSelectedTrackId] = React.useState<string>('')
   const [showTrackFilter, setShowTrackFilter] = React.useState(false)
@@ -113,7 +115,7 @@ function ResultsContent() {
     <div className="space-y-8">
       {/* Podium */}
       {top3.length >= 3 && (
-        <div className="flex items-end justify-center gap-4 py-8">
+        <div className="flex items-end justify-center gap-2 sm:gap-4 py-8">
           {[2, 1, 3].map(place => {
             const entry = top3.find(e => e.rank === place)
             return entry ? <PodiumCard key={entry.project_id} entry={entry} place={place as 1 | 2 | 3} /> : null
@@ -182,72 +184,112 @@ function ResultsContent() {
         )}
 
         <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-          {/* Table header */}
-          <div className="grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-            <span>Rank</span>
-            <span>Project & Team</span>
-            <span>Avg Score</span>
-            <span>Peer Votes</span>
-            <span>Status</span>
-          </div>
-          {/* Rows */}
-          {allEntries.map((entry, i) => {
-            const isDisqualified = entry.team_status === 'disqualified'
-            const rank = entry.rank ?? i + 1
-            return (
-              <div
-                key={entry.project_id}
-                className={cn(
-                  'grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3.5 border-b border-gray-50 last:border-0 items-center',
-                  isDisqualified && 'opacity-40',
-                )}
-              >
-                <span className="font-mono text-lg font-bold text-portal-primary">
-                  {String(rank).padStart(2, '0')}
-                </span>
-                <div className="min-w-0">
-                  <p className={cn('text-sm font-semibold truncate', isDisqualified && 'line-through')}>{entry.project_title}</p>
-                  <p className="text-xs text-portal-secondary">{entry.team_name}</p>
-                </div>
-                <span className="font-mono text-sm font-bold">
-                  {entry.average_score != null ? entry.average_score.toFixed(1) : '—'}
-                </span>
-                <span className="flex items-center gap-1 text-sm text-portal-secondary">
-                  <ThumbsUp className="size-3" />
-                  {entry.peer_vote_count ?? 0}
-                </span>
-                <div>
-                  {isDisqualified ? (
-                    <PortalBadge variant="danger">Disqualified</PortalBadge>
-                  ) : entry.is_finalist ? (
-                    <PortalBadge variant="warning">Finalist</PortalBadge>
-                  ) : (
-                    <PortalBadge variant="muted">Participant</PortalBadge>
-                  )}
-                </div>
+          {isMobile ? (
+            /* Mobile: card-based list */
+            <div className="divide-y divide-gray-50">
+              {allEntries.map((entry, i) => {
+                const isDisqualified = entry.team_status === 'disqualified'
+                const rank = entry.rank ?? i + 1
+                return (
+                  <div key={entry.project_id} className={cn('px-4 py-3.5', isDisqualified && 'opacity-40')}>
+                    <div className="flex items-start gap-3">
+                      <span className="font-mono text-lg font-bold text-portal-primary shrink-0">
+                        {String(rank).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn('text-sm font-semibold', isDisqualified && 'line-through')}>{entry.project_title}</p>
+                        <p className="text-xs text-portal-secondary">{entry.team_name}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          {entry.average_score != null && (
+                            <span className="font-mono text-sm font-bold">{entry.average_score.toFixed(1)}</span>
+                          )}
+                          <span className="flex items-center gap-1 text-xs text-portal-secondary">
+                            <ThumbsUp className="size-3" />
+                            {entry.peer_vote_count ?? 0}
+                          </span>
+                          {isDisqualified ? (
+                            <PortalBadge variant="danger">Disqualified</PortalBadge>
+                          ) : entry.is_finalist ? (
+                            <PortalBadge variant="warning">Finalist</PortalBadge>
+                          ) : (
+                            <PortalBadge variant="muted">Participant</PortalBadge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* Desktop: grid table */
+            <>
+              <div className="grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
+                <span>Rank</span>
+                <span>Project & Team</span>
+                <span>Avg Score</span>
+                <span>Peer Votes</span>
+                <span>Status</span>
               </div>
-            )
-          })}
+              {allEntries.map((entry, i) => {
+                const isDisqualified = entry.team_status === 'disqualified'
+                const rank = entry.rank ?? i + 1
+                return (
+                  <div
+                    key={entry.project_id}
+                    className={cn(
+                      'grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3.5 border-b border-gray-50 last:border-0 items-center',
+                      isDisqualified && 'opacity-40',
+                    )}
+                  >
+                    <span className="font-mono text-lg font-bold text-portal-primary">
+                      {String(rank).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0">
+                      <p className={cn('text-sm font-semibold truncate', isDisqualified && 'line-through')}>{entry.project_title}</p>
+                      <p className="text-xs text-portal-secondary">{entry.team_name}</p>
+                    </div>
+                    <span className="font-mono text-sm font-bold">
+                      {entry.average_score != null ? entry.average_score.toFixed(1) : '—'}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm text-portal-secondary">
+                      <ThumbsUp className="size-3" />
+                      {entry.peer_vote_count ?? 0}
+                    </span>
+                    <div>
+                      {isDisqualified ? (
+                        <PortalBadge variant="danger">Disqualified</PortalBadge>
+                      ) : entry.is_finalist ? (
+                        <PortalBadge variant="warning">Finalist</PortalBadge>
+                      ) : (
+                        <PortalBadge variant="muted">Participant</PortalBadge>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
         </div>
       </div>
 
       {/* Bottom stats row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
-          <p className="text-2xl font-bold text-foreground">{totalSubmissions}</p>
+        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">{totalSubmissions}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Total Submissions</p>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
-          <p className="text-2xl font-bold text-foreground">{avgScore.toFixed(1)}</p>
+        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">{avgScore.toFixed(1)}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Avg Competition Score</p>
           <ProgressBar value={avgScore * 10} size="sm" className="mt-2" />
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
-          <p className="text-2xl font-bold text-foreground">{totalVotes.toLocaleString()}</p>
+        <div className="rounded-xl border border-gray-100 bg-white p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">{totalVotes.toLocaleString()}</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Community Engagement</p>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-portal-dark p-4">
-          <p className="text-2xl font-bold text-white">Verified</p>
+        <div className="rounded-xl border border-gray-100 bg-portal-dark p-3 sm:p-4">
+          <p className="text-xl sm:text-2xl font-bold text-white">Verified</p>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">Judging Panel Status</p>
         </div>
       </div>

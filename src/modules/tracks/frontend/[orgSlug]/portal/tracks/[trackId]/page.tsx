@@ -85,7 +85,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
     return (
       <div className="flex flex-col gap-6">
         <PortalPageTitle label={t('tracks.portal.detailLabel', 'Track Details')} title={t('common.loading', 'Loading...')} />
-        <div className="rounded-xl border border-gray-100 bg-white p-8">
+        <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8">
           <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
@@ -112,7 +112,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
           <TrackIcon color={track.color} iconUrl={track.icon_url} />
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">{track.name}</h1>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{track.name}</h1>
               {track.badge && <PortalBadge variant="default">{track.badge.toUpperCase()}</PortalBadge>}
             </div>
             {track.short_description && (
@@ -128,7 +128,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Description */}
       {track.description && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <SectionLabel className="mb-3">{t('tracks.portal.about', 'About This Track')}</SectionLabel>
           <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
             {track.description}
@@ -138,7 +138,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <SectionLabel className="mb-3">{t('tracks.portal.resources', 'Resources & Files')}</SectionLabel>
           <ul className="divide-y">
             {attachments.map((att) => (
@@ -172,7 +172,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
 
       {/* Judging Criteria */}
       {criteria.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <SectionLabel className="mb-4">{t('tracks.portal.judgingCriteria', 'Judging Criteria')}</SectionLabel>
           <p className="mb-5 text-sm text-muted-foreground">
             {t('tracks.portal.criteriaDesc', 'Projects in this track will be evaluated on the following criteria.')}

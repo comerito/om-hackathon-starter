@@ -8,6 +8,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
+import { useIsMobile } from '@open-mercato/ui/hooks/useIsMobile'
 import Link from 'next/link'
 import { Rocket, HelpCircle } from 'lucide-react'
 import { PortalPageTitle, PortalBadge, AvatarStack, ProgressBar } from '@/components/portal'
@@ -42,6 +43,7 @@ const STATUS_STYLES: Record<string, { badge: 'danger' | 'primary' | 'muted' | 's
 
 function PresentationsContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
+  const isMobile = useIsMobile()
   const { selectedId: competitionId } = useCompetitionContext()
   const [now, setNow] = React.useState(() => Date.now())
   const [clockDelta, setClockDelta] = React.useState(0)
@@ -103,17 +105,17 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Now Presenting Hero */}
         {presenting && (
-          <div className="rounded-xl border-2 border-dashed border-portal-primary/30 bg-white p-6">
+          <div className="rounded-xl border-2 border-dashed border-portal-primary/30 bg-white p-4 sm:p-6">
             <PortalBadge variant="danger">Now Presenting</PortalBadge>
-            <h2 className="mt-3 font-display text-2xl font-bold text-foreground">{presenting.project_title ?? 'Untitled'}</h2>
+            <h2 className="mt-2 sm:mt-3 font-display text-xl sm:text-2xl font-bold text-foreground">{presenting.project_title ?? 'Untitled'}</h2>
             <p className="text-sm text-portal-secondary mt-1">Team: {presenting.team_name}</p>
             {timeRemaining !== null && (
-              <div className="mt-4 inline-flex flex-col items-center rounded-xl bg-gray-50 px-6 py-4">
+              <div className="mt-3 sm:mt-4 inline-flex flex-col items-center rounded-xl bg-gray-50 px-4 py-3 sm:px-6 sm:py-4">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">
                   Time Remaining
                 </span>
                 <span className={cn(
-                  'font-mono text-4xl font-bold tabular-nums',
+                  'font-mono text-2xl sm:text-4xl font-bold tabular-nums',
                   isTimerUp ? 'text-portal-danger animate-pulse' : timeRemaining < 30 ? 'text-portal-danger' : 'text-portal-tertiary',
                 )}>
                   {isTimerUp ? "TIME'S UP" : formatTime(timeRemaining)}
@@ -156,9 +158,9 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
 
       {/* Presentation Schedule Table */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground">Presentation Schedule</h2>
-          <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
             <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" /> Presenting</span>
             <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-portal-primary" /> On Deck</span>
             <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-gray-400" /> Waiting</span>
@@ -166,37 +168,70 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
         </div>
 
         <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-          <div className="grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-            <span>Rank</span>
-            <span>Team Name</span>
-            <span>Project Concept</span>
-            <span>Status</span>
-            <span>Time Slot</span>
-          </div>
-          {queue.map((demo) => {
-            const status = demo.status === 'qa' ? 'presenting' : demo.status
-            const styles = STATUS_STYLES[status] ?? STATUS_STYLES.waiting
-            const isCompleted = demo.status === 'completed' || demo.status === 'skipped'
-            return (
-              <div
-                key={demo.id}
-                className={cn(
-                  'grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-50 last:border-0 items-center',
-                  isCompleted && 'opacity-40',
-                )}
-              >
-                <span className={cn('font-mono text-lg font-bold', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300')}>
-                  {String(demo.presentation_order + 1).padStart(2, '0')}
-                </span>
-                <p className="text-sm font-semibold text-foreground truncate">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
-                <p className="text-sm text-portal-secondary italic truncate">"{demo.project_title}"</p>
-                <PortalBadge variant={styles.badge}>{status.replace('_', ' ')}</PortalBadge>
-                <span className="text-sm font-mono text-portal-secondary">
-                  {demo.status === 'presenting' || demo.status === 'qa' ? 'NOW' : '—'}
-                </span>
+          {isMobile ? (
+            /* Mobile: card-based list */
+            <div className="divide-y divide-gray-50">
+              {queue.map((demo) => {
+                const status = demo.status === 'qa' ? 'presenting' : demo.status
+                const styles = STATUS_STYLES[status] ?? STATUS_STYLES.waiting
+                const isCompleted = demo.status === 'completed' || demo.status === 'skipped'
+                return (
+                  <div key={demo.id} className={cn('px-4 py-3', isCompleted && 'opacity-40')}>
+                    <div className="flex items-start gap-3">
+                      <span className={cn('font-mono text-lg font-bold shrink-0', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300')}>
+                        {String(demo.presentation_order + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
+                        <p className="text-xs text-portal-secondary italic truncate">"{demo.project_title}"</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <PortalBadge variant={styles.badge}>{status.replace('_', ' ')}</PortalBadge>
+                          {(demo.status === 'presenting' || demo.status === 'qa') && (
+                            <span className="text-xs font-mono font-bold text-portal-danger">NOW</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* Desktop: grid table */
+            <>
+              <div className="grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
+                <span>Rank</span>
+                <span>Team Name</span>
+                <span>Project Concept</span>
+                <span>Status</span>
+                <span>Time Slot</span>
               </div>
-            )
-          })}
+              {queue.map((demo) => {
+                const status = demo.status === 'qa' ? 'presenting' : demo.status
+                const styles = STATUS_STYLES[status] ?? STATUS_STYLES.waiting
+                const isCompleted = demo.status === 'completed' || demo.status === 'skipped'
+                return (
+                  <div
+                    key={demo.id}
+                    className={cn(
+                      'grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-50 last:border-0 items-center',
+                      isCompleted && 'opacity-40',
+                    )}
+                  >
+                    <span className={cn('font-mono text-lg font-bold', demo.status === 'presenting' || demo.status === 'qa' ? 'text-portal-danger' : demo.status === 'on_deck' ? 'text-portal-primary' : 'text-gray-300')}>
+                      {String(demo.presentation_order + 1).padStart(2, '0')}
+                    </span>
+                    <p className="text-sm font-semibold text-foreground truncate">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
+                    <p className="text-sm text-portal-secondary italic truncate">"{demo.project_title}"</p>
+                    <PortalBadge variant={styles.badge}>{status.replace('_', ' ')}</PortalBadge>
+                    <span className="text-sm font-mono text-portal-secondary">
+                      {demo.status === 'presenting' || demo.status === 'qa' ? 'NOW' : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+            </>
+          )}
         </div>
       </div>
 

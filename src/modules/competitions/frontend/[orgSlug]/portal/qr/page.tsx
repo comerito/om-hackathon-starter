@@ -38,7 +38,7 @@ function QRContent() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 flex flex-col items-center max-w-md w-full">
+      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-5 sm:p-8 flex flex-col items-center max-w-md w-full">
         <h3 className="text-lg font-bold text-foreground">
           {selected?.name ?? 'Competition'}
         </h3>

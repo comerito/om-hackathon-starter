@@ -35,7 +35,7 @@ export function CountdownWidget({ targetDate, label = 'HOURS LEFT', size = 'lg',
       <span
         className={cn(
           'font-mono font-bold leading-none tracking-tight text-portal-primary',
-          size === 'lg' ? 'text-5xl' : 'text-3xl',
+          size === 'lg' ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-3xl',
         )}
       >
         {String(hours).padStart(2, '0')}:{String(Math.floor((target.getTime() - Date.now()) / 60000) % 60).padStart(2, '0')}

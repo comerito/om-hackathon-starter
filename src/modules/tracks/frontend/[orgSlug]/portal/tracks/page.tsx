@@ -308,7 +308,7 @@ function TracksContent() {
       {/* ---- Top row: Featured track + Prize pool ---- */}
       <div className="grid gap-5 lg:grid-cols-5">
         {/* Featured / current track card */}
-        <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="lg:col-span-3 flex flex-col justify-between rounded-xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
           <div>
             <PortalBadge variant={hasSelectedTrack ? 'success' : 'default'} className="mb-4">
               {hasSelectedTrack
@@ -317,7 +317,7 @@ function TracksContent() {
             </PortalBadge>
             <div className="mb-3 flex items-center gap-3">
               <TrackIcon color={featuredTrack.color} iconUrl={featuredTrack.icon_url} size="lg" />
-              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 {featuredTrack.name}
               </h2>
             </div>
@@ -343,7 +343,7 @@ function TracksContent() {
         <GradientCard className="lg:col-span-2 flex flex-col justify-between">
           <div>
             <SectionLabel className="mb-2 !text-white/70">{t('tracks.portal.totalPrizePool', 'Total Prize Pool')}</SectionLabel>
-            <p className="font-display text-4xl font-bold tracking-tight">
+            <p className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
               {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : t('tracks.portal.tbd', 'TBD')}
             </p>
           </div>
@@ -406,7 +406,7 @@ function TracksContent() {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3 px-6 pt-5 pb-4">
+                <div className="flex flex-col gap-3 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 sm:pb-4">
                   {/* Track number */}
                   <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
                     {t('tracks.portal.trackNumber', 'Track')} {String(globalIdx + 1).padStart(2, '0')}
@@ -427,10 +427,10 @@ function TracksContent() {
                 </div>
 
                 {/* Bottom accent bar */}
-                <div className="mx-6 h-1 rounded-full" style={{ backgroundColor: track.color }} />
+                <div className="mx-4 sm:mx-6 h-1 rounded-full" style={{ backgroundColor: track.color }} />
 
                 {/* Footer */}
-                <div className="flex items-center justify-between gap-2 px-6 pb-5 pt-4">
+                <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4">
                   <span className="text-xs font-medium text-muted-foreground">
                     {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
                   </span>

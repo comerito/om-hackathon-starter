@@ -5,7 +5,41 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { ParticipantProfile } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-export const metadata = { PUT: { requireCustomerAuth: true } }
+export const metadata = { GET: { requireCustomerAuth: true }, PUT: { requireCustomerAuth: true } }
+
+export async function GET(req: Request) {
+  try {
+    const auth = await getCustomerAuthFromRequest(req)
+    if (!auth?.sub) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+
+    const container = await createRequestContainer()
+    const em = container.resolve('em') as EntityManager
+
+    const profile = await em.findOne(ParticipantProfile, {
+      customerUserId: auth.sub,
+      tenantId: auth.tenantId,
+    })
+
+    return NextResponse.json({
+      ok: true,
+      profile: profile ? {
+        id: profile.id,
+        bio: profile.bio,
+        organization: profile.organization,
+        avatar_url: profile.avatarUrl,
+        portfolio_url: profile.portfolioUrl,
+        office_hours_url: profile.officeHoursUrl,
+        specialty: profile.specialty,
+        skills: profile.skills,
+        social_links: profile.socialLinks,
+        notification_preferences: profile.notificationPreferences,
+      } : null,
+    })
+  } catch (error) {
+    console.error('[portal/update-profile] GET error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 export async function PUT(req: Request) {
   try {

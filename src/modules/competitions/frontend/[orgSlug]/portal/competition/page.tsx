@@ -83,12 +83,12 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const completionPct = milestones.length > 0 ? Math.round((completedMilestones / milestones.length) * 100) : 0
 
   if (isLoading) {
-    return <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-portal-secondary">Loading...</div>
+    return <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center text-portal-secondary">Loading...</div>
   }
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center">
+      <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-8 text-center">
         <p className="text-lg font-bold text-foreground mb-2">No competitions yet</p>
         <p className="text-sm text-portal-secondary">You haven't been registered in any competition. Contact the organizer to get started.</p>
       </div>
@@ -105,7 +105,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
       {/* ===== Active Competition Hero ===== */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Left: Active competition card */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-3">
             <PortalBadge variant="primary">{stageLabels[activeComp.stage] ?? activeComp.stage}</PortalBadge>
             <span className="flex items-center gap-1 text-xs text-portal-secondary">
@@ -117,7 +117,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
             </div>
           </div>
 
-          <h2 className="font-display text-2xl font-bold text-foreground">{activeComp.name}</h2>
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">{activeComp.name}</h2>
           {activeComp.description && (
             <p className="mt-1 text-sm text-portal-secondary line-clamp-2">{activeComp.description}</p>
           )}
