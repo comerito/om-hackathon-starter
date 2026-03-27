@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
+import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -20,6 +21,10 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
     const knex = (em as any).getConnection().getKnex()
+
+    // Resolve organization scope from the request (cookie-selected org)
+    const scope = await resolveOrganizationScopeForRequest({ container, auth, request: req })
+    const organizationIds = scope.filterIds
 
     let query = knex('competitions_invitation as ci')
       .join('customer_user_invitations as cui', 'cui.id', 'ci.customer_invitation_id')
@@ -41,6 +46,9 @@ export async function GET(req: Request) {
 
     if (competitionId) {
       query = query.where('ci.competition_id', competitionId)
+    }
+    if (organizationIds && organizationIds.length > 0) {
+      query = query.whereIn('ci.organization_id', organizationIds)
     }
 
     const rows = await query

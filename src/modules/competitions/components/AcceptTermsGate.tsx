@@ -51,12 +51,11 @@ function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: (v:
       role="checkbox"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="relative shrink-0 mt-0.5 h-5 w-5 rounded-md border-2 transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal-primary/40 focus-visible:ring-offset-2"
-      style={{
-        borderColor: checked ? 'var(--portal-primary)' : '#D1D5DB',
-        backgroundColor: checked ? 'var(--portal-primary)' : 'transparent',
-        boxShadow: checked ? '0 0 0 3px rgba(79, 70, 229, 0.1)' : 'none',
-      }}
+      className={`relative shrink-0 mt-0.5 h-5 w-5 rounded-md border-2 transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal-primary/40 focus-visible:ring-offset-2 ${
+        checked
+          ? 'border-portal-primary bg-portal-primary shadow-[0_0_0_3px_rgba(79,70,229,0.1)]'
+          : 'border-gray-300 dark:border-slate-500 bg-transparent'
+      }`}
     >
       <span
         className="absolute inset-0 flex items-center justify-center transition-all duration-200"
@@ -130,13 +129,12 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
         <div className="px-8 pt-8 pb-2">
           <div className="mb-5 flex items-center gap-3">
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl"
-              style={{ backgroundColor: 'rgba(79, 70, 229, 0.08)' }}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-portal-primary/10"
             >
               <ShieldIcon className="text-portal-primary" />
             </div>
             <div>
-              <h2 className="font-display text-xl font-bold tracking-tight text-portal-dark">
+              <h2 className="font-display text-xl font-bold tracking-tight text-portal-dark dark:text-white">
                 {t('competitions.portal.terms.title', 'Accept Terms to Continue')}
               </h2>
             </div>
@@ -152,16 +150,16 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
         <div className="space-y-3 px-8 py-5">
           {needsCoc && (
             <label
-              className="group flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all duration-200"
-              style={{
-                borderColor: cocChecked ? 'var(--portal-primary)' : '#E5E7EB',
-                backgroundColor: cocChecked ? 'rgba(79, 70, 229, 0.03)' : 'transparent',
-              }}
+              className={`group flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all duration-200 ${
+                cocChecked
+                  ? 'border-portal-primary bg-portal-primary/5'
+                  : 'border-gray-200 dark:border-slate-600 bg-transparent'
+              }`}
             >
               <CustomCheckbox checked={cocChecked} onChange={setCocChecked} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-portal-dark">{t('competitions.portal.terms.coc', 'Code of Conduct')}</span>
+                  <span className="text-sm font-semibold text-portal-dark dark:text-white">{t('competitions.portal.terms.coc', 'Code of Conduct')}</span>
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-portal-secondary">
                   {t('competitions.portal.terms.cocDesc', 'I have read and agree to follow the Code of Conduct.')}
@@ -184,17 +182,17 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
 
           {needsPrivacy && (
             <label
-              className="group flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all duration-200"
-              style={{
-                borderColor: privacyChecked ? 'var(--portal-primary)' : '#E5E7EB',
-                backgroundColor: privacyChecked ? 'rgba(79, 70, 229, 0.03)' : 'transparent',
-              }}
+              className={`group flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all duration-200 ${
+                privacyChecked
+                  ? 'border-portal-primary bg-portal-primary/5'
+                  : 'border-gray-200 dark:border-slate-600 bg-transparent'
+              }`}
             >
               <CustomCheckbox checked={privacyChecked} onChange={setPrivacyChecked} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <LockIcon className="h-4 w-4 text-portal-secondary" />
-                  <span className="text-sm font-semibold text-portal-dark">{t('competitions.portal.terms.privacy', 'Privacy Policy')}</span>
+                  <span className="text-sm font-semibold text-portal-dark dark:text-white">{t('competitions.portal.terms.privacy', 'Privacy Policy')}</span>
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-portal-secondary">
                   {t('competitions.portal.terms.privacyDesc', 'I have read and agree to the Privacy Policy (GDPR/RODO).')}
@@ -222,14 +220,11 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
             type="button"
             disabled={submitting || !allChecked}
             onClick={handleAccept}
-            className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed"
-            style={{
-              background: allChecked
-                ? 'linear-gradient(135deg, var(--portal-primary) 0%, var(--portal-primary-light) 100%)'
-                : '#D1D5DB',
-              boxShadow: allChecked ? '0 4px 14px rgba(79, 70, 229, 0.35)' : 'none',
-              transform: submitting ? 'scale(0.98)' : 'scale(1)',
-            }}
+            className={`group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-sm font-bold shadow-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+              allChecked
+                ? 'bg-gradient-to-br from-portal-primary to-portal-primary-light text-white shadow-[0_4px_14px_rgba(79,70,229,0.35)]'
+                : 'bg-gray-300 dark:bg-slate-600 text-white/70 dark:text-slate-400'
+            } ${submitting ? 'scale-[0.98]' : 'scale-100'}`}
           >
             {submitting ? (
               <span className="flex items-center gap-2">

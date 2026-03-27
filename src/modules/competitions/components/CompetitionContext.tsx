@@ -36,6 +36,8 @@ export function useCompetitionContext() {
 }
 
 const STORAGE_KEY = 'hackon:selected-competition'
+const STAGE_STORAGE_KEY = 'hackon:selected-competition-stage'
+const ROLE_STORAGE_KEY = 'hackon:selected-competition-role'
 
 export function CompetitionProvider({ children }: { children: React.ReactNode }) {
   const [competitions, setCompetitions] = React.useState<CompetitionSummary[]>([])
@@ -58,9 +60,13 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
           const valid = result.items.find(c => c.id === stored)
           if (valid) {
             setSelectedIdState(valid.id)
+            localStorage.setItem(STAGE_STORAGE_KEY, valid.stage)
+            localStorage.setItem(ROLE_STORAGE_KEY, valid.role)
           } else if (result.items.length > 0) {
             setSelectedIdState(result.items[0].id)
             localStorage.setItem(STORAGE_KEY, result.items[0].id)
+            localStorage.setItem(STAGE_STORAGE_KEY, result.items[0].stage)
+            localStorage.setItem(ROLE_STORAGE_KEY, result.items[0].role)
           }
         }
       } catch (err) {
@@ -76,7 +82,12 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
   const setSelectedId = React.useCallback((id: string) => {
     setSelectedIdState(id)
     localStorage.setItem(STORAGE_KEY, id)
-  }, [])
+    const comp = competitions.find(c => c.id === id)
+    if (comp) {
+      localStorage.setItem(STAGE_STORAGE_KEY, comp.stage)
+      localStorage.setItem(ROLE_STORAGE_KEY, comp.role)
+    }
+  }, [competitions])
 
   const selected = React.useMemo(
     () => competitions.find(c => c.id === selectedId) ?? null,

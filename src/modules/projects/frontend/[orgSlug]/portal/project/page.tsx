@@ -13,7 +13,7 @@ import { useCompetitionContext } from '../../../../../competitions/components/Co
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge } from '@/components/portal'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle } from 'lucide-react'
+import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil } from 'lucide-react'
 import Link from 'next/link'
 
 /* ---------- types ---------- */
@@ -351,10 +351,44 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   /* -- No project yet -- */
   if (!isLoading && data?.hasTeam && !project) {
     return (
-      <PortalEmptyState
-        title={t('projects.portal.noProject', 'No Project Yet')}
-        description={t('projects.portal.noProjectDesc', 'Your project will be created when the hacking phase begins.')}
-      />
+      <div className="rounded-xl border border-dashed border-white/10 py-12 px-6">
+        <div className="mx-auto max-w-md text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-portal-primary/10">
+              <FolderCode className="size-6 text-portal-primary" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              {t('projects.portal.noProject', 'No Project Yet')}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              {t('projects.portal.noProjectDescDetailed', 'When the hacking phase begins, a draft project will be created automatically for your team. You\'ll then be able to edit all the details — add a description, tech stack, demo links, screenshots, and more.')}
+            </p>
+          </div>
+
+          <div className="space-y-3 text-left">
+            <div className="flex items-start gap-3 rounded-lg bg-muted/30 px-4 py-3">
+              <Sparkles className="size-4 text-portal-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {t('projects.portal.noProjectStep1', 'A draft project is created automatically when the competition enters the hacking stage')}
+              </p>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg bg-muted/30 px-4 py-3">
+              <Pencil className="size-4 text-portal-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {t('projects.portal.noProjectStep2', 'Your team can then edit the project — fill in details, upload assets, and prepare your submission')}
+              </p>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg bg-muted/30 px-4 py-3">
+              <Clock className="size-4 text-portal-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {t('projects.portal.noProjectStep3', 'Make sure to submit before the deadline — you\'ll see a countdown timer once your project is ready to edit')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     )
   }
 
