@@ -15,6 +15,8 @@ import {
   UserSearch,
   HelpCircle,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Rocket,
   Copy,
   Info,
@@ -102,6 +104,10 @@ function formatTimeAgo(dateStr: string): string {
 /* ---------- announcement card ---------- */
 
 function AnnouncementCard({ announcement }: { announcement: Announcement }) {
+  const [expanded, setExpanded] = React.useState(false)
+  const contentRef = React.useRef<HTMLParagraphElement>(null)
+  const [isClamped, setIsClamped] = React.useState(false)
+
   const category = announcement.category || 'general'
   const actionUrl = announcement.action_url
   const actionLabel = announcement.action_label
@@ -109,6 +115,12 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
   const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
+
+  // Detect whether text is actually clamped
+  React.useEffect(() => {
+    const el = contentRef.current
+    if (el) setIsClamped(el.scrollHeight > el.clientHeight + 1)
+  }, [announcement.content])
 
   return (
     <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
@@ -134,13 +146,28 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
           </button>
         </div>
       ) : (
-        <p className="text-xs text-portal-secondary line-clamp-2 whitespace-pre-wrap">{announcement.content}</p>
+        <p
+          ref={contentRef}
+          className={`text-xs text-portal-secondary whitespace-pre-wrap ${expanded ? '' : 'line-clamp-2'}`}
+        >
+          {announcement.content}
+        </p>
       )}
-      {actionUrl && actionLabel && (
-        <div className="mt-3">
+      <div className="flex items-center gap-3 mt-2">
+        {!isCode && isClamped && (
+          <button
+            type="button"
+            onClick={() => setExpanded(prev => !prev)}
+            className="flex items-center gap-0.5 text-xs font-medium text-portal-primary hover:text-portal-primary-light transition-colors"
+          >
+            {expanded ? 'Show less' : 'Read more'}
+            {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+          </button>
+        )}
+        {actionUrl && actionLabel && (
           <ActionLink href={actionUrl}>{actionLabel}</ActionLink>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -285,9 +312,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
           <div className="mt-3 sm:mt-4 flex flex-wrap items-end gap-3 sm:gap-8">
             <div>
               <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{timeLeft.hours}</span>
-              <span className="text-sm sm:text-lg font-bold text-portal-secondary">h </span>
-              <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="text-sm sm:text-lg font-bold text-portal-secondary">m</span>
+              <span className="text-sm sm:text-lg font-bold text-portal-secondary ml-0.5 sm:ml-1">h</span>
+              <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground ml-2 sm:ml-3">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <span className="text-sm sm:text-lg font-bold text-portal-secondary ml-0.5 sm:ml-1">m</span>
               <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">Remaining</span>
             </div>
             {milestones.length > 0 && (

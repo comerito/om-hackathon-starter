@@ -489,20 +489,7 @@ function TracksContent() {
             )
           })}
 
-          {/* Suggestion card (always last) */}
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 p-6 text-center">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-slate-500">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-foreground">
-              {t('tracks.portal.suggestTitle', "Don't see your track?")}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('tracks.portal.suggestDesc', 'Suggest a wild-card track to the admins')}
-            </p>
-          </div>
+
         </div>
       </div>
     </div>

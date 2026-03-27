@@ -5,12 +5,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { usePortalInjectedMenuItems } from '@open-mercato/ui/portal/hooks/usePortalInjectedMenuItems'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import dynamic from 'next/dynamic'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
 import { cn } from '@open-mercato/shared/lib/utils'
-
-const MilestonesDrawer = dynamic(() => import('./MilestonesDrawer').then(m => ({ default: m.MilestonesDrawer })), { ssr: false })
 
 type PortalSidebarProps = {
   variant?: 'full' | 'minimal'
@@ -62,23 +59,36 @@ const MINIMAL_IDS = new Set([
   'competitions.portal-agenda',
 ])
 
+/** Stage ordering for visibility comparisons */
+const STAGE_INDEX: Record<string, number> = {
+  draft: 0, open: 1, team_formation: 2, track_selection: 3,
+  hacking: 4, demos: 5, deliberation: 6, finished: 7, archived: 8,
+}
+
+/** Nav items hidden until competition reaches a minimum stage.
+ *  `roles`: restrict only these roles (omit to apply to all roles) */
+const MIN_STAGE_FOR_ITEM: Array<{ id: string; minStage: string; roles?: string[] }> = [
+  { id: 'projects.portal-my-project', minStage: 'team_formation' },
+  { id: 'judging.portal-presentations', minStage: 'demos', roles: ['participant'] },
+  { id: 'judging.portal-results', minStage: 'deliberation', roles: ['participant'] },
+  { id: 'sponsors.portal-voting', minStage: 'demos', roles: ['participant'] },
+]
+
 export function PortalSidebar({ variant = 'full', competitionName, competitionSubtitle, onClose }: PortalSidebarProps) {
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
-  const [milestonesOpen, setMilestonesOpen] = React.useState(false)
 
-  // Listen for external open requests (from dashboard milestone/deadline clicks)
-  React.useEffect(() => {
-    function handleOpen() { setMilestonesOpen(true) }
-    window.addEventListener('open-milestones-drawer', handleOpen)
-    return () => window.removeEventListener('open-milestones-drawer', handleOpen)
-  }, [])
-
-  // Get selected competition ID from localStorage (same key as CompetitionContext)
+  // Get selected competition ID, stage, and role from localStorage (same keys as CompetitionContext)
   const [selectedCompetitionId, setSelectedCompetitionId] = React.useState<string | null>(null)
+  const [competitionStage, setCompetitionStage] = React.useState<string | null>(null)
+  const [competitionRole, setCompetitionRole] = React.useState<string | null>(null)
   React.useEffect(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null
+    const stage = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-stage') : null
+    const role = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-role') : null
     setSelectedCompetitionId(stored)
+    setCompetitionStage(stage)
+    setCompetitionRole(role)
   }, [])
   const { items: mainItems } = usePortalInjectedMenuItems('menu:portal:sidebar:main')
   const { items: accountItems } = usePortalInjectedMenuItems('menu:portal:sidebar:account')
@@ -90,6 +100,17 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
       items = items.filter((item) => MINIMAL_IDS.has(item.id))
     }
 
+    // Hide nav items that require a minimum competition stage
+    const currentStageIdx = competitionStage ? (STAGE_INDEX[competitionStage] ?? -1) : -1
+    items = items.filter((item) => {
+      const rule = MIN_STAGE_FOR_ITEM.find(r => r.id === item.id)
+      if (!rule) return true
+      // If the rule is role-scoped, skip it for non-matching roles
+      if (rule.roles && competitionRole && !rule.roles.includes(competitionRole)) return true
+      if (currentStageIdx < 0) return false // stage unknown — hide stage-gated items
+      return currentStageIdx >= (STAGE_INDEX[rule.minStage] ?? 0)
+    })
+
     items.sort((a, b) => {
       const aIdx = NAV_ORDER.indexOf(a.id)
       const bIdx = NAV_ORDER.indexOf(b.id)
@@ -97,7 +118,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     })
 
     return items
-  }, [mainItems, accountItems, variant])
+  }, [mainItems, accountItems, variant, competitionStage])
 
   const prefix = `/${orgSlug}/portal`
 
@@ -170,7 +191,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         {variant === 'full' && selectedCompetitionId && (
           <button
             type="button"
-            onClick={() => { setMilestonesOpen(true); onClose?.() }}
+            onClick={() => { window.dispatchEvent(new Event('open-milestones-drawer')); onClose?.() }}
             className="flex w-full items-center gap-2 rounded-lg border border-gray-100 dark:border-white/10 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 hover:text-foreground transition-colors"
           >
             <Milestone className="size-4" />
@@ -196,15 +217,6 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
         )}
       </div>
 
-      {/* Milestones Drawer — only mount when open to avoid useQuery issues */}
-      {milestonesOpen && (
-        <MilestonesDrawer
-          competitionId={selectedCompetitionId}
-          open={milestonesOpen}
-          onClose={() => setMilestonesOpen(false)}
-          orgSlug={orgSlug}
-        />
-      )}
     </aside>
   )
 }

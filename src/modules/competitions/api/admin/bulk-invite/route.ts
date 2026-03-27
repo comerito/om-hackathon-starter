@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
+import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
 import { sendEmail } from '@open-mercato/shared/lib/email/send'
 import { hashForLookup } from '@open-mercato/shared/lib/encryption/aes'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
     const invitationService = container.resolve('customerInvitationService') as CustomerInvitationService
 
     const tenantId = auth.tenantId
-    const organizationId = auth.orgId
+    const scope = await resolveOrganizationScopeForRequest({ container, auth, request: req })
+    const organizationId = scope.selectedId ?? auth.orgId
     if (!organizationId) {
       return NextResponse.json({ error: 'Organization context required' }, { status: 400 })
     }

@@ -4,9 +4,12 @@ import * as React from 'react'
 import { usePathname } from 'next/navigation'
 import { usePortalEventBridge } from '@open-mercato/ui/portal/hooks/usePortalEventBridge'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
+import dynamic from 'next/dynamic'
 import { PortalSidebar } from './PortalSidebar'
 import { PortalTopBar } from './PortalTopBar'
 import { PortalFooter } from './PortalFooter'
+
+const MilestonesDrawer = dynamic(() => import('./MilestonesDrawer').then(m => ({ default: m.MilestonesDrawer })), { ssr: false })
 
 export type PortalLayoutVariant = 'full' | 'minimal' | 'topnav' | 'kiosk'
 
@@ -71,12 +74,27 @@ export function HackathonPortalLayout({
   navLinks,
 }: HackathonPortalLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [milestonesOpen, setMilestonesOpen] = React.useState(false)
   const pathname = usePathname()
+  const { orgSlug } = usePortalContext()
+
+  // Read competition ID from localStorage (same key as CompetitionContext)
+  const [selectedCompetitionId, setSelectedCompetitionId] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    setSelectedCompetitionId(typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null)
+  }, [])
 
   // Close mobile menu on route change
   React.useEffect(() => {
     setMobileMenuOpen(false)
   }, [pathname])
+
+  // Listen for milestones drawer open requests (from dashboard, sidebar button, etc.)
+  React.useEffect(() => {
+    function handleOpen() { setMilestonesOpen(true) }
+    window.addEventListener('open-milestones-drawer', handleOpen)
+    return () => window.removeEventListener('open-milestones-drawer', handleOpen)
+  }, [])
 
   // Variant D: Kiosk — no chrome at all
   if (variant === 'kiosk') {
@@ -114,6 +132,16 @@ export function HackathonPortalLayout({
   return (
     <div className="flex min-h-screen bg-portal-bg overflow-x-hidden">
       {enableEventBridge && <EventBridge />}
+
+      {/* Milestones Drawer — rendered at layout level so it works on all screen sizes */}
+      {milestonesOpen && (
+        <MilestonesDrawer
+          competitionId={selectedCompetitionId}
+          open={milestonesOpen}
+          onClose={() => setMilestonesOpen(false)}
+          orgSlug={orgSlug}
+        />
+      )}
 
       {/* Desktop sidebar — fixed, hidden below lg */}
       <div className="hidden lg:flex lg:fixed lg:inset-y-0 lg:z-40">
