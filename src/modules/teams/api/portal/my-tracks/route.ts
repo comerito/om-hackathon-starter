@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { TeamMember, TeamTrack } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = resolvePortalLocale(req)
 
     // Find user's team membership
     const membership = await em.findOne(TeamMember, {
@@ -51,12 +53,21 @@ export async function GET(req: Request) {
       const trackEntities = await em.find(Track, {
         id: { $in: trackIds },
       } as FilterQuery<Track>)
-      tracks = trackEntities.map(t => ({
-        id: t.id,
-        name: t.name,
-        color: t.color,
-        description: t.description ?? null,
-      }))
+      tracks = await applyPortalTranslationOverlays(
+        trackEntities.map(t => ({
+          id: t.id,
+          name: t.name,
+          color: t.color,
+          description: t.description ?? null,
+        })),
+        {
+          entityType: 'tracks:track',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
     }
 
     return NextResponse.json({ track_ids: trackIds, tracks })

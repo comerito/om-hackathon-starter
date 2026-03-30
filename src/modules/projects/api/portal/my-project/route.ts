@@ -8,6 +8,7 @@ import { Team } from '../../../../teams/data/entities'
 import { Track } from '../../../../tracks/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -58,6 +59,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = resolvePortalLocale(req)
 
     // Find user's team membership
     const membership = await em.findOne(TeamMember, {
@@ -92,7 +94,17 @@ export async function GET(req: Request) {
     const trackMap = new Map<string, { name: string; color: string }>()
     if (trackIds.length > 0) {
       const tracks = await em.find(Track, { id: { $in: trackIds } } as FilterQuery<Track>)
-      for (const t of tracks) {
+      const translatedTracks = await applyPortalTranslationOverlays(
+        tracks.map(t => ({ id: t.id, name: t.name, color: t.color })),
+        {
+          entityType: 'tracks:track',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+      for (const t of translatedTracks) {
         trackMap.set(t.id, { name: t.name, color: t.color })
       }
     }
@@ -100,13 +112,34 @@ export async function GET(req: Request) {
     // Also resolve team's trackId if not already in map
     if (team.trackId && !trackMap.has(team.trackId)) {
       const track = await em.findOne(Track, { id: team.trackId })
-      if (track) trackMap.set(track.id, { name: track.name, color: track.color })
+      if (track) {
+        const [translatedTrack] = await applyPortalTranslationOverlays(
+          [{ id: track.id, name: track.name, color: track.color }],
+          {
+            entityType: 'tracks:track',
+            locale,
+            tenantId: auth.tenantId,
+            organizationId: auth.orgId,
+            container,
+          },
+        )
+        trackMap.set(track.id, { name: translatedTrack?.name ?? track.name, color: track.color })
+      }
     }
 
     const comp = await em.findOne(Competition, { id: competitionId } as FilterQuery<Competition>)
     const submissionDeadline = comp?.projectSubmissionDeadline ?? null
 
-    const serializedProjects = projects.map(serializeProject)
+    const serializedProjects = await applyPortalTranslationOverlays(
+      projects.map(serializeProject),
+      {
+        entityType: 'projects:project',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
     const firstProject = serializedProjects[0] ?? null
     const trackName = firstProject ? (trackMap.get(firstProject.track_id)?.name ?? null) : null
 

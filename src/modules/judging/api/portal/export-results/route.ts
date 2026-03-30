@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
     const knex = (em as any).getConnection().getKnex()
+    const locale = resolvePortalLocale(req)
 
     // Get leaderboard data with scores
     const rows = await knex('projects_project as p')
@@ -35,6 +37,7 @@ export async function GET(req: Request) {
         'p.id',
       )
       .select(
+        'p.id as id',
         'p.title',
         't.name as team_name',
         'p.status',
@@ -48,9 +51,24 @@ export async function GET(req: Request) {
       .whereNot('p.status', 'draft')
       .orderByRaw('COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC')
 
+    const translatedRows = await applyPortalTranslationOverlays(
+      rows.map((row: any) => ({
+        ...row,
+        id: String(row.id),
+        title: row.title ?? '',
+      })),
+      {
+        entityType: 'projects:project',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
+
     // Build CSV
     const header = 'Rank,Project,Team,Avg Score,Peer Votes,Status,Finalist\n'
-    const csvRows = rows.map((row: any, i: number) => {
+    const csvRows = translatedRows.map((row: any, i: number) => {
       const rank = row.rank ?? i + 1
       const title = (row.title || '').replace(/"/g, '""')
       const teamName = (row.team_name || '').replace(/"/g, '""')

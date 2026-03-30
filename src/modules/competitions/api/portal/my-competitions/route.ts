@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { Competition, CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = resolvePortalLocale(req)
 
     // Find all participations for this customer user
     const participations = await em.find(CompetitionParticipation, {
@@ -61,7 +63,15 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ items })
+    const translatedItems = await applyPortalTranslationOverlays(items, {
+      entityType: 'competitions:competition',
+      locale,
+      tenantId: auth.tenantId,
+      organizationId: auth.orgId,
+      container,
+    })
+
+    return NextResponse.json({ items: translatedItems })
   } catch (error) {
     console.error('[portal/my-competitions] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
