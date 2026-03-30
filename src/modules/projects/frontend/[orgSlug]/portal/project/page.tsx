@@ -45,9 +45,13 @@ type ProjectData = {
   updated_at: string
 }
 
+type TrackInfo = { id: string; name: string; color: string }
+
 type MyProjectResponse = {
   project: ProjectData | null
+  projects?: ProjectData[]
   team: { id: string; name: string; track_id: string | null } | null
+  tracks?: TrackInfo[]
   trackName: string | null
   submissionDeadline: string | null
   hasTeam: boolean
@@ -117,10 +121,28 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     enabled: !!competitionId,
   })
 
-  // Populate form when data loads
+  // Multi-project support: track selector
+  const allProjects = data?.projects ?? (data?.project ? [data.project] : [])
+  const allTracks = data?.tracks ?? []
+  const hasMultipleProjects = allProjects.length > 1
+  const [activeTrackId, setActiveTrackId] = React.useState<string | null>(null)
+
+  // Set initial active track when data loads
   React.useEffect(() => {
-    if (!data?.project) return
-    const p = data.project
+    if (allProjects.length > 0 && !activeTrackId) {
+      setActiveTrackId(allProjects[0].track_id)
+    }
+  }, [allProjects, activeTrackId])
+
+  // Derive active project from track selection
+  const activeProject = activeTrackId
+    ? allProjects.find(p => p.track_id === activeTrackId) ?? allProjects[0] ?? null
+    : allProjects[0] ?? null
+
+  // Populate form when data loads or active project changes
+  React.useEffect(() => {
+    const p = activeProject
+    if (!p) return
     setTitle(p.title ?? '')
     setTagline(p.tagline ?? '')
     setDescription(p.description ?? '')
@@ -136,9 +158,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setBuiltDuringDescription(p.built_during_hackathon_description ?? '')
     setLastSaved(p.updated_at ?? null)
     setScreenshotIds(p.screenshot_ids ?? [])
-  }, [data?.project])
+  }, [activeProject?.id, activeProject?.updated_at])
 
-  const project = data?.project
+  const project = activeProject
   const isPublished = project?.status === 'published'
   const isDraft = project?.status === 'draft'
 
@@ -396,10 +418,46 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
   }
 
+  // Track tab switcher for multi-project teams
+  const trackTabs = hasMultipleProjects ? (
+    <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+      {allProjects.map((p) => {
+        const trackInfo = allTracks.find(t2 => t2.id === p.track_id)
+        const isActive = p.track_id === activeTrackId
+        return (
+          <button
+            key={p.track_id}
+            type="button"
+            onClick={() => {
+              // Auto-save current before switching
+              if (project && isDraft) doAutoSave()
+              setActiveTrackId(p.track_id)
+            }}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all shrink-0',
+              isActive
+                ? 'bg-portal-primary text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-white/5 text-portal-secondary hover:bg-gray-200 dark:hover:bg-white/10',
+            )}
+          >
+            {trackInfo && (
+              <div className="size-2.5 rounded-full" style={{ backgroundColor: trackInfo.color || '#6366f1' }} />
+            )}
+            <span>{trackInfo?.name ?? 'Track'}</span>
+            <PortalBadge variant={p.status === 'published' ? 'success' : p.status === 'draft' ? 'muted' : 'info'}>
+              {p.status}
+            </PortalBadge>
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
   /* ======== Published state (read-only) ======== */
   if (isPublished) {
     return (
       <div className="space-y-6">
+        {trackTabs}
         {/* Submitted banner */}
         <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-5 flex items-center gap-3">
           <div className="flex size-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
@@ -487,6 +545,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   /* ======== Draft editor (two-column layout) ======== */
   return (
     <div className="space-y-6">
+      {trackTabs}
       {/* ---- Deadline Banner ---- */}
       {deadline && !deadlinePassed && (
         <div

@@ -31,6 +31,7 @@ type Team = {
   description: string | null
   status: string
   track_id: string | null
+  track_ids?: string[]
   competition_id: string
   _teams?: { memberCount: number }
 }
@@ -698,25 +699,45 @@ function TeamView({
     return id.slice(0, 2).toUpperCase()
   }, [memberNameMap])
 
-  // Track selection
-  const [selectedTrackId, setSelectedTrackId] = React.useState(team.track_id ?? '')
+  // Track selection — supports multi-track
+  const maxTracksPerTeam = (selected as any)?.max_tracks_per_team ?? 1
+  const [selectedTrackIds, setSelectedTrackIds] = React.useState<string[]>(
+    team.track_ids ?? (team.track_id ? [team.track_id] : []),
+  )
 
   React.useEffect(() => {
-    setSelectedTrackId(team.track_id ?? '')
-  }, [team.track_id])
+    setSelectedTrackIds(team.track_ids ?? (team.track_id ? [team.track_id] : []))
+  }, [team.track_id, team.track_ids])
 
-  async function handleSelectTrack(trackId: string) {
-    setSelectedTrackId(trackId)
-    const { ok } = await apiCall('/api/teams/portal/select-track', {
+  async function handleToggleTrack(trackId: string) {
+    let newIds: string[]
+    if (maxTracksPerTeam === 1) {
+      // Radio behavior: select this one, deselect others
+      newIds = selectedTrackIds.includes(trackId) ? [] : [trackId]
+    } else {
+      // Checkbox behavior: toggle
+      if (selectedTrackIds.includes(trackId)) {
+        newIds = selectedTrackIds.filter(id => id !== trackId)
+      } else {
+        if (selectedTrackIds.length >= maxTracksPerTeam) {
+          flash(`Maximum ${maxTracksPerTeam} track(s) allowed`, 'error')
+          return
+        }
+        newIds = [...selectedTrackIds, trackId]
+      }
+    }
+    setSelectedTrackIds(newIds)
+    const { ok } = await apiCall('/api/teams/portal/manage-tracks', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ team_id: team.id, track_id: trackId || null }),
+      body: JSON.stringify({ team_id: team.id, track_ids: newIds }),
     })
     if (ok) {
-      flash(t('teams.portal.myTeam.trackSelected', 'Track selected!'), 'success')
-      queryClient.invalidateQueries({ queryKey: ['portal-my-team'] })
+      flash(t('teams.portal.myTeam.trackSelected', 'Track updated!'), 'success')
+      queryClient.invalidateQueries({ queryKey: ['portal-my-membership'] })
     } else {
-      flash(t('teams.portal.myTeam.trackFailed', 'Failed to select track'), 'error')
+      flash(t('teams.portal.myTeam.trackFailed', 'Failed to update tracks'), 'error')
+      setSelectedTrackIds(team.track_ids ?? (team.track_id ? [team.track_id] : []))
     }
   }
 
@@ -739,20 +760,25 @@ function TeamView({
     }
   }
 
-  // Track selection stage check — mirror backend logic from portal/select-track/route.ts
+  // Track selection stage check — allow during team_formation and track_selection,
+  // and after that only if allowTrackChange is enabled on the competition
   const STAGE_ORDER = ['draft', 'open', 'team_formation', 'track_selection', 'hacking', 'demos', 'deliberation', 'finished', 'archived']
   const currentStage = selected?.stage ?? 'draft'
   const currentStageIdx = STAGE_ORDER.indexOf(currentStage)
+  const teamFormationIdx = STAGE_ORDER.indexOf('team_formation')
   const trackSelectionIdx = STAGE_ORDER.indexOf('track_selection')
-  const canSelectTrack = currentStageIdx >= trackSelectionIdx
+  const allowTrackChange = (selected as any)?.allow_track_change ?? false
+  const canSelectTrack = (currentStageIdx >= teamFormationIdx && currentStageIdx <= trackSelectionIdx)
+    || (currentStageIdx > trackSelectionIdx && allowTrackChange)
 
-  // Compute selected track info
-  const selectedTrack = tracks.find((tr) => tr.id === (selectedTrackId || team.track_id))
+  // Compute selected track info (first selected track for sidebar display)
+  const selectedTrack = tracks.find((tr) => selectedTrackIds.includes(tr.id))
+  const selectedTracksAll = tracks.filter((tr) => selectedTrackIds.includes(tr.id))
 
   // Milestones for the timeline
   const milestones = [
     { label: 'Team formed', done: true },
-    { label: 'Track selected', done: !!team.track_id },
+    { label: 'Track selected', done: selectedTrackIds.length > 0 },
     { label: 'Project submitted', done: team.status === 'submitted' || team.status === 'presented' },
     { label: 'Presentation done', done: team.status === 'presented' },
   ]
@@ -798,29 +824,40 @@ function TeamView({
         </div>
 
         {/* Track Selection */}
-        {(isOwner || team.track_id) && tracks.length > 0 && (
+        {(isOwner || selectedTrackIds.length > 0) && tracks.length > 0 && (
           <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-            <SectionLabel className="mb-4 block">Track</SectionLabel>
+            <div className="flex items-center gap-2 mb-4">
+              <SectionLabel className="block">{maxTracksPerTeam > 1 ? 'Tracks' : 'Track'}</SectionLabel>
+              {maxTracksPerTeam > 1 && (
+                <span className="text-xs text-portal-secondary">
+                  ({selectedTrackIds.length}/{maxTracksPerTeam})
+                </span>
+              )}
+            </div>
 
-            {!canSelectTrack && isOwner && (
+            {!canSelectTrack && isOwner && currentStageIdx < teamFormationIdx && (
               <p className="mb-3 text-xs text-portal-secondary bg-gray-50 dark:bg-white/5 rounded-lg px-3 py-2">
-                {t('teams.portal.myTeam.trackLocked', 'Track selection is not available yet. It will open during the track selection stage.')}
+                {t('teams.portal.myTeam.trackNotYet', 'Track selection will open during the team formation stage.')}
               </p>
             )}
 
-            {isOwner ? (
+            {!canSelectTrack && isOwner && currentStageIdx > trackSelectionIdx && (
+              <p className="mb-3 text-xs text-portal-secondary bg-gray-50 dark:bg-white/5 rounded-lg px-3 py-2">
+                {t('teams.portal.myTeam.trackLocked', 'Track selection is locked. Changes are no longer allowed.')}
+              </p>
+            )}
+
+            {isOwner && canSelectTrack ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {tracks.map((track) => {
-                  const isSelected = selectedTrackId === track.id
+                  const isSelected = selectedTrackIds.includes(track.id)
                   return (
                     <button
                       key={track.id}
                       type="button"
-                      onClick={() => canSelectTrack && handleSelectTrack(track.id)}
-                      disabled={!canSelectTrack}
+                      onClick={() => handleToggleTrack(track.id)}
                       className={cn(
                         'flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all',
-                        !canSelectTrack && 'opacity-50 cursor-not-allowed',
                         isSelected
                           ? 'border-portal-primary bg-portal-primary/5 shadow-sm'
                           : 'border-gray-100 dark:border-white/10 hover:border-gray-200 dark:hover:border-white/20 hover:shadow-sm',
@@ -852,12 +889,10 @@ function TeamView({
                 })}
               </div>
             ) : (
-              /* Non-owner: show selected track as a card */
-              (() => {
-                const t2 = tracks.find((tr) => tr.id === team.track_id)
-                if (!t2) return null
-                return (
-                  <div className="flex items-start gap-3 rounded-xl border-2 border-portal-primary/30 bg-portal-primary/5 p-4">
+              /* Non-owner or locked: show selected track(s) as read-only cards */
+              <div className="space-y-2">
+                {selectedTracksAll.map((t2) => (
+                  <div key={t2.id} className="flex items-start gap-3 rounded-xl border-2 border-portal-primary/30 bg-portal-primary/5 p-4">
                     <div
                       className="size-10 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: `${t2.color || '#6366f1'}15` }}
@@ -869,8 +904,8 @@ function TeamView({
                       {t2.description && <p className="text-xs text-portal-secondary mt-0.5">{t2.description}</p>}
                     </div>
                   </div>
-                )
-              })()
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -1037,13 +1072,17 @@ function TeamView({
               </div>
             </div>
 
-            {/* Track */}
-            {selectedTrack && (
+            {/* Track(s) */}
+            {selectedTracksAll.length > 0 && (
               <div className="flex items-center justify-between px-6 py-3">
-                <span className="text-xs text-portal-secondary">{t('teams.portal.myTeam.trackLabel', 'Track')}</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="size-2.5 rounded-full" style={{ backgroundColor: selectedTrack.color || '#6366f1' }} />
-                  <span className="text-xs font-semibold text-foreground">{selectedTrack.name}</span>
+                <span className="text-xs text-portal-secondary">{selectedTracksAll.length > 1 ? t('teams.portal.myTeam.tracksLabel', 'Tracks') : t('teams.portal.myTeam.trackLabel', 'Track')}</span>
+                <div className="flex flex-col items-end gap-1">
+                  {selectedTracksAll.map((st) => (
+                    <div key={st.id} className="flex items-center gap-1.5">
+                      <div className="size-2.5 rounded-full" style={{ backgroundColor: st.color || '#6366f1' }} />
+                      <span className="text-xs font-semibold text-foreground">{st.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

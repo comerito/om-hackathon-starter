@@ -81,7 +81,8 @@ export async function GET(req: Request) {
 
       return NextResponse.json({
         items: items.map(t => ({
-          id: t.id, name: t.name, description: t.description, color: t.color,
+          id: t.id, name: t.name, short_description: t.shortDescription ?? null,
+          description: t.description, color: t.color,
           icon_url: t.iconUrl, max_teams: t.maxTeams, order: t.order,
           category: t.category, badge: t.badge,
         })),

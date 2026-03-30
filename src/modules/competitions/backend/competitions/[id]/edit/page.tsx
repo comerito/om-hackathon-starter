@@ -45,6 +45,7 @@ type CompetitionFormValues = {
   timezone: string
   min_team_size: number
   max_team_size: number
+  max_tracks_per_team: number
   code_of_conduct_url: string
   rules_url: string
   privacy_policy_url: string
@@ -73,6 +74,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     { id: 'timezone', label: t('competitions.fields.timezone', 'Timezone'), type: 'text' },
     { id: 'min_team_size', label: t('competitions.fields.minTeamSize', 'Min Team Size'), type: 'number' },
     { id: 'max_team_size', label: t('competitions.fields.maxTeamSize', 'Max Team Size'), type: 'number' },
+    { id: 'max_tracks_per_team', label: t('competitions.fields.maxTracksPerTeam', 'Max Tracks per Team'), type: 'number' },
     { id: 'code_of_conduct_url', label: t('competitions.fields.cocUrl', 'Code of Conduct URL'), type: 'text', required: true },
     { id: 'rules_url', label: t('competitions.fields.rulesUrl', 'Rules URL'), type: 'text' },
     { id: 'privacy_policy_url', label: t('competitions.fields.privacyPolicyUrl', 'Privacy Policy URL'), type: 'text' },
@@ -83,7 +85,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('competitions.groups.general', 'General'), column: 1, fields: ['name', 'slug', 'description', 'location'] },
     { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'timezone'] },
-    { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size'] },
+    { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size', 'max_tracks_per_team'] },
     { id: 'legal', title: t('competitions.groups.legal', 'Legal & Media'), column: 2, fields: ['code_of_conduct_url', 'rules_url', 'privacy_policy_url', 'cover_image_url'] },
     { id: 'portal', title: t('competitions.groups.portal', 'Portal Settings'), column: 2, fields: ['info_cards'] },
   ], [t])
@@ -116,6 +118,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             timezone: String(item.timezone ?? 'Europe/Warsaw'),
             min_team_size: Number(item.min_team_size ?? 2),
             max_team_size: Number(item.max_team_size ?? 5),
+            max_tracks_per_team: Number(item.max_tracks_per_team ?? 1),
             code_of_conduct_url: String(item.code_of_conduct_url ?? ''),
             rules_url: String(item.rules_url ?? ''),
             privacy_policy_url: String(item.privacy_policy_url ?? ''),
@@ -137,7 +140,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
   const fallback = React.useMemo<CompetitionFormValues>(() => ({
     id: id ?? '', name: '', slug: '', description: '', location: '',
     starts_at: '', ends_at: '', timezone: 'Europe/Warsaw',
-    min_team_size: 2, max_team_size: 5,
+    min_team_size: 2, max_team_size: 5, max_tracks_per_team: 1,
     code_of_conduct_url: '', rules_url: '', privacy_policy_url: '', cover_image_url: '', info_cards: '', stage: 'draft',
   }), [id])
 

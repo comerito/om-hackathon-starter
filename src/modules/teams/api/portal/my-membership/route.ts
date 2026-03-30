@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { TeamMember, Team } from '../../../data/entities'
+import { TeamMember, Team, TeamTrack } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -42,6 +42,13 @@ export async function GET(req: Request) {
       deletedAt: null,
     } as FilterQuery<Team>)
 
+    // Fetch team's track assignments from junction table
+    const teamTracks = team ? await em.find(TeamTrack, {
+      teamId: team.id,
+      competitionId,
+    } as FilterQuery<TeamTrack>) : []
+    const trackIds = teamTracks.map(tt => tt.trackId)
+
     // Fetch all team members
     const members = await em.find(TeamMember, {
       teamId: membership.teamId,
@@ -73,6 +80,7 @@ export async function GET(req: Request) {
         description: team.description,
         status: team.status,
         track_id: team.trackId,
+        track_ids: trackIds,
         competition_id: team.competitionId,
       } : null,
       members: members.map(m => {

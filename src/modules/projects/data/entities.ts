@@ -13,7 +13,7 @@ export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
 // ── Entities ────────────────────────────────────────────────────────
 
 @Entity({ tableName: 'projects_project' })
-@Unique({ properties: ['teamId', 'competitionId'] })
+@Unique({ properties: ['teamId', 'trackId', 'competitionId'] })
 export class Project {
   @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
   id!: string

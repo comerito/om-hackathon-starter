@@ -27909,76 +27909,6 @@
           "mappedType": "datetime"
         }
       },
-      "name": "mikro_orm_migrations_projects",
-      "schema": "public",
-      "indexes": [
-        {
-          "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "mikro_orm_migrations_projects_pkey",
-          "unique": true,
-          "primary": true
-        }
-      ],
-      "checks": [],
-      "foreignKeys": {},
-      "nativeEnums": {},
-      "comment": null
-    },
-    {
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int4",
-          "unsigned": true,
-          "autoincrement": true,
-          "primary": true,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": 32,
-          "scale": 0,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "integer"
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": 255,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
-        "executed_at": {
-          "name": "executed_at",
-          "type": "timestamptz(6)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": "CURRENT_TIMESTAMP",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        }
-      },
       "name": "mikro_orm_migrations_query_index",
       "schema": "public",
       "indexes": [
@@ -28409,6 +28339,76 @@
           "composite": false,
           "constraint": false,
           "keyName": "mikro_orm_migrations_staff_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "executed_at": {
+          "name": "executed_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "CURRENT_TIMESTAMP",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "name": "mikro_orm_migrations_teams",
+      "schema": "public",
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "mikro_orm_migrations_teams_pkey",
           "unique": true,
           "primary": true
         }
@@ -51418,201 +51418,6 @@
           "composite": false,
           "constraint": false,
           "keyName": "teams_team_member_tenant_id_index",
-          "unique": false,
-          "primary": false
-        }
-      ],
-      "checks": [],
-      "foreignKeys": {},
-      "nativeEnums": {},
-      "comment": null
-    },
-    {
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": true,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": "gen_random_uuid()",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": true,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "track_id": {
-          "name": "track_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "competition_id": {
-          "name": "competition_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamptz(6)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        }
-      },
-      "name": "teams_team_track",
-      "schema": "public",
-      "indexes": [
-        {
-          "columnNames": [
-            "competition_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_competition_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "organization_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_organization_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_pkey",
-          "unique": true,
-          "primary": true
-        },
-        {
-          "columnNames": [
-            "team_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_team_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "team_id",
-            "track_id"
-          ],
-          "composite": true,
-          "constraint": true,
-          "keyName": "teams_team_track_team_id_track_id_unique",
-          "unique": true,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_tenant_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "track_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "teams_team_track_track_id_index",
           "unique": false,
           "primary": false
         }

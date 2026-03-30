@@ -145,6 +145,9 @@ export class Competition {
   @Property({ name: 'max_teams_per_track', type: 'int', nullable: true })
   maxTeamsPerTrack?: number | null
 
+  @Property({ name: 'max_tracks_per_team', type: 'int', default: 1 })
+  maxTracksPerTeam: number = 1
+
   @Property({ name: 'allow_track_change', type: 'boolean', default: false })
   allowTrackChange: boolean = false
 

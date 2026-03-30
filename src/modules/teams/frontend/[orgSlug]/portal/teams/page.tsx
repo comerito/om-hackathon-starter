@@ -9,7 +9,6 @@ import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmpty
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
@@ -68,15 +67,19 @@ function TeamsTab({
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-teams', competitionId, search],
-    queryFn: () => {
-      const params: Record<string, string> = {
+    queryFn: async () => {
+      const params = new URLSearchParams({
         pageSize: '50',
         sortField: 'name',
         sortDir: 'asc',
         competition_id: competitionId,
-      }
-      if (search) params.name = search
-      return fetchCrudList<Team>('teams/teams', params)
+      })
+      if (search) params.set('name', search)
+      const { ok, result } = await apiCall<{ items: Team[]; total: number; page: number; pageSize: number; totalPages: number }>(
+        `/api/teams/portal/browse-teams?${params}`,
+      )
+      if (!ok || !result) return { items: [] as Team[], total: 0, page: 1, pageSize: 50, totalPages: 0 }
+      return result
     },
     enabled: !!competitionId,
   })
@@ -295,11 +298,13 @@ function TeamsContent() {
   // Fetch my team membership to determine if I'm an owner
   const { data: myMemberData } = useQuery({
     queryKey: ['portal-my-membership-browse', selectedId, userId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!selectedId || !userId) return { items: [] as Array<{ team_id: string; role: string }>, total: 0, page: 1, pageSize: 10, totalPages: 0 }
-      return fetchCrudList<{ team_id: string; role: string }>('teams/members', {
-        pageSize: '10', competition_id: selectedId, customer_user_id: userId,
-      })
+      const { ok, result } = await apiCall<{ items: Array<{ team_id: string; role: string }>; total: number }>(
+        `/api/teams/portal/my-team-membership?competition_id=${selectedId}`,
+      )
+      if (!ok || !result) return { items: [] as Array<{ team_id: string; role: string }>, total: 0, page: 1, pageSize: 10, totalPages: 0 }
+      return result
     },
     enabled: !!selectedId && !!userId,
   })

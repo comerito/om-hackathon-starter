@@ -8,9 +8,9 @@ import { Track } from '../../../../tracks/data/entities'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const selectTrackSchema = z.object({
+const manageTracksSchema = z.object({
   team_id: z.string().uuid(),
-  track_id: z.string().uuid().nullable(),
+  track_ids: z.array(z.string().uuid()),
 })
 
 export const metadata = {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const parsed = selectTrackSchema.parse(body)
+    const parsed = manageTracksSchema.parse(body)
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       tenantId: auth.tenantId,
     } as FilterQuery<TeamMember>)
     if (!ownership) {
-      return NextResponse.json({ error: 'Only the team owner can select a track' }, { status: 403 })
+      return NextResponse.json({ error: 'Only the team owner can manage tracks' }, { status: 403 })
     }
 
     const team = await em.findOne(Team, {
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
-    // Enforce competition stage — track selection only allowed during permitted windows
+    // Load competition for config and stage gating
     const competition = await em.findOne(Competition, {
       id: team.competitionId,
       tenantId: auth.tenantId,
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
     }
 
+    // Stage gating — allow during team_formation and track_selection; after that only with allowTrackChange
     const stageIdx = STAGE_ORDER.indexOf(competition.stage)
     const teamFormationIdx = STAGE_ORDER.indexOf(CompetitionStage.TEAM_FORMATION)
     const trackSelectionIdx = STAGE_ORDER.indexOf(CompetitionStage.TRACK_SELECTION)
@@ -66,56 +67,89 @@ export async function POST(req: Request) {
     if (stageIdx < teamFormationIdx) {
       return NextResponse.json({ error: 'Track selection has not started yet' }, { status: 403 })
     } else if (stageIdx > trackSelectionIdx) {
-      // After track selection — only allow if allowTrackChange is true
       if (!competition.allowTrackChange) {
         return NextResponse.json({ error: 'Track selection is closed. Track changes are not allowed.' }, { status: 403 })
       }
     }
 
-    // Verify track belongs to same competition (if not null)
-    if (parsed.track_id) {
-      const track = await em.findOne(Track, {
-        id: parsed.track_id,
+    // Validate track count against maxTracksPerTeam
+    const maxTracks = competition.maxTracksPerTeam ?? 1
+    if (parsed.track_ids.length > maxTracks) {
+      return NextResponse.json({ error: `Maximum ${maxTracks} track(s) allowed per team` }, { status: 422 })
+    }
+
+    // Validate all tracks belong to this competition
+    if (parsed.track_ids.length > 0) {
+      const tracks = await em.find(Track, {
+        id: { $in: parsed.track_ids },
         competitionId: team.competitionId,
         tenantId: auth.tenantId,
       } as FilterQuery<Track>)
-      if (!track) {
-        return NextResponse.json({ error: 'Track not found in this competition' }, { status: 404 })
+      if (tracks.length !== parsed.track_ids.length) {
+        return NextResponse.json({ error: 'One or more tracks not found in this competition' }, { status: 404 })
       }
     }
 
-    team.trackId = parsed.track_id
+    // Sync junction table: find current, diff, insert/delete
+    const currentEntries = await em.find(TeamTrack, {
+      teamId: team.id,
+    } as FilterQuery<TeamTrack>)
+    const currentTrackIds = new Set(currentEntries.map(e => e.trackId))
+    const desiredTrackIds = new Set(parsed.track_ids)
 
-    // Sync junction table: clear existing, add new if non-null
-    const existingEntries = await em.find(TeamTrack, { teamId: team.id } as FilterQuery<TeamTrack>)
-    for (const entry of existingEntries) {
-      em.remove(entry)
+    // Delete removed tracks
+    for (const entry of currentEntries) {
+      if (!desiredTrackIds.has(entry.trackId)) {
+        em.remove(entry)
+      }
     }
-    if (parsed.track_id) {
-      em.persist(em.create(TeamTrack, {
-        teamId: team.id,
-        trackId: parsed.track_id,
-        competitionId: team.competitionId,
-        tenantId: auth.tenantId,
-        organizationId: auth.orgId,
-        createdAt: new Date(),
-      }))
+
+    // Insert new tracks
+    for (const trackId of parsed.track_ids) {
+      if (!currentTrackIds.has(trackId)) {
+        em.persist(em.create(TeamTrack, {
+          teamId: team.id,
+          trackId,
+          competitionId: team.competitionId,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          createdAt: new Date(),
+        }))
+      }
     }
+
+    // Update deprecated Team.trackId for backward compat
+    team.trackId = parsed.track_ids[0] ?? null
+    em.persist(team)
 
     await em.flush()
 
-    return NextResponse.json({ ok: true, track_id: parsed.track_id })
+    // Emit event
+    try {
+      const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
+      await eventBus.emit('teams.team.tracks_updated', {
+        teamId: team.id,
+        trackIds: parsed.track_ids,
+        competitionId: team.competitionId,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+      })
+    } catch (e) {
+      console.error('[portal/manage-tracks] Event emit error:', e)
+    }
+
+    return NextResponse.json({ ok: true, track_ids: parsed.track_ids })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
     }
-    console.error('[portal/select-track] POST error:', error)
+    console.error('[portal/manage-tracks] POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export const openApi: OpenApiRouteDoc = {
   tag: 'Portal',
-  summary: 'Select track (portal)',
-  methods: { POST: { summary: 'Team owner selects a track for their team' } },
+  summary: 'Manage team tracks',
+  methods: { POST: { summary: 'Set the tracks for a team (multi-track support)' } },
 }

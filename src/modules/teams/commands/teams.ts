@@ -5,7 +5,7 @@ import type { CrudEmitContext, CrudEventsConfig, CrudIndexerConfig } from '@open
 import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { Team, TeamStatus } from '../data/entities'
+import { Team, TeamStatus, TeamTrack } from '../data/entities'
 import { createTeamSchema, updateTeamSchema, disqualifyTeamSchema } from '../data/validators'
 
 const ENTITY_ID = 'teams:team'
@@ -52,11 +52,14 @@ const createTeamCommand: CommandHandler<Record<string, unknown>, Team> = {
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
 
+    // Resolve track IDs: prefer track_ids array, fall back to single track_id
+    const trackIds = parsed.track_ids ?? (parsed.track_id ? [parsed.track_id] : [])
+
     const team = await de.createOrmEntity({
       entity: Team,
       data: {
         competitionId: parsed.competition_id,
-        trackId: parsed.track_id ?? null,
+        trackId: trackIds[0] ?? null,
         name: parsed.name,
         description: parsed.description ?? null,
         avatarUrl: parsed.avatar_url ?? null,
@@ -64,6 +67,22 @@ const createTeamCommand: CommandHandler<Record<string, unknown>, Team> = {
         organizationId: scope.organizationId,
       },
     })
+
+    // Create junction entries for multi-track
+    if (trackIds.length > 0) {
+      const em = ctx.container.resolve('em') as import('@mikro-orm/postgresql').EntityManager
+      for (const trackId of trackIds) {
+        em.persist(em.create(TeamTrack, {
+          teamId: team.id,
+          trackId,
+          competitionId: parsed.competition_id,
+          tenantId: scope.tenantId,
+          organizationId: scope.organizationId,
+          createdAt: new Date(),
+        }))
+      }
+      await em.flush()
+    }
 
     await emitCrudSideEffects({
       dataEngine: de,
@@ -101,6 +120,7 @@ const updateTeamCommand: CommandHandler<Record<string, unknown>, Team> = {
         if (parsed.name !== undefined) entity.name = parsed.name
         if (parsed.description !== undefined) entity.description = parsed.description
         if (parsed.track_id !== undefined) entity.trackId = parsed.track_id
+        if (parsed.track_ids !== undefined) entity.trackId = parsed.track_ids[0] ?? null
         if (parsed.avatar_url !== undefined) entity.avatarUrl = parsed.avatar_url
         if (parsed.table_number !== undefined) entity.tableNumber = parsed.table_number
         if (parsed.table_location !== undefined) entity.tableLocation = parsed.table_location
@@ -110,6 +130,31 @@ const updateTeamCommand: CommandHandler<Record<string, unknown>, Team> = {
       },
     })
     if (!team) throw new CrudHttpError(404, { error: 'Team not found' })
+
+    // Sync junction table if track_ids provided
+    if (parsed.track_ids !== undefined) {
+      const em = ctx.container.resolve('em') as import('@mikro-orm/postgresql').EntityManager
+      const existing = await em.find(TeamTrack, { teamId: team.id } as import('@mikro-orm/postgresql').FilterQuery<TeamTrack>)
+      const currentIds = new Set(existing.map(e => e.trackId))
+      const desiredIds = new Set(parsed.track_ids)
+
+      for (const entry of existing) {
+        if (!desiredIds.has(entry.trackId)) em.remove(entry)
+      }
+      for (const trackId of parsed.track_ids) {
+        if (!currentIds.has(trackId)) {
+          em.persist(em.create(TeamTrack, {
+            teamId: team.id,
+            trackId,
+            competitionId: team.competitionId,
+            tenantId: scope.tenantId,
+            organizationId: scope.organizationId,
+            createdAt: new Date(),
+          }))
+        }
+      }
+      await em.flush()
+    }
 
     await emitCrudSideEffects({
       dataEngine: de,

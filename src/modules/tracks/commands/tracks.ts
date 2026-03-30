@@ -141,8 +141,6 @@ const deleteTrackCommand: CommandHandler<{ body?: Record<string, unknown>; query
         organizationId: scope.organizationId,
         deletedAt: null,
       } as FilterQuery<Track>,
-      soft: true,
-      softDeleteField: 'deletedAt',
     })
     if (!track) throw new CrudHttpError(404, { error: 'Track not found' })
 

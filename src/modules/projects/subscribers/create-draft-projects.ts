@@ -1,6 +1,6 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { Project, ProjectStatus } from '../data/entities'
-import { Team, TeamStatus } from '../../teams/data/entities'
+import { Team, TeamStatus, TeamTrack } from '../../teams/data/entities'
 
 export const metadata = {
   event: 'competitions.competition.stage_advanced',
@@ -17,7 +17,7 @@ export default async function handler(
 
   const em = ctx.resolve('em') as EntityManager
 
-  // Find all active teams in the competition that have a track assigned
+  // Find all active teams in the competition
   const teams = await em.find(Team, {
     competitionId: payload.competitionId,
     status: TeamStatus.ACTIVE,
@@ -28,43 +28,57 @@ export default async function handler(
 
   let created = 0
   for (const team of teams) {
-    if (!team.trackId) {
-      console.log(`[projects:create-draft-projects] Team ${team.id} (${team.name}) has no track — skipping project creation`)
-      continue
-    }
-
-    // Check if project already exists for this team (idempotency)
-    const existing = await em.findOne(Project, {
+    // Get all track assignments from junction table
+    const teamTracks = await em.find(TeamTrack, {
       teamId: team.id,
       competitionId: payload.competitionId,
-      deletedAt: null,
-    } as FilterQuery<Project>)
+    } as FilterQuery<TeamTrack>)
 
-    if (existing) {
-      console.log(`[projects:create-draft-projects] Project already exists for team ${team.id} — skipping`)
-      continue
+    if (teamTracks.length === 0) {
+      // Fall back to deprecated trackId for backward compat
+      if (!team.trackId) {
+        console.log(`[projects:create-draft-projects] Team ${team.id} (${team.name}) has no tracks — skipping project creation`)
+        continue
+      }
+      // Create single project from legacy trackId
+      teamTracks.push({ trackId: team.trackId } as TeamTrack)
     }
 
-    const now = new Date()
-    const project = em.create(Project, {
-      teamId: team.id,
-      competitionId: payload.competitionId,
-      trackId: team.trackId,
-      title: `${team.name}'s Project`,
-      status: ProjectStatus.DRAFT,
-      techStack: [],
-      screenshotIds: [],
-      attachmentIds: [],
-      usesPreexistingCode: false,
-      flaggedForReuse: false,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-      tenantId: payload.tenantId,
-      organizationId: payload.organizationId,
-    })
-    em.persist(project)
-    created++
+    for (const tt of teamTracks) {
+      // Check if project already exists for this team+track (idempotency)
+      const existing = await em.findOne(Project, {
+        teamId: team.id,
+        competitionId: payload.competitionId,
+        trackId: tt.trackId,
+        deletedAt: null,
+      } as FilterQuery<Project>)
+
+      if (existing) {
+        console.log(`[projects:create-draft-projects] Project already exists for team ${team.id} track ${tt.trackId} — skipping`)
+        continue
+      }
+
+      const now = new Date()
+      const project = em.create(Project, {
+        teamId: team.id,
+        competitionId: payload.competitionId,
+        trackId: tt.trackId,
+        title: `${team.name}'s Project`,
+        status: ProjectStatus.DRAFT,
+        techStack: [],
+        screenshotIds: [],
+        attachmentIds: [],
+        usesPreexistingCode: false,
+        flaggedForReuse: false,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+        tenantId: payload.tenantId,
+        organizationId: payload.organizationId,
+      })
+      em.persist(project)
+      created++
+    }
   }
 
   if (created > 0) {

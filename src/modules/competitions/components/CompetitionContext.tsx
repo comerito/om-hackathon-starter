@@ -13,6 +13,8 @@ type CompetitionSummary = {
   ends_at: string
   location: string | null
   timezone: string
+  max_tracks_per_team?: number
+  allow_track_change?: boolean
 }
 
 type CompetitionContextValue = {

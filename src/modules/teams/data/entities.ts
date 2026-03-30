@@ -239,3 +239,35 @@ export class TeamResource {
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
 }
+
+// ── Team ↔ Track junction (M2M) ──────────────────────────────────
+
+@Entity({ tableName: 'teams_team_track' })
+@Unique({ properties: ['teamId', 'trackId'] })
+export class TeamTrack {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'team_id', type: 'uuid' })
+  teamId!: string
+
+  @Index()
+  @Property({ name: 'track_id', type: 'uuid' })
+  trackId!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+}

@@ -53,6 +53,8 @@ export async function GET(req: Request) {
         ends_at: c.endsAt,
         location: c.location,
         timezone: c.timezone,
+        max_tracks_per_team: c.maxTracksPerTeam ?? 1,
+        allow_track_change: c.allowTrackChange ?? false,
         role: p?.role ?? 'participant',
         checked_in: p?.checkedIn ?? false,
         coc_accepted: p?.cocAccepted ?? false,
