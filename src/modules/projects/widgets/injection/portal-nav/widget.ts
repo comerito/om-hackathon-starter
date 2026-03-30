@@ -14,7 +14,7 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'projects.portal-my-project', label: 'My Project', labelKey: 'projects.portal.nav.myProject', icon: 'lucide:folder-code', href: `${prefix}/project`, groupId: 'hackathon', groupLabel: 'Hackathon', groupOrder: 2 },
+      { id: 'projects.portal-my-project', label: 'My Project', labelKey: 'projects.portal.nav.myProject', icon: 'lucide:folder-code', href: `${prefix}/project`, groupId: 'hackathon', groupLabel: 'Hackathon', groupLabelKey: 'projects.portal.nav.groupHackathon', groupOrder: 2 },
     ]
   },
 }

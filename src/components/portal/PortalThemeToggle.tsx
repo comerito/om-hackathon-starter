@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Sun, Moon, Monitor } from 'lucide-react'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 
 type Theme = 'light' | 'dark' | 'system'
@@ -19,6 +20,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function PortalThemeToggle({ className }: { className?: string }) {
+  const t = useT()
   const [theme, setTheme] = React.useState<Theme>('system')
 
   React.useEffect(() => {
@@ -55,7 +57,12 @@ export function PortalThemeToggle({ className }: { className?: string }) {
   }, [])
 
   const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'
+  const label = theme === 'dark'
+    ? t('common.theme.dark', 'Dark')
+    : theme === 'light'
+      ? t('common.theme.light', 'Light')
+      : t('common.theme.system', 'System')
+  const title = t('common.theme.toggle', 'Toggle theme')
 
   return (
     <button
@@ -65,8 +72,8 @@ export function PortalThemeToggle({ className }: { className?: string }) {
         'rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 dark:hover:bg-white/10 transition-colors',
         className,
       )}
-      aria-label={`Theme: ${label}. Click to change.`}
-      title={`Theme: ${label}`}
+      aria-label={`${title}: ${label}`}
+      title={`${title}: ${label}`}
     >
       <Icon className="size-[18px]" />
     </button>

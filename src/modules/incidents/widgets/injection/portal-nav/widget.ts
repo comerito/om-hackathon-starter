@@ -12,7 +12,7 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'incidents.portal-report', label: 'Report Incident', labelKey: 'incidents.portal.nav.report', icon: 'lucide:shield-alert', href: `${prefix}/incident`, groupId: 'tools', groupLabel: 'Tools', groupOrder: 6 },
+      { id: 'incidents.portal-report', label: 'Report Incident', labelKey: 'incidents.portal.nav.report', icon: 'lucide:shield-alert', href: `${prefix}/incident`, groupId: 'tools', groupLabel: 'Tools', groupLabelKey: 'incidents.portal.nav.groupTools', groupOrder: 6 },
     ]
   },
 }

@@ -32,7 +32,7 @@ type PortalTopBarProps = {
 export function PortalTopBar({
   variant = 'full',
   title,
-  searchPlaceholder = 'Search resources...',
+  searchPlaceholder,
   userName,
   userRole,
   backHref,
@@ -43,8 +43,9 @@ export function PortalTopBar({
   const { auth, orgSlug } = usePortalContext()
   const t = useT()
   const displayName = userName || auth.user?.displayName || auth.user?.email || ''
-  const displayRole = userRole || 'PARTICIPANT'
+  const displayRole = userRole || t('competitions.portal.topBar.defaultRole', 'Participant')
   const prefix = `/${orgSlug}/portal`
+  const resolvedSearchPlaceholder = searchPlaceholder || t('competitions.portal.topBar.searchPlaceholder', 'Search resources...')
 
   return (
     <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900 px-3 sm:px-6" data-portal-handle="section:portal:header">
@@ -54,7 +55,9 @@ export function PortalTopBar({
           type="button"
           onClick={onMenuToggle}
           className="lg:hidden rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={mobileMenuOpen
+            ? t('competitions.portal.topBar.closeMenu', 'Close menu')
+            : t('competitions.portal.topBar.openMenu', 'Open menu')}
         >
           {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
@@ -97,7 +100,7 @@ export function PortalTopBar({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
             <input
               type="text"
-              placeholder={searchPlaceholder}
+              placeholder={resolvedSearchPlaceholder}
               className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
             />
           </div>
@@ -132,7 +135,7 @@ export function PortalTopBar({
               className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <Settings className="size-4 text-portal-secondary" />
-              My Profile
+              {t('competitions.portal.topBar.profile', 'My Profile')}
             </Link>
             <div className="mx-3 h-px bg-gray-100 dark:bg-white/10" />
             <button
@@ -141,7 +144,7 @@ export function PortalTopBar({
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="size-4" />
-              Sign Out
+              {t('competitions.portal.topBar.signOut', 'Sign Out')}
             </button>
           </div>
         </div>

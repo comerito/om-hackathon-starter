@@ -132,7 +132,7 @@ function TeamsTab({
                     <span
                       className={`text-xs rounded px-1.5 py-0.5 capitalize ${statusStyles[team.status] ?? 'bg-muted'}`}
                     >
-                      {team.status}
+                      {t(`teams.portal.myTeam.status.${team.status}`, team.status)}
                     </span>
                   </div>
                   {team.description && (

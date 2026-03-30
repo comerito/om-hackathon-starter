@@ -62,13 +62,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-const roundLabels: Record<string, string> = {
-  preliminary: 'Preliminary', final: 'Final', both: 'Both Rounds',
-}
-
 function TrackDetailContent({ trackId }: { trackId: string }) {
   const t = useT()
   const { orgSlug } = usePortalContext()
+  const roundLabels: Record<string, string> = {
+    preliminary: t('tracks.portal.round.preliminary', 'Preliminary'),
+    final: t('tracks.portal.round.final', 'Final'),
+    both: t('tracks.portal.round.both', 'Both Rounds'),
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['portal-track-detail', trackId],
@@ -76,7 +77,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
       const { ok, result } = await apiCall<{ track: TrackDetail; criteria: Criterion[]; attachments: Attachment[] }>(
         `/api/tracks/portal/track-detail?track_id=${trackId}`,
       )
-      if (!ok || !result) throw new Error('Failed to load track')
+      if (!ok || !result) throw new Error(t('tracks.portal.notFound', 'Track not found'))
       return result
     },
   })
@@ -183,7 +184,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
               <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('tracks.portal.trackSpecific', 'Track-Specific Criteria')}</h4>
               <div className="grid gap-3 sm:grid-cols-2">
                 {trackCriteria.map((c) => (
-                  <CriterionCard key={c.id} criterion={c} color={track.color} />
+                  <CriterionCard key={c.id} criterion={c} color={track.color} roundLabels={roundLabels} />
                 ))}
               </div>
             </div>
@@ -196,7 +197,7 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
               )}
               <div className="grid gap-3 sm:grid-cols-2">
                 {globalCriteria.map((c) => (
-                  <CriterionCard key={c.id} criterion={c} color="#6b7280" />
+                  <CriterionCard key={c.id} criterion={c} color="#6b7280" roundLabels={roundLabels} />
                 ))}
               </div>
             </div>
@@ -207,7 +208,8 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
   )
 }
 
-function CriterionCard({ criterion, color }: { criterion: Criterion; color: string }) {
+function CriterionCard({ criterion, color, roundLabels }: { criterion: Criterion; color: string; roundLabels: Record<string, string> }) {
+  const t = useT()
   return (
     <div className="rounded-lg border border-gray-100 dark:border-white/10 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -220,7 +222,7 @@ function CriterionCard({ criterion, color }: { criterion: Criterion; color: stri
         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{criterion.description}</p>
       )}
       <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
-        <span>Max: {criterion.max_score} pts</span>
+        <span>{t('tracks.portal.criteria.maxScore', 'Max: {count} pts', { count: criterion.max_score })}</span>
         <span>{roundLabels[criterion.round] ?? criterion.round}</span>
       </div>
     </div>

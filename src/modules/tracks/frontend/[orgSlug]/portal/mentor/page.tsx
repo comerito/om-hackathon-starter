@@ -81,10 +81,12 @@ export default function MentorTracksPage({ params }: { params: { orgSlug: string
                         <div key={team.id} className="py-2 flex items-center justify-between">
                           <div>
                             <span className="text-sm font-medium">{team.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">{team._teams?.memberCount ?? '?'} members</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {t('tracks.portal.mentor.members', '{count} members', { count: team._teams?.memberCount ?? '?' })}
+                            </span>
                           </div>
                           <span className={`text-xs rounded px-1.5 py-0.5 capitalize ${team.status === 'active' ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-slate-400'}`}>
-                            {team.status}
+                            {t(`tracks.portal.mentor.status.${team.status}`, team.status)}
                           </span>
                         </div>
                       ))}

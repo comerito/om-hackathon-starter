@@ -40,7 +40,7 @@ function QRContent() {
     <div className="flex flex-col items-center gap-6">
       <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 flex flex-col items-center max-w-md w-full">
         <h3 className="text-lg font-bold text-foreground">
-          {selected?.name ?? 'Competition'}
+          {selected?.name ?? t('competitions.portal.qr.fallbackCompetition', 'Competition')}
         </h3>
         <p className="text-sm text-portal-secondary mt-1">
           {auth.user?.displayName ?? auth.user?.email}
@@ -64,7 +64,9 @@ function QRContent() {
 
         {/* Fallback code for manual entry */}
         <div className="mt-4 rounded-lg bg-gray-50 dark:bg-white/5 px-4 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">Manual Code</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">
+            {t('competitions.portal.qr.manualCode', 'Manual Code')}
+          </p>
           <p className="font-mono text-xs text-foreground select-all">{data.id}</p>
         </div>
       </div>

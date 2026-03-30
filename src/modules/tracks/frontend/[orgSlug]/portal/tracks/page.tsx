@@ -205,7 +205,7 @@ function TracksContent() {
         newIds = myTrackIds.filter(id => id !== trackId)
       } else {
         if (myTrackIds.length >= maxTracksPerTeam) {
-          setTrackError(`Maximum ${maxTracksPerTeam} track(s) allowed per team`)
+          setTrackError(t('tracks.portal.maxTracksError', 'Maximum {count} track(s) allowed per team', { count: maxTracksPerTeam }))
           setSelectingTrackId(null)
           setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
           return
@@ -221,7 +221,7 @@ function TracksContent() {
         body: JSON.stringify({ team_id: myTeamId, track_ids: newIds }),
       })
       if (!ok || !(result as any)?.ok) {
-        setTrackError((result as any)?.error ?? 'Failed to update tracks')
+        setTrackError((result as any)?.error ?? t('tracks.portal.updateFailed', 'Failed to update tracks'))
         setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
       } else {
         refetchMembership()
@@ -374,7 +374,7 @@ function TracksContent() {
               <PortalBadge variant={hasSelectedTrack ? 'success' : 'default'} className="mb-4">
                 {hasSelectedTrack
                   ? (myTrackIds.length > 1
-                    ? `${myTrackIds.length} Tracks Selected`
+                    ? t('tracks.portal.multiSelected', '{count} Tracks Selected', { count: myTrackIds.length })
                     : t('tracks.portal.yourTrack', 'Your Track'))
                   : t('tracks.portal.featuredTrack', 'Featured Track')}
               </PortalBadge>

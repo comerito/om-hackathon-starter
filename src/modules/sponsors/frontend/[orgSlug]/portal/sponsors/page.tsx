@@ -17,13 +17,18 @@ const tierOrder: Record<string, number> = { title: 0, gold: 1, silver: 2, partne
 const tierBadgeVariants: Record<string, 'primary' | 'warning' | 'muted' | 'info'> = {
   title: 'primary', gold: 'warning', silver: 'muted', partner: 'info', in_kind: 'muted',
 }
-const tierLabels: Record<string, string> = { title: 'TITLE SPONSOR', gold: 'GOLD TIER', silver: 'SILVER TIER', partner: 'PARTNER', in_kind: 'IN-KIND' }
-
 const prizeIcons = [Trophy, Medal, Award, Star]
 
 function SponsorsContent() {
   const t = useT()
   const { selectedId: competitionId } = useCompetitionContext()
+  const tierLabels: Record<string, string> = {
+    title: t('sponsors.portal.tier.title', 'TITLE SPONSOR'),
+    gold: t('sponsors.portal.tier.gold', 'GOLD TIER'),
+    silver: t('sponsors.portal.tier.silver', 'SILVER TIER'),
+    partner: t('sponsors.portal.tier.partner', 'PARTNER'),
+    in_kind: t('sponsors.portal.tier.inKind', 'IN-KIND'),
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-sponsors', competitionId],
@@ -34,7 +39,7 @@ function SponsorsContent() {
     enabled: !!competitionId,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">Loading...</div>
+  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('sponsors.portal.loading', 'Loading...')}</div>
 
   const sponsors = (data?.sponsors ?? []).sort((a, b) => (tierOrder[a.tier] ?? 99) - (tierOrder[b.tier] ?? 99))
   const prizes = data?.prizes ?? []
@@ -46,7 +51,7 @@ function SponsorsContent() {
   if (sponsors.length === 0 && prizes.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        Sponsor information will appear here.
+        {t('sponsors.portal.empty', 'Sponsor information will appear here.')}
       </div>
     )
   }
@@ -55,16 +60,16 @@ function SponsorsContent() {
     <div className="space-y-10">
       {/* Hero Section */}
       <GradientCard className="relative overflow-hidden">
-        <SectionLabel className="text-white/80">Event Rewards</SectionLabel>
+        <SectionLabel className="text-white/80">{t('sponsors.portal.hero.label', 'Event Rewards')}</SectionLabel>
         <h2 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
-          Empowering<br />Innovation.
+          {t('sponsors.portal.hero.title', 'Empowering Innovation.')}
         </h2>
         <p className="mt-3 text-sm text-white/70 max-w-md">
-          Meet the partners making this editorial evolution possible and discover the rewards for the most impactful solutions.
+          {t('sponsors.portal.hero.description', 'Meet the partners making this editorial evolution possible and discover the rewards for the most impactful solutions.')}
         </p>
         {totalPrizePool > 0 && (
           <div className="mt-4 sm:mt-0 sm:absolute sm:top-6 sm:right-6 rounded-xl bg-white/20 backdrop-blur-sm px-5 py-3 w-fit">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">Total Pool</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">{t('sponsors.portal.totalPool', 'Total Pool')}</span>
             <p className="text-2xl font-bold text-white">${totalPrizePool.toLocaleString()}</p>
           </div>
         )}
@@ -74,8 +79,8 @@ function SponsorsContent() {
       {sponsors.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Our Sponsors</h2>
-            <SectionLabel>Industry Partners</SectionLabel>
+            <h2 className="text-xl font-bold text-foreground">{t('sponsors.portal.sponsors.title', 'Our Sponsors')}</h2>
+            <SectionLabel>{t('sponsors.portal.sponsors.label', 'Industry Partners')}</SectionLabel>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {sponsors.map(sponsor => (
@@ -102,7 +107,7 @@ function SponsorsContent() {
                 {sponsor.challenge_title && (
                   <div className="border-l-3 border-l-portal-primary bg-portal-primary/5 rounded-r-lg p-3 mt-3" style={{ borderLeftWidth: '3px' }}>
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-primary">
-                      Sponsor Challenge
+                      {t('sponsors.portal.challenge', 'Sponsor Challenge')}
                     </span>
                     <p className="text-sm font-semibold text-foreground mt-1">{sponsor.challenge_title}</p>
                     {sponsor.challenge_description && (
@@ -120,8 +125,8 @@ function SponsorsContent() {
       {prizes.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Prizes</h2>
-            <SectionLabel>Victory Rewards</SectionLabel>
+            <h2 className="text-xl font-bold text-foreground">{t('sponsors.portal.prizes.title', 'Prizes')}</h2>
+            <SectionLabel>{t('sponsors.portal.prizes.label', 'Victory Rewards')}</SectionLabel>
           </div>
           <div className="space-y-3">
             {prizes.map((prize, i) => {
@@ -143,7 +148,7 @@ function SponsorsContent() {
                   </div>
                   {prize.value && (
                     <div className="text-right shrink-0">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Value</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('sponsors.portal.prizes.value', 'Value')}</span>
                       <p className="text-xl font-bold text-portal-primary">{prize.value}</p>
                     </div>
                   )}

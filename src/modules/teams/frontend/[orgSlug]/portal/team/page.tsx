@@ -463,7 +463,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                   type="button"
                   onClick={handleClearSelection}
                   className="text-portal-secondary hover:text-foreground text-xs"
-                  aria-label="Clear"
+                  aria-label={t('common.clear', 'Clear')}
                 >
                   &times;
                 </button>
@@ -572,7 +572,7 @@ function LeaveTeamButton({ teamId, isOwner, memberCount, orgSlug, competitionSta
       router.refresh()
       window.location.reload()
     } else {
-      setError((result as any)?.error ?? 'Failed to leave team')
+      setError((result as any)?.error ?? t('teams.portal.myTeam.leaveFailed', 'Failed to leave team'))
     }
   }
 
@@ -720,7 +720,7 @@ function TeamView({
         newIds = selectedTrackIds.filter(id => id !== trackId)
       } else {
         if (selectedTrackIds.length >= maxTracksPerTeam) {
-          flash(`Maximum ${maxTracksPerTeam} track(s) allowed`, 'error')
+          flash(t('teams.portal.myTeam.maxTracksAllowed', 'Maximum {count} track(s) allowed', { count: maxTracksPerTeam }), 'error')
           return
         }
         newIds = [...selectedTrackIds, trackId]
@@ -777,10 +777,10 @@ function TeamView({
 
   // Milestones for the timeline
   const milestones = [
-    { label: 'Team formed', done: true },
-    { label: 'Track selected', done: selectedTrackIds.length > 0 },
-    { label: 'Project submitted', done: team.status === 'submitted' || team.status === 'presented' },
-    { label: 'Presentation done', done: team.status === 'presented' },
+    { label: t('teams.portal.myTeam.milestone.teamFormed', 'Team formed'), done: true },
+    { label: t('teams.portal.myTeam.milestone.trackSelected', 'Track selected'), done: selectedTrackIds.length > 0 },
+    { label: t('teams.portal.myTeam.milestone.projectSubmitted', 'Project submitted'), done: team.status === 'submitted' || team.status === 'presented' },
+    { label: t('teams.portal.myTeam.milestone.presentationDone', 'Presentation done'), done: team.status === 'presented' },
   ]
   const milestoneDoneCount = milestones.filter((m) => m.done).length
   const milestoneProgress = Math.round((milestoneDoneCount / milestones.length) * 100)
@@ -792,7 +792,7 @@ function TeamView({
         {/* Active Collaborators */}
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <SectionLabel>Active Collaborators</SectionLabel>
+            <SectionLabel>{t('teams.portal.myTeam.section.collaborators', 'Active Collaborators')}</SectionLabel>
             <PortalBadge variant="primary">{members.length}</PortalBadge>
           </div>
 
@@ -995,7 +995,7 @@ function TeamView({
       <div className="space-y-6">
         {/* Hackathon Progress */}
         <GradientCard>
-          <SectionLabel className="!text-white/70 mb-2 block">Hackathon Progress</SectionLabel>
+          <SectionLabel className="!text-white/70 mb-2 block">{t('teams.portal.myTeam.section.hackathonProgress', 'Hackathon Progress')}</SectionLabel>
           {selected?.ends_at ? (
             <>
               <p className="font-mono text-4xl font-bold leading-none tracking-tight text-white">
@@ -1005,10 +1005,10 @@ function TeamView({
                   return String(hours).padStart(2, '0')
                 })()}h
               </p>
-              <p className="mt-1 text-sm text-white/70">Remaining until final presentation</p>
+              <p className="mt-1 text-sm text-white/70">{t('teams.portal.myTeam.progress.remaining', 'Remaining until final presentation')}</p>
             </>
           ) : (
-            <p className="text-sm text-white/70">No end date set</p>
+            <p className="text-sm text-white/70">{t('teams.portal.myTeam.progress.noEndDate', 'No end date set')}</p>
           )}
         </GradientCard>
 
@@ -1017,7 +1017,7 @@ function TeamView({
           {/* Team header with colored accent */}
           <div className="relative px-6 pt-5 pb-4">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-portal-primary via-portal-primary-light to-portal-primary" />
-            <SectionLabel className="mb-2 block">Team Info</SectionLabel>
+            <SectionLabel className="mb-2 block">{t('teams.portal.myTeam.section.teamInfo', 'Team Info')}</SectionLabel>
             <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{team.name}</h3>
             {team.description && (
               <p className="mt-1 text-xs leading-relaxed text-portal-secondary">{team.description}</p>
@@ -1034,7 +1034,7 @@ function TeamView({
                   : team.status === 'disqualified' ? 'danger'
                     : 'muted'
               }>
-                {team.status}
+                {t(`teams.portal.myTeam.status.${team.status}`, team.status)}
               </PortalBadge>
             </div>
 
@@ -1048,7 +1048,7 @@ function TeamView({
                     <path d="M5.865 17 4 22h16l-1.865-5" />
                   </svg>
                 )}
-                {membership.role}
+                {t(`teams.portal.myTeam.role.${membership.role}`, membership.role)}
               </span>
             </div>
 
@@ -1104,8 +1104,16 @@ function TeamView({
 
         {/* Milestones */}
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-          <SectionLabel className="mb-3 block">Milestones</SectionLabel>
-          <ProgressBar value={milestoneProgress} label={`${milestoneDoneCount} of ${milestones.length} complete`} size="sm" className="mb-4" />
+          <SectionLabel className="mb-3 block">{t('teams.portal.myTeam.section.milestones', 'Milestones')}</SectionLabel>
+          <ProgressBar
+            value={milestoneProgress}
+            label={t('teams.portal.myTeam.milestoneProgress', '{completed} of {total} complete', {
+              completed: milestoneDoneCount,
+              total: milestones.length,
+            })}
+            size="sm"
+            className="mb-4"
+          />
           <div className="space-y-0">
             {milestones.map((ms, idx) => (
               <div key={idx} className="flex items-start gap-3 relative">
@@ -1226,7 +1234,7 @@ export default function MyTeamPage({ params }: { params: { orgSlug: string } }) 
   return (
     <PortalCompetitionLayout>
       <PortalPageTitle
-        label="Workspace"
+        label={t('teams.portal.myTeam.label', 'Workspace')}
         title={t('teams.portal.myTeam.title', 'My Team')}
         rightElement={null}
       />

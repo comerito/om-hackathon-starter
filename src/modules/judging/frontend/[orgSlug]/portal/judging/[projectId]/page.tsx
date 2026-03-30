@@ -95,7 +95,7 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
         flash(submit ? t('judging.portal.scoreSubmitted', 'Score submitted!') : t('judging.portal.scoreSaved', 'Score saved'), 'success')
         if (submit) queryClient.invalidateQueries({ queryKey: ['portal-judge-assignments'] })
       } else {
-        flash(result?.error ?? 'Failed to save', 'error')
+        flash(result?.error ?? t('judging.portal.saveFailed', 'Failed to save'), 'error')
       }
     } finally {
       setSaving(false); setSubmitting(false)
@@ -174,7 +174,7 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
                         ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30'
                         : 'bg-muted hover:bg-muted/80 text-foreground'
                     } ${isSubmitted ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-                    aria-label={`Score ${i} out of ${criterion.max_score}`}
+                    aria-label={t('judging.portal.scoreAria', 'Score {score} out of {max}', { score: i, max: criterion.max_score })}
                   >
                     {i}
                   </button>

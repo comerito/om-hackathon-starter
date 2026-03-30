@@ -275,7 +275,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         queryClient.invalidateQueries({ queryKey: ['portal-my-project'] })
         setShowSubmitConfirm(false)
       } else {
-        const errorMsg = result?.details?.join(', ') ?? result?.error ?? 'Submission failed'
+        const errorMsg = result?.details?.join(', ') ?? result?.error ?? t('projects.portal.submitFailed', 'Submission failed')
         flash(errorMsg, 'error')
       }
     } finally {
@@ -334,9 +334,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
   // Completeness check
   const requiredFields = [
-    { label: 'Title', filled: !!title.trim() },
-    { label: 'Description', filled: !!description.trim() },
-    { label: 'Originality disclosure', filled: !usesPreexistingCode || !!preexistingCodeDescription.trim() },
+    { label: t('projects.fields.checklist.title', 'Title'), filled: !!title.trim() },
+    { label: t('projects.fields.checklist.description', 'Description'), filled: !!description.trim() },
+    { label: t('projects.fields.checklist.originality', 'Originality disclosure'), filled: !usesPreexistingCode || !!preexistingCodeDescription.trim() },
   ]
   const filledCount = requiredFields.filter(f => f.filled).length
   const totalRequired = requiredFields.length
@@ -350,7 +350,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     const diff = Math.round((now.getTime() - new Date(lastSaved).getTime()) / 1000)
     if (diff < 60) return t('projects.portal.autosavedJustNow', 'Autosaved just now')
     const mins = Math.floor(diff / 60)
-    return `Autosaved ${mins}m ago`
+    return t('projects.portal.autosavedMinutesAgo', 'Autosaved {count}m ago', { count: mins })
   }, [saving, autoSaveFailed, lastSaved, now, t])
 
   /* -- No team state -- */
@@ -443,9 +443,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             {trackInfo && (
               <div className="size-2.5 rounded-full" style={{ backgroundColor: trackInfo.color || '#6366f1' }} />
             )}
-            <span>{trackInfo?.name ?? 'Track'}</span>
+            <span>{trackInfo?.name ?? t('projects.portal.trackFallback', 'Track')}</span>
             <PortalBadge variant={p.status === 'published' ? 'success' : p.status === 'draft' ? 'muted' : 'info'}>
-              {p.status}
+              {t(`projects.portal.status.${p.status}`, p.status)}
             </PortalBadge>
           </button>
         )
@@ -511,22 +511,22 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           <div className="grid gap-3 sm:grid-cols-2">
             {project?.demo_url && (
               <a href={project.demo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Link2 className="size-4" /> Demo
+                <Link2 className="size-4" /> {t('projects.portal.link.demo', 'Demo')}
               </a>
             )}
             {project?.repo_url && (
               <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Code className="size-4" /> Repository
+                <Code className="size-4" /> {t('projects.portal.link.repository', 'Repository')}
               </a>
             )}
             {project?.video_url && (
               <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Video className="size-4" /> Video
+                <Video className="size-4" /> {t('projects.portal.link.video', 'Video')}
               </a>
             )}
             {project?.presentation_url && (
               <a href={project.presentation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Link2 className="size-4" /> Presentation
+                <Link2 className="size-4" /> {t('projects.portal.link.presentation', 'Presentation')}
               </a>
             )}
           </div>
@@ -604,7 +604,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={255}
                 className="rounded-xl bg-gray-900 text-white px-4 py-3 w-full text-sm focus:outline-none focus:ring-2 focus:ring-portal-primary/50"
-                placeholder="Enter your project name"
+                placeholder={t('projects.fields.title', 'Project Title')}
               />
             </div>
 
@@ -620,7 +620,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 onChange={(e) => setTagline(e.target.value)}
                 maxLength={140}
                 className="rounded-xl bg-gray-900 text-white px-4 py-3 w-full text-sm focus:outline-none focus:ring-2 focus:ring-portal-primary/50"
-                placeholder="A short summary (max 140 chars)"
+                placeholder={t('projects.fields.tagline', 'Tagline')}
               />
             </div>
 
@@ -632,7 +632,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
-                placeholder="Describe your project in detail..."
+                placeholder={t('projects.fields.description', 'Description')}
               />
             </div>
 
@@ -644,7 +644,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   className={cn(textareaClass, 'min-h-[100px]')}
                   value={problemStatement}
                   onChange={(e) => setProblemStatement(e.target.value)}
-                  placeholder="What problem does this solve?"
+                  placeholder={t('projects.fields.problemStatement', 'Problem Statement')}
                 />
               </div>
               <div>
@@ -653,7 +653,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   className={cn(textareaClass, 'min-h-[100px]')}
                   value={solution}
                   onChange={(e) => setSolution(e.target.value)}
-                  placeholder="How does your project solve it?"
+                  placeholder={t('projects.fields.solution', 'Solution')}
                 />
               </div>
             </div>
@@ -672,7 +672,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                       type="button"
                       onClick={() => handleRemoveTech(tag)}
                       className="ml-0.5 hover:text-red-500 transition-colors"
-                      aria-label={`Remove ${tag}`}
+                      aria-label={t('projects.portal.removeTech', 'Remove {tag}', { tag })}
                     >
                       &times;
                     </button>
@@ -764,7 +764,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   value={demoUrl}
                   onChange={(e) => setDemoUrl(e.target.value)}
                   className={cn(inputClass, 'pl-10')}
-                  placeholder="https://"
+                  placeholder={t('projects.fields.demoUrl', 'Demo URL')}
                 />
               </div>
             </div>
@@ -779,7 +779,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   value={repoUrl}
                   onChange={(e) => setRepoUrl(e.target.value)}
                   className={cn(inputClass, 'pl-10')}
-                  placeholder="https://github.com/..."
+                  placeholder={t('projects.fields.repoUrl', 'Repository URL')}
                 />
               </div>
             </div>
@@ -794,7 +794,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   className={cn(inputClass, 'pl-10')}
-                  placeholder="https://"
+                  placeholder={t('projects.fields.videoUrl', 'Video Pitch')}
                 />
               </div>
             </div>
@@ -809,7 +809,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   value={presentationUrl}
                   onChange={(e) => setPresentationUrl(e.target.value)}
                   className={cn(inputClass, 'pl-10')}
-                  placeholder="https://"
+                  placeholder={t('projects.fields.presentationUrl', 'Presentation URL')}
                 />
               </div>
             </div>
@@ -843,7 +843,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                   className={textareaClass}
                   value={preexistingCodeDescription}
                   onChange={(e) => setPreexistingCodeDescription(e.target.value)}
-                  placeholder="e.g., Started from a React template, used open-source auth library..."
+                  placeholder={t('projects.fields.preexistingCodeDesc', 'Describe the pre-existing code used')}
                 />
               </div>
             )}
@@ -854,7 +854,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 className={textareaClass}
                 value={builtDuringDescription}
                 onChange={(e) => setBuiltDuringDescription(e.target.value)}
-                placeholder="Describe what your team built from scratch during the event..."
+                placeholder={t('projects.fields.builtDuringDesc', 'What was built during the hackathon')}
               />
             </div>
           </div>

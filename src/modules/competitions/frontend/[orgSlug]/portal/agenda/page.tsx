@@ -31,12 +31,6 @@ const TYPE_BADGE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'd
   demo_session: 'warning', custom: 'primary',
 }
 
-const DOT_COLORS: Record<string, string> = {
-  happening: 'bg-portal-primary',
-  past: 'bg-gray-300 dark:bg-slate-600',
-  future: 'bg-gray-200 dark:bg-slate-700',
-}
-
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toUpperCase()
 }
@@ -49,11 +43,6 @@ function getDayLabel(dateStr: string): string {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString([], { weekday: 'long' })
 }
 
-function isHappeningNow(startsAt: string, endsAt: string): boolean {
-  const now = Date.now()
-  return now >= new Date(startsAt).getTime() && now <= new Date(endsAt).getTime()
-}
-
 function getTimeStatus(startsAt: string, endsAt: string): 'happening' | 'past' | 'future' {
   const now = Date.now()
   if (now >= new Date(startsAt).getTime() && now <= new Date(endsAt).getTime()) return 'happening'
@@ -64,9 +53,11 @@ function getTimeStatus(startsAt: string, endsAt: string): 'happening' | 'past' |
 /* ---------- Timeline Event Card ---------- */
 
 function TimelineEventCard({ item }: { item: AgendaItem }) {
+  const t = useT()
   const status = getTimeStatus(item.starts_at, item.ends_at)
   const happening = status === 'happening'
-  const typeLabel = item.type.replace(/_/g, ' ')
+  const typeKey = item.type === 'demo_session' ? 'demoSession' : item.type
+  const typeLabel = t(`competitions.portal.agenda.type.${typeKey}`, item.type.replace(/_/g, ' '))
 
   return (
     <div className="flex gap-4">
@@ -93,7 +84,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
             {formatTime(item.starts_at)} — {formatTime(item.ends_at)}
           </span>
           {happening && (
-            <PortalBadge variant="primary">Happening Now</PortalBadge>
+            <PortalBadge variant="primary">{t('competitions.portal.agenda.happeningNow', 'Happening Now')}</PortalBadge>
           )}
         </div>
 
@@ -133,7 +124,7 @@ function AgendaContent() {
       const { ok, result } = await apiCall<{ items: AgendaItem[] }>(
         `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=agenda`,
       )
-      if (!ok || !result) throw new Error('Failed to load')
+      if (!ok || !result) throw new Error(t('competitions.portal.agenda.error', 'Failed to load'))
       return result
     },
     enabled: !!selectedId,
@@ -162,19 +153,19 @@ function AgendaContent() {
   if (!selectedId) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        Select a competition to view its agenda.
+        {t('competitions.portal.agenda.noCompetition', 'Select a competition to view its agenda.')}
       </div>
     )
   }
 
   if (isLoading) {
-    return <div className="py-12 text-center text-portal-secondary">Loading...</div>
+    return <div className="py-12 text-center text-portal-secondary">{t('competitions.portal.agenda.loading', 'Loading...')}</div>
   }
 
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        No agenda items yet. The schedule will be published soon.
+        {t('competitions.portal.agenda.empty', 'No agenda items yet. The schedule will be published soon.')}
       </div>
     )
   }
@@ -229,11 +220,16 @@ function AgendaContent() {
         {/* Session completion */}
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">
-            {selectedDay ? getDayLabel(selectedDay) : 'Day'} Completion
+            {t('competitions.portal.agenda.dayCompletion', '{day} Completion', {
+              day: selectedDay ? getDayLabel(selectedDay) : t('competitions.portal.agenda.dayFallback', 'Day'),
+            })}
           </h4>
           <ProgressBar
             value={mainSessions.length > 0 ? (completedSessions / mainSessions.length) * 100 : 0}
-            label={`${completedSessions} of ${mainSessions.length} main sessions completed`}
+            label={t('competitions.portal.agenda.sessionProgress', '{completed} of {total} main sessions completed', {
+              completed: completedSessions,
+              total: mainSessions.length,
+            })}
             size="md"
           />
         </div>
@@ -251,7 +247,9 @@ function AgendaContent() {
                   : { background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)' }}
               >
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-1">Featured Curator</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-1">
+                    {t('competitions.portal.agenda.featuredCurator', 'Featured Curator')}
+                  </p>
                   <p className="text-sm font-bold text-white">{featured.speaker_name}</p>
                   <p className="text-xs text-white/70">{featured.speaker_bio || featured.title}</p>
                 </div>
@@ -267,8 +265,8 @@ function AgendaContent() {
               <HelpCircle className="size-4 text-portal-primary" />
             </div>
             <div>
-              <p className="text-xs font-bold text-foreground">Need help?</p>
-              <p className="text-[11px] text-portal-secondary">Curators are available in the Slack #help channel 24/7.</p>
+              <p className="text-xs font-bold text-foreground">{t('competitions.portal.agenda.needHelp.title', 'Need help?')}</p>
+              <p className="text-[11px] text-portal-secondary">{t('competitions.portal.agenda.needHelp.description', 'Curators are available in the Slack #help channel 24/7.')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -276,8 +274,8 @@ function AgendaContent() {
               <Wifi className="size-4 text-portal-primary" />
             </div>
             <div>
-              <p className="text-xs font-bold text-foreground">Wi-Fi Network</p>
-              <p className="text-[11px] text-portal-secondary">SSID: HACKFEST_24<br />Pass: hackathon_2024</p>
+              <p className="text-xs font-bold text-foreground">{t('competitions.portal.agenda.wifi.title', 'Wi-Fi Network')}</p>
+              <p className="text-[11px] text-portal-secondary whitespace-pre-line">{t('competitions.portal.agenda.wifi.details', 'SSID: HACKFEST_24\nPass: hackathon_2024')}</p>
             </div>
           </div>
         </div>
@@ -301,7 +299,10 @@ export default function AgendaPortalPage({ params }: { params: { orgSlug: string
 
   return (
     <PortalCompetitionLayout>
-      <PortalPageTitle label="Event Timeline" title="The Agenda" />
+      <PortalPageTitle
+        label={t('competitions.portal.agenda.page.label', 'Event Timeline')}
+        title={t('competitions.portal.agenda.page.title', 'The Agenda')}
+      />
       <AgendaContent />
     </PortalCompetitionLayout>
   )

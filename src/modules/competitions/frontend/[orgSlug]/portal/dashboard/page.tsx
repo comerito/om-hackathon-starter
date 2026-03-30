@@ -17,7 +17,6 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Rocket,
   Copy,
   Info,
   AlertTriangle,
@@ -57,20 +56,6 @@ type MyMembershipResponse = {
   members: TeamMemberInfo[]
 }
 
-/* ---------- stage titles ---------- */
-
-const stageDisplayTitles: Record<string, string> = {
-  draft: 'Preparing',
-  open: 'Registration Open',
-  team_formation: 'Team Formation',
-  track_selection: 'Track Selection',
-  hacking: 'Hacking in Progress',
-  demos: 'Demo Day',
-  deliberation: 'Judging in Progress',
-  finished: 'Results Announced',
-  archived: 'Competition Archived',
-}
-
 const priorityIcons: Record<string, { icon: 'info' | 'warning' | 'urgent'; bg: string; fg: string }> = {
   info: { icon: 'info', bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-500 dark:text-blue-400' },
   warning: { icon: 'warning', bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-500 dark:text-amber-400' },
@@ -92,18 +77,19 @@ function getTimeRemaining(endDate: string): { hours: number; minutes: number } {
   return { hours: Math.floor(diff / (1000 * 60 * 60)), minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)) }
 }
 
-function formatTimeAgo(dateStr: string): string {
+function formatTimeAgo(dateStr: string, t: ReturnType<typeof useT>): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins} MINUTES AGO`
+  if (mins < 60) return t('competitions.portal.dashboard.timeAgo.minutes', '{count} minutes ago', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} HOURS AGO`
-  return `${Math.floor(hours / 24)} DAYS AGO`
+  if (hours < 24) return t('competitions.portal.dashboard.timeAgo.hours', '{count} hours ago', { count: hours })
+  return t('competitions.portal.dashboard.timeAgo.days', '{count} days ago', { count: Math.floor(hours / 24) })
 }
 
 /* ---------- announcement card ---------- */
 
 function AnnouncementCard({ announcement }: { announcement: Announcement }) {
+  const t = useT()
   const [expanded, setExpanded] = React.useState(false)
   const contentRef = React.useRef<HTMLParagraphElement>(null)
   const [isClamped, setIsClamped] = React.useState(false)
@@ -115,6 +101,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
   const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
+  const categoryLabel = t(`competitions.portal.dashboard.announcements.category.${category}`, category)
 
   // Detect whether text is actually clamped
   React.useEffect(() => {
@@ -127,10 +114,10 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
-            {category}
+            {categoryLabel}
           </PortalBadge>
           <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
-            {formatTimeAgo(announcement.published_at)}
+            {formatTimeAgo(announcement.published_at, t)}
           </span>
         </div>
         <div className={`size-8 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
@@ -160,7 +147,9 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
             onClick={() => setExpanded(prev => !prev)}
             className="flex items-center gap-0.5 text-xs font-medium text-portal-primary hover:text-portal-primary-light transition-colors"
           >
-            {expanded ? 'Show less' : 'Read more'}
+            {expanded
+              ? t('competitions.portal.dashboard.announcements.showLess', 'Show less')
+              : t('competitions.portal.dashboard.announcements.readMore', 'Read more')}
             {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
           </button>
         )}
@@ -174,20 +163,28 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
 /* ---------- quick actions ---------- */
 
-const quickActions = [
-  { id: 'tracks', icon: PlusCircle, label: 'Join a New Track', path: '/portal/tracks' },
-  { id: 'teams', icon: UserSearch, label: 'Find a Teammate', path: '/portal/teams' },
-  { id: 'help', icon: HelpCircle, label: 'Request Mentor Help', path: '/portal/participants' },
-]
-
 /* ---------- dashboard content ---------- */
 
 function DashboardContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const { selected, selectedId } = useCompetitionContext()
-  const { auth } = usePortalContext()
-  const userId = auth.user?.id
   const prefix = `/${orgSlug}`
+  const stageDisplayTitles: Record<string, string> = {
+    draft: t('competitions.portal.dashboard.stage.draft', 'Preparing'),
+    open: t('competitions.portal.dashboard.stage.open', 'Registration Open'),
+    team_formation: t('competitions.portal.dashboard.stage.teamFormation', 'Team Formation'),
+    track_selection: t('competitions.portal.dashboard.stage.trackSelection', 'Track Selection'),
+    hacking: t('competitions.portal.dashboard.stage.hacking', 'Hacking in Progress'),
+    demos: t('competitions.portal.dashboard.stage.demos', 'Demo Day'),
+    deliberation: t('competitions.portal.dashboard.stage.deliberation', 'Judging in Progress'),
+    finished: t('competitions.portal.dashboard.stage.finished', 'Results Announced'),
+    archived: t('competitions.portal.dashboard.stage.archived', 'Competition Archived'),
+  }
+  const quickActions = [
+    { id: 'tracks', icon: PlusCircle, label: t('competitions.portal.dashboard.quickActions.tracks', 'Join a New Track'), path: '/portal/tracks' },
+    { id: 'teams', icon: UserSearch, label: t('competitions.portal.dashboard.quickActions.teams', 'Find a Teammate'), path: '/portal/teams' },
+    { id: 'help', icon: HelpCircle, label: t('competitions.portal.dashboard.quickActions.help', 'Request Mentor Help'), path: '/portal/participants' },
+  ]
 
   // Fetch announcements
   const { data: announcementsData } = useQuery({
@@ -197,7 +194,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
       const { ok, result } = await apiCall<{ items: Announcement[] }>(
         `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=announcements`,
       )
-      if (!ok || !result) throw new Error('Failed to load announcements')
+      if (!ok || !result) throw new Error(t('competitions.portal.dashboard.errors.announcements', 'Failed to load announcements'))
       return result
     },
     enabled: !!selectedId,
@@ -225,7 +222,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
       const { ok, result } = await apiCall<{ items: AgendaItem[] }>(
         `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=agenda`,
       )
-      if (!ok || !result) throw new Error('Failed to load agenda')
+      if (!ok || !result) throw new Error(t('competitions.portal.dashboard.errors.agenda', 'Failed to load agenda'))
       return result
     },
     enabled: !!selectedId,
@@ -286,7 +283,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
     if (agendaDeadline) candidates.push({ title: agendaDeadline.title, date: agendaDeadline.starts_at })
     if (nextMilestone) candidates.push({ title: nextMilestone.name, date: nextMilestone.due_date })
     // Also consider the competition's project submission deadline
-    if (selected.ends_at) candidates.push({ title: 'Final Submission', date: selected.ends_at })
+    if (selected.ends_at) candidates.push({ title: t('competitions.portal.dashboard.finalSubmission', 'Final Submission'), date: selected.ends_at })
     // Pick the soonest future one, or the soonest overall if all are past
     const future = candidates.filter(c => new Date(c.date) > now)
     if (future.length > 0) return future.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
@@ -305,9 +302,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Hero Status Section */}
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-          <SectionLabel>Hackathon Status</SectionLabel>
+          <SectionLabel>{t('competitions.portal.dashboard.section.status', 'Hackathon Status')}</SectionLabel>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            {stageDisplayTitles[stage] ?? 'In Progress'}
+            {stageDisplayTitles[stage] ?? t('competitions.portal.dashboard.stage.fallback', 'In Progress')}
           </h1>
           <div className="mt-3 sm:mt-4 flex flex-wrap items-end gap-3 sm:gap-8">
             <div>
@@ -315,12 +312,16 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               <span className="text-sm sm:text-lg font-bold text-portal-secondary ml-0.5 sm:ml-1">h</span>
               <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground ml-2 sm:ml-3">{String(timeLeft.minutes).padStart(2, '0')}</span>
               <span className="text-sm sm:text-lg font-bold text-portal-secondary ml-0.5 sm:ml-1">m</span>
-              <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">Remaining</span>
+              <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">
+                {t('competitions.portal.dashboard.remaining', 'Remaining')}
+              </span>
             </div>
             {milestones.length > 0 && (
               <div>
                 <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">{String(milestones.length).padStart(2, '0')}</span>
-                <span className="ml-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">Milestones</span>
+                <span className="ml-1 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">
+                  {t('competitions.portal.dashboard.milestones', 'Milestones')}
+                </span>
               </div>
             )}
           </div>
@@ -332,7 +333,10 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
             >
               <ProgressBar
                 value={milestones.length > 0 ? (completedMilestones / milestones.length) * 100 : 0}
-                label={`${completedMilestones} of ${milestones.length} milestones completed`}
+                label={t('competitions.portal.dashboard.milestonesProgress', '{completed} of {total} milestones completed', {
+                  completed: completedMilestones,
+                  total: milestones.length,
+                })}
                 size="md"
               />
             </button>
@@ -343,8 +347,8 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
         <div className="flex flex-col gap-4">
           {/* Stat cards row */}
           <div className="grid grid-cols-2 gap-4">
-            <StatCard icon={Users} value={participantCount.toLocaleString()} label="Participants" />
-            <StatCard icon={Compass} value={String(trackCount).padStart(2, '0')} label="Active Tracks" variant="primary" />
+            <StatCard icon={Users} value={participantCount.toLocaleString()} label={t('competitions.portal.dashboard.stats.participants', 'Participants')} />
+            <StatCard icon={Compass} value={String(trackCount).padStart(2, '0')} label={t('competitions.portal.dashboard.stats.activeTracks', 'Active Tracks')} variant="primary" />
           </div>
 
           {/* Next Deadline — click opens milestones drawer */}
@@ -354,7 +358,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               onClick={() => window.dispatchEvent(new Event('open-milestones-drawer'))}
               className="flex-1 flex flex-col justify-center rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 sm:px-5 sm:py-4 text-left cursor-pointer hover:border-portal-primary/30 hover:shadow-sm transition-all"
             >
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Next Deadline</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
+                {t('competitions.portal.dashboard.nextDeadline', 'Next Deadline')}
+              </span>
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mt-1 gap-1">
                 <p className="text-sm font-bold text-foreground">{nextDeadline.title}</p>
                 <div className="sm:text-right">
@@ -362,7 +368,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
                     {new Date(nextDeadline.date).toLocaleDateString([], { weekday: 'long' })},{' '}
                     {new Date(nextDeadline.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
-                  <p className="text-[10px] text-portal-secondary">{selected.timezone ?? 'Local Time'}</p>
+                  <p className="text-[10px] text-portal-secondary">
+                    {selected.timezone ?? t('competitions.portal.dashboard.localTime', 'Local Time')}
+                  </p>
                 </div>
               </div>
             </button>
@@ -375,12 +383,14 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
         {/* Left: Announcements */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-foreground">Latest Announcements</h2>
+            <h2 className="text-lg font-bold text-foreground">
+              {t('competitions.portal.dashboard.latestAnnouncements', 'Latest Announcements')}
+            </h2>
             <Link
               href={`${prefix}/portal/announcements`}
               className="text-xs font-semibold text-portal-primary hover:text-portal-primary-light transition-colors"
             >
-              View All
+              {t('competitions.portal.dashboard.viewAll', 'View All')}
             </Link>
           </div>
           <div className="space-y-3">
@@ -390,7 +400,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               ))
             ) : (
               <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-6 text-center text-sm text-portal-secondary">
-                No announcements yet.
+                {t('competitions.portal.dashboard.noAnnouncements', 'No announcements yet.')}
               </div>
             )}
           </div>
@@ -399,7 +409,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               type="button"
               className="mt-4 flex w-full items-center justify-center gap-1 text-xs font-medium text-portal-secondary hover:text-foreground transition-colors"
             >
-              Load Older Announcements
+              {t('competitions.portal.dashboard.loadOlder', 'Load Older Announcements')}
             </button>
           )}
         </div>
@@ -409,7 +419,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
           {/* Quick Actions */}
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
-              Quick Actions
+              {t('competitions.portal.dashboard.quickActions', 'Quick Actions')}
             </span>
             <div className="mt-2 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 divide-y divide-gray-50 dark:divide-white/5">
               {quickActions.map((action) => (
@@ -431,7 +441,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
             <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-3">
                 <div className="size-2 rounded-full bg-portal-primary" />
-                <span className="text-sm font-bold text-foreground">My Team: {team.name}</span>
+                <span className="text-sm font-bold text-foreground">
+                  {t('competitions.portal.dashboard.myTeam', 'My Team: {name}', { name: team.name })}
+                </span>
               </div>
               <div className="space-y-2.5">
                 {members.slice(0, 3).map((member) => (
@@ -449,11 +461,14 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               </div>
               <div className="mt-4">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-                  Team Capacity
+                  {t('competitions.portal.dashboard.teamCapacity', 'Team Capacity')}
                 </span>
                 <ProgressBar
                   value={(members.length / maxTeamSize) * 100}
-                  label={`${members.length} of ${maxTeamSize} Slots Filled`}
+                  label={t('competitions.portal.dashboard.teamCapacityProgress', '{filled} of {total} slots filled', {
+                    filled: members.length,
+                    total: maxTeamSize,
+                  })}
                   size="sm"
                   className="mt-1"
                 />
@@ -464,17 +479,22 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
           {/* Resources Gradient Card */}
           <GradientCard>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">
-              Resources
+              {t('competitions.portal.dashboard.resources', 'Resources')}
             </span>
-            <h3 className="mt-1 text-lg font-bold text-white">Submission Guide</h3>
+            <h3 className="mt-1 text-lg font-bold text-white">
+              {t('competitions.portal.dashboard.submissionGuide', 'Submission Guide')}
+            </h3>
             <p className="mt-2 text-xs leading-relaxed text-white/80">
-              Learn how to package your project for final judging. Includes code repo rules and video specs.
+              {t(
+                'competitions.portal.dashboard.submissionGuideDescription',
+                'Learn how to package your project for final judging. Includes code repo rules and video specs.',
+              )}
             </p>
             <Link
               href={`${prefix}/portal/project`}
               className="mt-4 inline-flex items-center justify-center rounded-md bg-white/20 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
             >
-              Read Guide
+              {t('competitions.portal.dashboard.readGuide', 'Read Guide')}
             </Link>
           </GradientCard>
         </div>
@@ -486,7 +506,6 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
 /* ---------- page component ---------- */
 
 export default function DashboardPortalPage({ params }: { params: { orgSlug: string } }) {
-  const t = useT()
   const router = useRouter()
   const { auth } = usePortalContext()
 

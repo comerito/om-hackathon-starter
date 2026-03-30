@@ -2,6 +2,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
@@ -59,6 +60,7 @@ function getInitials(name: string): string {
 /* ---------- skill input ---------- */
 
 function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: string[]) => void }) {
+  const t = useT()
   const [input, setInput] = React.useState('')
 
   function addSkill() {
@@ -83,7 +85,7 @@ function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: stri
       </div>
       <div className="flex gap-2">
         <Input
-          placeholder="Add a skill..."
+          placeholder={t('competitions.portal.profile.skills.placeholder', 'Add a skill...')}
           value={input}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
           onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
@@ -104,6 +106,7 @@ function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: stri
 /* ---------- profile content ---------- */
 
 function ProfileContent() {
+  const t = useT()
   const { auth } = usePortalContext()
   const queryClient = useQueryClient()
   const user = auth.user!
@@ -181,12 +184,12 @@ function ProfileContent() {
           body: JSON.stringify({ avatar_url: newAvatarUrl }),
         })
         queryClient.invalidateQueries({ queryKey: ['portal-my-profile'] })
-        flash('Avatar updated', 'success')
+        flash(t('competitions.portal.profile.flash.avatarUpdated', 'Avatar updated'), 'success')
       } else {
-        flash('Failed to upload avatar', 'error')
+        flash(t('competitions.portal.profile.flash.avatarFailed', 'Failed to upload avatar'), 'error')
       }
     } catch {
-      flash('Upload failed', 'error')
+      flash(t('competitions.portal.profile.flash.uploadFailed', 'Upload failed'), 'error')
     } finally {
       setUploadingAvatar(false)
       if (avatarInputRef.current) avatarInputRef.current.value = ''
@@ -217,13 +220,13 @@ function ProfileContent() {
 
       if (ok) {
         queryClient.invalidateQueries({ queryKey: ['portal-my-profile'] })
-        flash('Profile updated successfully', 'success')
+        flash(t('competitions.portal.profile.flash.saved', 'Profile updated successfully'), 'success')
         setEditing(false)
       } else {
-        flash(result?.error ?? 'Failed to save profile', 'error')
+        flash(result?.error ?? t('competitions.portal.profile.flash.saveFailed', 'Failed to save profile'), 'error')
       }
     } catch {
-      flash('Failed to save profile', 'error')
+      flash(t('competitions.portal.profile.flash.saveFailed', 'Failed to save profile'), 'error')
     } finally {
       setSaving(false)
     }
@@ -233,8 +236,8 @@ function ProfileContent() {
     <div className="space-y-6">
       {/* Page Header */}
       <PortalPageTitle
-        label="Participant Portal"
-        title="My Identity"
+        label={t('competitions.portal.profile.page.label', 'Participant Portal')}
+        title={t('competitions.portal.profile.page.title', 'My Identity')}
         rightElement={
           editing ? (
             <div className="flex gap-2">
@@ -243,7 +246,7 @@ function ProfileContent() {
                 onClick={() => setEditing(false)}
                 className="rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2 text-xs sm:text-sm font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
-                Cancel
+                {t('competitions.portal.profile.cancel', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -252,7 +255,7 @@ function ProfileContent() {
                 className="inline-flex items-center gap-2 rounded-lg bg-portal-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90 disabled:opacity-60"
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Save
+                {t('competitions.portal.profile.save', 'Save')}
               </button>
             </div>
           ) : (
@@ -261,7 +264,7 @@ function ProfileContent() {
               onClick={() => setEditing(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-portal-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary/90"
             >
-              Edit Profile
+              {t('competitions.portal.profile.edit', 'Edit Profile')}
             </button>
           )
         }
@@ -269,7 +272,7 @@ function ProfileContent() {
 
       {isLoading ? (
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-          Loading profile...
+          {t('competitions.portal.profile.loading', 'Loading profile...')}
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -317,7 +320,7 @@ function ProfileContent() {
 
                   <div className="mt-1 flex items-center gap-2 justify-center sm:justify-start">
                     <span className="text-sm text-portal-secondary truncate">{user.email}</span>
-                    {user.emailVerified && <span className="text-xs font-medium text-green-600">Verified</span>}
+                    {user.emailVerified && <span className="text-xs font-medium text-green-600">{t('competitions.portal.profile.verified', 'Verified')}</span>}
                   </div>
 
                   {editing ? (
@@ -325,14 +328,14 @@ function ProfileContent() {
                       <textarea
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}
-                        placeholder="Write a short bio about yourself..."
+                        placeholder={t('competitions.portal.profile.bio.placeholder', 'Write a short bio about yourself...')}
                         rows={3}
                         className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30 resize-none"
                       />
                     </div>
                   ) : (
                     <p className="mt-3 text-sm leading-relaxed text-portal-secondary">
-                      {bio || 'No bio yet. Click "Edit Profile" to add one.'}
+                      {bio || t('competitions.portal.profile.bio.empty', 'No bio yet. Click "Edit Profile" to add one.')}
                     </p>
                   )}
 
@@ -370,35 +373,35 @@ function ProfileContent() {
               <div className="space-y-4">
                 {/* Organization & Specialty */}
                 <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-foreground">About You</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.about.title', 'About You')}</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-medium text-portal-secondary mb-1">Organization</label>
-                      <Input value={organization} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrganization(e.target.value)} placeholder="Company or school" />
+                      <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.organization.label', 'Organization')}</label>
+                      <Input value={organization} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrganization(e.target.value)} placeholder={t('competitions.portal.profile.organization.placeholder', 'Company or school')} />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-portal-secondary mb-1">Specialty</label>
-                      <Input value={specialty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSpecialty(e.target.value)} placeholder="e.g. Full-Stack, Design, AI" />
+                      <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.specialty.label', 'Specialty')}</label>
+                      <Input value={specialty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSpecialty(e.target.value)} placeholder={t('competitions.portal.profile.specialty.placeholder', 'e.g. Full-Stack, Design, AI')} />
                     </div>
                   </div>
                 </div>
 
                 {/* Skills */}
                 <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-3">
-                  <h3 className="text-sm font-bold text-foreground">Skills</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.skills.title', 'Skills')}</h3>
                   <SkillInput skills={skills} onChange={setSkills} />
                 </div>
 
                 {/* Social Links */}
                 <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-foreground">Social Links</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.social.title', 'Social Links')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <Github className="size-4 text-portal-secondary shrink-0" />
                       <Input
                         value={socialLinks.github ?? ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, github: e.target.value }))}
-                        placeholder="https://github.com/username"
+                        placeholder={t('competitions.portal.profile.social.github.placeholder', 'https://github.com/username')}
                       />
                     </div>
                     <div className="flex items-center gap-3">
@@ -406,7 +409,7 @@ function ProfileContent() {
                       <Input
                         value={socialLinks.linkedin ?? ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, linkedin: e.target.value }))}
-                        placeholder="https://linkedin.com/in/username"
+                        placeholder={t('competitions.portal.profile.social.linkedin.placeholder', 'https://linkedin.com/in/username')}
                       />
                     </div>
                     <div className="flex items-center gap-3">
@@ -414,7 +417,7 @@ function ProfileContent() {
                       <Input
                         value={socialLinks.twitter ?? ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
-                        placeholder="https://twitter.com/username"
+                        placeholder={t('competitions.portal.profile.social.twitter.placeholder', 'https://twitter.com/username')}
                       />
                     </div>
                     <div className="flex items-center gap-3">
@@ -422,7 +425,7 @@ function ProfileContent() {
                       <Input
                         value={socialLinks.website ?? ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, website: e.target.value }))}
-                        placeholder="https://yourwebsite.com"
+                        placeholder={t('competitions.portal.profile.social.website.placeholder', 'https://yourwebsite.com')}
                       />
                     </div>
                   </div>
@@ -430,15 +433,15 @@ function ProfileContent() {
 
                 {/* Portfolio & Office Hours */}
                 <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-foreground">Links</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.links.title', 'Links')}</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-medium text-portal-secondary mb-1">Portfolio URL</label>
-                      <Input value={portfolioUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPortfolioUrl(e.target.value)} placeholder="https://portfolio.dev" />
+                      <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.links.portfolio.label', 'Portfolio URL')}</label>
+                      <Input value={portfolioUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPortfolioUrl(e.target.value)} placeholder={t('competitions.portal.profile.links.portfolio.placeholder', 'https://portfolio.dev')} />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-portal-secondary mb-1">Office Hours</label>
-                      <Input value={officeHoursUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOfficeHoursUrl(e.target.value)} placeholder="https://calendly.com/you" />
+                      <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.links.officeHours.label', 'Office Hours')}</label>
+                      <Input value={officeHoursUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOfficeHoursUrl(e.target.value)} placeholder={t('competitions.portal.profile.links.officeHours.placeholder', 'https://calendly.com/you')} />
                     </div>
                   </div>
                 </div>
@@ -450,13 +453,13 @@ function ProfileContent() {
               <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
                 {organization && (
                   <div>
-                    <SectionLabel>Organization</SectionLabel>
+                    <SectionLabel>{t('competitions.portal.profile.organization.label', 'Organization')}</SectionLabel>
                     <p className="mt-1 text-sm font-medium text-foreground">{organization}</p>
                   </div>
                 )}
                 {skills.length > 0 && (
                   <div>
-                    <SectionLabel>Skills</SectionLabel>
+                    <SectionLabel>{t('competitions.portal.profile.skills.title', 'Skills')}</SectionLabel>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {skills.map((skill) => (
                         <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">{skill}</span>
@@ -466,7 +469,7 @@ function ProfileContent() {
                 )}
                 {(portfolioUrl || officeHoursUrl) && (
                   <div>
-                    <SectionLabel>Links</SectionLabel>
+                    <SectionLabel>{t('competitions.portal.profile.links.title', 'Links')}</SectionLabel>
                     <div className="mt-2 flex flex-col gap-1">
                       {portfolioUrl && <a href={portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-portal-primary hover:underline truncate">{portfolioUrl}</a>}
                       {officeHoursUrl && <a href={officeHoursUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-portal-primary hover:underline truncate">{officeHoursUrl}</a>}
@@ -483,7 +486,7 @@ function ProfileContent() {
                   <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5">
                     <Shield className="size-4 text-portal-secondary" />
                   </div>
-                  <h3 className="text-sm font-bold text-foreground">Access Permissions</h3>
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.permissions.title', 'Access Permissions')}</h3>
                 </div>
               </div>
               {features.length > 0 ? (
@@ -493,7 +496,7 @@ function ProfileContent() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-portal-secondary">No permissions assigned.</p>
+                <p className="text-sm text-portal-secondary">{t('competitions.portal.profile.permissions.empty', 'No permissions assigned.')}</p>
               )}
             </div>
           </div>
@@ -503,7 +506,7 @@ function ProfileContent() {
             {/* Assigned Roles Card */}
             <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5">
               <div className="flex items-center justify-between px-4 sm:px-5 py-4">
-                <h3 className="text-sm font-bold text-foreground">Assigned Roles</h3>
+                <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.roles.title', 'Assigned Roles')}</h3>
                 <span className="inline-flex items-center justify-center rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-portal-primary">
                   {String(roles.length).padStart(2, '0')}
                 </span>
@@ -518,19 +521,19 @@ function ProfileContent() {
                     </div>
                   ))
                 ) : (
-                  <div className="px-4 sm:px-5 py-4 text-sm text-portal-secondary">No roles assigned.</div>
+                  <div className="px-4 sm:px-5 py-4 text-sm text-portal-secondary">{t('competitions.portal.profile.roles.empty', 'No roles assigned.')}</div>
                 )}
               </div>
             </div>
 
             {/* Engagement Controls Card */}
             <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
-              <h3 className="text-sm font-bold text-foreground mb-4">Notifications</h3>
+              <h3 className="text-sm font-bold text-foreground mb-4">{t('competitions.portal.profile.notifications.title', 'Notifications')}</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">Email Digest</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Daily Summary</span>
+                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.emailDigest.title', 'Email Digest')}</p>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.emailDigest.subtitle', 'Daily Summary')}</span>
                   </div>
                   <ToggleSwitch
                     checked={notifPrefs.email_digest ?? true}
@@ -548,8 +551,8 @@ function ProfileContent() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">Slack Alerts</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Instant</span>
+                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.slackAlerts.title', 'Slack Alerts')}</p>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.slackAlerts.subtitle', 'Instant')}</span>
                   </div>
                   <ToggleSwitch
                     checked={notifPrefs.slack_alerts ?? false}
@@ -567,8 +570,8 @@ function ProfileContent() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">SMS Urgent</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">Critical Only</span>
+                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.smsUrgent.title', 'SMS Urgent')}</p>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.smsUrgent.subtitle', 'Critical Only')}</span>
                   </div>
                   <ToggleSwitch
                     checked={notifPrefs.sms_urgent ?? false}

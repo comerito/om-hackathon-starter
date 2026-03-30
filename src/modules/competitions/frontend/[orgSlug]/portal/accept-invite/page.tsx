@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { Zap, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
@@ -14,16 +15,16 @@ type InviteInfo = {
   expires_at: string
 }
 
-const roleLabels: Record<string, string> = {
-  participant: 'Participant',
-  mentor: 'Mentor',
-  judge: 'Judge',
-}
-
 export default function AcceptInvitePage({ params }: Props) {
+  const t = useT()
   const orgSlug = params.orgSlug
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+  const roleLabels: Record<string, string> = {
+    participant: t('competitions.portal.acceptInvite.role.participant', 'Participant'),
+    mentor: t('competitions.portal.acceptInvite.role.mentor', 'Mentor'),
+    judge: t('competitions.portal.acceptInvite.role.judge', 'Judge'),
+  }
 
   const [info, setInfo] = useState<InviteInfo | null>(null)
   const [loadingInfo, setLoadingInfo] = useState(true)
@@ -38,7 +39,7 @@ export default function AcceptInvitePage({ params }: Props) {
 
   useEffect(() => {
     if (!token) {
-      setInfoError('No invitation token provided.')
+      setInfoError(t('competitions.portal.acceptInvite.errors.noToken', 'No invitation token provided.'))
       setLoadingInfo(false)
       return
     }
@@ -53,12 +54,12 @@ export default function AcceptInvitePage({ params }: Props) {
         setInfo(result)
         if (result.display_name) setDisplayName(result.display_name)
       } else {
-        setInfoError((result as any)?.error ?? 'This invitation link is invalid or has expired.')
+        setInfoError((result as any)?.error ?? t('competitions.portal.acceptInvite.errors.invalidOrExpired', 'This invitation link is invalid or has expired.'))
       }
       setLoadingInfo(false)
     }
     load()
-  }, [token])
+  }, [token, t])
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -66,15 +67,15 @@ export default function AcceptInvitePage({ params }: Props) {
       setError(null)
 
       if (password.length < 8) {
-        setError('Password must be at least 8 characters.')
+        setError(t('competitions.portal.acceptInvite.errors.passwordLength', 'Password must be at least 8 characters.'))
         return
       }
       if (password !== confirmPassword) {
-        setError('Passwords do not match.')
+        setError(t('competitions.portal.acceptInvite.errors.passwordMismatch', 'Passwords do not match.'))
         return
       }
       if (!displayName.trim()) {
-        setError('Display name is required.')
+        setError(t('competitions.portal.acceptInvite.errors.displayNameRequired', 'Display name is required.'))
         return
       }
 
@@ -94,14 +95,14 @@ export default function AcceptInvitePage({ params }: Props) {
           return
         }
 
-        setError(result.result?.error || 'Failed to accept invitation. The link may have expired.')
+        setError(result.result?.error || t('competitions.portal.acceptInvite.errors.acceptFailed', 'Failed to accept invitation. The link may have expired.'))
       } catch {
-        setError('Something went wrong. Please try again.')
+        setError(t('competitions.portal.acceptInvite.errors.generic', 'Something went wrong. Please try again.'))
       } finally {
         setSubmitting(false)
       }
     },
-    [token, password, confirmPassword, displayName, orgSlug],
+    [token, password, confirmPassword, displayName, orgSlug, t],
   )
 
   return (
@@ -123,19 +124,24 @@ export default function AcceptInvitePage({ params }: Props) {
               <div className="size-8 rounded-lg bg-white/20 flex items-center justify-center">
                 <Zap className="size-4" />
               </div>
-              <span className="text-sm font-bold uppercase tracking-widest opacity-80">Hackathon Portal</span>
+              <span className="text-sm font-bold uppercase tracking-widest opacity-80">
+                {t('competitions.portal.acceptInvite.badge', 'Hackathon Portal')}
+              </span>
             </div>
           </div>
 
           <div>
             <h1 className="font-display text-5xl font-bold leading-tight">
-              You&apos;re<br />
-              Invited.
+              {t('competitions.portal.acceptInvite.hero.title', "You're Invited.")}
             </h1>
             <p className="mt-6 text-lg text-white/70 max-w-md leading-relaxed">
               {info?.competition_name
-                ? `Join ${info.competition_name} and be part of something extraordinary.`
-                : 'Set up your account and join the hackathon.'}
+                ? t(
+                  'competitions.portal.acceptInvite.hero.description.withCompetition',
+                  'Join {competition} and be part of something extraordinary.',
+                  { competition: info.competition_name },
+                )
+                : t('competitions.portal.acceptInvite.hero.description.fallback', 'Set up your account and join the hackathon.')}
             </p>
             {info?.role && (
               <div className="mt-8 flex items-center gap-3">
@@ -147,7 +153,11 @@ export default function AcceptInvitePage({ params }: Props) {
           </div>
 
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} Hackathon Portal. Powered by Open Mercato.
+            {t(
+              'competitions.portal.acceptInvite.footer',
+              '© {year} Hackathon Portal. Powered by Open Mercato.',
+              { year: new Date().getFullYear() },
+            )}
           </p>
         </div>
       </div>
@@ -160,13 +170,17 @@ export default function AcceptInvitePage({ params }: Props) {
             <div className="size-8 rounded-lg bg-portal-primary flex items-center justify-center">
               <Zap className="size-4 text-white" />
             </div>
-            <span className="text-sm font-bold uppercase tracking-widest text-portal-primary">Hackathon Portal</span>
+            <span className="text-sm font-bold uppercase tracking-widest text-portal-primary">
+              {t('competitions.portal.acceptInvite.badge', 'Hackathon Portal')}
+            </span>
           </div>
 
           {loadingInfo ? (
             <div className="text-center py-12">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-portal-primary/20 border-t-portal-primary" />
-              <p className="mt-4 text-sm text-portal-secondary">Validating your invitation...</p>
+              <p className="mt-4 text-sm text-portal-secondary">
+                {t('competitions.portal.acceptInvite.loading', 'Validating your invitation...')}
+              </p>
             </div>
           ) : infoError ? (
             <div className="text-center py-12">
@@ -175,26 +189,36 @@ export default function AcceptInvitePage({ params }: Props) {
                   <circle cx="12" cy="12" r="10" /><line x1="15" x2="9" y1="9" y2="15" /><line x1="9" x2="15" y1="9" y2="15" />
                 </svg>
               </div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-2">Invitation Invalid</h2>
+              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+                {t('competitions.portal.acceptInvite.invalidTitle', 'Invitation Invalid')}
+              </h2>
               <p className="text-sm text-portal-secondary">{infoError}</p>
               <a
                 href={`/${orgSlug}/portal/login`}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-portal-primary hover:text-portal-primary-light transition-colors"
               >
-                Go to Login <ArrowRight className="size-4" />
+                {t('competitions.portal.acceptInvite.goToLogin', 'Go to Login')} <ArrowRight className="size-4" />
               </a>
             </div>
           ) : (
             <>
               <div className="mb-8">
-                <h2 className="font-display text-3xl font-bold text-foreground">Complete your account</h2>
+                <h2 className="font-display text-3xl font-bold text-foreground">
+                  {t('competitions.portal.acceptInvite.title', 'Complete your account')}
+                </h2>
                 <p className="mt-2 text-sm text-portal-secondary">
                   {info?.competition_name && info?.role
-                    ? `You've been invited to ${info.competition_name} as a ${roleLabels[info.role] ?? info.role}.`
-                    : 'Set up your password to get started.'}
+                    ? t(
+                      'competitions.portal.acceptInvite.description.withRole',
+                      "You've been invited to {competition} as a {role}.",
+                      { competition: info.competition_name, role: roleLabels[info.role] ?? info.role },
+                    )
+                    : t('competitions.portal.acceptInvite.description.fallback', 'Set up your password to get started.')}
                 </p>
                 {info?.email_masked && (
-                  <p className="mt-1 text-xs text-portal-secondary/70">Account: {info.email_masked}</p>
+                  <p className="mt-1 text-xs text-portal-secondary/70">
+                    {t('competitions.portal.acceptInvite.account', 'Account: {email}', { email: info.email_masked })}
+                  </p>
                 )}
               </div>
 
@@ -207,13 +231,13 @@ export default function AcceptInvitePage({ params }: Props) {
 
                 <div>
                   <label htmlFor="accept-name" className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
-                    Display Name
+                    {t('competitions.portal.acceptInvite.displayName.label', 'Display Name')}
                   </label>
                   <input
                     id="accept-name"
                     type="text"
                     required
-                    placeholder="Your name"
+                    placeholder={t('competitions.portal.acceptInvite.displayName.placeholder', 'Your name')}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     disabled={submitting}
@@ -223,7 +247,7 @@ export default function AcceptInvitePage({ params }: Props) {
 
                 <div>
                   <label htmlFor="accept-password" className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
-                    Password
+                    {t('competitions.portal.acceptInvite.password.label', 'Password')}
                   </label>
                   <div className="relative">
                     <input
@@ -231,7 +255,7 @@ export default function AcceptInvitePage({ params }: Props) {
                       type={showPassword ? 'text' : 'password'}
                       required
                       minLength={8}
-                      placeholder="Min. 8 characters"
+                      placeholder={t('competitions.portal.acceptInvite.password.placeholder', 'Min. 8 characters')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={submitting}
@@ -250,14 +274,14 @@ export default function AcceptInvitePage({ params }: Props) {
 
                 <div>
                   <label htmlFor="accept-confirm" className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
-                    Confirm Password
+                    {t('competitions.portal.acceptInvite.confirmPassword.label', 'Confirm Password')}
                   </label>
                   <input
                     id="accept-confirm"
                     type="password"
                     required
                     minLength={8}
-                    placeholder="Repeat your password"
+                    placeholder={t('competitions.portal.acceptInvite.confirmPassword.placeholder', 'Repeat your password')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={submitting}
@@ -273,11 +297,11 @@ export default function AcceptInvitePage({ params }: Props) {
                   {submitting ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Setting up...
+                      {t('competitions.portal.acceptInvite.submitting', 'Setting up...')}
                     </span>
                   ) : (
                     <>
-                      Accept & Get Started
+                      {t('competitions.portal.acceptInvite.submit', 'Accept & Get Started')}
                       <ArrowRight className="size-4" />
                     </>
                   )}
