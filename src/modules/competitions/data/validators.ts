@@ -91,11 +91,34 @@ export const updateCompetitionSchema = z.object({
   rules_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
-  info_cards: z.any().optional(),
 })
 
 export type CreateCompetitionInput = z.infer<typeof createCompetitionSchema>
 export type UpdateCompetitionInput = z.infer<typeof updateCompetitionSchema>
+
+// ── CompetitionInfoCard ────────────────────────────────────────────
+
+export const createCompetitionInfoCardSchema = z.object({
+  competition_id: z.string().uuid(),
+  key: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/, 'Key must be lowercase alphanumeric with underscores or hyphens'),
+  icon: z.string().max(100).optional(),
+  label: z.string().min(1).max(255),
+  value: z.string().min(1),
+  sort_order: z.number().int().default(0),
+})
+
+export const updateCompetitionInfoCardSchema = z.object({
+  id: z.string().uuid(),
+  competition_id: z.string().uuid().optional(),
+  key: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/).optional(),
+  icon: z.string().max(100).nullable().optional(),
+  label: z.string().min(1).max(255).optional(),
+  value: z.string().min(1).optional(),
+  sort_order: z.number().int().optional(),
+})
+
+export type CreateCompetitionInfoCardInput = z.infer<typeof createCompetitionInfoCardSchema>
+export type UpdateCompetitionInfoCardInput = z.infer<typeof updateCompetitionInfoCardSchema>
 
 // ── Stage Advance ───────────────────────────────────────────────────
 

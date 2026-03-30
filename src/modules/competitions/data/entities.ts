@@ -194,9 +194,6 @@ export class Competition {
     allowVoteChange: false,
   }
 
-  @Property({ name: 'info_cards', type: 'jsonb', default: '[]' })
-  infoCards: Array<{ key: string; label: string; value: string; icon?: string }> = []
-
   @Property({ name: 'code_of_conduct_url', type: 'varchar', length: 1000 })
   codeOfConductUrl!: string
 
@@ -507,6 +504,48 @@ export class Milestone {
 
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
+}
+
+@Entity({ tableName: 'competitions_competition_info_card' })
+export class CompetitionInfoCard {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ type: 'varchar', length: 100 })
+  key!: string
+
+  @Property({ type: 'varchar', length: 100, nullable: true })
+  icon?: string | null
+
+  @Property({ type: 'varchar', length: 255 })
+  label!: string
+
+  @Property({ type: 'text' })
+  value!: string
+
+  @Property({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder: number = 0
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
 }
 
 // ── Competition Invitation (maps framework invitation → competition + role) ──

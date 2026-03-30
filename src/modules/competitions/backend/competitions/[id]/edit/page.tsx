@@ -10,6 +10,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import Link from 'next/link'
 
 const STAGE_ORDER = [
   'draft', 'open', 'team_formation', 'track_selection',
@@ -50,7 +51,6 @@ type CompetitionFormValues = {
   rules_url: string
   privacy_policy_url: string
   cover_image_url: string
-  info_cards: string
   stage: string
 }
 
@@ -79,7 +79,6 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     { id: 'rules_url', label: t('competitions.fields.rulesUrl', 'Rules URL'), type: 'text' },
     { id: 'privacy_policy_url', label: t('competitions.fields.privacyPolicyUrl', 'Privacy Policy URL'), type: 'text' },
     { id: 'cover_image_url', label: t('competitions.fields.coverImageUrl', 'Cover Image URL'), type: 'text' },
-    { id: 'info_cards', label: t('competitions.fields.infoCards', 'Info Cards (JSON)'), type: 'textarea', description: 'JSON array of info cards: [{"key":"wifi","label":"Wi-Fi","value":"SSID: HACK / Pass: 1234","icon":"wifi"}]' },
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
@@ -87,7 +86,6 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'timezone'] },
     { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size', 'max_tracks_per_team'] },
     { id: 'legal', title: t('competitions.groups.legal', 'Legal & Media'), column: 2, fields: ['code_of_conduct_url', 'rules_url', 'privacy_policy_url', 'cover_image_url'] },
-    { id: 'portal', title: t('competitions.groups.portal', 'Portal Settings'), column: 2, fields: ['info_cards'] },
   ], [t])
 
   React.useEffect(() => {
@@ -123,7 +121,6 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             rules_url: String(item.rules_url ?? ''),
             privacy_policy_url: String(item.privacy_policy_url ?? ''),
             cover_image_url: String(item.cover_image_url ?? ''),
-            info_cards: typeof item.info_cards === 'string' ? item.info_cards : JSON.stringify(item.info_cards ?? [], null, 2),
             stage: String(item.stage ?? 'draft'),
           })
         }
@@ -141,7 +138,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     id: id ?? '', name: '', slug: '', description: '', location: '',
     starts_at: '', ends_at: '', timezone: 'Europe/Warsaw',
     min_team_size: 2, max_team_size: 5, max_tracks_per_team: 1,
-    code_of_conduct_url: '', rules_url: '', privacy_policy_url: '', cover_image_url: '', info_cards: '', stage: 'draft',
+    code_of_conduct_url: '', rules_url: '', privacy_policy_url: '', cover_image_url: '', stage: 'draft',
   }), [id])
 
   const currentStage = initial?.stage ?? 'draft'
@@ -254,6 +251,24 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             </div>
           )}
 
+          {!loading && initial && (
+            <div className="mb-6 rounded-lg border bg-card p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">{t('competitions.edit.infoCards.title', 'Portal Info Cards')}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t('competitions.edit.infoCards.description', 'Manage competition info cards as separate localized records instead of JSON.')}
+                  </p>
+                </div>
+                <Button asChild variant="outline">
+                  <Link href={`/backend/competitions/info-cards?competitionId=${encodeURIComponent(initial.id)}`}>
+                    {t('competitions.edit.infoCards.manage', 'Manage Info Cards')}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+
           <CrudForm<CompetitionFormValues>
             title={t('competitions.edit.title', 'Edit Competition')}
             backHref="/backend/competitions"
@@ -275,7 +290,6 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
                 rules_url: vals.rules_url || null,
                 privacy_policy_url: vals.privacy_policy_url || null,
                 cover_image_url: vals.cover_image_url || null,
-                info_cards: typeof vals.info_cards === 'string' ? (() => { try { return JSON.parse(vals.info_cards) } catch { return [] } })() : vals.info_cards,
               }
               await updateCrud('competitions/competitions', cleaned)
             }}
