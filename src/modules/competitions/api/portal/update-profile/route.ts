@@ -59,7 +59,7 @@ export async function PUT(req: Request) {
       profile = new ParticipantProfile()
       profile.customerUserId = auth.sub
       profile.tenantId = auth.tenantId
-      profile.organizationId = auth.tenantId
+      profile.organizationId = auth.orgId
       em.persist(profile)
     }
 

@@ -146,7 +146,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
 
           {/* Bio */}
           {p.bio && (
-            <p className="text-sm leading-relaxed text-portal-secondary">{p.bio}</p>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-portal-secondary">{p.bio}</p>
           )}
 
           {/* Skills */}
