@@ -2,6 +2,7 @@ import './commands/competitions'
 import './commands/participations'
 import './commands/agenda'
 import './commands/announcements'
+import './commands/info-cards'
 import './commands/milestones'
 import type { ModuleInfo } from '@open-mercato/shared/modules/registry'
 

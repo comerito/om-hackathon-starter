@@ -77,24 +77,24 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
     const start = new Date(presenting.actual_start).getTime()
     const duration = presenting.presentation_duration_minutes * 60 * 1000
     timeRemaining = Math.max(0, Math.floor((start + duration - (now + clockDelta)) / 1000))
-    timerLabel = 'Presentation'
+    timerLabel = t('judging.portal.presentations.timer.presentation', 'Presentation')
   } else if (presenting?.actual_start && presenting.status === 'qa') {
     const start = new Date(presenting.actual_start).getTime()
     const presDuration = presenting.presentation_duration_minutes * 60 * 1000
     const qaDuration = presenting.qa_duration_minutes * 60 * 1000
     timeRemaining = Math.max(0, Math.floor((start + presDuration + qaDuration - (now + clockDelta)) / 1000))
-    timerLabel = 'Q&A'
+    timerLabel = t('judging.portal.presentations.timer.qa', 'Q&A')
   }
   const isTimerUp = timeRemaining === 0
   const totalDuration = presenting ? (presenting.presentation_duration_minutes + presenting.qa_duration_minutes) * 60 : 0
   const progress = totalDuration > 0 && timeRemaining !== null ? ((totalDuration - timeRemaining) / totalDuration) * 100 : 0
 
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">Loading...</div>
+  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('judging.portal.presentations.loading', 'Loading...')}</div>
 
   if (queue.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        The presentation queue has not been generated yet.
+        {t('judging.portal.presentations.empty', 'The presentation queue has not been generated yet.')}
       </div>
     )
   }
@@ -106,19 +106,19 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
         {/* Now Presenting Hero */}
         {presenting && (
           <div className="rounded-xl border-2 border-dashed border-portal-primary/30 bg-white dark:bg-white/5 p-4 sm:p-6">
-            <PortalBadge variant="danger">Now Presenting</PortalBadge>
-            <h2 className="mt-2 sm:mt-3 font-display text-xl sm:text-2xl font-bold text-foreground">{presenting.project_title ?? 'Untitled'}</h2>
-            <p className="text-sm text-portal-secondary mt-1">Team: {presenting.team_name}</p>
+            <PortalBadge variant="danger">{t('judging.portal.presentations.nowPresenting', 'Now Presenting')}</PortalBadge>
+            <h2 className="mt-2 sm:mt-3 font-display text-xl sm:text-2xl font-bold text-foreground">{presenting.project_title ?? t('judging.portal.presentations.untitled', 'Untitled')}</h2>
+            <p className="text-sm text-portal-secondary mt-1">{t('judging.portal.presentations.team', 'Team: {name}', { name: presenting.team_name ?? '-' })}</p>
             {timeRemaining !== null && (
               <div className="mt-3 sm:mt-4 inline-flex flex-col items-center rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 sm:px-6 sm:py-4">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary mb-1">
-                  Time Remaining
+                  {timerLabel || t('judging.portal.presentations.timeRemaining', 'Time Remaining')}
                 </span>
                 <span className={cn(
                   'font-mono text-2xl sm:text-4xl font-bold tabular-nums',
                   isTimerUp ? 'text-portal-danger animate-pulse' : timeRemaining < 30 ? 'text-portal-danger' : 'text-portal-tertiary',
                 )}>
-                  {isTimerUp ? "TIME'S UP" : formatTime(timeRemaining)}
+                  {isTimerUp ? t('judging.portal.presentations.timeUp', "TIME'S UP") : formatTime(timeRemaining)}
                 </span>
                 <ProgressBar value={progress} size="sm" className="mt-2 w-full" />
               </div>
@@ -131,10 +131,10 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
           {onDeck && (
             <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-                Next Up (On Deck)
+                {t('judging.portal.presentations.nextUp', 'Next Up (On Deck)')}
               </span>
-              <p className="mt-2 text-sm font-bold text-foreground">{onDeck.project_title ?? 'Untitled'}</p>
-              <p className="text-xs text-portal-secondary">Team: {onDeck.team_name}</p>
+              <p className="mt-2 text-sm font-bold text-foreground">{onDeck.project_title ?? t('judging.portal.presentations.untitled', 'Untitled')}</p>
+              <p className="text-xs text-portal-secondary">{t('judging.portal.presentations.team', 'Team: {name}', { name: onDeck.team_name ?? '-' })}</p>
               <AvatarStack
                 avatars={[{ name: onDeck.team_name ?? 'T' }]}
                 size="sm"
@@ -146,11 +146,14 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
             <div className="flex items-center gap-2 mb-1">
               <Rocket className="size-4 text-portal-primary-light" />
               <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-danger">
-                Logistics Update
+                {t('judging.portal.presentations.logistics', 'Logistics Update')}
               </span>
             </div>
             <p className="text-xs text-gray-300">
-              Teams {presenting ? presenting.presentation_order + 3 : '—'}–{presenting ? presenting.presentation_order + 7 : '—'} please report to Stage B holding area.
+              {t('judging.portal.presentations.logisticsCopy', 'Teams {start}–{end} please report to Stage B holding area.', {
+                start: presenting ? presenting.presentation_order + 3 : '—',
+                end: presenting ? presenting.presentation_order + 7 : '—',
+              })}
             </p>
           </div>
         </div>
@@ -159,11 +162,11 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
       {/* Presentation Schedule Table */}
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">Presentation Schedule</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('judging.portal.presentations.schedule', 'Presentation Schedule')}</h2>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500 dark:bg-red-400" /> Presenting</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-portal-primary" /> On Deck</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-gray-400 dark:bg-slate-500" /> Waiting</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500 dark:bg-red-400" /> {t('judging.portal.presentations.legend.presenting', 'Presenting')}</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-portal-primary" /> {t('judging.portal.presentations.legend.onDeck', 'On Deck')}</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-gray-400 dark:bg-slate-500" /> {t('judging.portal.presentations.legend.waiting', 'Waiting')}</span>
           </div>
         </div>
 
@@ -185,9 +188,9 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
                         <p className="text-sm font-semibold text-foreground">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
                         <p className="text-xs text-portal-secondary italic truncate">"{demo.project_title}"</p>
                         <div className="flex items-center gap-2 mt-1.5">
-                          <PortalBadge variant={styles.badge}>{status.replace('_', ' ')}</PortalBadge>
+                          <PortalBadge variant={styles.badge}>{t(`judging.portal.presentations.status.${status}`, status.replace('_', ' '))}</PortalBadge>
                           {(demo.status === 'presenting' || demo.status === 'qa') && (
-                            <span className="text-xs font-mono font-bold text-portal-danger">NOW</span>
+                            <span className="text-xs font-mono font-bold text-portal-danger">{t('judging.portal.presentations.now', 'NOW')}</span>
                           )}
                         </div>
                       </div>
@@ -200,11 +203,11 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
             /* Desktop: grid table */
             <>
               <div className="grid grid-cols-[50px_1fr_1fr_120px_80px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-white/10 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-                <span>Rank</span>
-                <span>Team Name</span>
-                <span>Project Concept</span>
-                <span>Status</span>
-                <span>Time Slot</span>
+                <span>{t('judging.portal.presentations.columns.rank', 'Rank')}</span>
+                <span>{t('judging.portal.presentations.columns.team', 'Team Name')}</span>
+                <span>{t('judging.portal.presentations.columns.project', 'Project Concept')}</span>
+                <span>{t('judging.portal.presentations.columns.status', 'Status')}</span>
+                <span>{t('judging.portal.presentations.columns.time', 'Time Slot')}</span>
               </div>
               {queue.map((demo) => {
                 const status = demo.status === 'qa' ? 'presenting' : demo.status
@@ -223,9 +226,9 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
                     </span>
                     <p className="text-sm font-semibold text-foreground truncate">{demo.team_name ?? demo.team_id.substring(0, 8)}</p>
                     <p className="text-sm text-portal-secondary italic truncate">"{demo.project_title}"</p>
-                    <PortalBadge variant={styles.badge}>{status.replace('_', ' ')}</PortalBadge>
+                    <PortalBadge variant={styles.badge}>{t(`judging.portal.presentations.status.${status}`, status.replace('_', ' '))}</PortalBadge>
                     <span className="text-sm font-mono text-portal-secondary">
-                      {demo.status === 'presenting' || demo.status === 'qa' ? 'NOW' : '—'}
+                      {demo.status === 'presenting' || demo.status === 'qa' ? t('judging.portal.presentations.now', 'NOW') : '—'}
                     </span>
                   </div>
                 )
@@ -238,7 +241,7 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
       {/* Kiosk link */}
       <div className="text-center">
         <Link href={`/${orgSlug}/portal/kiosk`} className="text-sm text-portal-primary font-semibold hover:text-portal-primary-light transition-colors">
-          Open full-screen kiosk view →
+          {t('judging.portal.presentations.kioskLink', 'Open full-screen kiosk view ->')}
         </Link>
       </div>
 
@@ -264,8 +267,11 @@ export default function PresentationsPage({ params }: { params: { orgSlug: strin
   if (auth.loading || !auth.user) return null
 
   return (
-    <PortalCompetitionLayout>
-      <PortalPageTitle label="Live Presentation Queue" title="Showcase Finale" />
+      <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('judging.portal.presentations.label', 'Live Presentation Queue')}
+        title={t('judging.portal.presentations.title', 'Showcase Finale')}
+      />
       <PresentationsContent orgSlug={params.orgSlug} />
     </PortalCompetitionLayout>
   )

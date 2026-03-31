@@ -35,7 +35,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     idField: 'id',
     orgField: 'organizationId',
     tenantField: 'tenantId',
-    softDeleteField: 'deletedAt',
+    // Hard delete — tracks should be fully removed, not soft-deleted
   },
   events: { module: 'tracks', entity: 'track', persistent: true },
   indexer: { entityType: ENTITY_ID },

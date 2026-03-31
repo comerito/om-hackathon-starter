@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 import { Check, X, ExternalLink, Settings, HelpCircle } from 'lucide-react'
 
@@ -22,13 +23,15 @@ type MilestonesDrawerProps = {
   rulesUrl?: string | null
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }).toUpperCase() + ', ' +
-    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' }).toUpperCase() + ', ' +
+    d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesUrl }: MilestonesDrawerProps) {
+  const t = useT()
+  const locale = useLocale()
   const { data } = useQuery({
     queryKey: ['portal-milestones-drawer', competitionId],
     queryFn: async () => {
@@ -63,8 +66,8 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-6 pt-6 sm:pt-8 pb-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Milestones</h2>
-            <p className="text-sm text-gray-400 mt-1">Hackathon Progress Journey</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">{t('portal.drawer.milestones.title', 'Milestones')}</h2>
+            <p className="text-sm text-gray-400 mt-1">{t('portal.drawer.milestones.subtitle', 'Hackathon Progress Journey')}</p>
           </div>
           <button
             type="button"
@@ -78,7 +81,7 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
         {/* Timeline */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {milestones.length === 0 ? (
-            <p className="text-sm text-gray-500">No milestones configured yet.</p>
+            <p className="text-sm text-gray-500">{t('portal.drawer.milestones.empty', 'No milestones configured yet.')}</p>
           ) : (
             <div className="relative">
               {/* Vertical line */}
@@ -136,11 +139,11 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
                         >
                           {isActive && (
                             <>
-                              <span className="font-bold text-portal-primary-light">{formatDate(milestone.due_date)}</span>
-                              <span className="block uppercase tracking-wide text-portal-primary-light mt-0.5">Current Phase</span>
+                              <span className="font-bold text-portal-primary-light">{formatDate(milestone.due_date, locale)}</span>
+                              <span className="block uppercase tracking-wide text-portal-primary-light mt-0.5">{t('portal.drawer.milestones.currentPhase', 'Current Phase')}</span>
                             </>
                           )}
-                          {!isActive && formatDate(milestone.due_date)}
+                          {!isActive && formatDate(milestone.due_date, locale)}
                         </p>
                         {milestone.description && (
                           <p className={cn(
@@ -168,15 +171,15 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
               rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
             >
-              View Rules <ExternalLink className="size-4" />
+              {t('portal.drawer.milestones.viewRules', 'View Rules')} <ExternalLink className="size-4" />
             </a>
           )}
           <div className="flex items-center justify-between">
             <button type="button" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              <Settings className="size-3.5" /> Settings
+              <Settings className="size-3.5" /> {t('portal.drawer.milestones.settings', 'Settings')}
             </button>
             <button type="button" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              <HelpCircle className="size-3.5" /> Support
+              <HelpCircle className="size-3.5" /> {t('portal.drawer.milestones.support', 'Support')}
             </button>
           </div>
         </div>

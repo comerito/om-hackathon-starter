@@ -3,7 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Team, TeamMember, TeamRole } from '../../../data/entities'
+import { Team, TeamMember, TeamRole, TeamTrack } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
@@ -60,15 +60,11 @@ export async function POST(req: Request) {
     }
 
     const stageIdx = STAGE_ORDER.indexOf(competition.stage)
+    const teamFormationIdx = STAGE_ORDER.indexOf(CompetitionStage.TEAM_FORMATION)
     const trackSelectionIdx = STAGE_ORDER.indexOf(CompetitionStage.TRACK_SELECTION)
 
-    if (stageIdx < trackSelectionIdx) {
-      // Before track selection — only allow if simultaneous formation+track is enabled and stage is team_formation
-      const allowEarly = competition.stage === CompetitionStage.TEAM_FORMATION
-        && competition.stageConfig?.allowSimultaneousFormationAndTrack
-      if (!allowEarly) {
-        return NextResponse.json({ error: 'Track selection has not started yet' }, { status: 403 })
-      }
+    if (stageIdx < teamFormationIdx) {
+      return NextResponse.json({ error: 'Track selection has not started yet' }, { status: 403 })
     } else if (stageIdx > trackSelectionIdx) {
       // After track selection — only allow if allowTrackChange is true
       if (!competition.allowTrackChange) {
@@ -89,7 +85,24 @@ export async function POST(req: Request) {
     }
 
     team.trackId = parsed.track_id
-    await em.persistAndFlush(team)
+
+    // Sync junction table: clear existing, add new if non-null
+    const existingEntries = await em.find(TeamTrack, { teamId: team.id } as FilterQuery<TeamTrack>)
+    for (const entry of existingEntries) {
+      em.remove(entry)
+    }
+    if (parsed.track_id) {
+      em.persist(em.create(TeamTrack, {
+        teamId: team.id,
+        trackId: parsed.track_id,
+        competitionId: team.competitionId,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        createdAt: new Date(),
+      }))
+    }
+
+    await em.flush()
 
     return NextResponse.json({ ok: true, track_id: parsed.track_id })
   } catch (error) {

@@ -33,17 +33,20 @@ const categoryBadgeVariants: Record<string, 'info' | 'warning' | 'danger' | 'pri
   sponsor: 'success',
 }
 
-function formatTimeAgo(dateStr: string): string {
+function formatTimeAgo(dateStr: string, t: ReturnType<typeof useT>): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins} minutes ago`
+  if (mins < 60) return t('competitions.portal.announcements.timeAgo.minutes', '{count} minutes ago', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} hours ago`
+  if (hours < 24) return t('competitions.portal.announcements.timeAgo.hours', '{count} hours ago', { count: hours })
   const days = Math.floor(hours / 24)
-  return `${days} day${days !== 1 ? 's' : ''} ago`
+  return days === 1
+    ? t('competitions.portal.announcements.timeAgo.days.one', '{count} day ago', { count: days })
+    : t('competitions.portal.announcements.timeAgo.days.other', '{count} days ago', { count: days })
 }
 
 function AnnouncementCard({ announcement, showPinned }: { announcement: Announcement; showPinned?: boolean }) {
+  const t = useT()
   const category = announcement.category || 'general'
   const actionUrl = announcement.action_url
   const actionLabel = announcement.action_label
@@ -58,14 +61,14 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
           {showPinned && announcement.pinned && (
             <span className="flex items-center gap-1 rounded-full bg-portal-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-portal-primary">
               <Pin className="size-2.5" />
-              Pinned
+              {t('competitions.portal.announcements.pinned', 'Pinned')}
             </span>
           )}
           <PortalBadge variant={categoryBadgeVariants[category] ?? 'muted'}>
-            {category}
+            {t(`competitions.portal.announcements.category.${category}`, category)}
           </PortalBadge>
           <span className="text-[10px] font-medium uppercase tracking-wide text-portal-secondary">
-            {formatTimeAgo(announcement.published_at)}
+            {formatTimeAgo(announcement.published_at, t)}
           </span>
         </div>
         <div className={`size-7 sm:size-8 shrink-0 rounded-lg ${priority.bg} flex items-center justify-center`} title={announcement.priority}>
@@ -113,7 +116,7 @@ function AnnouncementsContent() {
       const { ok, result } = await apiCall<{ items: Announcement[] }>(
         `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=announcements`,
       )
-      if (!ok || !result) throw new Error('Failed to load')
+      if (!ok || !result) throw new Error(t('competitions.portal.announcements.error', 'Failed to load'))
       return result
     },
     enabled: !!selectedId,
@@ -154,7 +157,7 @@ function AnnouncementsContent() {
               filter === 'all' ? 'bg-portal-primary text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15'
             }`}
           >
-            All ({items.length})
+            {t('competitions.portal.announcements.filter.all', 'All ({count})', { count: items.length })}
           </button>
           <button
             type="button"
@@ -163,7 +166,7 @@ function AnnouncementsContent() {
               filter === 'pinned' ? 'bg-portal-primary text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15'
             }`}
           >
-            Pinned ({pinnedCount})
+            {t('competitions.portal.announcements.filter.pinned', 'Pinned ({count})', { count: pinnedCount })}
           </button>
         </div>
       )}

@@ -73,6 +73,7 @@ const createCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         minTeamSize: parsed.min_team_size,
         maxTeamSize: parsed.max_team_size,
         maxTeamsPerTrack: parsed.max_teams_per_track ?? null,
+        maxTracksPerTeam: parsed.max_tracks_per_team ?? 1,
         allowTrackChange: parsed.allow_track_change,
         projectSubmissionDeadline: parsed.project_submission_deadline ? new Date(parsed.project_submission_deadline) : null,
         judgingDeadline: parsed.judging_deadline ? new Date(parsed.judging_deadline) : null,
@@ -132,6 +133,7 @@ const updateCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         if (parsed.min_team_size !== undefined) entity.minTeamSize = parsed.min_team_size
         if (parsed.max_team_size !== undefined) entity.maxTeamSize = parsed.max_team_size
         if (parsed.max_teams_per_track !== undefined) entity.maxTeamsPerTrack = parsed.max_teams_per_track
+        if (parsed.max_tracks_per_team !== undefined) entity.maxTracksPerTeam = parsed.max_tracks_per_team
         if (parsed.allow_track_change !== undefined) entity.allowTrackChange = parsed.allow_track_change
         if (parsed.project_submission_deadline !== undefined) entity.projectSubmissionDeadline = parsed.project_submission_deadline ? new Date(parsed.project_submission_deadline) : null
         if (parsed.judging_deadline !== undefined) entity.judgingDeadline = parsed.judging_deadline ? new Date(parsed.judging_deadline) : null

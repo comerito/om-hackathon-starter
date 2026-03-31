@@ -1,41 +1,50 @@
 "use client"
 import Link from 'next/link'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import {
-  Zap, Users, Trophy, Calendar, Code, Rocket, ArrowRight,
+  Zap, Users, Trophy, Code, Rocket, ArrowRight,
 } from 'lucide-react'
 
 type Props = { params: { orgSlug: string } }
 
-const features = [
-  {
-    icon: Code,
-    title: 'Build Together',
-    description: 'Collaborate in real-time with your team. Submit code, demos, and presentations all in one place.',
-  },
-  {
-    icon: Trophy,
-    title: 'Compete & Win',
-    description: 'Multiple tracks, expert judges, and a prize pool. Show what you can build in 48 hours.',
-  },
-  {
-    icon: Users,
-    title: 'Find Your Team',
-    description: 'Connect with developers, designers, and strategists. Form the perfect team for your challenge.',
-  },
-]
-
-const stats = [
-  { value: '48h', label: 'Of Hacking' },
-  { value: '3', label: 'Tracks' },
-  { value: '$25K', label: 'In Prizes' },
-  { value: '∞', label: 'Ideas' },
-]
-
 export default function HackathonLandingPage({ params }: Props) {
+  const t = useT()
   const { auth } = usePortalContext()
   const orgSlug = params.orgSlug
   const isLoggedIn = !!auth.user
+  const features = [
+    {
+      icon: Code,
+      title: t('competitions.portal.landing.features.build.title', 'Build Together'),
+      description: t(
+        'competitions.portal.landing.features.build.description',
+        'Collaborate in real-time with your team. Submit code, demos, and presentations all in one place.',
+      ),
+    },
+    {
+      icon: Trophy,
+      title: t('competitions.portal.landing.features.compete.title', 'Compete & Win'),
+      description: t(
+        'competitions.portal.landing.features.compete.description',
+        'Multiple tracks, expert judges, and a prize pool. Show what you can build in 48 hours.',
+      ),
+    },
+    {
+      icon: Users,
+      title: t('competitions.portal.landing.features.team.title', 'Find Your Team'),
+      description: t(
+        'competitions.portal.landing.features.team.description',
+        'Connect with developers, designers, and strategists. Form the perfect team for your challenge.',
+      ),
+    },
+  ]
+  const stats = [
+    { value: '48h', label: t('competitions.portal.landing.stats.hacking', 'Of Hacking') },
+    { value: '3', label: t('competitions.portal.landing.stats.tracks', 'Tracks') },
+    { value: '$25K', label: t('competitions.portal.landing.stats.prizes', 'In Prizes') },
+    { value: '∞', label: t('competitions.portal.landing.stats.ideas', 'Ideas') },
+  ]
 
   return (
     <div className="min-h-screen bg-portal-bg">
@@ -54,16 +63,20 @@ export default function HackathonLandingPage({ params }: Props) {
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20 text-center text-white">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 backdrop-blur-sm mb-6">
             <Zap className="size-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Hackathon Portal</span>
+            <span className="text-xs font-bold uppercase tracking-widest">
+              {t('competitions.portal.landing.badge', 'Hackathon Portal')}
+            </span>
           </div>
 
           <h1 className="font-display text-3xl font-bold leading-tight sm:text-5xl lg:text-7xl">
-            Where Ideas<br />Become Reality
+            {t('competitions.portal.landing.hero.title', 'Where Ideas Become Reality')}
           </h1>
 
           <p className="mx-auto mt-4 sm:mt-6 max-w-xl text-sm sm:text-lg text-white/70 leading-relaxed">
-            Join the hackathon, form your team, build something amazing, and compete for prizes.
-            Everything you need in one portal.
+            {t(
+              'competitions.portal.landing.hero.description',
+              'Join the hackathon, form your team, build something amazing, and compete for prizes. Everything you need in one portal.',
+            )}
           </p>
 
           <div className="mt-6 sm:mt-10 flex items-center justify-center gap-4">
@@ -72,7 +85,7 @@ export default function HackathonLandingPage({ params }: Props) {
                 href={`/${orgSlug}/portal/dashboard`}
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-portal-primary shadow-lg hover:shadow-xl transition-all"
               >
-                Go to Dashboard
+                {t('competitions.portal.landing.cta.dashboard', 'Go to Dashboard')}
                 <ArrowRight className="size-4" />
               </Link>
             ) : (
@@ -81,7 +94,7 @@ export default function HackathonLandingPage({ params }: Props) {
                   href={`/${orgSlug}/portal/login`}
                   className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-portal-primary shadow-lg hover:shadow-xl transition-all"
                 >
-                  Sign In
+                  {t('competitions.portal.landing.cta.signIn', 'Sign In')}
                   <ArrowRight className="size-4" />
                 </Link>
               </>
@@ -103,8 +116,12 @@ export default function HackathonLandingPage({ params }: Props) {
       {/* Features */}
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-20">
         <div className="text-center mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-portal-primary">Everything You Need</span>
-          <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-foreground">One Portal, Full Experience</h2>
+          <span className="text-xs font-bold uppercase tracking-widest text-portal-primary">
+            {t('competitions.portal.landing.section.eyebrow', 'Everything You Need')}
+          </span>
+          <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-foreground">
+            {t('competitions.portal.landing.section.title', 'One Portal, Full Experience')}
+          </h2>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-3">
@@ -124,15 +141,22 @@ export default function HackathonLandingPage({ params }: Props) {
       <div className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-20">
         <div className="rounded-2xl bg-gradient-to-r from-portal-primary to-portal-primary-light p-6 sm:p-10 text-center text-white">
           <Rocket className="size-6 sm:size-8 mx-auto mb-3 sm:mb-4 opacity-80" />
-          <h2 className="font-display text-xl sm:text-2xl font-bold">Ready to Build?</h2>
+          <h2 className="font-display text-xl sm:text-2xl font-bold">
+            {t('competitions.portal.landing.finalCta.title', 'Ready to Build?')}
+          </h2>
           <p className="mt-2 text-sm text-white/70 max-w-md mx-auto">
-            Sign in to access the hackathon dashboard, form your team, and start building.
+            {t(
+              'competitions.portal.landing.finalCta.description',
+              'Sign in to access the hackathon dashboard, form your team, and start building.',
+            )}
           </p>
           <Link
             href={isLoggedIn ? `/${orgSlug}/portal/dashboard` : `/${orgSlug}/portal/login`}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/20 px-6 py-3 text-sm font-bold backdrop-blur-sm hover:bg-white/30 transition-colors"
           >
-            {isLoggedIn ? 'Go to Dashboard' : 'Get Started'}
+            {isLoggedIn
+              ? t('competitions.portal.landing.cta.dashboard', 'Go to Dashboard')
+              : t('competitions.portal.landing.finalCta.getStarted', 'Get Started')}
             <ArrowRight className="size-4" />
           </Link>
         </div>
@@ -140,7 +164,11 @@ export default function HackathonLandingPage({ params }: Props) {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 dark:border-white/10 py-6 text-center text-xs text-portal-secondary">
-        &copy; {new Date().getFullYear()} Hackathon Portal &middot; Powered by Open Mercato
+        {t(
+          'competitions.portal.landing.footer',
+          '© {year} Hackathon Portal · Powered by Open Mercato',
+          { year: new Date().getFullYear() },
+        )}
       </footer>
     </div>
   )

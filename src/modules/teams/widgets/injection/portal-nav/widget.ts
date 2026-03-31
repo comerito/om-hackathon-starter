@@ -14,8 +14,8 @@ const widget: InjectionMenuItemWidget = {
     const slug = getOrgSlug()
     const prefix = slug ? `/${slug}/portal` : '/portal'
     return [
-      { id: 'teams.portal-my-team', label: 'My Team', labelKey: 'teams.portal.nav.myTeam', icon: 'lucide:users', href: `${prefix}/team`, groupId: 'hackathon', groupLabel: 'Hackathon', groupOrder: 2 },
-      { id: 'teams.portal-browse-teams', label: 'Browse Teams', labelKey: 'teams.portal.nav.browseTeams', icon: 'lucide:search', href: `${prefix}/teams`, groupId: 'community', groupLabel: 'Community', groupOrder: 3 },
+      { id: 'teams.portal-my-team', label: 'My Team', labelKey: 'teams.portal.nav.myTeam', icon: 'lucide:users', href: `${prefix}/team`, groupId: 'hackathon', groupLabel: 'Hackathon', groupLabelKey: 'teams.portal.nav.groupHackathon', groupOrder: 2 },
+      { id: 'teams.portal-browse-teams', label: 'Browse Teams', labelKey: 'teams.portal.nav.browseTeams', icon: 'lucide:search', href: `${prefix}/teams`, groupId: 'community', groupLabel: 'Community', groupLabelKey: 'teams.portal.nav.groupCommunity', groupOrder: 3 },
     ]
   },
 }

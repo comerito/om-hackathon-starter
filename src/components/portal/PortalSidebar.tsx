@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { usePortalInjectedMenuItems } from '@open-mercato/ui/portal/hooks/usePortalInjectedMenuItems'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
 import { cn } from '@open-mercato/shared/lib/utils'
@@ -43,12 +44,12 @@ const NAV_ORDER: string[] = [
 ]
 
 /** Group definitions for rendering separators */
-type NavGroup = { id: string; label: string; itemIds: string[] }
+type NavGroup = { id: string; labelKey?: string; fallbackLabel: string; itemIds: string[] }
 const NAV_GROUPS: NavGroup[] = [
-  { id: 'main', label: '', itemIds: ['competitions.portal-dashboard', 'competitions.portal-agenda', 'competitions.portal-announcements'] },
-  { id: 'hackathon', label: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
-  { id: 'results', label: 'Judging & Results', itemIds: ['judging.portal-presentations', 'judging.portal-results', 'sponsors.portal-voting', 'judging.portal-judging'] },
-  { id: 'tools', label: 'Tools', itemIds: ['competitions.portal-qr', 'incidents.portal-report'] },
+  { id: 'main', fallbackLabel: '', itemIds: ['competitions.portal-dashboard', 'competitions.portal-agenda', 'competitions.portal-announcements'] },
+  { id: 'hackathon', labelKey: 'portal.sidebar.group.hackathon', fallbackLabel: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
+  { id: 'results', labelKey: 'portal.sidebar.group.results', fallbackLabel: 'Judging & Results', itemIds: ['judging.portal-presentations', 'judging.portal-results', 'sponsors.portal-voting', 'judging.portal-judging'] },
+  { id: 'tools', labelKey: 'portal.sidebar.group.tools', fallbackLabel: 'Tools', itemIds: ['competitions.portal-qr', 'incidents.portal-report'] },
 ]
 
 /** Items to show in minimal (incident/support) sidebar variant */
@@ -75,6 +76,7 @@ const MIN_STAGE_FOR_ITEM: Array<{ id: string; minStage: string; roles?: string[]
 ]
 
 export function PortalSidebar({ variant = 'full', competitionName, competitionSubtitle, onClose }: PortalSidebarProps) {
+  const t = useT()
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
 
@@ -128,7 +130,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
       <div className="px-5 pt-6 pb-4">
         <Link href={`${prefix}/dashboard`} className="block">
           <h2 className="text-lg font-bold text-portal-primary leading-tight">
-            {competitionName || 'Hackathon Hub'}
+            {competitionName || t('portal.sidebar.hub', 'Hackathon Hub')}
           </h2>
           {competitionSubtitle && (
             <p className="mt-0.5 text-[10px] font-medium uppercase tracking-widest text-portal-secondary">
@@ -149,16 +151,22 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
           if (groupItems.length === 0) return null
 
           return (
-            <div key={group.id} className={group.label ? 'mt-4 first:mt-0' : ''}>
-              {group.label && (
+            <div key={group.id} className={group.fallbackLabel ? 'mt-4 first:mt-0' : ''}>
+              {group.fallbackLabel && (
                 <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-portal-secondary/50">
-                  {group.label}
+                  {group.labelKey ? t(group.labelKey, group.fallbackLabel) : group.fallbackLabel}
                 </p>
               )}
               <div className="space-y-0.5">
                 {groupItems.map((item) => {
                   const Icon = resolveIcon(item.icon)
                   const isActive = item.href ? pathname === item.href || pathname.startsWith(item.href + '/') : false
+                  const itemLabel =
+                    item.labelKey && item.label
+                      ? t(item.labelKey, item.label)
+                      : item.labelKey
+                        ? t(item.labelKey, item.id)
+                        : item.label
 
                   return (
                     <Link
@@ -176,7 +184,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-portal-primary" />
                       )}
                       <Icon className="size-[18px] shrink-0" />
-                      <span className="uppercase tracking-wide">{item.label}</span>
+                      <span className="uppercase tracking-wide">{itemLabel}</span>
                     </Link>
                   )
                 })}
@@ -195,7 +203,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
             className="flex w-full items-center gap-2 rounded-lg border border-gray-100 dark:border-white/10 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 hover:text-foreground transition-colors"
           >
             <Milestone className="size-4" />
-            <span>Milestones</span>
+            <span>{t('portal.sidebar.milestones', 'Milestones')}</span>
           </button>
         )}
         {variant === 'minimal' ? (
@@ -204,7 +212,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
             className="flex items-center gap-2 text-sm text-portal-secondary hover:text-foreground"
           >
             <span className="text-lg">?</span>
-            <span>Support</span>
+            <span>{t('portal.sidebar.support', 'Support')}</span>
           </Link>
         ) : (
           <Link
@@ -212,7 +220,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
             onClick={onClose}
             className="flex w-full items-center justify-center rounded-lg bg-portal-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-portal-primary-light"
           >
-            Join Hackathon
+            {t('portal.sidebar.joinHackathon', 'Join Hackathon')}
           </Link>
         )}
       </div>

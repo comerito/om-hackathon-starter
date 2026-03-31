@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { Track } from '../../../data/entities'
 import { JudgingCriterion } from '../../../../judging/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Load track
     const track = await em.findOne(Track, {
@@ -56,8 +58,7 @@ export async function GET(req: Request) {
       // Attachments module may not be available — continue without
     }
 
-    return NextResponse.json({
-      track: {
+    const [translatedTrack] = await applyPortalTranslationOverlays([{
         id: track.id,
         name: track.name,
         short_description: track.shortDescription ?? null,
@@ -68,8 +69,16 @@ export async function GET(req: Request) {
         category: track.category ?? null,
         badge: track.badge ?? null,
         competition_id: track.competitionId,
-      },
-      criteria: criteria.map(c => ({
+      }], {
+      entityType: 'tracks:track',
+      locale,
+      tenantId: auth.tenantId,
+      organizationId: auth.orgId,
+      container,
+    })
+
+    const translatedCriteria = await applyPortalTranslationOverlays(
+      criteria.map(c => ({
         id: c.id,
         name: c.name,
         description: c.description ?? null,
@@ -79,6 +88,18 @@ export async function GET(req: Request) {
         order: c.order,
         is_global: c.trackId === null,
       })),
+      {
+        entityType: 'judging:judging_criterion',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
+
+    return NextResponse.json({
+      track: translatedTrack,
+      criteria: translatedCriteria,
       attachments,
     })
   } catch (error) {

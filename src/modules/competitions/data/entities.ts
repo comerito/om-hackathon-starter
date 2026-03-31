@@ -69,6 +69,14 @@ export const MilestoneStatus = {
 } as const
 export type MilestoneStatus = (typeof MilestoneStatus)[keyof typeof MilestoneStatus]
 
+export const PortalLocalePreferenceSource = {
+  USER: 'user',
+  ORGANIZATION: 'organization',
+  BROWSER: 'browser',
+  FALLBACK: 'fallback',
+} as const
+export type PortalLocalePreferenceSource = (typeof PortalLocalePreferenceSource)[keyof typeof PortalLocalePreferenceSource]
+
 // ── JSONB Config Interfaces ─────────────────────────────────────────
 
 export interface StageConfig {
@@ -145,6 +153,9 @@ export class Competition {
   @Property({ name: 'max_teams_per_track', type: 'int', nullable: true })
   maxTeamsPerTrack?: number | null
 
+  @Property({ name: 'max_tracks_per_team', type: 'int', default: 1 })
+  maxTracksPerTeam: number = 1
+
   @Property({ name: 'allow_track_change', type: 'boolean', default: false })
   allowTrackChange: boolean = false
 
@@ -190,9 +201,6 @@ export class Competition {
     votingEndsAt: null,
     allowVoteChange: false,
   }
-
-  @Property({ name: 'info_cards', type: 'jsonb', default: '[]' })
-  infoCards: Array<{ key: string; label: string; value: string; icon?: string }> = []
 
   @Property({ name: 'code_of_conduct_url', type: 'varchar', length: 1000 })
   codeOfConductUrl!: string
@@ -273,6 +281,37 @@ export class CompetitionParticipation {
 
   @Property({ name: 'looking_for_team_description', type: 'text', nullable: true })
   lookingForTeamDescription?: string | null
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
+}
+
+@Entity({ tableName: 'competitions_portal_locale_preference' })
+@Unique({ properties: ['customerUserId', 'tenantId', 'organizationId'] })
+export class PortalLocalePreference {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'customer_user_id', type: 'uuid' })
+  customerUserId!: string
+
+  @Property({ type: 'varchar', length: 10 })
+  locale!: string
 
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
@@ -504,6 +543,48 @@ export class Milestone {
 
   @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
   updatedAt: Date = new Date()
+}
+
+@Entity({ tableName: 'competitions_competition_info_card' })
+export class CompetitionInfoCard {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'competition_id', type: 'uuid' })
+  competitionId!: string
+
+  @Property({ type: 'varchar', length: 100 })
+  key!: string
+
+  @Property({ type: 'varchar', length: 100, nullable: true })
+  icon?: string | null
+
+  @Property({ type: 'varchar', length: 255 })
+  label!: string
+
+  @Property({ type: 'text' })
+  value!: string
+
+  @Property({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder: number = 0
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
 }
 
 // ── Competition Invitation (maps framework invitation → competition + role) ──

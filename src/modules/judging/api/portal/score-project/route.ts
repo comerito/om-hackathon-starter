@@ -7,6 +7,7 @@ import { Project } from '../../../../projects/data/entities'
 import { saveScoreSchema } from '../../../data/validators'
 import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Load project to get its trackId for criteria filtering
     const project = await em.findOne(Project, {
@@ -59,11 +61,22 @@ export async function GET(req: Request) {
       criterionScores = cs.map(c => ({ criterion_id: c.criterionId, score: c.score, note: c.note ?? null }))
     }
 
-    return NextResponse.json({
-      criteria: criteria.map(c => ({
+    const translatedCriteria = await applyPortalTranslationOverlays(
+      criteria.map(c => ({
         id: c.id, name: c.name, description: c.description,
         max_score: c.maxScore, weight: c.weight, order: c.order, round: c.round,
       })),
+      {
+        entityType: 'judging:judging_criterion',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
+
+    return NextResponse.json({
+      criteria: translatedCriteria,
       score: projectScore ? {
         id: projectScore.id,
         total_score: projectScore.totalScore,

@@ -2,7 +2,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Team } from '../../data/entities'
+import { Team, TeamTrack } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const selectTrackSchema = z.object({
@@ -38,7 +38,22 @@ export async function POST(request: Request) {
     }
 
     team.trackId = parsed.track_id
-    await em.persistAndFlush(team)
+
+    // Sync junction table: clear existing, add new
+    const existingEntries = await em.find(TeamTrack, { teamId: team.id } as FilterQuery<TeamTrack>)
+    for (const entry of existingEntries) {
+      em.remove(entry)
+    }
+    em.persist(em.create(TeamTrack, {
+      teamId: team.id,
+      trackId: parsed.track_id,
+      competitionId: team.competitionId,
+      tenantId: auth.tenantId,
+      organizationId: team.organizationId,
+      createdAt: new Date(),
+    }))
+
+    await em.flush()
 
     // Emit track_selected event
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

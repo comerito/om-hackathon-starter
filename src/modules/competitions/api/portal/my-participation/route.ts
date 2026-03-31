@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, Competition } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     const participation = await em.findOne(CompetitionParticipation, {
       customerUserId: auth.sub, competitionId, deletedAt: null,
@@ -25,6 +27,16 @@ export async function GET(req: Request) {
     if (!participation) return NextResponse.json({ error: 'Not a participant' }, { status: 404 })
 
     const competition = await em.findOne(Competition, { id: competitionId } as FilterQuery<Competition>)
+    const [translatedCompetition] = competition ? await applyPortalTranslationOverlays([{
+      id: competition.id,
+      name: competition.name,
+    }], {
+      entityType: 'competitions:competition',
+      locale,
+      tenantId: auth.tenantId,
+      organizationId: auth.orgId,
+      container,
+    }) : []
 
     return NextResponse.json({
       id: participation.id,
@@ -34,7 +46,7 @@ export async function GET(req: Request) {
       privacyPolicyAcceptedAt: participation.privacyPolicyAcceptedAt,
       cocUrl: competition?.codeOfConductUrl ?? null,
       privacyPolicyUrl: competition?.privacyPolicyUrl ?? null,
-      competitionName: competition?.name ?? null,
+      competitionName: translatedCompetition?.name ?? competition?.name ?? null,
     })
   } catch (error) {
     console.error('[portal/my-participation] GET error:', error)

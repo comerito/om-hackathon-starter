@@ -7,6 +7,7 @@ import { Track } from '../../../../tracks/data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { Team } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Verify the user participates in this competition
     const participation = await em.findOne(CompetitionParticipation, {
@@ -47,13 +49,24 @@ export async function GET(req: Request) {
         tenantId: auth.tenantId,
       }, { orderBy: { startsAt: 'asc' } })
 
-      return NextResponse.json({
-        items: items.map(i => ({
+      const translatedItems = await applyPortalTranslationOverlays(
+        items.map(i => ({
           id: i.id, title: i.title, description: i.description, type: i.type,
           starts_at: i.startsAt, ends_at: i.endsAt, location: i.location,
           speaker_name: i.speakerName, speaker_bio: i.speakerBio ?? null,
           speaker_photo_url: i.speakerPhotoUrl ?? null, is_mandatory: i.isMandatory,
         })),
+        {
+          entityType: 'competitions:agenda_item',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+
+      return NextResponse.json({
+        items: translatedItems,
       })
     }
 
@@ -64,12 +77,23 @@ export async function GET(req: Request) {
         deletedAt: null,
       }, { orderBy: { createdAt: 'desc' } })
 
-      return NextResponse.json({
-        items: items.map(a => ({
+      const translatedItems = await applyPortalTranslationOverlays(
+        items.map(a => ({
           id: a.id, title: a.title, content: a.content, priority: a.priority,
           pinned: a.pinned, published_at: a.publishedAt, target_roles: a.targetRoles,
           category: a.category, action_url: a.actionUrl, action_label: a.actionLabel,
         })),
+        {
+          entityType: 'competitions:announcement',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+
+      return NextResponse.json({
+        items: translatedItems,
       })
     }
 
@@ -79,12 +103,24 @@ export async function GET(req: Request) {
         tenantId: auth.tenantId,
       }, { orderBy: { order: 'asc' } })
 
-      return NextResponse.json({
-        items: items.map(t => ({
-          id: t.id, name: t.name, description: t.description, color: t.color,
+      const translatedItems = await applyPortalTranslationOverlays(
+        items.map(t => ({
+          id: t.id, name: t.name, short_description: t.shortDescription ?? null,
+          description: t.description, color: t.color,
           icon_url: t.iconUrl, max_teams: t.maxTeams, order: t.order,
           category: t.category, badge: t.badge,
         })),
+        {
+          entityType: 'tracks:track',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+
+      return NextResponse.json({
+        items: translatedItems,
       })
     }
 
@@ -93,11 +129,23 @@ export async function GET(req: Request) {
         competitionId,
         tenantId: auth.tenantId,
       }, { orderBy: { sortOrder: 'asc' } })
-      return NextResponse.json({
-        items: items.map(m => ({
+
+      const translatedItems = await applyPortalTranslationOverlays(
+        items.map(m => ({
           id: m.id, name: m.name, description: m.description,
           due_date: m.dueDate, status: m.status, sort_order: m.sortOrder,
         })),
+        {
+          entityType: 'competitions:milestone',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+
+      return NextResponse.json({
+        items: translatedItems,
       })
     }
 
@@ -118,12 +166,23 @@ export async function GET(req: Request) {
         teamMap = new Map(teams.map(t => [t.id, t.name]))
       }
 
-      return NextResponse.json({
-        items: items.map(p => ({
+      const translatedItems = await applyPortalTranslationOverlays(
+        items.map(p => ({
           id: p.id, title: p.title, tagline: p.tagline,
           team_id: p.teamId, track_id: p.trackId,
           team_name: teamMap.get(p.teamId) ?? null,
         })),
+        {
+          entityType: 'projects:project',
+          locale,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+          container,
+        },
+      )
+
+      return NextResponse.json({
+        items: translatedItems,
       })
     }
 

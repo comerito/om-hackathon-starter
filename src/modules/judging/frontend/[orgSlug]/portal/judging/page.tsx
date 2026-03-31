@@ -84,7 +84,7 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium truncate">{project.title}</h3>
                       {project.flagged_for_reuse && (
-                        <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-800 dark:text-orange-400">Flagged</span>
+                        <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-800 dark:text-orange-400">{t('judging.portal.flagged', 'Flagged')}</span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{project.team_name}</p>
@@ -93,7 +93,11 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
                   <div className="flex items-center gap-3">
                     {score?.total_score != null && <span className="text-lg font-mono font-bold">{score.total_score.toFixed(1)}</span>}
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}>
-                      {status === 'submitted' ? 'Submitted' : status === 'draft' ? 'Draft' : 'Unscored'}
+                      {status === 'submitted'
+                        ? t('judging.portal.assignmentStatus.submitted', 'Submitted')
+                        : status === 'draft'
+                          ? t('judging.portal.assignmentStatus.draft', 'Draft')
+                          : t('judging.portal.assignmentStatus.unscored', 'Unscored')}
                     </span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground"><polyline points="9 18 15 12 9 6" /></svg>
                   </div>

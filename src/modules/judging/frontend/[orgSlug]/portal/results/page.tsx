@@ -10,7 +10,7 @@ import { useCompetitionContext } from '../../../../../competitions/components/Co
 import { cn } from '@open-mercato/shared/lib/utils'
 import { useIsMobile } from '@open-mercato/ui/hooks/useIsMobile'
 import { ThumbsUp, Download, Filter } from 'lucide-react'
-import { PortalPageTitle, PortalBadge, StatCard, ProgressBar } from '@/components/portal'
+import { PortalPageTitle, PortalBadge, ProgressBar } from '@/components/portal'
 
 type LeaderboardEntry = {
   project_id: string; project_title: string; team_id: string; team_name: string | null
@@ -21,8 +21,13 @@ type LeaderboardEntry = {
 /* ---------- Podium ---------- */
 
 function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 3 }) {
+  const t = useT()
   const medalColors = { 1: 'from-yellow-400 to-amber-500', 2: 'from-gray-300 to-gray-400', 3: 'from-amber-600 to-amber-700' }
-  const placeLabels = { 1: 'GRAND WINNER', 2: 'SILVER FINALIST', 3: 'BRONZE FINALIST' }
+  const placeLabels = {
+    1: t('judging.portal.results.place.1', 'GRAND WINNER'),
+    2: t('judging.portal.results.place.2', 'SILVER FINALIST'),
+    3: t('judging.portal.results.place.3', 'BRONZE FINALIST'),
+  }
   const heights = { 1: 'h-40', 2: 'h-32', 3: 'h-28' }
 
   return (
@@ -87,18 +92,18 @@ function ResultsContent() {
   if (selected && selected.stage !== 'finished' && selected.stage !== 'archived') {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        Results will be available after the judging phase.
+        {t('judging.portal.results.stageLocked', 'Results will be available after the judging phase.')}
       </div>
     )
   }
 
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">Loading...</div>
+  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('judging.portal.results.loading', 'Loading...')}</div>
 
   const entries = data?.items ?? []
   if (entries.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-        Results have not been published yet.
+        {t('judging.portal.results.empty', 'Results have not been published yet.')}
       </div>
     )
   }
@@ -126,7 +131,7 @@ function ResultsContent() {
       {/* Full Rankings Table */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">Full Rankings</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('judging.portal.results.rankings', 'Full Rankings')}</h2>
           <div className="flex gap-2">
             <button
               type="button"
@@ -138,14 +143,14 @@ function ResultsContent() {
                   : 'border-gray-200 dark:border-white/10 text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5',
               )}
             >
-              <Filter className="size-3.5" /> Filter
+              <Filter className="size-3.5" /> {t('judging.portal.results.filter', 'Filter')}
             </button>
             <button
               type="button"
               onClick={() => window.open(`/api/judging/portal/export-results?competition_id=${competitionId}`, '_blank')}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-1.5 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
-              <Download className="size-3.5" /> Export
+              <Download className="size-3.5" /> {t('judging.portal.results.export', 'Export')}
             </button>
           </div>
         </div>
@@ -163,7 +168,7 @@ function ResultsContent() {
                   : 'border-gray-200 dark:border-white/10 text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5',
               )}
             >
-              All Tracks
+              {t('judging.portal.results.allTracks', 'All Tracks')}
             </button>
             {tracks.map(track => (
               <button
@@ -208,11 +213,11 @@ function ResultsContent() {
                             {entry.peer_vote_count ?? 0}
                           </span>
                           {isDisqualified ? (
-                            <PortalBadge variant="danger">Disqualified</PortalBadge>
+                            <PortalBadge variant="danger">{t('judging.portal.results.status.disqualified', 'Disqualified')}</PortalBadge>
                           ) : entry.is_finalist ? (
-                            <PortalBadge variant="warning">Finalist</PortalBadge>
+                            <PortalBadge variant="warning">{t('judging.portal.results.status.finalist', 'Finalist')}</PortalBadge>
                           ) : (
-                            <PortalBadge variant="muted">Participant</PortalBadge>
+                            <PortalBadge variant="muted">{t('judging.portal.results.status.participant', 'Participant')}</PortalBadge>
                           )}
                         </div>
                       </div>
@@ -225,11 +230,11 @@ function ResultsContent() {
             /* Desktop: grid table */
             <>
               <div className="grid grid-cols-[60px_1fr_100px_100px_120px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-white/10 text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">
-                <span>Rank</span>
-                <span>Project & Team</span>
-                <span>Avg Score</span>
-                <span>Peer Votes</span>
-                <span>Status</span>
+                <span>{t('judging.portal.results.columns.rank', 'Rank')}</span>
+                <span>{t('judging.portal.results.columns.projectTeam', 'Project & Team')}</span>
+                <span>{t('judging.portal.results.columns.avgScore', 'Avg Score')}</span>
+                <span>{t('judging.portal.results.columns.peerVotes', 'Peer Votes')}</span>
+                <span>{t('judging.portal.results.columns.status', 'Status')}</span>
               </div>
               {allEntries.map((entry, i) => {
                 const isDisqualified = entry.team_status === 'disqualified'
@@ -258,11 +263,11 @@ function ResultsContent() {
                     </span>
                     <div>
                       {isDisqualified ? (
-                        <PortalBadge variant="danger">Disqualified</PortalBadge>
+                        <PortalBadge variant="danger">{t('judging.portal.results.status.disqualified', 'Disqualified')}</PortalBadge>
                       ) : entry.is_finalist ? (
-                        <PortalBadge variant="warning">Finalist</PortalBadge>
+                        <PortalBadge variant="warning">{t('judging.portal.results.status.finalist', 'Finalist')}</PortalBadge>
                       ) : (
-                        <PortalBadge variant="muted">Participant</PortalBadge>
+                        <PortalBadge variant="muted">{t('judging.portal.results.status.participant', 'Participant')}</PortalBadge>
                       )}
                     </div>
                   </div>
@@ -277,20 +282,20 @@ function ResultsContent() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{totalSubmissions}</p>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Total Submissions</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">{t('judging.portal.results.stats.totalSubmissions', 'Total Submissions')}</p>
         </div>
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{avgScore.toFixed(1)}</p>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Avg Competition Score</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">{t('judging.portal.results.stats.avgCompetitionScore', 'Avg Competition Score')}</p>
           <ProgressBar value={avgScore * 10} size="sm" className="mt-2" />
         </div>
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <p className="text-xl sm:text-2xl font-bold text-foreground">{totalVotes.toLocaleString()}</p>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">Community Engagement</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary mt-0.5">{t('judging.portal.results.stats.communityEngagement', 'Community Engagement')}</p>
         </div>
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-portal-dark p-3 sm:p-4">
-          <p className="text-xl sm:text-2xl font-bold text-white">Verified</p>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">Judging Panel Status</p>
+          <p className="text-xl sm:text-2xl font-bold text-white">{t('judging.portal.results.stats.verified', 'Verified')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mt-0.5">{t('judging.portal.results.stats.panelStatus', 'Judging Panel Status')}</p>
         </div>
       </div>
     </div>
@@ -309,8 +314,11 @@ export default function ResultsPage({ params }: { params: { orgSlug: string } })
   if (auth.loading || !auth.user) return null
 
   return (
-    <PortalCompetitionLayout>
-      <PortalPageTitle label="Hackathon Results 2024" title="Leaderboard" />
+      <PortalCompetitionLayout>
+      <PortalPageTitle
+        label={t('judging.portal.results.label', 'Hackathon Results 2024')}
+        title={t('judging.portal.results.title', 'Leaderboard')}
+      />
       <ResultsContent />
     </PortalCompetitionLayout>
   )

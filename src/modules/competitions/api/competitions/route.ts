@@ -55,7 +55,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   list: {
     schema: querySchema,
     entityId: ENTITY_ID,
-    fields: ['id', 'name', 'slug', 'stage', 'starts_at', 'ends_at', 'location', 'timezone', 'min_team_size', 'max_team_size', 'tenant_id', 'organization_id', 'is_active', 'created_at'],
+    fields: ['id', 'name', 'slug', 'stage', 'starts_at', 'ends_at', 'location', 'timezone', 'min_team_size', 'max_team_size', 'max_tracks_per_team', 'tenant_id', 'organization_id', 'is_active', 'created_at'],
     sortFieldMap: { id: 'id', name: 'name', slug: 'slug', stage: 'stage', starts_at: 'starts_at', ends_at: 'ends_at', created_at: 'created_at' },
     buildFilters: async (q: Query) => {
       const filters: Record<string, unknown> = {}

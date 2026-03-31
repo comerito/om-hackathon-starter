@@ -1,9 +1,12 @@
 import type { ModuleSetupConfig } from '@open-mercato/shared/modules/setup'
 import type { EntityManager } from '@mikro-orm/postgresql'
+import type { ModuleConfigService } from '@open-mercato/core/modules/configs/lib/module-config-service'
 import {
   CustomerRole,
   CustomerRoleAcl,
 } from '@open-mercato/core/modules/customer_accounts/data/entities'
+
+const PORTAL_DEFAULT_LOCALE_CONFIG_KEY = 'portal_default_locale'
 
 interface SeedScope {
   tenantId: string
@@ -108,8 +111,13 @@ export const setup: ModuleSetupConfig = {
     await seedHackathonRoles(em, { tenantId, organizationId })
   },
 
-  async seedDefaults({ em, tenantId, organizationId }) {
+  async seedDefaults({ em, tenantId, organizationId, container }) {
     await seedHackathonRoles(em, { tenantId, organizationId })
+    const configService = container.resolve('moduleConfigService') as ModuleConfigService
+    const existing = await configService.getValue<string>('competitions', PORTAL_DEFAULT_LOCALE_CONFIG_KEY, { defaultValue: null })
+    if (!existing) {
+      await configService.setValue('competitions', PORTAL_DEFAULT_LOCALE_CONFIG_KEY, 'pl')
+    }
   },
 }
 

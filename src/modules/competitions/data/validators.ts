@@ -1,4 +1,15 @@
 import { z } from 'zod'
+import { locales } from '@open-mercato/shared/lib/i18n/config'
+
+export const portalLocaleEnum = z.enum(locales as [typeof locales[number], ...typeof locales[number][]])
+
+export const portalLocaleSchema = z.object({
+  locale: portalLocaleEnum,
+})
+
+export const portalDefaultLocaleSchema = z.object({
+  default_locale: portalLocaleEnum,
+})
 
 // ── JSONB config schemas ────────────────────────────────────────────
 
@@ -53,6 +64,7 @@ export const createCompetitionSchema = z.object({
   min_team_size: z.number().int().min(1).default(2),
   max_team_size: z.number().int().min(1).default(5),
   max_teams_per_track: z.number().int().min(1).optional(),
+  max_tracks_per_team: z.number().int().min(1).default(1),
   allow_track_change: z.boolean().default(false),
   project_submission_deadline: z.string().datetime().optional(),
   judging_deadline: z.string().datetime().optional(),
@@ -78,6 +90,7 @@ export const updateCompetitionSchema = z.object({
   min_team_size: z.number().int().min(1).optional(),
   max_team_size: z.number().int().min(1).optional(),
   max_teams_per_track: z.number().int().min(1).nullable().optional(),
+  max_tracks_per_team: z.number().int().min(1).optional(),
   allow_track_change: z.boolean().optional(),
   project_submission_deadline: z.string().datetime().nullable().optional(),
   judging_deadline: z.string().datetime().nullable().optional(),
@@ -89,11 +102,34 @@ export const updateCompetitionSchema = z.object({
   rules_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
-  info_cards: z.any().optional(),
 })
 
 export type CreateCompetitionInput = z.infer<typeof createCompetitionSchema>
 export type UpdateCompetitionInput = z.infer<typeof updateCompetitionSchema>
+
+// ── CompetitionInfoCard ────────────────────────────────────────────
+
+export const createCompetitionInfoCardSchema = z.object({
+  competition_id: z.string().uuid(),
+  key: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/, 'Key must be lowercase alphanumeric with underscores or hyphens'),
+  icon: z.string().max(100).optional(),
+  label: z.string().min(1).max(255),
+  value: z.string().min(1),
+  sort_order: z.number().int().default(0),
+})
+
+export const updateCompetitionInfoCardSchema = z.object({
+  id: z.string().uuid(),
+  competition_id: z.string().uuid().optional(),
+  key: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/).optional(),
+  icon: z.string().max(100).nullable().optional(),
+  label: z.string().min(1).max(255).optional(),
+  value: z.string().min(1).optional(),
+  sort_order: z.number().int().optional(),
+})
+
+export type CreateCompetitionInfoCardInput = z.infer<typeof createCompetitionInfoCardSchema>
+export type UpdateCompetitionInfoCardInput = z.infer<typeof updateCompetitionInfoCardSchema>
 
 // ── Stage Advance ───────────────────────────────────────────────────
 

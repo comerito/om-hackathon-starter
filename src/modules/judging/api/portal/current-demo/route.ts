@@ -6,6 +6,7 @@ import { DemoSession, DemoStatus } from '../../../data/entities'
 import { Team } from '../../../../teams/data/entities'
 import { Project } from '../../../../projects/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Find currently active demo (presenting or qa)
     const activeDemos = await em.find(DemoSession, {
@@ -38,7 +40,17 @@ export async function GET(req: Request) {
     const teams = teamIds.length ? await em.find(Team, { id: { $in: teamIds } } as FilterQuery<Team>) : []
     const projects = projectIds.length ? await em.find(Project, { id: { $in: projectIds } } as FilterQuery<Project>) : []
     const teamMap = new Map(teams.map(t => [t.id, t.name]))
-    const projectMap = new Map(projects.map(p => [p.id, p.title]))
+    const translatedProjects = await applyPortalTranslationOverlays(
+      projects.map(p => ({ id: p.id, title: p.title })),
+      {
+        entityType: 'projects:project',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
+    const projectMap = new Map(translatedProjects.map(p => [p.id, p.title]))
 
     const presenting = activeDemos.find(d => d.status === DemoStatus.PRESENTING || d.status === DemoStatus.QA) ?? null
     const onDeck = activeDemos.find(d => d.status === DemoStatus.ON_DECK) ?? null

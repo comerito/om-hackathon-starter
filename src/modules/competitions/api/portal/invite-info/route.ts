@@ -4,6 +4,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CustomerInvitationService } from '@open-mercato/core/modules/customer_accounts/services/customerInvitationService'
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: {},
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
     const invitationService = container.resolve('customerInvitationService') as CustomerInvitationService
+    const locale = await resolvePortalLocale(req, { container })
 
     // Validate token
     const invitation = await invitationService.findByToken(token)
@@ -40,7 +42,17 @@ export async function GET(req: Request) {
         id: competitionInvitation.competitionId,
         deletedAt: null,
       } as FilterQuery<Competition>)
-      competitionName = competition?.name ?? null
+      const [translatedCompetition] = competition ? await applyPortalTranslationOverlays([{
+        id: competition.id,
+        name: competition.name,
+      }], {
+        entityType: 'competitions:competition',
+        locale,
+        tenantId: competition.tenantId,
+        organizationId: competition.organizationId,
+        container,
+      }) : []
+      competitionName = translatedCompetition?.name ?? competition?.name ?? null
       role = competitionInvitation.participationRole
     }
 

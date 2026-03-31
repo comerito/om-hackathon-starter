@@ -2,33 +2,31 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
+import { CompetitionInfoCards, type CompetitionInfoCard } from '../../../../components/CompetitionInfoCards'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import Link from 'next/link'
-import { Plus, User, FileText, ArrowRight, Compass } from 'lucide-react'
+import {
+  ArrowRight,
+  Compass,
+  FileText,
+  Plus,
+  User,
+} from 'lucide-react'
 import { PortalPageTitle, PortalBadge, ProgressBar, GradientCard } from '@/components/portal'
 
 type MyCompetition = {
   id: string; name: string; slug: string; stage: string; role: string
   starts_at: string; ends_at: string; location: string | null; timezone: string
   description?: string | null
+  info_cards: CompetitionInfoCard[]
 }
 
 type Milestone = {
   id: string; name: string; due_date: string; status: string
-}
-
-const stageLabels: Record<string, string> = {
-  draft: 'Draft', open: 'Registration Open', team_formation: 'Team Formation',
-  track_selection: 'Track Selection', hacking: 'Hacking', demos: 'Demos',
-  deliberation: 'Deliberation', finished: 'Finished', archived: 'Archived',
-}
-
-const roleLabels: Record<string, string> = {
-  participant: 'Participant', mentor: 'Mentor', judge: 'Judge',
 }
 
 function getTimeRemaining(endDate: string): { hours: number; minutes: number } {
@@ -38,14 +36,31 @@ function getTimeRemaining(endDate: string): { hours: number; minutes: number } {
 
 function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
-  const { competitions, selectedId, setSelectedId, selected } = useCompetitionContext()
+  const locale = useLocale()
+  const { selectedId, setSelectedId } = useCompetitionContext()
   const prefix = `/${orgSlug}/portal`
+  const stageLabels: Record<string, string> = {
+    draft: t('competitions.portal.competition.stage.draft', 'Draft'),
+    open: t('competitions.portal.competition.stage.open', 'Registration Open'),
+    team_formation: t('competitions.portal.competition.stage.teamFormation', 'Team Formation'),
+    track_selection: t('competitions.portal.competition.stage.trackSelection', 'Track Selection'),
+    hacking: t('competitions.portal.competition.stage.hacking', 'Hacking'),
+    demos: t('competitions.portal.competition.stage.demos', 'Demos'),
+    deliberation: t('competitions.portal.competition.stage.deliberation', 'Deliberation'),
+    finished: t('competitions.portal.competition.stage.finished', 'Finished'),
+    archived: t('competitions.portal.competition.stage.archived', 'Archived'),
+  }
+  const roleLabels: Record<string, string> = {
+    participant: t('competitions.portal.competition.role.participant', 'Participant'),
+    mentor: t('competitions.portal.competition.role.mentor', 'Mentor'),
+    judge: t('competitions.portal.competition.role.judge', 'Judge'),
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-my-competitions'],
     queryFn: async () => {
       const { ok, result } = await apiCall<{ items: MyCompetition[] }>('/api/competitions/portal/my-competitions')
-      if (!ok || !result) throw new Error('Failed to load')
+      if (!ok || !result) throw new Error(t('competitions.portal.competition.error', 'Failed to load'))
       return result
     },
   })
@@ -83,14 +98,14 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const completionPct = milestones.length > 0 ? Math.round((completedMilestones / milestones.length) * 100) : 0
 
   if (isLoading) {
-    return <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center text-portal-secondary">Loading...</div>
+    return <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center text-portal-secondary">{t('competitions.portal.competition.loading', 'Loading...')}</div>
   }
 
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 text-center">
-        <p className="text-lg font-bold text-foreground mb-2">No competitions yet</p>
-        <p className="text-sm text-portal-secondary">You haven't been registered in any competition. Contact the organizer to get started.</p>
+        <p className="text-lg font-bold text-foreground mb-2">{t('competitions.portal.competition.empty.title', 'No competitions yet')}</p>
+        <p className="text-sm text-portal-secondary">{t('competitions.portal.competition.empty.description', "You haven't been registered in any competition. Contact the organizer to get started.")}</p>
       </div>
     )
   }
@@ -99,6 +114,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const activeComp = items.find(c => c.id === selectedId) ?? items[0]
   const pastComps = items.filter(c => c.id !== activeComp.id)
   const timeLeft = getTimeRemaining(activeComp.ends_at)
+  const infoCards = activeComp.info_cards ?? []
 
   return (
     <div className="space-y-8">
@@ -112,7 +128,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
               <User className="size-3" /> {roleLabels[activeComp.role] ?? activeComp.role}
             </span>
             <div className="ml-auto text-right">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary block">Time Remaining</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary block">{t('competitions.portal.competition.timeRemaining', 'Time Remaining')}</span>
               <span className="text-lg font-bold text-portal-primary">{timeLeft.hours}h {String(timeLeft.minutes).padStart(2, '0')}m</span>
             </div>
           </div>
@@ -125,7 +141,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
           {/* Project Completion progress */}
           <div className="mt-5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-foreground">Project Completion</span>
+              <span className="text-xs font-semibold text-foreground">{t('competitions.portal.competition.projectCompletion', 'Project Completion')}</span>
               <span className="text-xs font-bold text-portal-primary">{completionPct}%</span>
             </div>
             <ProgressBar value={completionPct} size="md" />
@@ -137,13 +153,13 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
               href={`${prefix}/project`}
               className="rounded-lg bg-portal-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-portal-primary-light transition-colors"
             >
-              Continue Project
+              {t('competitions.portal.competition.continueProject', 'Continue Project')}
             </Link>
             <Link
               href={`${prefix}/tracks`}
               className="text-sm font-semibold text-foreground hover:text-portal-primary transition-colors"
             >
-              View Guidelines
+              {t('competitions.portal.competition.viewGuidelines', 'View Guidelines')}
             </Link>
           </div>
         </div>
@@ -152,7 +168,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
         <div className="flex flex-col gap-4">
           {/* Upcoming Deadlines */}
           <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-foreground mb-3">Upcoming Deadlines</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-foreground mb-3">{t('competitions.portal.competition.upcomingDeadlines', 'Upcoming Deadlines')}</h3>
             {upcomingMilestones.length > 0 ? (
               <div className="space-y-3">
                 {upcomingMilestones.map(m => (
@@ -168,41 +184,50 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
                     <div>
                       <p className="text-sm font-bold text-foreground">{m.name}</p>
                       <p className="text-xs text-portal-secondary">
-                        {new Date(m.due_date).toLocaleDateString([], { weekday: 'short' })},{' '}
-                        {new Date(m.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(m.due_date).toLocaleDateString(locale, { weekday: 'short' })},{' '}
+                        {new Date(m.due_date).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-portal-secondary">No upcoming deadlines</p>
+              <p className="text-xs text-portal-secondary">{t('competitions.portal.competition.noUpcomingDeadlines', 'No upcoming deadlines')}</p>
             )}
           </div>
 
           {/* Need a Teammate CTA */}
           <GradientCard className="flex-1">
-            <h3 className="text-sm font-bold text-white">Need a Teammate?</h3>
+            <h3 className="text-sm font-bold text-white">{t('competitions.portal.competition.needTeammate.title', 'Need a Teammate?')}</h3>
             <p className="text-xs text-white/70 mt-1">
-              Find developers and designers looking for a group in your competition.
+              {t('competitions.portal.competition.needTeammate.description', 'Find developers and designers looking for a group in your competition.')}
             </p>
             <Link
               href={`${prefix}/teams`}
               className="mt-3 inline-flex items-center rounded-md bg-white/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
             >
-              Open Matchmaker
+              {t('competitions.portal.competition.needTeammate.cta', 'Open Matchmaker')}
             </Link>
           </GradientCard>
         </div>
       </div>
 
+      {infoCards.length > 0 && (
+        <CompetitionInfoCards
+          items={infoCards}
+          title={infoCards.length > 2 ? t('competitions.portal.competition.infoCards.title', 'Competition Info') : undefined}
+          description={infoCards.length > 2 ? t('competitions.portal.competition.infoCards.description', 'Key details for your current competition.') : undefined}
+          showCountBadge={infoCards.length > 2}
+        />
+      )}
+
       {/* ===== Past & Drafts ===== */}
       {pastComps.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl font-bold text-foreground">Past & Drafts</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">{t('competitions.portal.competition.pastDrafts', 'Past & Drafts')}</h2>
             <span className="text-xs font-semibold text-portal-primary cursor-pointer hover:text-portal-primary-light transition-colors">
-              Browse All Competitions
+              {t('competitions.portal.competition.browseAll', 'Browse All Competitions')}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -220,15 +245,17 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
                       <Compass className="size-4 text-portal-secondary" />
                     </div>
                     <PortalBadge variant={isFinished ? 'success' : 'muted'}>
-                      {isFinished ? 'Completed' : stageLabels[comp.stage] ?? comp.stage}
+                      {isFinished ? t('competitions.portal.competition.status.completed', 'Completed') : stageLabels[comp.stage] ?? comp.stage}
                     </PortalBadge>
                   </div>
                   <h3 className="text-sm font-bold text-foreground">{comp.name}</h3>
                   <p className="text-xs text-portal-secondary mt-1 line-clamp-2">
-                    {roleLabels[comp.role] ?? comp.role} · {new Date(comp.starts_at).toLocaleDateString([], { month: 'short', year: 'numeric' })}
+                    {roleLabels[comp.role] ?? comp.role} · {new Date(comp.starts_at).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}
                   </p>
                   <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-portal-primary">
-                    {isFinished ? 'View Results' : 'Entry Incomplete'}
+                    {isFinished
+                      ? t('competitions.portal.competition.viewResults', 'View Results')
+                      : t('competitions.portal.competition.entryIncomplete', 'Entry Incomplete')}
                     <ArrowRight className="size-3" />
                   </div>
                 </button>
@@ -240,9 +267,9 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
               <div className="size-10 rounded-full bg-portal-primary/10 flex items-center justify-center mb-3">
                 <Compass className="size-5 text-portal-primary" />
               </div>
-              <h3 className="text-sm font-bold text-foreground">Explore Open Tracks</h3>
+              <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.competition.exploreTracks.title', 'Explore Open Tracks')}</h3>
               <p className="text-xs text-portal-secondary mt-1">
-                Discover active hackathons starting this month.
+                {t('competitions.portal.competition.exploreTracks.description', 'Discover active hackathons starting this month.')}
               </p>
             </div>
           </div>
@@ -266,14 +293,14 @@ export default function MyCompetitionsPage({ params }: { params: { orgSlug: stri
   return (
     <PortalCompetitionLayout>
       <PortalPageTitle
-        label="Track your progress and manage your active hackathon entries."
-        title="My Competitions"
+        label={t('competitions.portal.competition.page.label', 'Track your progress and manage your active hackathon entries.')}
+        title={t('competitions.portal.competition.page.title', 'My Competitions')}
         rightElement={
           <Link
             href={`/${orgSlug}/portal/tracks`}
             className="flex items-center gap-1.5 rounded-lg border border-portal-primary px-4 py-2 text-sm font-semibold text-portal-primary hover:bg-portal-primary/5 transition-colors"
           >
-            <Plus className="size-4" /> Join New
+            <Plus className="size-4" /> {t('competitions.portal.competition.page.joinNew', 'Join New')}
           </Link>
         }
       />

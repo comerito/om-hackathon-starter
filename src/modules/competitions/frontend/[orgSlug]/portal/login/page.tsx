@@ -25,7 +25,7 @@ export default function HackathonLoginPage({ params }: Props) {
       setError(null)
 
       if (!tenant.tenantId) {
-        setError('Organization not found.')
+        setError(t('competitions.portal.login.errors.organizationNotFound', 'Organization not found.'))
         return
       }
 
@@ -43,19 +43,19 @@ export default function HackathonLoginPage({ params }: Props) {
         }
 
         if (result.status === 423) {
-          setError('Account locked. Try again later.')
+          setError(t('competitions.portal.login.errors.accountLocked', 'Account locked. Try again later.'))
         } else if (result.status === 401) {
-          setError('Invalid email or password.')
+          setError(t('competitions.portal.login.errors.invalidCredentials', 'Invalid email or password.'))
         } else {
-          setError(result.result?.error || 'Login failed. Please try again.')
+          setError(result.result?.error || t('competitions.portal.login.errors.generic', 'Login failed. Please try again.'))
         }
       } catch {
-        setError('Login failed. Please try again.')
+        setError(t('competitions.portal.login.errors.generic', 'Login failed. Please try again.'))
       } finally {
         setSubmitting(false)
       }
     },
-    [email, password, tenant.tenantId, orgSlug],
+    [email, password, tenant.tenantId, orgSlug, t],
   )
 
   return (
@@ -78,40 +78,59 @@ export default function HackathonLoginPage({ params }: Props) {
               <div className="size-8 rounded-lg bg-white/20 flex items-center justify-center">
                 <Zap className="size-4" />
               </div>
-              <span className="text-sm font-bold uppercase tracking-widest opacity-80">Hackathon Portal</span>
+              <span className="text-sm font-bold uppercase tracking-widest opacity-80">
+                {t('competitions.portal.login.badge', 'Hackathon Portal')}
+              </span>
             </div>
           </div>
 
           <div>
             <h1 className="font-display text-5xl font-bold leading-tight">
-              Build.<br />
-              Ship.<br />
-              Win.
+              {t('competitions.portal.login.hero.title', 'Build. Ship. Win.')
+                .split(' ')
+                .map((word) => (
+                  <span key={word}>
+                    {word}
+                    <br />
+                  </span>
+                ))}
             </h1>
             <p className="mt-6 text-lg text-white/70 max-w-md leading-relaxed">
-              Join the most exciting hackathon experience. Collaborate with talented developers,
-              designers, and innovators to create something extraordinary.
+              {t(
+                'competitions.portal.login.hero.description',
+                'Join the most exciting hackathon experience. Collaborate with talented developers, designers, and innovators to create something extraordinary.',
+              )}
             </p>
             <div className="mt-8 flex items-center gap-6">
               <div>
                 <p className="text-3xl font-bold">48h</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">Of Building</p>
+                <p className="text-xs text-white/50 uppercase tracking-wider">
+                  {t('competitions.portal.login.hero.stats.building', 'Of Building')}
+                </p>
               </div>
               <div className="h-8 w-px bg-white/20" />
               <div>
                 <p className="text-3xl font-bold">$25K</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">In Prizes</p>
+                <p className="text-xs text-white/50 uppercase tracking-wider">
+                  {t('competitions.portal.login.hero.stats.prizes', 'In Prizes')}
+                </p>
               </div>
               <div className="h-8 w-px bg-white/20" />
               <div>
                 <p className="text-3xl font-bold">3</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">Tracks</p>
+                <p className="text-xs text-white/50 uppercase tracking-wider">
+                  {t('competitions.portal.login.hero.stats.tracks', 'Tracks')}
+                </p>
               </div>
             </div>
           </div>
 
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} Hackathon Portal. Powered by Open Mercato.
+            {t(
+              'competitions.portal.login.footer',
+              '© {year} Hackathon Portal. Powered by Open Mercato.',
+              { year: new Date().getFullYear() },
+            )}
           </p>
         </div>
       </div>
@@ -124,13 +143,20 @@ export default function HackathonLoginPage({ params }: Props) {
             <div className="size-8 rounded-lg bg-portal-primary flex items-center justify-center">
               <Zap className="size-4 text-white" />
             </div>
-            <span className="text-sm font-bold uppercase tracking-widest text-portal-primary">Hackathon Portal</span>
+            <span className="text-sm font-bold uppercase tracking-widest text-portal-primary">
+              {t('competitions.portal.login.badge', 'Hackathon Portal')}
+            </span>
           </div>
 
           <div className="mb-8">
-            <h2 className="font-display text-3xl font-bold text-foreground">Welcome back</h2>
+            <h2 className="font-display text-3xl font-bold text-foreground">
+              {t('competitions.portal.login.title', 'Welcome back')}
+            </h2>
             <p className="mt-2 text-sm text-portal-secondary">
-              Sign in to your account to continue your hackathon journey.
+              {t(
+                'competitions.portal.login.description',
+                'Sign in to your account to continue your hackathon journey.',
+              )}
             </p>
           </div>
 
@@ -143,14 +169,14 @@ export default function HackathonLoginPage({ params }: Props) {
 
             <div>
               <label htmlFor="login-email" className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
-                Email address
+                {t('competitions.portal.login.email.label', 'Email address')}
               </label>
               <input
                 id="login-email"
                 type="email"
                 autoComplete="email"
                 required
-                placeholder="you@example.com"
+                placeholder={t('competitions.portal.login.email.placeholder', 'you@example.com')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={submitting}
@@ -160,7 +186,7 @@ export default function HackathonLoginPage({ params }: Props) {
 
             <div>
               <label htmlFor="login-password" className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
-                Password
+                {t('competitions.portal.login.password.label', 'Password')}
               </label>
               <div className="relative">
                 <input
@@ -168,7 +194,7 @@ export default function HackathonLoginPage({ params }: Props) {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  placeholder="Enter your password"
+                  placeholder={t('competitions.portal.login.password.placeholder', 'Enter your password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
@@ -191,22 +217,22 @@ export default function HackathonLoginPage({ params }: Props) {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-portal-primary px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-portal-primary-light hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
-                'Signing in...'
+                t('competitions.portal.login.submitting', 'Signing in...')
               ) : (
                 <>
-                  Sign In
+                  {t('competitions.portal.login.submit', 'Sign In')}
                   <ArrowRight className="size-4" />
                 </>
               )}
             </button>
 
             <p className="text-center text-sm text-portal-secondary">
-              Don&apos;t have an account?{' '}
+              {t('competitions.portal.login.noAccount', "Don't have an account?")}{' '}
               <Link
                 href={`/${orgSlug}/portal/signup`}
                 className="font-semibold text-portal-primary hover:text-portal-primary-light transition-colors"
               >
-                Create one
+                {t('competitions.portal.login.createAccount', 'Create one')}
               </Link>
             </p>
           </form>

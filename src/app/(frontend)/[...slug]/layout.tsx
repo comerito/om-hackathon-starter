@@ -4,9 +4,11 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { Organization } from '@open-mercato/core/modules/directory/data/entities'
 import { CustomerUser } from '@open-mercato/core/modules/customer_accounts/data/entities'
 import { FeatureTogglesService } from '@open-mercato/core/modules/feature_toggles/lib/feature-flag-check'
-import { resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
+import { I18nProvider } from '@open-mercato/shared/lib/i18n/context'
+import { loadDictionary, resolveTranslations } from '@open-mercato/shared/lib/i18n/server'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { HackathonPortalLayout, type PortalLayoutVariant } from '@/components/portal/HackathonPortalLayout'
+import { resolvePortalLocaleFromContext } from '@/lib/portal-translations'
 
 type LayoutProps = {
   children: React.ReactNode
@@ -55,6 +57,7 @@ export default async function FrontendLayout({ children, params }: LayoutProps) 
   let userName: string | null = null
   let userEmail: string | null = null
   let portalEnabled = true
+  let portalLocale: 'en' | 'pl' | 'es' | 'de' = 'pl'
 
   try {
     const container = await createRequestContainer()
@@ -90,6 +93,16 @@ export default async function FrontendLayout({ children, params }: LayoutProps) 
         userEmail = customerAuth.email
       }
     }
+
+    const { cookies, headers } = await import('next/headers')
+    const cookieStore = await cookies()
+    const headerStore = await headers()
+    portalLocale = await resolvePortalLocaleFromContext({
+      auth: customerAuth,
+      cookieLocale: cookieStore.get('locale')?.value ?? null,
+      acceptLanguage: headerStore.get('accept-language'),
+      container,
+    })
   } catch {
     // Fallback to JWT data
     if (customerAuth) {
@@ -116,30 +129,32 @@ export default async function FrontendLayout({ children, params }: LayoutProps) 
 
   const authenticated = !isPublic && !!customerAuth
   const variant = isPublic ? 'full' as const : getLayoutVariant(pathname)
+  const portalDict = await loadDictionary(portalLocale)
 
   return (
-    <PortalProvider
-      orgSlug={orgSlug}
-      initialAuth={customerAuth}
-      initialTenant={{
-        tenantId: tenantId ?? undefined,
-        organizationId: organizationId ?? undefined,
-        organizationName: orgName ?? undefined,
-      }}
-    >
-      {isPublic ? (
-        // Public routes (login/signup): no layout chrome
-        <>{children}</>
-      ) : (
-        <HackathonPortalLayout
-          variant={variant}
-          enableEventBridge={authenticated}
-          competitionName={orgName ?? undefined}
-          userName={userName ?? undefined}
-        >
-          {children}
-        </HackathonPortalLayout>
-      )}
-    </PortalProvider>
+    <I18nProvider locale={portalLocale} dict={portalDict}>
+      <PortalProvider
+        orgSlug={orgSlug}
+        initialAuth={customerAuth}
+        initialTenant={{
+          tenantId: tenantId ?? undefined,
+          organizationId: organizationId ?? undefined,
+          organizationName: orgName ?? undefined,
+        }}
+      >
+        {isPublic ? (
+          <>{children}</>
+        ) : (
+          <HackathonPortalLayout
+            variant={variant}
+            enableEventBridge={authenticated}
+            competitionName={orgName ?? undefined}
+            userName={userName ?? undefined}
+          >
+            {children}
+          </HackathonPortalLayout>
+        )}
+      </PortalProvider>
+    </I18nProvider>
   )
 }

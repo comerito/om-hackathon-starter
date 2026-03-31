@@ -1,6 +1,7 @@
 "use client"
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
@@ -20,6 +21,7 @@ type QueueResponse = {
 }
 
 function KioskContent() {
+  const t = useT()
   const { selectedId: competitionId } = useCompetitionContext()
   const [now, setNow] = React.useState(() => Date.now())
   const [clockDelta, setClockDelta] = React.useState(0)
@@ -51,12 +53,12 @@ function KioskContent() {
     if (presenting.status === 'presenting') {
       const duration = presenting.presentation_duration_minutes * 60 * 1000
       timeRemaining = Math.max(0, Math.floor((start + duration - correctedNow) / 1000))
-      phase = 'PRESENTATION'
+      phase = t('judging.portal.presentations.timer.presentation', 'Presentation')
     } else if (presenting.status === 'qa') {
       const presDuration = presenting.presentation_duration_minutes * 60 * 1000
       const qaDuration = presenting.qa_duration_minutes * 60 * 1000
       timeRemaining = Math.max(0, Math.floor((start + presDuration + qaDuration - correctedNow) / 1000))
-      phase = 'Q&A'
+      phase = t('judging.portal.presentations.timer.qa', 'Q&A')
     }
   }
 
@@ -72,7 +74,7 @@ function KioskContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-portal-dark flex items-center justify-center">
-        <p className="text-white/40 text-[3vh]">Loading...</p>
+        <p className="text-white/40 text-[3vh]">{t('judging.portal.kiosk.loading', 'Loading...')}</p>
       </div>
     )
   }
@@ -81,11 +83,11 @@ function KioskContent() {
     return (
       <div className="min-h-screen bg-portal-dark flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white/50 text-[4vh]">Waiting for next presentation...</p>
+          <p className="text-white/50 text-[4vh]">{t('judging.portal.kiosk.waiting', 'Waiting for next presentation...')}</p>
           {onDeck && (
             <div className="mt-8">
-              <p className="text-portal-primary text-[2vh] uppercase tracking-[0.3em]">Up Next</p>
-              <p className="text-white text-[6vh] font-extrabold uppercase mt-2">{onDeck.team_name ?? 'Team'}</p>
+              <p className="text-portal-primary text-[2vh] uppercase tracking-[0.3em]">{t('judging.portal.kiosk.upNext', 'Up Next')}</p>
+              <p className="text-white text-[6vh] font-extrabold uppercase mt-2">{onDeck.team_name ?? t('judging.portal.kiosk.teamFallback', 'Team')}</p>
             </div>
           )}
         </div>
@@ -100,17 +102,17 @@ function KioskContent() {
         <div className="flex items-center gap-2">
           <span className="size-2.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-[1.5vh] font-medium uppercase tracking-[0.2em] text-white/50">
-            Live Submissions Phase
+            {t('judging.portal.kiosk.livePhase', 'Live Submissions Phase')}
           </span>
         </div>
         <div className="flex items-center gap-6 text-white/40">
           <div className="text-right">
-            <span className="text-[1.2vh] uppercase tracking-widest block">Local Time</span>
+            <span className="text-[1.2vh] uppercase tracking-widest block">{t('judging.portal.kiosk.localTime', 'Local Time')}</span>
             <span className="text-[2vh] font-mono font-bold text-white/60">{localTime}</span>
           </div>
           <div className="text-right">
-            <span className="text-[1.2vh] uppercase tracking-widest block">Status</span>
-            <span className="text-[2vh] font-bold text-green-400">Active</span>
+            <span className="text-[1.2vh] uppercase tracking-widest block">{t('judging.portal.kiosk.status', 'Status')}</span>
+            <span className="text-[2vh] font-bold text-green-400">{t('judging.portal.kiosk.active', 'Active')}</span>
           </div>
         </div>
       </div>
@@ -120,7 +122,7 @@ function KioskContent() {
         {/* Current team label */}
         <div className="flex items-center gap-4 mb-4">
           <span className="text-portal-primary text-[2vh] font-semibold uppercase tracking-[0.2em]">
-            Current Team
+            {t('judging.portal.kiosk.currentTeam', 'Current Team')}
           </span>
           <div className="h-px w-12 bg-portal-primary" />
         </div>
@@ -130,7 +132,7 @@ function KioskContent() {
           className="text-white font-extrabold text-center uppercase leading-none tracking-tight"
           style={{ fontSize: 'clamp(48px, 10vw, 140px)' }}
         >
-          {presenting.team_name ?? 'TEAM'}
+          {presenting.team_name ?? t('judging.portal.kiosk.teamUpperFallback', 'TEAM')}
         </h1>
 
         {/* Project tagline */}
@@ -140,7 +142,7 @@ function KioskContent() {
 
         {/* Timer */}
         {timeRemaining !== null && (
-          <div className="mt-12" role="timer" aria-label={`${minutes} minutes ${seconds} seconds remaining`}>
+          <div className="mt-12" role="timer" aria-label={t('judging.portal.kiosk.timerLabel', '{minutes} minutes {seconds} seconds remaining', { minutes, seconds })}>
             <div className="flex items-baseline justify-center">
               <span className="font-mono font-bold text-white tabular-nums" style={{ fontSize: 'clamp(80px, 18vw, 200px)' }}>
                 {String(minutes).padStart(2, '0')}
@@ -166,8 +168,8 @@ function KioskContent() {
 
             {/* Phase labels */}
             <div className="flex items-center justify-between mt-2 text-[1.3vh] uppercase tracking-widest">
-              <span className="text-white/30">Phase Started</span>
-              <span className="text-portal-tertiary font-semibold">Hard Deadline: 00:00:00</span>
+              <span className="text-white/30">{phase || t('judging.portal.kiosk.phaseStarted', 'Phase Started')}</span>
+              <span className="text-portal-tertiary font-semibold">{t('judging.portal.kiosk.hardDeadline', 'Hard Deadline: 00:00:00')}</span>
             </div>
           </div>
         )}
@@ -177,20 +179,24 @@ function KioskContent() {
       {onDeck && (
         <div className="flex items-center gap-6 px-8 py-4 bg-white/5 border-t border-white/10">
           <span className="rounded-full bg-orange-100 dark:bg-orange-500/10 px-4 py-1.5 text-xs font-bold uppercase text-orange-800 dark:text-orange-400">
-            → Up Next
+            {t('judging.portal.kiosk.upNextBadge', 'Up Next')}
           </span>
           <div className="flex-1">
-            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">Queue Position 02</span>
+            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.queuePosition', 'Queue Position {position}', { position: '02' })}</span>
             <span className="text-white font-extrabold uppercase text-[2.5vh] tracking-wide">
-              {onDeck.team_name ?? 'TEAM'}
+              {onDeck.team_name ?? t('judging.portal.kiosk.teamUpperFallback', 'TEAM')}
             </span>
           </div>
           <div className="text-right">
-            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">Track</span>
-            <span className="text-white font-bold uppercase text-[1.8vh]">Infrastructure</span>
+            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.track', 'Track')}</span>
+            <span className="text-white font-bold uppercase text-[1.8vh]">{t('judging.portal.kiosk.trackFallback', 'Infrastructure')}</span>
           </div>
           <AvatarStack
-            avatars={[{ name: onDeck.team_name ?? 'T' }, { name: 'M' }, { name: 'A' }]}
+            avatars={[
+              { name: onDeck.team_name ?? t('judging.portal.kiosk.avatarFallback.team', 'T') },
+              { name: t('judging.portal.kiosk.avatarFallback.memberOne', 'M') },
+              { name: t('judging.portal.kiosk.avatarFallback.memberTwo', 'A') },
+            ]}
             size="sm"
           />
         </div>

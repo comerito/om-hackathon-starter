@@ -1,7 +1,7 @@
 "use client"
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
@@ -11,7 +11,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { cn } from '@open-mercato/shared/lib/utils'
 import {
   MessageCircle, Search, Users, X,
-  ExternalLink, Briefcase, Loader2,
+  ExternalLink, Briefcase,
 } from 'lucide-react'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
@@ -61,10 +61,11 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
   onInvite: (userId: string) => void
   invitingId: string | null
 }) {
+  const t = useT()
   const initials = p.display_name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
   const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
-  const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
   const canInvite = p.looking_for_team && myTeamId
+  const roleLabel = t(`competitions.portal.participants.role.${p.role}`, p.role)
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -113,7 +114,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
               <p className="text-sm text-white/70 truncate">{p.email}</p>
               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                 <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                  {p.role}
+                  {roleLabel}
                 </span>
                 {p.specialty && (
                   <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/80">
@@ -132,7 +133,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
             {p.looking_for_team && (
               <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-green-700">
                 <Users className="size-3" />
-                Looking for Team
+                {t('competitions.portal.participants.lookingForTeam', 'Looking for Team')}
               </span>
             )}
             {p.organization && (
@@ -151,7 +152,9 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
           {/* Skills */}
           {p.skills.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-portal-secondary mb-2">Skills</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-portal-secondary mb-2">
+                {t('competitions.portal.participants.skills', 'Skills')}
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {p.skills.map((skill) => (
                   <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">
@@ -173,7 +176,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
                   className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <ExternalLink className="size-4 text-portal-primary shrink-0" />
-                  View Portfolio
+                  {t('competitions.portal.participants.viewPortfolio', 'View Portfolio')}
                   <span className="ml-auto text-xs text-portal-secondary truncate max-w-[140px]">{getHostname(p.portfolio_url)}</span>
                 </a>
               )}
@@ -185,7 +188,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
                   className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <ExternalLink className="size-4 text-portal-primary shrink-0" />
-                  Book Office Hours
+                  {t('competitions.portal.participants.bookOfficeHours', 'Book Office Hours')}
                   <span className="ml-auto text-xs text-portal-secondary truncate max-w-[140px]">{getHostname(p.office_hours_url)}</span>
                 </a>
               )}
@@ -203,7 +206,9 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors disabled:opacity-60"
             >
               <Users className="size-4" />
-              {invitingId === p.customer_user_id ? 'Sending...' : 'Invite to Team'}
+              {invitingId === p.customer_user_id
+                ? t('competitions.portal.participants.inviting', 'Sending...')
+                : t('competitions.portal.participants.inviteToTeam', 'Invite to Team')}
             </button>
           )}
           <button
@@ -214,7 +219,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
               !canInvite && 'flex-1',
             )}
           >
-            Close
+            {t('competitions.portal.participants.close', 'Close')}
           </button>
         </div>
       </div>
@@ -225,6 +230,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
 /* ---------- participant card ---------- */
 
 function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: () => void }) {
+  const t = useT()
   const initials = p.display_name
     .split(' ')
     .map((n) => n.charAt(0))
@@ -234,6 +240,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
 
   const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
   const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
+  const roleLabel = t(`competitions.portal.participants.role.${p.role}`, p.role)
 
   return (
     <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5">
@@ -254,7 +261,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
             {p.looking_for_team && (
               <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
                 <Users className="size-2.5" />
-                LFT
+                {t('competitions.portal.participants.lookingForTeamShort', 'LFT')}
               </span>
             )}
           </div>
@@ -264,7 +271,7 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
 
       {/* Role Badge + Organization */}
       <div className="flex items-center gap-2 mb-3">
-        <PortalBadge variant={badgeVariant}>{p.role}</PortalBadge>
+        <PortalBadge variant={badgeVariant}>{roleLabel}</PortalBadge>
         {p.organization && (
           <>
             <span className="text-gray-300 dark:text-slate-600">&middot;</span>
@@ -296,13 +303,13 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
           onClick={onViewProfile}
           className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-portal-primary hover:text-portal-primary-light transition-colors"
         >
-          View Profile
+          {t('competitions.portal.participants.viewProfile', 'View Profile')}
           <span className="text-xs">&rarr;</span>
         </button>
         <button
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
-          aria-label={`Message ${p.display_name}`}
+          aria-label={t('competitions.portal.participants.messageAria', 'Message {name}', { name: p.display_name })}
         >
           <MessageCircle className="size-4" />
         </button>
@@ -330,6 +337,7 @@ function FilterPills({
   showLookingForTeam: boolean
   onToggleLookingForTeam: () => void
 }) {
+  const t = useT()
   return (
     <div className="overflow-x-auto">
       <div className="flex items-center gap-1.5 flex-nowrap">
@@ -366,7 +374,7 @@ function FilterPills({
             )}
           >
             <Users className="size-3" />
-            Looking for Team
+            {t('competitions.portal.participants.lookingForTeam', 'Looking for Team')}
             <span className={cn(
               'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold',
               showLookingForTeam ? 'bg-white/20 text-white' : 'bg-green-100 text-green-600',
@@ -384,8 +392,6 @@ function FilterPills({
 
 function ParticipantsContent() {
   const t = useT()
-  const queryClient = useQueryClient()
-  const { auth } = usePortalContext()
   const { selectedId } = useCompetitionContext()
   const [search, setSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
@@ -421,10 +427,10 @@ function ParticipantsContent() {
         body: JSON.stringify({ team_id: myTeamId, invitee_id: userId }),
       })
       if (ok) {
-        flash('Invitation sent!', 'success')
+        flash(t('competitions.portal.participants.flash.invitationSent', 'Invitation sent!'), 'success')
         setSelectedParticipant(null)
       } else {
-        flash(result?.error ?? 'Failed to send invitation', 'error')
+        flash(result?.error ?? t('competitions.portal.participants.flash.invitationFailed', 'Failed to send invitation'), 'error')
       }
     } finally {
       setInvitingId(null)
@@ -446,7 +452,7 @@ function ParticipantsContent() {
       const { ok, result } = await apiCall<{ items: Participant[] }>(
         `/api/competitions/portal/participants?competition_id=${selectedId}${searchParam}`,
       )
-      if (!ok || !result) throw new Error('Failed to load participants')
+      if (!ok || !result) throw new Error(t('competitions.portal.participants.errors.load', 'Failed to load participants'))
       return result
     },
     enabled: !!selectedId,
@@ -460,17 +466,21 @@ function ParticipantsContent() {
       const role = p.role || 'participant'
       roleCounts[role] = (roleCounts[role] ?? 0) + 1
     }
-    const filters: FilterOption[] = [{ id: 'all', label: 'All', count: allParticipants.length }]
+    const filters: FilterOption[] = [{ id: 'all', label: t('competitions.portal.participants.filter.all', 'All'), count: allParticipants.length }]
     const sortedRoles = Object.keys(roleCounts).sort((a, b) => {
       if (a === 'participant') return -1
       if (b === 'participant') return 1
       return a.localeCompare(b)
     })
     for (const role of sortedRoles) {
-      filters.push({ id: role, label: role.charAt(0).toUpperCase() + role.slice(1) + 's', count: roleCounts[role] })
+      filters.push({
+        id: role,
+        label: t(`competitions.portal.participants.filter.${role}`, role.charAt(0).toUpperCase() + role.slice(1) + 's'),
+        count: roleCounts[role],
+      })
     }
     return filters
-  }, [allParticipants])
+  }, [allParticipants, t])
 
   const lookingForTeamCount = React.useMemo(() => allParticipants.filter(p => p.looking_for_team).length, [allParticipants])
 
@@ -561,12 +571,16 @@ function ParticipantsContent() {
                 onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
                 className="inline-flex items-center rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 py-2.5 text-sm font-medium text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
-                Load More Participants
+                {t('competitions.portal.participants.loadMore', 'Load More Participants')}
               </button>
             )}
             <p className="text-xs text-portal-secondary">
-              Showing {visibleParticipants.length} of {filteredParticipants.length} participants
-              {filteredParticipants.length !== allParticipants.length && ` (${allParticipants.length} total)`}
+              {t('competitions.portal.participants.showing', 'Showing {visible} of {filtered} participants', {
+                visible: visibleParticipants.length,
+                filtered: filteredParticipants.length,
+              })}
+              {filteredParticipants.length !== allParticipants.length
+                && ` ${t('competitions.portal.participants.total', '({total} total)', { total: allParticipants.length })}`}
             </p>
           </div>
         </>
@@ -590,7 +604,10 @@ export default function ParticipantsPortalPage({ params }: { params: { orgSlug: 
 
   return (
     <PortalCompetitionLayout>
-      <PortalPageTitle label="Network Hub" title="Participants Directory" />
+      <PortalPageTitle
+        label={t('competitions.portal.participants.page.label', 'Network Hub')}
+        title={t('competitions.portal.participants.page.title', 'Participants Directory')}
+      />
       <ParticipantsContent />
     </PortalCompetitionLayout>
   )

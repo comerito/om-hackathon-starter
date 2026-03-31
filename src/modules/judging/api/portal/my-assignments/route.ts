@@ -6,6 +6,7 @@ import { JudgePanelJudge, JudgePanelTrack, JudgePanel, ProjectScore } from '../.
 import { Project } from '../../../../projects/data/entities'
 import { Team } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Find panels this judge is on
     const panelJudges = await em.find(JudgePanelJudge, {
@@ -59,9 +61,8 @@ export async function GET(req: Request) {
     } as FilterQuery<ProjectScore>) : []
     const scoreMap = new Map(scores.map(s => [s.projectId + ':' + s.round, s]))
 
-    return NextResponse.json({
-      panels: panels.map(p => ({ id: p.id, name: p.name, round: p.round })),
-      projects: projects.map(p => ({
+    const translatedProjects = await applyPortalTranslationOverlays(
+      projects.map(p => ({
         id: p.id, title: p.title, tagline: p.tagline, team_id: p.teamId,
         team_name: teamMap.get(p.teamId) ?? null, track_id: p.trackId,
         status: p.status, flagged_for_reuse: p.flaggedForReuse,
@@ -69,6 +70,18 @@ export async function GET(req: Request) {
         description: p.description, demo_url: p.demoUrl, repo_url: p.repoUrl,
         video_url: p.videoUrl, tech_stack: p.techStack,
       })),
+      {
+        entityType: 'projects:project',
+        locale,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        container,
+      },
+    )
+
+    return NextResponse.json({
+      panels: panels.map(p => ({ id: p.id, name: p.name, round: p.round })),
+      projects: translatedProjects,
       scores: scores.map(s => ({
         id: s.id, project_id: s.projectId, round: s.round,
         total_score: s.totalScore, is_submitted: s.isSubmitted,

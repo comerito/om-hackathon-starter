@@ -10,6 +10,7 @@ export const invitationStatusValues = ['pending', 'accepted', 'declined', 'expir
 export const createTeamSchema = z.object({
   competition_id: z.string().uuid(),
   track_id: z.string().uuid().optional(),
+  track_ids: z.array(z.string().uuid()).optional(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   avatar_url: z.string().max(500).optional(),
@@ -18,6 +19,7 @@ export const createTeamSchema = z.object({
 export const updateTeamSchema = z.object({
   id: z.string().uuid(),
   track_id: z.string().uuid().nullable().optional(),
+  track_ids: z.array(z.string().uuid()).optional(),
   name: z.string().min(1).max(255).optional(),
   description: z.string().nullable().optional(),
   avatar_url: z.string().max(500).nullable().optional(),
@@ -33,9 +35,15 @@ export const disqualifyTeamSchema = z.object({
   disqualification_reason: z.string().min(1),
 })
 
+export const manageTeamTracksSchema = z.object({
+  team_id: z.string().uuid(),
+  track_ids: z.array(z.string().uuid()),
+})
+
 export type CreateTeamInput = z.infer<typeof createTeamSchema>
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>
 export type DisqualifyTeamInput = z.infer<typeof disqualifyTeamSchema>
+export type ManageTeamTracksInput = z.infer<typeof manageTeamTracksSchema>
 
 // ── TeamMember ──────────────────────────────────────────────────────
 

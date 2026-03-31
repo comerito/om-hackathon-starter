@@ -68,7 +68,7 @@ function VotingContent() {
         flash(t('sponsors.portal.voteSuccess', 'Vote cast!'), 'success')
         queryClient.invalidateQueries({ queryKey: ['portal-my-votes'] })
       } else {
-        flash(result?.error ?? 'Failed to vote', 'error')
+        flash(result?.error ?? t('sponsors.portal.voteFailed', 'Failed to vote'), 'error')
       }
     } finally {
       setVoting(null)
@@ -82,14 +82,14 @@ function VotingContent() {
         flash(t('sponsors.portal.voteRemoved', 'Vote removed'), 'success')
         queryClient.invalidateQueries({ queryKey: ['portal-my-votes'] })
       } else {
-        flash(result?.error ?? 'Failed to remove vote', 'error')
+        flash(result?.error ?? t('sponsors.portal.voteRemoveFailed', 'Failed to remove vote'), 'error')
       }
     } catch {
-      flash('Failed to remove vote', 'error')
+      flash(t('sponsors.portal.voteRemoveFailed', 'Failed to remove vote'), 'error')
     }
   }
 
-  if (projectsLoading) return <div className="text-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
+  if (projectsLoading) return <div className="text-center py-12 text-muted-foreground">{t('sponsors.portal.loading', 'Loading...')}</div>
 
   if (projects.length === 0) {
     return <PortalEmptyState title={t('sponsors.portal.noProjects', 'No Projects to Vote On')} description={t('sponsors.portal.noProjectsDesc', 'Projects will appear here after the hacking phase.')} />
@@ -101,7 +101,9 @@ function VotingContent() {
       {votingClosed && (
         <div className="rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-4 text-center">
           <p className="font-medium text-blue-800 dark:text-blue-300">{t('sponsors.portal.votingEnded', 'Voting has ended.')}</p>
-          <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{t('sponsors.portal.votesRecorded', `Your ${votesUsed} vote(s) have been recorded.`)}</p>
+          <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+            {t('sponsors.portal.votesRecorded', 'Your {count} vote(s) have been recorded.', { count: votesUsed })}
+          </p>
         </div>
       )}
 
