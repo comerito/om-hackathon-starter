@@ -163,30 +163,20 @@ function ProfileContent() {
     setUploadingAvatar(true)
     try {
       const formData = new FormData()
-      formData.set('entityId', 'competitions:participant-profile')
-      formData.set('recordId', data?.id ?? 'new')
       formData.set('file', file)
-      formData.set('fieldKey', 'avatar')
 
-      const { ok, result } = await apiCall<{ ok: boolean; item?: { id: string; url: string } }>(
-        '/api/attachments',
+      const { ok, result } = await apiCall<{ ok: boolean; avatar_url?: string; error?: string }>(
+        '/api/competitions/portal/profile-avatar',
         { method: 'POST', body: formData },
       )
 
-      if (ok && result?.item?.url) {
-        const newAvatarUrl = result.item.url
+      if (ok && result?.avatar_url) {
+        const newAvatarUrl = result.avatar_url
         setAvatarUrl(newAvatarUrl)
-
-        // Save immediately
-        await apiCall('/api/competitions/portal/update-profile', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar_url: newAvatarUrl }),
-        })
         queryClient.invalidateQueries({ queryKey: ['portal-my-profile'] })
         flash(t('competitions.portal.profile.flash.avatarUpdated', 'Avatar updated'), 'success')
       } else {
-        flash(t('competitions.portal.profile.flash.avatarFailed', 'Failed to upload avatar'), 'error')
+        flash(result?.error ?? t('competitions.portal.profile.flash.avatarFailed', 'Failed to upload avatar'), 'error')
       }
     } catch {
       flash(t('competitions.portal.profile.flash.uploadFailed', 'Upload failed'), 'error')
@@ -334,7 +324,7 @@ function ProfileContent() {
                       />
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm leading-relaxed text-portal-secondary">
+                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-portal-secondary">
                       {bio || t('competitions.portal.profile.bio.empty', 'No bio yet. Click "Edit Profile" to add one.')}
                     </p>
                   )}
