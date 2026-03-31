@@ -1,4 +1,15 @@
 import { z } from 'zod'
+import { locales } from '@open-mercato/shared/lib/i18n/config'
+
+export const portalLocaleEnum = z.enum(locales as [typeof locales[number], ...typeof locales[number][]])
+
+export const portalLocaleSchema = z.object({
+  locale: portalLocaleEnum,
+})
+
+export const portalDefaultLocaleSchema = z.object({
+  default_locale: portalLocaleEnum,
+})
 
 // ── JSONB config schemas ────────────────────────────────────────────
 

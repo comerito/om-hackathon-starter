@@ -69,6 +69,14 @@ export const MilestoneStatus = {
 } as const
 export type MilestoneStatus = (typeof MilestoneStatus)[keyof typeof MilestoneStatus]
 
+export const PortalLocalePreferenceSource = {
+  USER: 'user',
+  ORGANIZATION: 'organization',
+  BROWSER: 'browser',
+  FALLBACK: 'fallback',
+} as const
+export type PortalLocalePreferenceSource = (typeof PortalLocalePreferenceSource)[keyof typeof PortalLocalePreferenceSource]
+
 // ── JSONB Config Interfaces ─────────────────────────────────────────
 
 export interface StageConfig {
@@ -273,6 +281,37 @@ export class CompetitionParticipation {
 
   @Property({ name: 'looking_for_team_description', type: 'text', nullable: true })
   lookingForTeamDescription?: string | null
+
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
+}
+
+@Entity({ tableName: 'competitions_portal_locale_preference' })
+@Unique({ properties: ['customerUserId', 'tenantId', 'organizationId'] })
+export class PortalLocalePreference {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Index()
+  @Property({ name: 'customer_user_id', type: 'uuid' })
+  customerUserId!: string
+
+  @Property({ type: 'varchar', length: 10 })
+  locale!: string
 
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })

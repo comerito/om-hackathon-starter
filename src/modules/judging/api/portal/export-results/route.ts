@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
     const knex = (em as any).getConnection().getKnex()
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Get leaderboard data with scores
     const rows = await knex('projects_project as p')

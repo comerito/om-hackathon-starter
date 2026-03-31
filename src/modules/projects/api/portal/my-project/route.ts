@@ -59,7 +59,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Find user's team membership
     const membership = await em.findOne(TeamMember, {

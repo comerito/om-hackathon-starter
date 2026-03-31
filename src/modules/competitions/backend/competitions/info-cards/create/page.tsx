@@ -5,6 +5,7 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { InfoCardIconPicker } from '../../../../components/InfoCardIconPicker'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -21,7 +22,14 @@ export default function CreateCompetitionInfoCardPage() {
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'competition_id', label: t('competitions.infoCards.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, defaultValue: competitionId },
     { id: 'key', label: t('competitions.infoCards.key', 'Key'), type: 'text', required: true, placeholder: 'wifi' },
-    { id: 'icon', label: t('competitions.infoCards.icon', 'Icon'), type: 'text', placeholder: 'wifi' },
+    {
+      id: 'icon',
+      label: t('competitions.infoCards.icon', 'Icon'),
+      type: 'custom',
+      component: ({ value, setValue }) => (
+        <InfoCardIconPicker value={String(value || '')} onChange={setValue} />
+      ),
+    },
     { id: 'label', label: t('competitions.infoCards.label', 'Label'), type: 'text', required: true },
     { id: 'value', label: t('competitions.infoCards.value', 'Value'), type: 'textarea', required: true },
     { id: 'sort_order', label: t('competitions.infoCards.sortOrder', 'Sort Order'), type: 'number', defaultValue: 0 },

@@ -2,19 +2,27 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
+import { CompetitionInfoCards, type CompetitionInfoCard } from '../../../../components/CompetitionInfoCards'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import Link from 'next/link'
-import { Plus, User, FileText, ArrowRight, Compass } from 'lucide-react'
+import {
+  ArrowRight,
+  Compass,
+  FileText,
+  Plus,
+  User,
+} from 'lucide-react'
 import { PortalPageTitle, PortalBadge, ProgressBar, GradientCard } from '@/components/portal'
 
 type MyCompetition = {
   id: string; name: string; slug: string; stage: string; role: string
   starts_at: string; ends_at: string; location: string | null; timezone: string
   description?: string | null
+  info_cards: CompetitionInfoCard[]
 }
 
 type Milestone = {
@@ -28,6 +36,7 @@ function getTimeRemaining(endDate: string): { hours: number; minutes: number } {
 
 function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
+  const locale = useLocale()
   const { selectedId, setSelectedId } = useCompetitionContext()
   const prefix = `/${orgSlug}/portal`
   const stageLabels: Record<string, string> = {
@@ -105,6 +114,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   const activeComp = items.find(c => c.id === selectedId) ?? items[0]
   const pastComps = items.filter(c => c.id !== activeComp.id)
   const timeLeft = getTimeRemaining(activeComp.ends_at)
+  const infoCards = activeComp.info_cards ?? []
 
   return (
     <div className="space-y-8">
@@ -174,8 +184,8 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
                     <div>
                       <p className="text-sm font-bold text-foreground">{m.name}</p>
                       <p className="text-xs text-portal-secondary">
-                        {new Date(m.due_date).toLocaleDateString([], { weekday: 'short' })},{' '}
-                        {new Date(m.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(m.due_date).toLocaleDateString(locale, { weekday: 'short' })},{' '}
+                        {new Date(m.due_date).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </button>
@@ -201,6 +211,15 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
           </GradientCard>
         </div>
       </div>
+
+      {infoCards.length > 0 && (
+        <CompetitionInfoCards
+          items={infoCards}
+          title={infoCards.length > 2 ? t('competitions.portal.competition.infoCards.title', 'Competition Info') : undefined}
+          description={infoCards.length > 2 ? t('competitions.portal.competition.infoCards.description', 'Key details for your current competition.') : undefined}
+          showCountBadge={infoCards.length > 2}
+        />
+      )}
 
       {/* ===== Past & Drafts ===== */}
       {pastComps.length > 0 && (
@@ -231,7 +250,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
                   </div>
                   <h3 className="text-sm font-bold text-foreground">{comp.name}</h3>
                   <p className="text-xs text-portal-secondary mt-1 line-clamp-2">
-                    {roleLabels[comp.role] ?? comp.role} · {new Date(comp.starts_at).toLocaleDateString([], { month: 'short', year: 'numeric' })}
+                    {roleLabels[comp.role] ?? comp.role} · {new Date(comp.starts_at).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}
                   </p>
                   <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-portal-primary">
                     {isFinished

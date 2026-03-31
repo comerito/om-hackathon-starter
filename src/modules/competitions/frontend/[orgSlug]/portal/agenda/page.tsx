@@ -2,14 +2,15 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
+import { CompetitionInfoCards, type CompetitionInfoCard } from '../../../../components/CompetitionInfoCards'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
 import {
-  MapPin, Zap, HelpCircle, Wifi, Award, Mic, Wrench, Coffee,
+  MapPin, Zap, HelpCircle, Award, Mic, Wrench, Coffee,
   UtensilsCrossed, Clock, Clapperboard, Sparkles, type LucideIcon,
 } from 'lucide-react'
 import { PortalPageTitle, PortalBadge, ProgressBar } from '@/components/portal'
@@ -18,6 +19,11 @@ type AgendaItem = {
   id: string; title: string; description: string | null; type: string
   starts_at: string; ends_at: string; location: string | null; speaker_name: string | null
   speaker_bio: string | null; speaker_photo_url: string | null; is_mandatory: boolean
+}
+
+type CompetitionSummary = {
+  id: string
+  info_cards: CompetitionInfoCard[]
 }
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
@@ -31,16 +37,16 @@ const TYPE_BADGE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'd
   demo_session: 'warning', custom: 'primary',
 }
 
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toUpperCase()
+function formatTime(dateStr: string, locale: string): string {
+  return new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }).toUpperCase()
 }
 
 function getDayKey(dateStr: string): string {
   return new Date(dateStr).toISOString().split('T')[0]
 }
 
-function getDayLabel(dateStr: string): string {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString([], { weekday: 'long' })
+function getDayLabel(dateStr: string, locale: string): string {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString(locale, { weekday: 'long' })
 }
 
 function getTimeStatus(startsAt: string, endsAt: string): 'happening' | 'past' | 'future' {
@@ -54,6 +60,7 @@ function getTimeStatus(startsAt: string, endsAt: string): 'happening' | 'past' |
 
 function TimelineEventCard({ item }: { item: AgendaItem }) {
   const t = useT()
+  const locale = useLocale()
   const status = getTimeStatus(item.starts_at, item.ends_at)
   const happening = status === 'happening'
   const typeKey = item.type === 'demo_session' ? 'demoSession' : item.type
@@ -81,7 +88,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
       <div className={cn('flex-1 rounded-xl border dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5 mb-4', happening && 'border-portal-primary/20 shadow-sm')}>
         <div className="flex items-center justify-between mb-2">
           <span className={cn('text-sm font-semibold', happening ? 'text-portal-primary' : 'text-portal-secondary')}>
-            {formatTime(item.starts_at)} — {formatTime(item.ends_at)}
+            {formatTime(item.starts_at, locale)} - {formatTime(item.ends_at, locale)}
           </span>
           {happening && (
             <PortalBadge variant="primary">{t('competitions.portal.agenda.happeningNow', 'Happening Now')}</PortalBadge>
@@ -114,6 +121,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
 
 function AgendaContent() {
   const t = useT()
+  const locale = useLocale()
   const { selectedId } = useCompetitionContext()
   const [selectedDay, setSelectedDay] = React.useState<string | null>(null)
 
@@ -129,8 +137,19 @@ function AgendaContent() {
     },
     enabled: !!selectedId,
   })
+  const { data: competitionsData } = useQuery({
+    queryKey: ['portal-my-competitions'],
+    queryFn: async () => {
+      const { ok, result } = await apiCall<{ items: CompetitionSummary[] }>('/api/competitions/portal/my-competitions')
+      if (!ok || !result) throw new Error(t('competitions.portal.agenda.error', 'Failed to load'))
+      return result
+    },
+    enabled: !!selectedId,
+  })
 
   const items = data?.items ?? []
+  const selectedCompetition = competitionsData?.items.find((competition) => competition.id === selectedId)
+  const infoCards = selectedCompetition?.info_cards ?? []
 
   const days = React.useMemo(() => {
     const map = new Map<string, AgendaItem[]>()
@@ -185,7 +204,7 @@ function AgendaContent() {
           <div className="-mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto mb-6">
             <div className="flex gap-1 flex-nowrap">
               {days.map(([key]) => {
-                const label = getDayLabel(key)
+                const label = getDayLabel(key, locale)
                 const isActive = key === selectedDay
                 return (
                   <button
@@ -221,7 +240,7 @@ function AgendaContent() {
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">
             {t('competitions.portal.agenda.dayCompletion', '{day} Completion', {
-              day: selectedDay ? getDayLabel(selectedDay) : t('competitions.portal.agenda.dayFallback', 'Day'),
+              day: selectedDay ? getDayLabel(selectedDay, locale) : t('competitions.portal.agenda.dayFallback', 'Day'),
             })}
           </h4>
           <ProgressBar
@@ -258,7 +277,6 @@ function AgendaContent() {
           )
         })()}
 
-        {/* Info cards */}
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
@@ -269,16 +287,16 @@ function AgendaContent() {
               <p className="text-[11px] text-portal-secondary">{t('competitions.portal.agenda.needHelp.description', 'Curators are available in the Slack #help channel 24/7.')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="size-8 rounded-full bg-portal-primary/10 flex items-center justify-center">
-              <Wifi className="size-4 text-portal-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">{t('competitions.portal.agenda.wifi.title', 'Wi-Fi Network')}</p>
-              <p className="text-[11px] text-portal-secondary whitespace-pre-line">{t('competitions.portal.agenda.wifi.details', 'SSID: HACKFEST_24\nPass: hackathon_2024')}</p>
-            </div>
-          </div>
         </div>
+
+        <CompetitionInfoCards
+          items={infoCards}
+          title={t('competitions.portal.competition.infoCards.title', 'Competition Info')}
+          description={t('competitions.portal.competition.infoCards.description', 'Key details for your current competition.')}
+          className="p-3 sm:p-4"
+          gridClassName="grid-cols-1"
+          cardClassName="p-3"
+        />
       </div>
     </div>
   )

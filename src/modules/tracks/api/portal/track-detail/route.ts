@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Load track
     const track = await em.findOne(Track, {

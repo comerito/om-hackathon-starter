@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Verify the user participates in this competition
     const participation = await em.findOne(CompetitionParticipation, {

@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Load project to get its trackId for criteria filtering
     const project = await em.findOne(Project, {

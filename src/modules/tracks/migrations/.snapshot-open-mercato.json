@@ -9220,6 +9220,198 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
+        "customer_user_id": {
+          "name": "customer_user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(10)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 10,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "name": "competitions_portal_locale_preference",
+      "schema": "public",
+      "indexes": [
+        {
+          "columnNames": [
+            "customer_user_id",
+            "tenant_id",
+            "organization_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "competitions_portal_locale_preference_customer_us_df213_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "customer_user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "competitions_portal_locale_preference_customer_user_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "organization_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "competitions_portal_locale_preference_organization_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "competitions_portal_locale_preference_pkey",
+          "unique": true,
+          "primary": true
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "competitions_portal_locale_preference_tenant_id_index",
+          "unique": false,
+          "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
         "organization_id": {
           "name": "organization_id",
           "type": "uuid",

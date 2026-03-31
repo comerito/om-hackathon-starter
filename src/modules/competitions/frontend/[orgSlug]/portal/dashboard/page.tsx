@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
@@ -167,6 +167,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
 function DashboardContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
+  const locale = useLocale()
   const { selected, selectedId } = useCompetitionContext()
   const prefix = `/${orgSlug}`
   const stageDisplayTitles: Record<string, string> = {
@@ -365,8 +366,8 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
                 <p className="text-sm font-bold text-foreground">{nextDeadline.title}</p>
                 <div className="sm:text-right">
                   <p className="text-xs sm:text-sm font-bold text-portal-primary">
-                    {new Date(nextDeadline.date).toLocaleDateString([], { weekday: 'long' })},{' '}
-                    {new Date(nextDeadline.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(nextDeadline.date).toLocaleDateString(locale, { weekday: 'long' })},{' '}
+                    {new Date(nextDeadline.date).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                   </p>
                   <p className="text-[10px] text-portal-secondary">
                     {selected.timezone ?? t('competitions.portal.dashboard.localTime', 'Local Time')}

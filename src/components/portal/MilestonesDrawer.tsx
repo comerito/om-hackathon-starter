@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 import { Check, X, ExternalLink, Settings, HelpCircle } from 'lucide-react'
 
@@ -23,14 +23,15 @@ type MilestonesDrawerProps = {
   rulesUrl?: string | null
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }).toUpperCase() + ', ' +
-    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' }).toUpperCase() + ', ' +
+    d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesUrl }: MilestonesDrawerProps) {
   const t = useT()
+  const locale = useLocale()
   const { data } = useQuery({
     queryKey: ['portal-milestones-drawer', competitionId],
     queryFn: async () => {
@@ -138,11 +139,11 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
                         >
                           {isActive && (
                             <>
-                              <span className="font-bold text-portal-primary-light">{formatDate(milestone.due_date)}</span>
+                              <span className="font-bold text-portal-primary-light">{formatDate(milestone.due_date, locale)}</span>
                               <span className="block uppercase tracking-wide text-portal-primary-light mt-0.5">{t('portal.drawer.milestones.currentPhase', 'Current Phase')}</span>
                             </>
                           )}
-                          {!isActive && formatDate(milestone.due_date)}
+                          {!isActive && formatDate(milestone.due_date, locale)}
                         </p>
                         {milestone.description && (
                           <p className={cn(

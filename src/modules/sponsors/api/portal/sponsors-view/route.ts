@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     const sponsors = await em.find(Sponsor, {
       competitionId, isVisible: true, deletedAt: null, tenantId: auth.tenantId, organizationId: auth.orgId,

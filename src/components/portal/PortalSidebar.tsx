@@ -161,6 +161,12 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
                 {groupItems.map((item) => {
                   const Icon = resolveIcon(item.icon)
                   const isActive = item.href ? pathname === item.href || pathname.startsWith(item.href + '/') : false
+                  const itemLabel =
+                    item.labelKey && item.label
+                      ? t(item.labelKey, item.label)
+                      : item.labelKey
+                        ? t(item.labelKey, item.id)
+                        : item.label
 
                   return (
                     <Link
@@ -178,7 +184,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-portal-primary" />
                       )}
                       <Icon className="size-[18px] shrink-0" />
-                      <span className="uppercase tracking-wide">{item.label}</span>
+                      <span className="uppercase tracking-wide">{itemLabel}</span>
                     </Link>
                   )
                 })}

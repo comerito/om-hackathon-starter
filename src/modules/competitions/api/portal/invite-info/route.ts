@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
     const invitationService = container.resolve('customerInvitationService') as CustomerInvitationService
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { container })
 
     // Validate token
     const invitation = await invitationService.findByToken(token)

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Settings, ArrowLeft, Search, LogOut, Menu, X } from 'lucide-react'
+import { PortalLocaleSwitcher } from './PortalLocaleSwitcher'
 import { PortalThemeToggle } from './PortalThemeToggle'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalNotificationBell } from '@open-mercato/ui/portal/components/PortalNotificationBell'
@@ -109,6 +110,8 @@ export function PortalTopBar({
 
       {/* Right: Actions */}
       <div className="ml-auto flex shrink-0 items-center gap-3" data-portal-handle="section:portal:header:actions">
+        <PortalLocaleSwitcher />
+
         {/* Notification bell + panel */}
         <PortalNotificationBell t={t} />
 

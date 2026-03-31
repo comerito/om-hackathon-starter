@@ -6,6 +6,7 @@ import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/b
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { InfoCardIconPicker } from '../../../../../components/InfoCardIconPicker'
 
 type CompetitionInfoCardFormValues = {
   id: string
@@ -27,7 +28,14 @@ export default function EditCompetitionInfoCardPage({ params }: { params?: { id?
 
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'key', label: t('competitions.infoCards.key', 'Key'), type: 'text', required: true },
-    { id: 'icon', label: t('competitions.infoCards.icon', 'Icon'), type: 'text' },
+    {
+      id: 'icon',
+      label: t('competitions.infoCards.icon', 'Icon'),
+      type: 'custom',
+      component: ({ value, setValue }) => (
+        <InfoCardIconPicker value={String(value || '')} onChange={setValue} />
+      ),
+    },
     { id: 'label', label: t('competitions.infoCards.label', 'Label'), type: 'text', required: true },
     { id: 'value', label: t('competitions.infoCards.value', 'Value'), type: 'textarea', required: true },
     { id: 'sort_order', label: t('competitions.infoCards.sortOrder', 'Sort Order'), type: 'number' },

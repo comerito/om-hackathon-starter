@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const locale = resolvePortalLocale(req)
+    const locale = await resolvePortalLocale(req, { auth, container })
 
     // Find panels this judge is on
     const panelJudges = await em.find(JudgePanelJudge, {
