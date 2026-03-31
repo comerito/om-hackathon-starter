@@ -82,8 +82,11 @@ const createCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         judgingConfig: parsed.judging_config ?? undefined,
         peerVotingConfig: parsed.peer_voting_config ?? undefined,
         codeOfConductUrl: parsed.code_of_conduct_url,
+        codeOfConductContent: parsed.code_of_conduct_content ?? null,
         rulesUrl: parsed.rules_url ?? null,
+        rulesContent: parsed.rules_content ?? null,
         privacyPolicyUrl: parsed.privacy_policy_url ?? null,
+        privacyPolicyContent: parsed.privacy_policy_content ?? null,
         coverImageUrl: parsed.cover_image_url ?? null,
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
@@ -142,8 +145,11 @@ const updateCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         if (parsed.judging_config !== undefined) entity.judgingConfig = parsed.judging_config
         if (parsed.peer_voting_config !== undefined) entity.peerVotingConfig = parsed.peer_voting_config
         if (parsed.code_of_conduct_url !== undefined) entity.codeOfConductUrl = parsed.code_of_conduct_url
+        if (parsed.code_of_conduct_content !== undefined) entity.codeOfConductContent = parsed.code_of_conduct_content
         if (parsed.rules_url !== undefined) entity.rulesUrl = parsed.rules_url
+        if (parsed.rules_content !== undefined) entity.rulesContent = parsed.rules_content
         if (parsed.privacy_policy_url !== undefined) entity.privacyPolicyUrl = parsed.privacy_policy_url
+        if (parsed.privacy_policy_content !== undefined) entity.privacyPolicyContent = parsed.privacy_policy_content
         if (parsed.cover_image_url !== undefined) entity.coverImageUrl = parsed.cover_image_url
       },
     })

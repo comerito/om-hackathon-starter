@@ -483,20 +483,23 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               {t('competitions.portal.dashboard.resources', 'Resources')}
             </span>
             <h3 className="mt-1 text-lg font-bold text-white">
-              {t('competitions.portal.dashboard.submissionGuide', 'Submission Guide')}
+              {t('competitions.portal.dashboard.competitionGuide', 'Competition Guide')}
             </h3>
             <p className="mt-2 text-xs leading-relaxed text-white/80">
               {t(
-                'competitions.portal.dashboard.submissionGuideDescription',
-                'Learn how to package your project for final judging. Includes code repo rules and video specs.',
+                'competitions.portal.dashboard.competitionGuideDescription',
+                'See the full competition flow, from registration and team setup to demos, judging, and final results.',
               )}
             </p>
-            <Link
-              href={`${prefix}/portal/project`}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-competition-guide-drawer', {
+                detail: { currentStage: stage },
+              }))}
               className="mt-4 inline-flex items-center justify-center rounded-md bg-white/20 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
             >
-              {t('competitions.portal.dashboard.readGuide', 'Read Guide')}
-            </Link>
+              {t('competitions.portal.dashboard.openGuide', 'Open Guide')}
+            </button>
           </GradientCard>
         </div>
       </div>

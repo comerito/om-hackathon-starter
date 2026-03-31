@@ -19,8 +19,11 @@ export default function CreateCompetitionPage() {
     { id: 'min_team_size', label: t('competitions.fields.minTeamSize', 'Min Team Size'), type: 'number', defaultValue: 2 },
     { id: 'max_team_size', label: t('competitions.fields.maxTeamSize', 'Max Team Size'), type: 'number', defaultValue: 5 },
     { id: 'code_of_conduct_url', label: t('competitions.fields.cocUrl', 'Code of Conduct URL'), type: 'text', required: true },
+    { id: 'code_of_conduct_content', label: t('competitions.fields.cocContent', 'Code of Conduct Content (Markdown)'), type: 'textarea' },
     { id: 'rules_url', label: t('competitions.fields.rulesUrl', 'Rules URL'), type: 'text' },
+    { id: 'rules_content', label: t('competitions.fields.rulesContent', 'Rules Content (Markdown)'), type: 'textarea' },
     { id: 'privacy_policy_url', label: t('competitions.fields.privacyPolicyUrl', 'Privacy Policy URL'), type: 'text' },
+    { id: 'privacy_policy_content', label: t('competitions.fields.privacyPolicyContent', 'Privacy Policy Content (Markdown)'), type: 'textarea' },
     { id: 'cover_image_url', label: t('competitions.fields.coverImageUrl', 'Cover Image URL'), type: 'text' },
   ], [t])
 
@@ -28,7 +31,20 @@ export default function CreateCompetitionPage() {
     { id: 'general', title: t('competitions.groups.general', 'General'), column: 1, fields: ['name', 'slug', 'description', 'location'] },
     { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'timezone'] },
     { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size'] },
-    { id: 'legal', title: t('competitions.groups.legal', 'Legal & Media'), column: 2, fields: ['code_of_conduct_url', 'rules_url', 'privacy_policy_url', 'cover_image_url'] },
+    {
+      id: 'legal',
+      title: t('competitions.groups.legal', 'Legal & Media'),
+      column: 2,
+      fields: [
+        'code_of_conduct_url',
+        'code_of_conduct_content',
+        'rules_url',
+        'rules_content',
+        'privacy_policy_url',
+        'privacy_policy_content',
+        'cover_image_url',
+      ],
+    },
   ], [t])
 
   const successRedirect = React.useMemo(

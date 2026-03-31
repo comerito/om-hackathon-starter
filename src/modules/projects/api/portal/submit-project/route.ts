@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { Project, ProjectStatus } from '../../../data/entities'
 import { TeamMember } from '../../../../teams/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
+import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const submitSchema = z.object({
@@ -76,6 +77,17 @@ export async function POST(req: Request) {
     if (!project.description || project.description.trim().length === 0) errors.push('Description is required')
     if (project.usesPreexistingCode && (!project.preexistingCodeDescription || project.preexistingCodeDescription.trim().length === 0)) {
       errors.push('Pre-existing code description is required when declaring code reuse')
+    }
+    if (!project.attachmentIds || project.attachmentIds.length === 0) {
+      errors.push('README.md feedback file is required')
+    } else {
+      const attachments = await em.find(Attachment, {
+        id: { $in: project.attachmentIds },
+      } as FilterQuery<Attachment>)
+      const hasReadme = attachments.some((attachment) => attachment.fileName.trim().toLowerCase() === 'readme.md')
+      if (!hasReadme) {
+        errors.push('Upload a README.md feedback file before submitting')
+      }
     }
 
     if (errors.length > 0) {

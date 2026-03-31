@@ -540,6 +540,144 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
   )
 }
 
+/* ========== MemberRow ========== */
+
+function MemberRow({
+  member,
+  isOwner,
+  isSelf,
+  teamId,
+  resolveInitials,
+  resolveUser,
+  competitionStage,
+}: {
+  member: TeamMember & { display_name: string; email: string }
+  isOwner: boolean
+  isSelf: boolean
+  teamId: string
+  resolveInitials: (id: string) => string
+  resolveUser: (id: string) => string
+  competitionStage?: string
+}) {
+  const t = useT()
+  const queryClient = useQueryClient()
+  const [confirmAction, setConfirmAction] = React.useState<'remove' | 'transfer' | null>(null)
+  const [loading, setLoading] = React.useState(false)
+
+  const ALLOWED_STAGES = ['open', 'team_formation', 'track_selection']
+  const canManage = isOwner && !isSelf && (competitionStage ? ALLOWED_STAGES.includes(competitionStage) : false)
+
+  async function handleRemove() {
+    setLoading(true)
+    const { ok, result } = await apiCall<{ ok?: boolean; error?: string }>('/api/teams/portal/remove-member', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ team_id: teamId, member_id: member.id }),
+    })
+    setLoading(false)
+    if (ok && (result as any)?.ok) {
+      flash(t('teams.portal.myTeam.memberRemoved', 'Member removed'), 'success')
+      queryClient.invalidateQueries({ queryKey: ['portal-my-membership'] })
+    } else {
+      flash((result as any)?.error ?? t('teams.portal.myTeam.removeFailed', 'Failed to remove member'), 'error')
+    }
+    setConfirmAction(null)
+  }
+
+  async function handleTransfer() {
+    setLoading(true)
+    const { ok, result } = await apiCall<{ ok?: boolean; error?: string }>('/api/teams/portal/transfer-ownership', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ team_id: teamId, new_owner_id: member.id }),
+    })
+    setLoading(false)
+    if (ok && (result as any)?.ok) {
+      flash(t('teams.portal.myTeam.ownershipTransferred', 'Ownership transferred!'), 'success')
+      queryClient.invalidateQueries({ queryKey: ['portal-my-membership'] })
+    } else {
+      flash((result as any)?.error ?? t('teams.portal.myTeam.transferFailed', 'Failed to transfer ownership'), 'error')
+    }
+    setConfirmAction(null)
+  }
+
+  return (
+    <div className="py-4 border-b border-gray-50 dark:border-white/5 last:border-0">
+      <div className="flex items-center gap-4">
+        <div className="size-12 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-400">
+          {resolveInitials(member.customer_user_id)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">{resolveUser(member.customer_user_id)}</p>
+          <p className="text-xs text-portal-secondary capitalize">{member.role}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <PortalBadge variant={member.role === 'owner' ? 'primary' : 'muted'}>
+            {member.role}
+          </PortalBadge>
+          {canManage && !confirmAction && (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setConfirmAction('transfer')}
+                className="rounded-lg px-2 py-1 text-[11px] font-medium text-portal-primary hover:bg-portal-primary/10 transition-colors"
+                title={t('teams.portal.myTeam.transferOwnership', 'Make Owner')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                  <path d="M5.865 17 4 22h16l-1.865-5" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmAction('remove')}
+                className="rounded-lg px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                title={t('teams.portal.myTeam.removeMember', 'Remove')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {confirmAction && (
+        <div className="mt-3 ml-16 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-3">
+          <p className="text-xs text-foreground mb-2">
+            {confirmAction === 'remove'
+              ? t('teams.portal.myTeam.removeMemberConfirm', 'Remove this member from the team?')
+              : t('teams.portal.myTeam.transferConfirm', 'Transfer ownership to this member? You will become a regular member.')}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={confirmAction === 'remove' ? handleRemove : handleTransfer}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60',
+                confirmAction === 'remove'
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-portal-primary hover:bg-portal-primary/90',
+              )}
+            >
+              {loading ? t('common.saving', 'Saving...') : t('common.confirm', 'Confirm')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmAction(null)}
+              className="rounded-lg border border-gray-200 dark:border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            >
+              {t('common.cancel', 'Cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ========== TeamView ========== */
 
 /* ---------- Leave Team button component ---------- */
@@ -803,18 +941,16 @@ function TeamView({
           ) : (
             <div>
               {members.map((m) => (
-                <div key={m.id} className="flex items-center gap-4 py-4 border-b border-gray-50 dark:border-white/5 last:border-0">
-                  <div className="size-12 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-400">
-                    {resolveInitials(m.customer_user_id)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{resolveUser(m.customer_user_id)}</p>
-                    <p className="text-xs text-portal-secondary capitalize">{m.role}</p>
-                  </div>
-                  <PortalBadge variant={m.role === 'owner' ? 'primary' : 'muted'}>
-                    {m.role}
-                  </PortalBadge>
-                </div>
+                <MemberRow
+                  key={m.id}
+                  member={m}
+                  isOwner={isOwner}
+                  isSelf={m.customer_user_id === membership.customer_user_id}
+                  teamId={team.id}
+                  resolveInitials={resolveInitials}
+                  resolveUser={resolveUser}
+                  competitionStage={selected?.stage}
+                />
               ))}
             </div>
           )}

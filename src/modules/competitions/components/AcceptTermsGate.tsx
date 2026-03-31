@@ -1,14 +1,18 @@
 "use client"
 import * as React from 'react'
+import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 
 type ParticipationStatus = {
   cocAccepted: boolean
   privacyPolicyAccepted: boolean
   cocUrl: string | null
+  cocHasContent: boolean
   privacyPolicyUrl: string | null
+  privacyPolicyHasContent: boolean
   competitionName: string | null
 }
 
@@ -70,6 +74,7 @@ function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: (v:
 export function AcceptTermsGate({ children, selectedId }: { children: React.ReactNode; selectedId: string | null }) {
   const t = useT()
   const queryClient = useQueryClient()
+  const { orgSlug } = usePortalContext()
   const [cocChecked, setCocChecked] = React.useState(false)
   const [privacyChecked, setPrivacyChecked] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
@@ -111,6 +116,8 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
   const needsCoc = !data.cocAccepted
   const needsPrivacy = !data.privacyPolicyAccepted
   const allChecked = (!needsCoc || cocChecked) && (!needsPrivacy || privacyChecked)
+  const cocHref = `/${orgSlug}/portal/legal/code-of-conduct`
+  const privacyHref = `/${orgSlug}/portal/legal/privacy-policy`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
@@ -164,17 +171,15 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
                 <p className="mt-1 text-xs leading-relaxed text-portal-secondary">
                   {t('competitions.portal.terms.cocDesc', 'I have read and agree to follow the Code of Conduct.')}
                 </p>
-                {data.cocUrl && (
-                  <a
-                    href={data.cocUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {(data.cocHasContent || data.cocUrl) && (
+                  <Link
+                    href={cocHref}
                     onClick={(e) => e.stopPropagation()}
                     className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-portal-primary transition-colors hover:text-portal-primary-light"
                   >
                     {t('competitions.portal.terms.readDocument', 'Read the full document')}
                     <ArrowIcon className="h-3 w-3" />
-                  </a>
+                  </Link>
                 )}
               </div>
             </label>
@@ -197,17 +202,15 @@ export function AcceptTermsGate({ children, selectedId }: { children: React.Reac
                 <p className="mt-1 text-xs leading-relaxed text-portal-secondary">
                   {t('competitions.portal.terms.privacyDesc', 'I have read and agree to the Privacy Policy (GDPR/RODO).')}
                 </p>
-                {data.privacyPolicyUrl && (
-                  <a
-                    href={data.privacyPolicyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {(data.privacyPolicyHasContent || data.privacyPolicyUrl) && (
+                  <Link
+                    href={privacyHref}
                     onClick={(e) => e.stopPropagation()}
                     className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-portal-primary transition-colors hover:text-portal-primary-light"
                   >
                     {t('competitions.portal.terms.readDocument', 'Read the full document')}
                     <ArrowIcon className="h-3 w-3" />
-                  </a>
+                  </Link>
                 )}
               </div>
             </label>

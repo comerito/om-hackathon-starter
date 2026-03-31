@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Settings, ArrowLeft, Search, LogOut, Menu, X } from 'lucide-react'
+import { Settings, ArrowLeft, LogOut, Menu, X } from 'lucide-react'
 import { PortalLocaleSwitcher } from './PortalLocaleSwitcher'
 import { PortalThemeToggle } from './PortalThemeToggle'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
@@ -14,8 +14,6 @@ type PortalTopBarProps = {
   variant?: 'full' | 'minimal' | 'topnav'
   /** Competition/section title shown in the top bar */
   title?: string
-  /** Search placeholder text */
-  searchPlaceholder?: string
   /** User display name */
   userName?: string
   /** User role label */
@@ -33,7 +31,6 @@ type PortalTopBarProps = {
 export function PortalTopBar({
   variant = 'full',
   title,
-  searchPlaceholder,
   userName,
   userRole,
   backHref,
@@ -46,8 +43,6 @@ export function PortalTopBar({
   const displayName = userName || auth.user?.displayName || auth.user?.email || ''
   const displayRole = userRole || t('competitions.portal.topBar.defaultRole', 'Participant')
   const prefix = `/${orgSlug}/portal`
-  const resolvedSearchPlaceholder = searchPlaceholder || t('competitions.portal.topBar.searchPlaceholder', 'Search resources...')
-
   return (
     <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900 px-3 sm:px-6" data-portal-handle="section:portal:header">
       {/* Hamburger toggle — visible below lg */}
@@ -94,19 +89,8 @@ export function PortalTopBar({
         )}
       </div>
 
-      {/* Center: Search — hidden on mobile */}
-      {variant !== 'minimal' && (
-        <div className="hidden sm:flex flex-1 justify-center max-w-md mx-auto">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder={resolvedSearchPlaceholder}
-              className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
-            />
-          </div>
-        </div>
-      )}
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Right: Actions */}
       <div className="ml-auto flex shrink-0 items-center gap-3" data-portal-handle="section:portal:header:actions">
