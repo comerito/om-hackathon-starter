@@ -54,5 +54,6 @@
   "tracks.portal.mentor.status.inactive": "inactive",
   "tracks.portal.mentor.status.default": "inactive",
   "tracks.portal.nav.tracks": "Tracks",
-  "tracks.portal.nav.groupHackathon": "Hackathon"
+  "tracks.portal.nav.groupHackathon": "Hackathon",
+  "tracks.fields.descriptionHelp": "Supports rich formatting and per-locale translations."
 }

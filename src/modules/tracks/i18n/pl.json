@@ -54,5 +54,6 @@
   "tracks.portal.mentor.status.inactive": "nieaktywny",
   "tracks.portal.mentor.status.default": "nieaktywny",
   "tracks.portal.nav.tracks": "Ścieżki",
-  "tracks.portal.nav.groupHackathon": "Hackathon"
+  "tracks.portal.nav.groupHackathon": "Hackathon",
+  "tracks.fields.descriptionHelp": "Obsługuje bogate formatowanie oraz tłumaczenia per język."
 }

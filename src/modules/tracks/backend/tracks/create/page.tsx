@@ -50,7 +50,13 @@ export default function CreateTrackPage() {
     { id: 'competition_id', label: t('tracks.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
     { id: 'name', label: t('tracks.fields.name', 'Name'), type: 'text', required: true },
     { id: 'short_description', label: t('tracks.fields.shortDescription', 'Short Description'), type: 'text', placeholder: 'A brief tagline for this track' },
-    { id: 'description', label: t('tracks.fields.description', 'Full Description'), type: 'textarea' },
+    {
+      id: 'description',
+      label: t('tracks.fields.description', 'Full Description'),
+      description: t('tracks.fields.descriptionHelp', 'Supports rich formatting and per-locale translations.'),
+      type: 'richtext',
+      editor: 'uiw',
+    },
     {
       id: 'color', label: t('tracks.fields.color', 'Color'), type: 'custom',
       component: ({ value, setValue }) => (

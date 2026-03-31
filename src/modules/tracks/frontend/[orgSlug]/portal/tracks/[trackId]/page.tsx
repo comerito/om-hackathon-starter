@@ -7,6 +7,7 @@ import { cn } from '@open-mercato/shared/lib/utils'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { MarkdownContent } from '@open-mercato/ui/backend/markdown/MarkdownContent'
 import { PortalCompetitionLayout } from '../../../../../../competitions/components/PortalCompetitionLayout'
 import {
   PortalPageTitle,
@@ -131,9 +132,11 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
       {track.description && (
         <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
           <SectionLabel className="mb-3">{t('tracks.portal.about', 'About This Track')}</SectionLabel>
-          <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
-            {track.description}
-          </div>
+          <MarkdownContent
+            body={track.description}
+            format="markdown"
+            className="prose prose-sm max-w-none text-muted-foreground dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-portal-primary [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+          />
         </div>
       )}
 
