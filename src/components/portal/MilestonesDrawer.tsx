@@ -106,8 +106,8 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
                             <div className="size-3 rounded-full bg-white" />
                           </div>
                         ) : (
-                          <div className="size-8 rounded-full bg-gray-700 flex items-center justify-center">
-                            <div className="size-2.5 rounded-full bg-gray-500" />
+                          <div className="size-8 rounded-full bg-gray-700/60 flex items-center justify-center">
+                            <div className="size-2.5 rounded-full bg-gray-400" />
                           </div>
                         )}
                       </div>
@@ -118,15 +118,13 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
                           'flex-1 rounded-xl px-4 py-3 mb-4 transition-colors',
                           isActive
                             ? 'bg-white/10 border border-white/10'
-                            : isUpcoming
-                              ? 'opacity-50'
-                              : '',
+                            : '',
                         )}
                       >
                         <h4
                           className={cn(
                             'text-sm font-bold',
-                            isCompleted ? 'text-white' : isActive ? 'text-white' : 'text-gray-400',
+                            isCompleted ? 'text-white' : isActive ? 'text-white' : 'text-gray-300',
                           )}
                         >
                           {milestone.name}
@@ -148,7 +146,7 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
                         {milestone.description && (
                           <p className={cn(
                             'text-xs mt-1.5 leading-relaxed',
-                            isUpcoming ? 'text-gray-600' : 'text-gray-400',
+                            isUpcoming ? 'text-gray-500' : 'text-gray-400',
                           )}>
                             {milestone.description}
                           </p>

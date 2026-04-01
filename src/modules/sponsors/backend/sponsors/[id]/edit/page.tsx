@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { updateCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
-import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { LoadingMessage, ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useQuery } from '@tanstack/react-query'
@@ -23,11 +22,10 @@ export default function EditSponsorPage({ params }: { params?: { id?: string } }
   const { data, isLoading, error } = useQuery({
     queryKey: ['sponsor-edit', sponsorId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ item: Record<string, unknown> }>(
-        `/api/sponsors/sponsors/${sponsorId}`,
-      )
-      if (!ok || !result?.item) throw new Error('Failed to load sponsor')
-      return result.item
+      const res = await fetchCrudList<Record<string, unknown>>('sponsors/sponsors', { id: sponsorId!, pageSize: '1' })
+      const item = res?.items?.[0]
+      if (!item) throw new Error('Failed to load sponsor')
+      return item
     },
     enabled: !!sponsorId,
   })
