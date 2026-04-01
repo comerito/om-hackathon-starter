@@ -1,6 +1,11 @@
 name,due_date,description,status,sort_order
-Registration Opens,2026-03-15T09:00:00Z,Open registration for all participants,completed,1
-Team Formation Deadline,2026-03-28T23:59:00Z,All teams must be formed,upcoming,2
-Project Submission,2026-04-01T18:00:00Z,Submit your project for judging,upcoming,3
-Judging Period,2026-04-01T19:00:00Z,Judges review all submissions,upcoming,4
-Winners Announced,2026-04-02T16:00:00Z,Award ceremony,upcoming,5
+Rejestracja otwarta,2026-04-10T14:00:00Z,Rejestracja uczestników i dostęp do portalu,upcoming,1
+Keynote i oficjalne otwarcie,2026-04-10T15:00:00Z,Wizja firmy i przedstawienie wyzwań hackathonu,upcoming,2
+Formowanie zespołów,2026-04-10T16:15:00Z,Wszystkie zespoły muszą być uformowane przed rozpoczęciem pracy,upcoming,3
+Wybór tracków,2026-04-10T16:15:00Z,Zespoły wybierają track i kierunek projektu,upcoming,4
+Początek hackowania,2026-04-10T16:15:00Z,Start fazy budowania - pierwsze burze mózgów,upcoming,5
+Progress check-in,2026-04-11T16:00:00Z,Każdy zespół prezentuje postępy (2 min) - co zbudowaliście i co blokuje,upcoming,6
+Freeze kodu,2026-04-12T09:00:00Z,Hard stop - koniec kodowania i finalny leaderboard Bounty Hunting,upcoming,7
+Prezentacje demo,2026-04-12T10:15:00Z,5 min prezentacja + 3 min Q&A na zespół,upcoming,8
+Obrady jury,2026-04-12T12:15:00Z,Jury ocenia projekty i publiczność głosuje,upcoming,9
+Ogłoszenie wyników,2026-04-12T13:00:00Z,Ceremonia wręczenia nagród i zamknięcie hackathonu,upcoming,10

@@ -1,23 +1,23 @@
 title,type,starts_at,ends_at,description,location,speaker_name,is_mandatory,order
-"Registration & Networking","custom","2026-03-27T16:00:00Z","2026-03-27T17:00:00Z","Coffee, first conversations, setup",,,,1
-"Keynote","ceremony","2026-03-27T17:00:00Z","2026-03-27T17:30:00Z","Company vision + why Agentic SE — what we aim to achieve",,,true,2
-"Intro to Codex","talk","2026-03-27T17:30:00Z","2026-03-27T17:45:00Z","Mike Grabowski — 15 minutes on Codex by OpenAI",,Mike Grabowski,,3
-"Challenge reveal + team formation","custom","2026-03-27T17:45:00Z","2026-03-27T18:15:00Z","3 tracks, pick your direction",,,true,4
-"First brainstorm sessions","custom","2026-03-27T18:15:00Z","2026-03-27T19:00:00Z",,,,,5
-"Dinner + planning","meal","2026-03-27T19:00:00Z","2026-03-27T21:00:00Z","Want to code? Code.",,,,6
-"Day Start + Optional Standup","custom","2026-03-28T09:00:00Z","2026-03-28T09:30:00Z","Each team 60 sec: what are we building?",,,,7
-"Deep work block #1","custom","2026-03-28T09:30:00Z","2026-03-28T13:00:00Z",,,,,8
-"Agentic SE for Software Houses","talk","2026-03-28T10:00:00Z","2026-03-28T10:30:00Z","Parallel to work block — your choice",,,,9
-"Lunch + Midday checkpoint","meal","2026-03-28T13:00:00Z","2026-03-28T14:00:00Z","Informal exchange between teams",,,,10
-"Deep work block #2","custom","2026-03-28T14:00:00Z","2026-03-28T18:00:00Z",,,,,11
-"Live Coding with Piotr Karwatka","workshop","2026-03-28T14:00:00Z","2026-03-28T15:00:00Z","Parallel — no slides, pure code",,Piotr Karwatka,,12
-"Progress check-in","custom","2026-03-28T18:00:00Z","2026-03-28T18:30:00Z","Each team 2 min: what did you build, what's blocking?",,,,13
-"Dinner","meal","2026-03-28T18:30:00Z","2026-03-28T19:30:00Z",,,,,14
-"Deep work block #3 — evening sprint","custom","2026-03-28T19:30:00Z","2026-03-28T22:00:00Z",,,,,15
-"Breakfast","meal","2026-03-29T09:00:00Z","2026-03-29T09:30:00Z",,,,,16
-"Final sprint","custom","2026-03-29T09:30:00Z","2026-03-29T12:00:00Z","Finishing, polishing, preparing demo",,,,17
-"Agentic SE at Open Mercato","talk","2026-03-29T11:30:00Z","2026-03-29T12:00:00Z","Honest retrospective — what works, what doesn't",,,,18
-"Code freeze. Lunch.","deadline","2026-03-29T12:00:00Z","2026-03-29T12:30:00Z","Final Bounty Hunting leaderboard",,,true,19
-"Demo time","demo_session","2026-03-29T12:30:00Z","2026-03-29T14:30:00Z","5 min presentation + 3 min Q&A per team",,,true,20
-"Jury deliberation + audience vote","custom","2026-03-29T14:30:00Z","2026-03-29T15:15:00Z",,,,,21
-"Results, awards, closing","ceremony","2026-03-29T15:15:00Z","2026-03-29T16:00:00Z",,,,,22
+"Rejestracja & Networking","custom","2026-04-10T14:00:00Z","2026-04-10T15:00:00Z","Kawa, pierwsze rozmowy, setup",,,,1
+"Keynote","ceremony","2026-04-10T15:00:00Z","2026-04-10T15:30:00Z","Wizja firmy + dlaczego Agentic SE - co chcemy osiągnąć",,,true,2
+"Intro to Codex","talk","2026-04-10T15:30:00Z","2026-04-10T15:45:00Z","Mike Grabowski - 15 minut o Codex od OpenAI",,Mike Grabowski,,3
+"Hackathon start, przedstawienie wyzwań + formowanie zespołów","custom","2026-04-10T15:45:00Z","2026-04-10T16:15:00Z","4 tracki, wybierasz kierunek",,,true,4
+"Pierwsze burze mózgów w zespołach","custom","2026-04-10T16:15:00Z","2026-04-10T17:00:00Z",,,,true,5
+"Kolacja + planowanie","meal","2026-04-10T17:00:00Z","2026-04-10T19:00:00Z","Chcesz kodować? Koduj.",,,,6
+"Day Start + Śniadanie","meal","2026-04-11T07:00:00Z","2026-04-11T07:30:00Z","Luźny czas na wymianę doświadczeń",,,,7
+"Deep work block #1 (3,5h)","custom","2026-04-11T07:30:00Z","2026-04-11T11:00:00Z",,,,,8
+"Agentic SE w Open Mercato","talk","2026-04-11T08:00:00Z","2026-04-11T08:30:00Z","Szczera retrospektywa - co działa, z czym są problemy - Patryk Lewczuk",,Patryk Lewczuk,,9
+"Lunch + Midday checkpoint","meal","2026-04-11T11:00:00Z","2026-04-11T12:00:00Z","Nieformalna wymiana między zespołami",,,,10
+"Deep work block #2 (4h)","custom","2026-04-11T12:00:00Z","2026-04-11T16:00:00Z",,,,,11
+"Live Coding z Piotr Karwatka","workshop","2026-04-11T12:00:00Z","2026-04-11T13:00:00Z","Równolegle - bez slajdów, czysty kod",,Piotr Karwatka,,12
+"Progress check-in","custom","2026-04-11T16:00:00Z","2026-04-11T16:30:00Z","Każdy zespół 2 min: co zbudowaliście, co blokuje?",,,,13
+"Kolacja","meal","2026-04-11T16:30:00Z","2026-04-11T17:30:00Z",,,,,14
+"Deep work block #3","custom","2026-04-11T17:30:00Z","2026-04-11T19:00:00Z","Opcjonalny wieczorny sprint",,,,15
+"Śniadanie","meal","2026-04-12T07:00:00Z","2026-04-12T07:30:00Z",,,,,16
+"Final sprint","custom","2026-04-12T07:30:00Z","2026-04-12T09:00:00Z","Dokańczanie, polerowanie, przygotowanie demo",,,,17
+"Hard stop. Freeze kodu. Lunch.","deadline","2026-04-12T09:00:00Z","2026-04-12T09:30:00Z","Finalny leaderboard Bounty Hunting",,,true,18
+"Agentic SE dla software house","talk","2026-04-12T09:30:00Z","2026-04-12T10:00:00Z","Tomasz Karwatka o tym, co się zmienia w dzisiejszym podejściu",,Tomasz Karwatka,,19
+"Demo time","demo_session","2026-04-12T10:15:00Z","2026-04-12T12:15:00Z","5 min prezentacja + 3 min Q&A na zespół",,,true,20
+"Obrady jury + głosowanie publiczności","custom","2026-04-12T12:15:00Z","2026-04-12T13:00:00Z",,,,,21
+"Ogłoszenie wyników, nagrody, closing","ceremony","2026-04-12T13:00:00Z","2026-04-12T14:00:00Z","Wspólne zdjęcie 📸",,,true,22

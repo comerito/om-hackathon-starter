@@ -9,6 +9,8 @@ type CountdownWidgetProps = {
   targetDate: Date | string
   /** Label shown below the number */
   label?: string
+  /** Countdown mode — affects default label */
+  mode?: 'remaining' | 'starts_in'
   /** Size variant */
   size?: 'sm' | 'lg'
   className?: string
@@ -22,11 +24,14 @@ function getHoursRemaining(target: Date): number {
 /**
  * Large countdown number display with label.
  */
-export function CountdownWidget({ targetDate, label = 'HOURS LEFT', size = 'lg', className }: CountdownWidgetProps) {
+export function CountdownWidget({ targetDate, label, mode = 'remaining', size = 'lg', className }: CountdownWidgetProps) {
   const t = useT()
   const target = React.useMemo(() => (typeof targetDate === 'string' ? new Date(targetDate) : targetDate), [targetDate])
   const [hours, setHours] = React.useState(() => getHoursRemaining(target))
-  const resolvedLabel = label === 'HOURS LEFT' ? t('common.countdown.hoursLeft', 'HOURS LEFT') : label
+  const defaultLabel = mode === 'starts_in'
+    ? t('common.countdown.startsIn', 'STARTS IN')
+    : t('common.countdown.hoursLeft', 'HOURS LEFT')
+  const resolvedLabel = label ?? defaultLabel
 
   React.useEffect(() => {
     const interval = setInterval(() => setHours(getHoursRemaining(target)), 60_000)

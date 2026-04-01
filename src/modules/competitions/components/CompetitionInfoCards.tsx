@@ -115,7 +115,7 @@ export function CompetitionInfoCards({
                 cardClassName,
               )}
             >
-              <div className="mb-3 flex items-start gap-3">
+              <div className="flex items-start gap-3">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-portal-primary/10">
                   <Icon className="size-4 text-portal-primary" />
                 </div>
@@ -123,11 +123,11 @@ export function CompetitionInfoCards({
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary">
                     {card.label}
                   </p>
+                  <p className="mt-1 whitespace-pre-line break-words text-sm font-bold text-foreground">
+                    {card.value}
+                  </p>
                 </div>
               </div>
-              <p className="whitespace-pre-line break-words text-sm font-bold text-foreground">
-                {card.value}
-              </p>
             </div>
           )
         })}
