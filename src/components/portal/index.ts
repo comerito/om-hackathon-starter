@@ -4,6 +4,7 @@ export { PortalSidebar } from './PortalSidebar'
 export { PortalTopBar } from './PortalTopBar'
 export { PortalFooter } from './PortalFooter'
 export { MilestonesDrawer } from './MilestonesDrawer'
+export { CompetitionGuideDrawer } from './CompetitionGuideDrawer'
 
 // Page structure
 export { PortalPageTitle } from './PortalPageTitle'

@@ -11,9 +11,9 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
-import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge } from '@/components/portal'
+import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge, SectionLabel } from '@/components/portal'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil } from 'lucide-react'
+import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil, FileCode2, Download, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 /* ---------- types ---------- */
@@ -32,6 +32,22 @@ type ProjectData = {
   presentation_url: string | null
   screenshot_ids: string[]
   attachment_ids: string[]
+  attachments?: Array<{
+    id: string
+    file_name: string
+    mime_type: string
+    file_size: number
+    url: string
+    created_at: string
+  }>
+  screenshots?: Array<{
+    id: string
+    file_name: string
+    mime_type: string
+    file_size: number
+    url: string
+    created_at: string
+  }>
   uses_preexisting_code: boolean
   preexisting_code_description: string | null
   built_during_hackathon_description: string | null
@@ -46,6 +62,7 @@ type ProjectData = {
 }
 
 type TrackInfo = { id: string; name: string; color: string }
+type ProjectAttachment = NonNullable<ProjectData['attachments']>[number]
 
 type MyProjectResponse = {
   project: ProjectData | null
@@ -93,6 +110,10 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [uploadingScreenshot, setUploadingScreenshot] = React.useState(false)
   const [screenshotIds, setScreenshotIds] = React.useState<string[]>([])
   const screenshotInputRef = React.useRef<HTMLInputElement>(null)
+  const [uploadingReadme, setUploadingReadme] = React.useState(false)
+  const [attachmentIds, setAttachmentIds] = React.useState<string[]>([])
+  const [readmeAttachment, setReadmeAttachment] = React.useState<ProjectAttachment | null>(null)
+  const readmeInputRef = React.useRef<HTMLInputElement>(null)
 
   const [saving, setSaving] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
@@ -100,6 +121,25 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [autoSaveFailed, setAutoSaveFailed] = React.useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = React.useState(false)
   const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  const updateProjectCache = React.useCallback((projectId: string, updater: (project: ProjectData) => ProjectData) => {
+    queryClient.setQueryData<MyProjectResponse | undefined>(['portal-my-project', competitionId], (current) => {
+      if (!current) return current
+
+      const updateOne = (project: ProjectData | null): ProjectData | null => {
+        if (!project || project.id !== projectId) return project
+        return updater(project)
+      }
+
+      return {
+        ...current,
+        project: updateOne(current.project),
+        projects: current.projects?.map((project) => (
+          project.id === projectId ? updater(project) : project
+        )) ?? current.projects,
+      }
+    })
+  }, [competitionId, queryClient])
 
   // Live countdown timer
   const [now, setNow] = React.useState(() => new Date())
@@ -158,7 +198,10 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setBuiltDuringDescription(p.built_during_hackathon_description ?? '')
     setLastSaved(p.updated_at ?? null)
     setScreenshotIds(p.screenshot_ids ?? [])
-  }, [activeProject?.id, activeProject?.updated_at])
+    setAttachmentIds(p.attachment_ids ?? [])
+    const restoredReadme = (p.attachments ?? []).find((attachment) => attachment.file_name.trim().toLowerCase() === 'readme.md') ?? null
+    setReadmeAttachment(restoredReadme)
+  }, [activeProject?.id, activeProject?.updated_at, activeProject?.attachment_ids, activeProject?.attachments])
 
   const project = activeProject
   const isPublished = project?.status === 'published'
@@ -218,11 +261,35 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           preexisting_code_description: preexistingCodeDescription.trim() || null,
           built_during_hackathon_description: builtDuringDescription.trim() || null,
           screenshot_ids: screenshotIds,
+          attachment_ids: attachmentIds,
         }),
       })
       if (ok && result?.updated_at) {
-        setLastSaved(result.updated_at)
+        const updatedAt = result.updated_at
+        setLastSaved(updatedAt)
         setAutoSaveFailed(false)
+        updateProjectCache(project.id, (cachedProject) => ({
+          ...cachedProject,
+          title: title.trim() || project.title,
+          tagline: tagline.trim() || null,
+          description: description.trim() || null,
+          problem_statement: problemStatement.trim() || null,
+          solution: solution.trim() || null,
+          tech_stack: techStack,
+          demo_url: demoUrl.trim() || null,
+          repo_url: repoUrl.trim() || null,
+          video_url: videoUrl.trim() || null,
+          presentation_url: presentationUrl.trim() || null,
+          uses_preexisting_code: usesPreexistingCode,
+          preexisting_code_description: preexistingCodeDescription.trim() || null,
+          built_during_hackathon_description: builtDuringDescription.trim() || null,
+          screenshot_ids: screenshotIds,
+          attachment_ids: attachmentIds,
+          attachments: attachmentIds.length > 0 && readmeAttachment
+            ? [readmeAttachment]
+            : [],
+          updated_at: updatedAt,
+        }))
       }
     } catch (err) {
       console.error('[project-editor] Auto-save failed:', err)
@@ -234,6 +301,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           demoUrl, repoUrl, videoUrl, presentationUrl,
           usesPreexistingCode, preexistingCodeDescription, builtDuringDescription,
           screenshotIds,
+          attachmentIds,
         }))
       } catch (lsErr) {
         console.error('[project-editor] localStorage fallback failed:', lsErr)
@@ -241,7 +309,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     } finally {
       setSaving(false)
     }
-  }, [project, isPublished, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds])
+  }, [project, isPublished, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds, readmeAttachment, updateProjectCache])
 
   // Auto-save every 30 seconds
   React.useEffect(() => {
@@ -307,16 +375,24 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     try {
       for (const file of Array.from(files)) {
         const formData = new FormData()
-        formData.set('entityId', 'projects:project')
-        formData.set('recordId', project.id)
+        formData.set('project_id', project.id)
+        formData.set('kind', 'screenshot')
         formData.set('file', file)
-        formData.set('fieldKey', 'screenshots')
-        const { ok, result } = await apiCall<{ ok: boolean; item?: { id: string } }>('/api/attachments', {
+        const { ok, result } = await apiCall<{ ok: boolean; item?: { id: string; file_name: string; mime_type: string; file_size: number; url: string; created_at: string } }>('/api/projects/portal/upload-asset', {
           method: 'POST',
           body: formData,
         })
         if (ok && result?.item?.id) {
-          setScreenshotIds(prev => [...prev, result.item!.id])
+          const newItem = result.item
+          setScreenshotIds(prev => {
+            const next = [...prev, newItem.id]
+            updateProjectCache(project.id, (cachedProject) => ({
+              ...cachedProject,
+              screenshot_ids: next,
+              screenshots: [...(cachedProject.screenshots ?? []), newItem],
+            }))
+            return next
+          })
         }
       }
       flash(t('projects.portal.screenshotUploaded', 'Screenshot uploaded'), 'success')
@@ -329,13 +405,77 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   }
 
   function handleRemoveScreenshot(id: string) {
-    setScreenshotIds(prev => prev.filter(s => s !== id))
+    setScreenshotIds(prev => {
+      const next = prev.filter(s => s !== id)
+      if (project) {
+        updateProjectCache(project.id, (cachedProject) => ({
+          ...cachedProject,
+          screenshot_ids: next,
+          screenshots: (cachedProject.screenshots ?? []).filter(s => s.id !== id),
+        }))
+      }
+      return next
+    })
+  }
+
+  async function handleReadmeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !project) return
+
+    if (file.name.trim().toLowerCase() !== 'readme.md') {
+      flash(t('projects.portal.readmeInvalid', 'Upload a file named README.md'), 'error')
+      if (readmeInputRef.current) readmeInputRef.current.value = ''
+      return
+    }
+
+    setUploadingReadme(true)
+    try {
+      const formData = new FormData()
+      formData.set('project_id', project.id)
+      formData.set('kind', 'readme')
+      formData.set('file', file)
+      const { ok, result } = await apiCall<{ ok: boolean; item?: { id: string; file_name: string; mime_type: string; file_size: number; url: string; created_at: string } }>('/api/projects/portal/upload-asset', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (ok && result?.item?.id) {
+        setAttachmentIds([result.item.id])
+        setReadmeAttachment(result.item)
+        updateProjectCache(project.id, (cachedProject) => ({
+          ...cachedProject,
+          attachment_ids: [result.item!.id],
+          attachments: [result.item!],
+        }))
+        flash(t('projects.portal.readmeUploaded', 'README.md uploaded'), 'success')
+      } else {
+        flash(t('projects.portal.uploadFailed', 'Upload failed'), 'error')
+      }
+    } catch {
+      flash(t('projects.portal.uploadFailed', 'Upload failed'), 'error')
+    } finally {
+      setUploadingReadme(false)
+      if (readmeInputRef.current) readmeInputRef.current.value = ''
+    }
+  }
+
+  function handleRemoveReadme() {
+    setAttachmentIds([])
+    setReadmeAttachment(null)
+    if (project) {
+      updateProjectCache(project.id, (cachedProject) => ({
+        ...cachedProject,
+        attachment_ids: [],
+        attachments: [],
+      }))
+    }
   }
 
   // Completeness check
   const requiredFields = [
     { label: t('projects.fields.checklist.title', 'Title'), filled: !!title.trim() },
     { label: t('projects.fields.checklist.description', 'Description'), filled: !!description.trim() },
+    { label: t('projects.fields.checklist.readmeFeedback', 'README.md feedback file'), filled: attachmentIds.length > 0 },
     { label: t('projects.fields.checklist.originality', 'Originality disclosure'), filled: !usesPreexistingCode || !!preexistingCodeDescription.trim() },
   ]
   const filledCount = requiredFields.filter(f => f.filled).length
@@ -428,9 +568,11 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           <button
             key={p.track_id}
             type="button"
-            onClick={() => {
+            onClick={async () => {
               // Auto-save current before switching
-              if (project && isDraft) doAutoSave()
+              if (project && isDraft) {
+                await doAutoSave()
+              }
               setActiveTrackId(p.track_id)
             }}
             className={cn(
@@ -455,89 +597,288 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
   /* ======== Published state (read-only) ======== */
   if (isPublished) {
+    const activeTrack = allTracks.find(tr => tr.id === project?.track_id)
+    const hasLinks = project?.demo_url || project?.repo_url || project?.video_url || project?.presentation_url
+
     return (
       <div className="space-y-6">
         {trackTabs}
-        {/* Submitted banner */}
-        <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-5 flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
-            <Check className="size-4 text-green-600 dark:text-green-400" />
-          </div>
-          <div>
-            <span className="font-semibold text-green-800 dark:text-green-300">
-              {t('projects.portal.submittedBanner', 'Your project has been submitted!')}
-            </span>
-            <p className="text-sm text-green-700 dark:text-green-400 mt-0.5">
-              {t('projects.portal.submittedDesc', 'Submitted on')} {project?.submitted_at ? new Date(project.submitted_at).toLocaleString() : ''}
-            </p>
-          </div>
-        </div>
 
-        {/* Project details card */}
-        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-5">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">{project?.title ?? ''}</h2>
-          {project?.tagline && <p className="text-lg text-portal-secondary italic">{project.tagline}</p>}
+        {/* ---- Hero card ---- */}
+        <div className="relative rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+          {/* Accent bar */}
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-portal-success via-emerald-400 to-portal-success" />
 
-          {project?.description && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.description', 'Description')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.description}</p>
-            </div>
-          )}
-          {project?.problem_statement && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.problemStatement', 'Problem Statement')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.problem_statement}</p>
-            </div>
-          )}
-          {project?.solution && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">{t('projects.fields.solution', 'Solution')}</h4>
-              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.solution}</p>
-            </div>
-          )}
+          <div className="p-5 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="space-y-2 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-portal-success px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
+                    <Check className="size-3" />
+                    {t('projects.portal.status.published', 'Published')}
+                  </span>
+                  {activeTrack && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-portal-secondary">
+                      <span className="size-2 rounded-full" style={{ backgroundColor: activeTrack.color || '#6366f1' }} />
+                      {activeTrack.name}
+                    </span>
+                  )}
+                </div>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  {project?.title ?? ''}
+                </h2>
+                {project?.tagline && (
+                  <p className="text-base text-portal-secondary leading-relaxed max-w-2xl">{project.tagline}</p>
+                )}
+              </div>
 
-          {project?.tech_stack && project.tech_stack.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1.5">{t('projects.fields.techStack', 'Tech Stack')}</h4>
-              <div className="flex flex-wrap gap-1.5">
-                {project.tech_stack.map(tag => (
-                  <span key={tag} className="inline-flex items-center rounded-full bg-portal-primary/10 px-2.5 py-0.5 text-xs font-medium text-portal-primary">{tag}</span>
-                ))}
+              {/* Submission timestamp */}
+              <div className="flex items-center gap-2.5 shrink-0 rounded-xl bg-portal-success/5 dark:bg-portal-success/10 border border-portal-success/10 dark:border-portal-success/20 px-4 py-3">
+                <div className="flex size-9 items-center justify-center rounded-full bg-portal-success/10">
+                  <Check className="size-4 text-portal-success" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-portal-success">
+                    {t('projects.portal.submittedBanner', 'Submitted')}
+                  </p>
+                  <p className="text-xs text-portal-secondary mt-0.5">
+                    {project?.submitted_at ? new Date(project.submitted_at).toLocaleString() : ''}
+                  </p>
+                </div>
               </div>
             </div>
-          )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {project?.demo_url && (
-              <a href={project.demo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Link2 className="size-4" /> {t('projects.portal.link.demo', 'Demo')}
-              </a>
-            )}
-            {project?.repo_url && (
-              <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Code className="size-4" /> {t('projects.portal.link.repository', 'Repository')}
-              </a>
-            )}
-            {project?.video_url && (
-              <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Video className="size-4" /> {t('projects.portal.link.video', 'Video')}
-              </a>
-            )}
-            {project?.presentation_url && (
-              <a href={project.presentation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-portal-primary hover:underline">
-                <Link2 className="size-4" /> {t('projects.portal.link.presentation', 'Presentation')}
-              </a>
+            {/* Tech stack pills — shown prominently in hero */}
+            {project?.tech_stack && project.tech_stack.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-5 pt-5 border-t border-gray-100 dark:border-white/5">
+                {project.tech_stack.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-lg border border-portal-primary/15 dark:border-portal-primary/25 bg-portal-primary/5 px-2.5 py-1 text-xs font-semibold text-portal-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>
 
+        {/* ---- Flagged warning ---- */}
         {project?.flagged_for_reuse && (
-          <div className="rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 p-4">
-            <span className="font-medium text-orange-800 dark:text-orange-300">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
-            {project.flagged_reason && <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">{project.flagged_reason}</p>}
+          <div className="rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 p-4 flex items-start gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/20 mt-0.5">
+              <Sparkles className="size-4 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <span className="font-semibold text-orange-800 dark:text-orange-300">{t('projects.portal.flaggedBanner', 'This project has been flagged for code reuse review.')}</span>
+              {project.flagged_reason && <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">{project.flagged_reason}</p>}
+            </div>
           </div>
         )}
+
+        {/* ---- Two-column layout ---- */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
+            {/* Description */}
+            {project?.description && (
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-6">
+                <SectionLabel className="mb-3 block">{t('projects.fields.description', 'Description')}</SectionLabel>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.description}</p>
+              </div>
+            )}
+
+            {/* Problem & Solution — side by side */}
+            {(project?.problem_statement || project?.solution) && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {project?.problem_statement && (
+                  <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-6">
+                    <SectionLabel className="mb-3 block">{t('projects.fields.problemStatement', 'Problem Statement')}</SectionLabel>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.problem_statement}</p>
+                  </div>
+                )}
+                {project?.solution && (
+                  <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-6">
+                    <SectionLabel className="mb-3 block">{t('projects.fields.solution', 'Solution')}</SectionLabel>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700 dark:text-slate-300">{project.solution}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Screenshots gallery */}
+            {project?.screenshots && project.screenshots.length > 0 && (
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-6">
+                <SectionLabel className="mb-3 block">{t('projects.portal.mediaSection', 'Media Gallery')}</SectionLabel>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {project.screenshots.map((shot, idx) => (
+                    <a
+                      key={shot.id}
+                      href={shot.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-video rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 overflow-hidden"
+                    >
+                      <img
+                        src={shot.url}
+                        alt={`${t('projects.portal.screenshot', 'Screenshot')} ${idx + 1}`}
+                        className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Originality disclosure */}
+            {project?.uses_preexisting_code && (
+              <div className="rounded-xl border border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5 p-5 sm:p-6">
+                <SectionLabel className="!text-amber-600 dark:!text-amber-400 mb-3 block">
+                  {t('projects.portal.originalitySection', 'Originality Disclosure')}
+                </SectionLabel>
+                {project.preexisting_code_description && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">{t('projects.fields.preexistingCodeDesc', 'Pre-existing code')}</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200/80 whitespace-pre-wrap">{project.preexisting_code_description}</p>
+                  </div>
+                )}
+                {project.built_during_hackathon_description && (
+                  <div>
+                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">{t('projects.fields.builtDuringDesc', 'Built during hackathon')}</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200/80 whitespace-pre-wrap">{project.built_during_hackathon_description}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT COLUMN (Sidebar) */}
+          <div className="space-y-5 lg:sticky lg:top-20 self-start">
+            {/* Project Links card */}
+            {hasLinks && (
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+                <div className="relative px-5 pt-4 pb-3">
+                  <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-portal-primary via-portal-primary-light to-portal-primary" />
+                  <SectionLabel className="block">{t('projects.portal.linksSection', 'Project Links')}</SectionLabel>
+                </div>
+                <div className="border-t border-gray-50 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5">
+                  {project?.demo_url && (
+                    <a
+                      href={project.demo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-5 py-3.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-portal-primary/10 text-portal-primary group-hover:bg-portal-primary/20 transition-colors">
+                        <Link2 className="size-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{t('projects.portal.link.demo', 'Demo')}</p>
+                        <p className="text-xs text-portal-secondary truncate">{project.demo_url}</p>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-portal-secondary shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                    </a>
+                  )}
+                  {project?.repo_url && (
+                    <a
+                      href={project.repo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-5 py-3.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 group-hover:bg-gray-200 dark:group-hover:bg-white/15 transition-colors">
+                        <Code className="size-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{t('projects.portal.link.repository', 'Repository')}</p>
+                        <p className="text-xs text-portal-secondary truncate">{project.repo_url}</p>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-portal-secondary shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                    </a>
+                  )}
+                  {project?.video_url && (
+                    <a
+                      href={project.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-5 py-3.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 transition-colors">
+                        <Video className="size-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{t('projects.portal.link.video', 'Video')}</p>
+                        <p className="text-xs text-portal-secondary truncate">{project.video_url}</p>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-portal-secondary shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                    </a>
+                  )}
+                  {project?.presentation_url && (
+                    <a
+                      href={project.presentation_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-5 py-3.5 text-sm text-foreground hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20 transition-colors">
+                        <Link2 className="size-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{t('projects.portal.link.presentation', 'Presentation')}</p>
+                        <p className="text-xs text-portal-secondary truncate">{project.presentation_url}</p>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-portal-secondary shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* README attachment */}
+            {readmeAttachment && (
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+                <SectionLabel className="mb-3 block">{t('projects.portal.feedbackReadmeSection', 'Feedback README')}</SectionLabel>
+                <a
+                  href={readmeAttachment.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-portal-primary/10 text-portal-primary">
+                    <FileCode2 className="size-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{readmeAttachment.file_name}</p>
+                    <p className="text-xs text-portal-secondary">
+                      {Math.max(1, Math.round(readmeAttachment.file_size / 1024))} KB
+                    </p>
+                  </div>
+                  <Download className="size-4 text-portal-secondary group-hover:text-portal-primary transition-colors shrink-0" />
+                </a>
+              </div>
+            )}
+
+            {/* Team card */}
+            {data?.team && (
+              <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+                <SectionLabel className="mb-3 block">{t('projects.portal.yourTeam', 'Your Team')}</SectionLabel>
+                <div className="flex items-center gap-3">
+                  <AvatarStack
+                    avatars={[{ name: data.team.name }]}
+                    size="md"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{data.team.name}</p>
+                    {data.trackName && (
+                      <p className="text-xs text-portal-secondary">{data.trackName}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -712,28 +1053,39 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               </button>
 
               {/* Screenshot thumbnails */}
-              {screenshotIds.map((id, idx) => (
-                <div key={id} className="relative group w-28 h-28 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 overflow-hidden flex items-center justify-center">
-                  <div className="flex flex-col items-center text-portal-secondary">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400 dark:text-slate-500">
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                    <span className="text-[10px] mt-1 text-gray-400 dark:text-slate-500">
-                      {t('projects.portal.screenshot', 'Screenshot')} {idx + 1}
-                    </span>
+              {screenshotIds.map((id, idx) => {
+                const shot = (project?.screenshots ?? []).find(s => s.id === id)
+                return (
+                  <div key={id} className="relative group w-28 h-28 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 overflow-hidden flex items-center justify-center">
+                    {shot?.url ? (
+                      <img
+                        src={shot.url}
+                        alt={`${t('projects.portal.screenshot', 'Screenshot')} ${idx + 1}`}
+                        className="absolute inset-0 size-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center text-portal-secondary">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400 dark:text-slate-500">
+                          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                          <circle cx="9" cy="9" r="2" />
+                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                        </svg>
+                        <span className="text-[10px] mt-1 text-gray-400 dark:text-slate-500">
+                          {t('projects.portal.screenshot', 'Screenshot')} {idx + 1}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveScreenshot(id)}
+                      className="absolute top-1 right-1 size-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={t('projects.portal.removeScreenshot', 'Remove screenshot')}
+                    >
+                      &times;
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveScreenshot(id)}
-                    className="absolute top-1 right-1 size-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label={t('projects.portal.removeScreenshot', 'Remove screenshot')}
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <input
@@ -748,6 +1100,79 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             {screenshotIds.length > 0 && (
               <span className="text-xs text-portal-secondary">{screenshotIds.length} {t('projects.portal.filesUploaded', 'file(s) uploaded')}</span>
             )}
+          </div>
+
+          <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-foreground">{t('projects.portal.feedbackReadmeSection', 'Hackathon Feedback README')}</h3>
+                <p className="text-sm text-portal-secondary mt-1">
+                  {t('projects.portal.feedbackReadmeHelp', 'Upload a README.md file with feedback about your team\'s experience using Open Mercato during the hackathon. This file is required for final submission.')}
+                </p>
+              </div>
+              <PortalBadge variant={attachmentIds.length > 0 ? 'success' : 'warning'}>
+                {attachmentIds.length > 0
+                  ? t('projects.portal.readmeStatusReady', 'Ready')
+                  : t('projects.portal.readmeStatusRequired', 'Required')}
+              </PortalBadge>
+            </div>
+
+            {readmeAttachment ? (
+              <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-portal-primary/10 text-portal-primary">
+                    <FileCode2 className="size-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{readmeAttachment.file_name}</p>
+                    <p className="text-xs text-portal-secondary">
+                      {Math.max(1, Math.round(readmeAttachment.file_size / 1024))} KB
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {readmeAttachment.url ? (
+                    <a
+                      href={readmeAttachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 px-3 py-2 text-sm font-medium text-foreground hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    >
+                      <Download className="mr-2 size-4" />
+                      {t('projects.portal.readmeDownload', 'Open File')}
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleRemoveReadme}
+                    className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+                  >
+                    <Trash2 className="mr-2 size-4" />
+                    {t('projects.portal.readmeRemove', 'Remove')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => readmeInputRef.current?.click()}
+                disabled={uploadingReadme || isPublished}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 dark:border-white/20 px-4 py-6 text-sm font-medium text-portal-secondary hover:border-portal-primary/50 hover:bg-portal-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="size-4" />
+                {uploadingReadme
+                  ? t('projects.portal.readmeUploading', 'Uploading README.md...')
+                  : t('projects.portal.readmeUpload', 'Upload README.md')}
+              </button>
+            )}
+
+            <input
+              ref={readmeInputRef}
+              type="file"
+              accept=".md,text/markdown,text/plain"
+              onChange={handleReadmeUpload}
+              className="hidden"
+            />
           </div>
 
           {/* ---- Submission Assets (URLs) ---- */}

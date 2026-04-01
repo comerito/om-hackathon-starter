@@ -205,11 +205,20 @@ export class Competition {
   @Property({ name: 'code_of_conduct_url', type: 'varchar', length: 1000 })
   codeOfConductUrl!: string
 
+  @Property({ name: 'code_of_conduct_content', type: 'text', nullable: true })
+  codeOfConductContent?: string | null
+
   @Property({ name: 'rules_url', type: 'varchar', length: 1000, nullable: true })
   rulesUrl?: string | null
 
+  @Property({ name: 'rules_content', type: 'text', nullable: true })
+  rulesContent?: string | null
+
   @Property({ name: 'privacy_policy_url', type: 'varchar', length: 1000, nullable: true })
   privacyPolicyUrl?: string | null
+
+  @Property({ name: 'privacy_policy_content', type: 'text', nullable: true })
+  privacyPolicyContent?: string | null
 
   @Property({ name: 'cover_image_url', type: 'varchar', length: 1000, nullable: true })
   coverImageUrl?: string | null

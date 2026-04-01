@@ -10,6 +10,7 @@ import { PortalTopBar } from './PortalTopBar'
 import { PortalFooter } from './PortalFooter'
 
 const MilestonesDrawer = dynamic(() => import('./MilestonesDrawer').then(m => ({ default: m.MilestonesDrawer })), { ssr: false })
+const CompetitionGuideDrawer = dynamic(() => import('./CompetitionGuideDrawer').then(m => ({ default: m.CompetitionGuideDrawer })), { ssr: false })
 
 export type PortalLayoutVariant = 'full' | 'minimal' | 'topnav' | 'kiosk'
 
@@ -43,8 +44,6 @@ type HackathonPortalLayoutProps = {
   competitionSubtitle?: string
   /** Title shown in top bar (e.g. section name) */
   topBarTitle?: string
-  /** Search placeholder */
-  searchPlaceholder?: string
   /** User display name */
   userName?: string
   /** User role label */
@@ -67,7 +66,6 @@ export function HackathonPortalLayout({
   competitionName,
   competitionSubtitle,
   topBarTitle,
-  searchPlaceholder,
   userName,
   userRole,
   backHref,
@@ -75,6 +73,8 @@ export function HackathonPortalLayout({
 }: HackathonPortalLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [milestonesOpen, setMilestonesOpen] = React.useState(false)
+  const [competitionGuideOpen, setCompetitionGuideOpen] = React.useState(false)
+  const [competitionGuideStage, setCompetitionGuideStage] = React.useState<string | null>(null)
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
 
@@ -96,6 +96,16 @@ export function HackathonPortalLayout({
     return () => window.removeEventListener('open-milestones-drawer', handleOpen)
   }, [])
 
+  React.useEffect(() => {
+    function handleOpen(event: Event) {
+      const detail = event instanceof CustomEvent ? event.detail as { currentStage?: string | null } | undefined : undefined
+      setCompetitionGuideStage(detail?.currentStage ?? null)
+      setCompetitionGuideOpen(true)
+    }
+    window.addEventListener('open-competition-guide-drawer', handleOpen as EventListener)
+    return () => window.removeEventListener('open-competition-guide-drawer', handleOpen as EventListener)
+  }, [])
+
   // Variant D: Kiosk — no chrome at all
   if (variant === 'kiosk') {
     return (
@@ -114,7 +124,7 @@ export function HackathonPortalLayout({
         <PortalTopBar
           variant="topnav"
           title={topBarTitle}
-          searchPlaceholder={searchPlaceholder}
+
           navLinks={navLinks}
           userName={userName}
           userRole={userRole}
@@ -140,6 +150,14 @@ export function HackathonPortalLayout({
           open={milestonesOpen}
           onClose={() => setMilestonesOpen(false)}
           orgSlug={orgSlug}
+        />
+      )}
+      {competitionGuideOpen && (
+        <CompetitionGuideDrawer
+          open={competitionGuideOpen}
+          onClose={() => setCompetitionGuideOpen(false)}
+          orgSlug={orgSlug}
+          currentStage={competitionGuideStage}
         />
       )}
 
@@ -179,7 +197,7 @@ export function HackathonPortalLayout({
         <PortalTopBar
           variant={variant === 'minimal' ? 'minimal' : 'full'}
           title={topBarTitle}
-          searchPlaceholder={searchPlaceholder}
+
           userName={userName}
           userRole={userRole}
           backHref={backHref}

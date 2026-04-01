@@ -30,6 +30,8 @@ export async function GET(req: Request) {
     const [translatedCompetition] = competition ? await applyPortalTranslationOverlays([{
       id: competition.id,
       name: competition.name,
+      code_of_conduct_content: competition.codeOfConductContent ?? null,
+      privacy_policy_content: competition.privacyPolicyContent ?? null,
     }], {
       entityType: 'competitions:competition',
       locale,
@@ -45,7 +47,9 @@ export async function GET(req: Request) {
       privacyPolicyAccepted: participation.privacyPolicyAccepted,
       privacyPolicyAcceptedAt: participation.privacyPolicyAcceptedAt,
       cocUrl: competition?.codeOfConductUrl ?? null,
+      cocHasContent: Boolean(translatedCompetition?.code_of_conduct_content ?? competition?.codeOfConductContent),
       privacyPolicyUrl: competition?.privacyPolicyUrl ?? null,
+      privacyPolicyHasContent: Boolean(translatedCompetition?.privacy_policy_content ?? competition?.privacyPolicyContent),
       competitionName: translatedCompetition?.name ?? competition?.name ?? null,
     })
   } catch (error) {

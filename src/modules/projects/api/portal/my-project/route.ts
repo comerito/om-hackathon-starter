@@ -7,11 +7,27 @@ import { TeamMember } from '../../../../teams/data/entities'
 import { Team } from '../../../../teams/data/entities'
 import { Track } from '../../../../tracks/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
+import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
+}
+
+function buildPortalAssetUrl(attachmentId: string): string {
+  return `/api/projects/portal/asset-file/${encodeURIComponent(attachmentId)}`
+}
+
+function serializeAttachment(attachment: Attachment) {
+  return {
+    id: attachment.id,
+    file_name: attachment.fileName,
+    mime_type: attachment.mimeType,
+    file_size: attachment.fileSize,
+    url: buildPortalAssetUrl(attachment.id),
+    created_at: attachment.createdAt.toISOString(),
+  }
 }
 
 function serializeProject(project: Project) {
@@ -140,14 +156,35 @@ export async function GET(req: Request) {
         container,
       },
     )
-    const firstProject = serializedProjects[0] ?? null
+    const projectAttachmentIds = [...new Set(projects.flatMap(project => [...(project.attachmentIds ?? []), ...(project.screenshotIds ?? [])]).filter(Boolean))]
+    const attachmentMap = new Map<string, ReturnType<typeof serializeAttachment>>()
+    if (projectAttachmentIds.length > 0) {
+      const attachments = await em.find(Attachment, {
+        id: { $in: projectAttachmentIds },
+      } as FilterQuery<Attachment>)
+      for (const attachment of attachments) {
+        attachmentMap.set(attachment.id, serializeAttachment(attachment))
+      }
+    }
+
+    const serializedProjectsWithAttachments = serializedProjects.map((project) => ({
+      ...project,
+      attachments: (project.attachment_ids ?? [])
+        .map(id => attachmentMap.get(id))
+        .filter(Boolean),
+      screenshots: (project.screenshot_ids ?? [])
+        .map(id => attachmentMap.get(id))
+        .filter(Boolean),
+    }))
+
+    const firstProject = serializedProjectsWithAttachments[0] ?? null
     const trackName = firstProject ? (trackMap.get(firstProject.track_id)?.name ?? null) : null
 
     return NextResponse.json({
       // Backward compat: single project (first one)
       project: firstProject,
       // New: all projects
-      projects: serializedProjects,
+      projects: serializedProjectsWithAttachments,
       team: {
         id: team.id,
         name: team.name,

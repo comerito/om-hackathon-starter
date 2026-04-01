@@ -73,9 +73,12 @@ export const createCompetitionSchema = z.object({
   judging_config: judgingConfigSchema.optional(),
   peer_voting_config: peerVotingConfigSchema.optional(),
   code_of_conduct_url: z.string().url().max(1000),
-  rules_url: z.string().url().max(1000).optional(),
-  privacy_policy_url: z.string().url().max(1000).optional(),
-  cover_image_url: z.string().url().max(1000).optional(),
+  code_of_conduct_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
+  rules_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  rules_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
+  privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  privacy_policy_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
+  cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
 })
 
 export const updateCompetitionSchema = z.object({
@@ -99,8 +102,11 @@ export const updateCompetitionSchema = z.object({
   judging_config: judgingConfigSchema.optional(),
   peer_voting_config: peerVotingConfigSchema.optional(),
   code_of_conduct_url: z.string().url().max(1000).optional(),
+  code_of_conduct_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
   rules_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  rules_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
   privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
+  privacy_policy_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
   cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
 })
 
