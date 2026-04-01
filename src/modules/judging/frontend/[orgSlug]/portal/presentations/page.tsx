@@ -44,7 +44,7 @@ const STATUS_STYLES: Record<string, { badge: 'danger' | 'primary' | 'muted' | 's
 function PresentationsContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const isMobile = useIsMobile()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
   const [now, setNow] = React.useState(() => Date.now())
   const [clockDelta, setClockDelta] = React.useState(0)
 
@@ -89,7 +89,14 @@ function PresentationsContent({ orgSlug }: { orgSlug: string }) {
   const totalDuration = presenting ? (presenting.presentation_duration_minutes + presenting.qa_duration_minutes) * 60 : 0
   const progress = totalDuration > 0 && timeRemaining !== null ? ((totalDuration - timeRemaining) / totalDuration) * 100 : 0
 
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('judging.portal.presentations.loading', 'Loading...')}</div>
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-64 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
+  }
 
   if (queue.length === 0) {
     return (

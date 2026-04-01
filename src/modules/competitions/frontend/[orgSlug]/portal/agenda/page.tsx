@@ -122,7 +122,7 @@ function TimelineEventCard({ item }: { item: AgendaItem }) {
 function AgendaContent() {
   const t = useT()
   const locale = useLocale()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [selectedDay, setSelectedDay] = React.useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -169,6 +169,16 @@ function AgendaContent() {
     if (days.length > 0 && !selectedDay) setSelectedDay(days[0][0])
   }, [days, selectedDay])
 
+  if (contextLoading || (!selectedId && !data)) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-28 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
   if (!selectedId) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
@@ -178,7 +188,13 @@ function AgendaContent() {
   }
 
   if (isLoading) {
-    return <div className="py-12 text-center text-portal-secondary">{t('competitions.portal.agenda.loading', 'Loading...')}</div>
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-28 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    )
   }
 
   if (items.length === 0) {

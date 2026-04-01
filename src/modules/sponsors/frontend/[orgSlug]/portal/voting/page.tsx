@@ -19,7 +19,7 @@ type MyVote = { id: string; project_id: string; created_at: string }
 function VotingContent() {
   const t = useT()
   const queryClient = useQueryClient()
-  const { selectedId: competitionId, selected } = useCompetitionContext()
+  const { selectedId: competitionId, selected, isLoading: contextLoading } = useCompetitionContext()
   const [voting, setVoting] = React.useState<string | null>(null)
 
   // Get published projects
@@ -89,7 +89,18 @@ function VotingContent() {
     }
   }
 
-  if (projectsLoading) return <div className="text-center py-12 text-muted-foreground">{t('sponsors.portal.loading', 'Loading...')}</div>
+  if (contextLoading || projectsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-16 rounded-lg border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-24 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   if (projects.length === 0) {
     return <PortalEmptyState title={t('sponsors.portal.noProjects', 'No Projects to Vote On')} description={t('sponsors.portal.noProjectsDesc', 'Projects will appear here after the hacking phase.')} />

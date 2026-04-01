@@ -22,7 +22,7 @@ type QueueResponse = {
 
 function KioskContent() {
   const t = useT()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
   const [now, setNow] = React.useState(() => Date.now())
   const [clockDelta, setClockDelta] = React.useState(0)
 
@@ -71,7 +71,7 @@ function KioskContent() {
 
   const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-  if (isLoading) {
+  if (contextLoading || isLoading) {
     return (
       <div className="min-h-screen bg-portal-dark flex items-center justify-center">
         <p className="text-white/40 text-[3vh]">{t('judging.portal.kiosk.loading', 'Loading...')}</p>

@@ -13,7 +13,6 @@ import {
   PortalPageTitle,
   SectionLabel,
   PortalBadge,
-  ToggleSwitch,
 } from '@/components/portal'
 import {
   Shield,
@@ -25,6 +24,7 @@ import {
   Linkedin,
   Twitter,
   Globe,
+  MessageCircle,
   Save,
   Loader2,
 } from 'lucide-react'
@@ -40,8 +40,7 @@ type ProfileData = {
   office_hours_url: string | null
   specialty: string | null
   skills: string[]
-  social_links: { github?: string; linkedin?: string; twitter?: string; website?: string }
-  notification_preferences: { email_digest?: boolean; slack_alerts?: boolean; sms_urgent?: boolean }
+  social_links: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string }
 }
 
 /* ---------- role dot colors ---------- */
@@ -126,8 +125,7 @@ function ProfileContent() {
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
   const [portfolioUrl, setPortfolioUrl] = React.useState('')
   const [officeHoursUrl, setOfficeHoursUrl] = React.useState('')
-  const [socialLinks, setSocialLinks] = React.useState<{ github?: string; linkedin?: string; twitter?: string; website?: string }>({})
-  const [notifPrefs, setNotifPrefs] = React.useState<{ email_digest?: boolean; slack_alerts?: boolean; sms_urgent?: boolean }>({})
+  const [socialLinks, setSocialLinks] = React.useState<{ github?: string; linkedin?: string; x?: string; website?: string; discord?: string }>({})
 
   // Fetch profile
   const { data, isLoading } = useQuery({
@@ -151,7 +149,6 @@ function ProfileContent() {
       setPortfolioUrl(data.portfolio_url ?? '')
       setOfficeHoursUrl(data.office_hours_url ?? '')
       setSocialLinks(data.social_links ?? {})
-      setNotifPrefs(data.notification_preferences ?? {})
     }
   }, [data])
 
@@ -203,7 +200,6 @@ function ProfileContent() {
             portfolio_url: portfolioUrl || null,
             office_hours_url: officeHoursUrl || null,
             social_links: socialLinks,
-            notification_preferences: notifPrefs,
           }),
         },
       )
@@ -261,8 +257,9 @@ function ProfileContent() {
       />
 
       {isLoading ? (
-        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
-          {t('competitions.portal.profile.loading', 'Loading profile...')}
+        <div className="space-y-4">
+          <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+          <div className="h-32 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -330,7 +327,7 @@ function ProfileContent() {
                   )}
 
                   {/* Social Links */}
-                  {!editing && (socialLinks.github || socialLinks.linkedin || socialLinks.twitter || socialLinks.website) && (
+                  {!editing && (socialLinks.github || socialLinks.linkedin || socialLinks.x || socialLinks.website || socialLinks.discord) && (
                     <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
                       {socialLinks.github && (
                         <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
@@ -342,8 +339,8 @@ function ProfileContent() {
                           <Linkedin className="size-4" />
                         </a>
                       )}
-                      {socialLinks.twitter && (
-                        <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
+                      {socialLinks.x && (
+                        <a href={socialLinks.x} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Twitter className="size-4" />
                         </a>
                       )}
@@ -351,6 +348,12 @@ function ProfileContent() {
                         <a href={socialLinks.website} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
                           <Globe className="size-4" />
                         </a>
+                      )}
+                      {socialLinks.discord && (
+                        <span className="flex items-center gap-1.5 rounded-lg bg-gray-50 dark:bg-white/5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-slate-400">
+                          <MessageCircle className="size-4" />
+                          {socialLinks.discord}
+                        </span>
                       )}
                     </div>
                   )}
@@ -405,9 +408,9 @@ function ProfileContent() {
                     <div className="flex items-center gap-3">
                       <Twitter className="size-4 text-portal-secondary shrink-0" />
                       <Input
-                        value={socialLinks.twitter ?? ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
-                        placeholder={t('competitions.portal.profile.social.twitter.placeholder', 'https://twitter.com/username')}
+                        value={socialLinks.x ?? ''}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, x: e.target.value }))}
+                        placeholder={t('competitions.portal.profile.social.x.placeholder', 'https://x.com/username')}
                       />
                     </div>
                     <div className="flex items-center gap-3">
@@ -416,6 +419,14 @@ function ProfileContent() {
                         value={socialLinks.website ?? ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, website: e.target.value }))}
                         placeholder={t('competitions.portal.profile.social.website.placeholder', 'https://yourwebsite.com')}
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="size-4 text-portal-secondary shrink-0" />
+                      <Input
+                        value={socialLinks.discord ?? ''}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, discord: e.target.value }))}
+                        placeholder={t('competitions.portal.profile.social.discord.placeholder', 'Discord nick')}
                       />
                     </div>
                   </div>
@@ -516,69 +527,6 @@ function ProfileContent() {
               </div>
             </div>
 
-            {/* Engagement Controls Card */}
-            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-5">
-              <h3 className="text-sm font-bold text-foreground mb-4">{t('competitions.portal.profile.notifications.title', 'Notifications')}</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.emailDigest.title', 'Email Digest')}</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.emailDigest.subtitle', 'Daily Summary')}</span>
-                  </div>
-                  <ToggleSwitch
-                    checked={notifPrefs.email_digest ?? true}
-                    onChange={(v) => {
-                      const updated = { ...notifPrefs, email_digest: v }
-                      setNotifPrefs(updated)
-                      if (!editing) {
-                        apiCall('/api/competitions/portal/update-profile', {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ notification_preferences: updated }),
-                        })
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.slackAlerts.title', 'Slack Alerts')}</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.slackAlerts.subtitle', 'Instant')}</span>
-                  </div>
-                  <ToggleSwitch
-                    checked={notifPrefs.slack_alerts ?? false}
-                    onChange={(v) => {
-                      const updated = { ...notifPrefs, slack_alerts: v }
-                      setNotifPrefs(updated)
-                      if (!editing) {
-                        apiCall('/api/competitions/portal/update-profile', {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ notification_preferences: updated }),
-                        })
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t('competitions.portal.profile.notifications.smsUrgent.title', 'SMS Urgent')}</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('competitions.portal.profile.notifications.smsUrgent.subtitle', 'Critical Only')}</span>
-                  </div>
-                  <ToggleSwitch
-                    checked={notifPrefs.sms_urgent ?? false}
-                    onChange={(v) => {
-                      const updated = { ...notifPrefs, sms_urgent: v }
-                      setNotifPrefs(updated)
-                      if (!editing) {
-                        apiCall('/api/competitions/portal/update-profile', {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ notification_preferences: updated }),
-                        })
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

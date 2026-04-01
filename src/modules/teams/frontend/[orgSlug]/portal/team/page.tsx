@@ -1299,7 +1299,7 @@ type MyMembershipResponse = {
 function MyTeamContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const { auth } = usePortalContext()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const userId = auth.user?.id
 
   // Fetch membership, team, and members in one call via portal API
@@ -1319,6 +1319,15 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
   const team = membershipData?.team
   const preloadedMembers = membershipData?.members
 
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-32 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
+  }
+
   if (!selectedId) {
     return (
       <PortalEmptyState
@@ -1328,14 +1337,6 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
           'Choose a competition from the header to view your team.',
         )}
       />
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-        <p className="text-sm text-portal-secondary">{t('common.loading', 'Loading...')}</p>
-      </div>
     )
   }
 

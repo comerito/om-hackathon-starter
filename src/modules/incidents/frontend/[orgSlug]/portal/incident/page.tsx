@@ -21,7 +21,7 @@ const SEVERITY_OPTIONS = [
 
 function IncidentReportContent() {
   const t = useT()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
   const [description, setDescription] = React.useState('')
   const [severity, setSeverity] = React.useState('low')
   const [reportedUserId, setReportedUserId] = React.useState('')
@@ -55,6 +55,15 @@ function IncidentReportContent() {
       setSubmitting(false)
       setShowConfirm(false)
     }
+  }
+
+  if (contextLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-4">
+        <div className="h-20 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-64 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
   }
 
   if (submitted) {

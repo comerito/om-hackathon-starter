@@ -108,7 +108,7 @@ function canSelectTrackUI(stage: string | undefined, allowTrackChange?: boolean)
 function TracksContent() {
   const t = useT()
   const { orgSlug } = usePortalContext()
-  const { selectedId, selected } = useCompetitionContext()
+  const { selectedId, selected, isLoading: contextLoading } = useCompetitionContext()
   const [activeFilter, setActiveFilter] = React.useState('all')
   const [selectingTrackId, setSelectingTrackId] = React.useState<string | null>(null)
   const [trackError, setTrackError] = React.useState<string | null>(null)
@@ -272,22 +272,18 @@ function TracksContent() {
     ? tracks
     : tracks.filter(tr => tr.name === activeFilter)
 
-  if (!selectedId) {
-    return <PortalEmptyState title={t('tracks.portal.noCompetition', 'Select a competition')} description={t('tracks.portal.noCompetitionDesc', 'Choose a competition to view its tracks.')} />
-  }
-
-  if (isLoading) {
+  if (contextLoading || isLoading) {
     return (
-      <div className="flex flex-col gap-6">
-        <PortalPageTitle
-          label={t('tracks.portal.hubLabel', 'Competition Hub')}
-          title={t('tracks.portal.title', 'Competition Tracks')}
-        />
-        <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8">
-          <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
-        </div>
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-40 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
       </div>
     )
+  }
+
+  if (!selectedId) {
+    return <PortalEmptyState title={t('tracks.portal.noCompetition', 'Select a competition')} description={t('tracks.portal.noCompetitionDesc', 'Choose a competition to view its tracks.')} />
   }
 
   if (tracks.length === 0) {

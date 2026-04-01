@@ -21,7 +21,7 @@ const prizeIcons = [Trophy, Medal, Award, Star]
 
 function SponsorsContent() {
   const t = useT()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
   const tierLabels: Record<string, string> = {
     title: t('sponsors.portal.tier.title', 'TITLE SPONSOR'),
     gold: t('sponsors.portal.tier.gold', 'GOLD TIER'),
@@ -39,7 +39,18 @@ function SponsorsContent() {
     enabled: !!competitionId,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('sponsors.portal.loading', 'Loading...')}</div>
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-40 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[1, 2].map(i => (
+            <div key={i} className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const sponsors = (data?.sponsors ?? []).sort((a, b) => (tierOrder[a.tier] ?? 99) - (tierOrder[b.tier] ?? 99))
   const prizes = data?.prizes ?? []

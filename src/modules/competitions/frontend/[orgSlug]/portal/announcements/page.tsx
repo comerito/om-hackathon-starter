@@ -101,7 +101,7 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
 
 function AnnouncementsContent() {
   const t = useT()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [refreshKey, setRefreshKey] = React.useState(0)
   const [filter, setFilter] = React.useState<'all' | 'pinned'>('all')
 
@@ -124,11 +124,7 @@ function AnnouncementsContent() {
 
   const items = data?.items ?? []
 
-  if (!selectedId) {
-    return <PortalEmptyState title={t('competitions.portal.announcements.noCompetition', 'Select a competition')} description={t('competitions.portal.announcements.noCompetitionDesc', 'Choose a competition to view announcements.')} />
-  }
-
-  if (isLoading) {
+  if (contextLoading || isLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
@@ -136,6 +132,10 @@ function AnnouncementsContent() {
         ))}
       </div>
     )
+  }
+
+  if (!selectedId) {
+    return <PortalEmptyState title={t('competitions.portal.announcements.noCompetition', 'Select a competition')} description={t('competitions.portal.announcements.noCompetitionDesc', 'Choose a competition to view announcements.')} />
   }
 
   if (items.length === 0) {

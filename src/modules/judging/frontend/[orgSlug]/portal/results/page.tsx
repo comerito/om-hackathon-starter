@@ -59,7 +59,7 @@ type Track = { id: string; name: string }
 function ResultsContent() {
   const t = useT()
   const isMobile = useIsMobile()
-  const { selectedId: competitionId, selected } = useCompetitionContext()
+  const { selectedId: competitionId, selected, isLoading: contextLoading } = useCompetitionContext()
   const [selectedTrackId, setSelectedTrackId] = React.useState<string>('')
   const [showTrackFilter, setShowTrackFilter] = React.useState(false)
 
@@ -89,6 +89,15 @@ function ResultsContent() {
     enabled: !!competitionId,
   })
 
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-64 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
+  }
+
   if (selected && selected.stage !== 'finished' && selected.stage !== 'archived') {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
@@ -96,8 +105,6 @@ function ResultsContent() {
       </div>
     )
   }
-
-  if (isLoading) return <div className="text-center py-12 text-portal-secondary">{t('judging.portal.results.loading', 'Loading...')}</div>
 
   const entries = data?.items ?? []
   if (entries.length === 0) {
