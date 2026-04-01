@@ -30,7 +30,7 @@ function resolveDocument(document: string): LegalDocumentKey {
 function LegalDocumentContent({ document }: { document: string }) {
   const t = useT()
   const { orgSlug } = usePortalContext()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const documentKey = resolveDocument(document)
 
   const copy = React.useMemo(() => {
@@ -65,20 +65,21 @@ function LegalDocumentContent({ document }: { document: string }) {
     enabled: !!selectedId,
   })
 
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-12 w-48 rounded-xl bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-64 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
+  }
+
   if (!selectedId) {
     return (
       <PortalEmptyState
         title={t('competitions.portal.competition.empty.title', 'No competitions yet')}
         description={t('competitions.portal.competition.empty.description', "You haven't been registered in any competition. Contact the organizer to get started.")}
       />
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="rounded-xl border border-gray-100 bg-white p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
-        {t('common.loading', 'Loading...')}
-      </div>
     )
   }
 

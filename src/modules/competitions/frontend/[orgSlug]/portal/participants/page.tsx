@@ -392,7 +392,7 @@ function FilterPills({
 
 function ParticipantsContent() {
   const t = useT()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [search, setSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
   const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE)
@@ -493,6 +493,16 @@ function ParticipantsContent() {
 
   const visibleParticipants = filteredParticipants.slice(0, visibleCount)
   const hasMore = visibleCount < filteredParticipants.length
+
+  if (contextLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
 
   if (!selectedId) {
     return <PortalEmptyState title={t('competitions.portal.participants.noCompetition', 'Select a competition')} description={t('competitions.portal.participants.noCompetitionDesc', 'Choose a competition to view its participants.')} />

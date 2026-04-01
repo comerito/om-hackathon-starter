@@ -113,7 +113,8 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   // Active competition = selected one
   const activeComp = items.find(c => c.id === selectedId) ?? items[0]
   const pastComps = items.filter(c => c.id !== activeComp.id)
-  const timeLeft = getTimeRemaining(activeComp.ends_at)
+  const isPreStart = ['draft', 'open'].includes(activeComp.stage)
+  const timeLeft = getTimeRemaining(isPreStart ? activeComp.starts_at : activeComp.ends_at)
   const infoCards = activeComp.info_cards ?? []
 
   return (
@@ -128,7 +129,7 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
               <User className="size-3" /> {roleLabels[activeComp.role] ?? activeComp.role}
             </span>
             <div className="ml-auto text-right">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary block">{t('competitions.portal.competition.timeRemaining', 'Time Remaining')}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary block">{isPreStart ? t('competitions.portal.competition.startsIn', 'Starts in') : t('competitions.portal.competition.timeRemaining', 'Time Remaining')}</span>
               <span className="text-lg font-bold text-portal-primary">{timeLeft.hours}h {String(timeLeft.minutes).padStart(2, '0')}m</span>
             </div>
           </div>

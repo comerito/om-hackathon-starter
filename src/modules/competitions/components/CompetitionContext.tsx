@@ -64,11 +64,13 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
             setSelectedIdState(valid.id)
             localStorage.setItem(STAGE_STORAGE_KEY, valid.stage)
             localStorage.setItem(ROLE_STORAGE_KEY, valid.role)
+            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: valid.role } }))
           } else if (result.items.length > 0) {
             setSelectedIdState(result.items[0].id)
             localStorage.setItem(STORAGE_KEY, result.items[0].id)
             localStorage.setItem(STAGE_STORAGE_KEY, result.items[0].stage)
             localStorage.setItem(ROLE_STORAGE_KEY, result.items[0].role)
+            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: result.items[0].role } }))
           }
         }
       } catch (err) {
@@ -88,6 +90,7 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
     if (comp) {
       localStorage.setItem(STAGE_STORAGE_KEY, comp.stage)
       localStorage.setItem(ROLE_STORAGE_KEY, comp.role)
+      window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: comp.role } }))
     }
   }, [competitions])
 

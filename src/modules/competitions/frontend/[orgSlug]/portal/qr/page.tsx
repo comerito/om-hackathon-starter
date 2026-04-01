@@ -13,7 +13,7 @@ import { QRCodeSVG } from 'qrcode.react'
 function QRContent() {
   const t = useT()
   const { auth } = usePortalContext()
-  const { selectedId, selected } = useCompetitionContext()
+  const { selectedId, selected, isLoading: contextLoading } = useCompetitionContext()
 
   const { data } = useQuery({
     queryKey: ['portal-my-participation-qr', selectedId],
@@ -24,6 +24,18 @@ function QRContent() {
     },
     enabled: !!selectedId,
   })
+
+  if (contextLoading || (!selectedId && !data)) {
+    return (
+      <div className="flex flex-col items-center gap-6">
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-5 sm:p-8 flex flex-col items-center max-w-md w-full">
+          <div className="h-6 w-48 rounded bg-gray-100 dark:bg-white/10 animate-pulse mb-2" />
+          <div className="h-4 w-32 rounded bg-gray-100 dark:bg-white/10 animate-pulse mb-6" />
+          <div className="size-[220px] rounded-xl bg-gray-100 dark:bg-white/10 animate-pulse" />
+        </div>
+      </div>
+    )
+  }
 
   if (!selectedId || !data) {
     return (

@@ -372,7 +372,7 @@ export class ParticipantProfile {
   skills: string[] = []
 
   @Property({ name: 'social_links', type: 'jsonb', default: '{}' })
-  socialLinks: { github?: string; linkedin?: string; twitter?: string; website?: string } = {}
+  socialLinks: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string } = {}
 
   @Property({ name: 'notification_preferences', type: 'jsonb', default: '{}' })
   notificationPreferences: { email_digest?: boolean; slack_alerts?: boolean; sms_urgent?: boolean } = {}

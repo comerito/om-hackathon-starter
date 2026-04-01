@@ -27,7 +27,7 @@ type AssignmentsResponse = {
 
 function JudgingContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
 
   const { data, isLoading } = useQuery<AssignmentsResponse>({
     queryKey: ['portal-judge-assignments', competitionId],
@@ -39,7 +39,16 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
     enabled: !!competitionId,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-16 rounded-lg border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-20 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
 
   const projects = data?.projects ?? []
   const scores = data?.scores ?? []

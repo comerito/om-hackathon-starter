@@ -168,7 +168,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 function DashboardContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const locale = useLocale()
-  const { selected, selectedId } = useCompetitionContext()
+  const { selected, selectedId, isLoading: contextLoading } = useCompetitionContext()
   const prefix = `/${orgSlug}`
   const stageDisplayTitles: Record<string, string> = {
     draft: t('competitions.portal.dashboard.stage.draft', 'Preparing'),
@@ -256,6 +256,18 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
     enabled: !!selectedId,
   })
 
+  if (contextLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="h-24 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+          <div className="h-24 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        </div>
+      </div>
+    )
+  }
+
   if (!selectedId || !selected) {
     return (
       <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-8 text-center text-portal-secondary">
@@ -265,7 +277,8 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
   }
 
   const stage = selected.stage
-  const timeLeft = getTimeRemaining(selected.ends_at)
+  const isPreStart = ['draft', 'open'].includes(stage)
+  const timeLeft = getTimeRemaining(isPreStart ? selected.starts_at : selected.ends_at)
   const latestAnnouncements = (announcementsData?.items ?? []).slice(0, 5)
   const participantCount = statsData?.participant_count ?? 0
   const trackCount = statsData?.track_count ?? 0
@@ -314,7 +327,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               <span className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground ml-2 sm:ml-3">{String(timeLeft.minutes).padStart(2, '0')}</span>
               <span className="text-sm sm:text-lg font-bold text-portal-secondary ml-0.5 sm:ml-1">m</span>
               <span className="ml-1 sm:ml-2 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-portal-secondary">
-                {t('competitions.portal.dashboard.remaining', 'Remaining')}
+                {isPreStart
+                  ? t('competitions.portal.dashboard.startsIn', 'Starts in')
+                  : t('competitions.portal.dashboard.remaining', 'Remaining')}
               </span>
             </div>
             {milestones.length > 0 && (

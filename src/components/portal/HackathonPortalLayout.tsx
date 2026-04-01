@@ -156,7 +156,6 @@ export function HackathonPortalLayout({
         <CompetitionGuideDrawer
           open={competitionGuideOpen}
           onClose={() => setCompetitionGuideOpen(false)}
-          orgSlug={orgSlug}
           currentStage={competitionGuideStage}
         />
       )}

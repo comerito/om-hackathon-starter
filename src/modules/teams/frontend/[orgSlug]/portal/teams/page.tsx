@@ -291,7 +291,7 @@ function TeamsContent() {
   const t = useT()
   const queryClient = useQueryClient()
   const { auth } = usePortalContext()
-  const { selectedId } = useCompetitionContext()
+  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [tab, setTab] = React.useState<'teams' | 'people'>('teams')
   const userId = auth.user?.id
 
@@ -354,6 +354,16 @@ function TeamsContent() {
     } else {
       flash(result?.error ?? t('teams.portal.browse.requestFailed', 'Failed to send request'), 'error')
     }
+  }
+
+  if (contextLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-40 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    )
   }
 
   if (!selectedId) {

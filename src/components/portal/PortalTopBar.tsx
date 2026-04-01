@@ -41,7 +41,26 @@ export function PortalTopBar({
   const { auth, orgSlug } = usePortalContext()
   const t = useT()
   const displayName = userName || auth.user?.displayName || auth.user?.email || ''
-  const displayRole = userRole || t('competitions.portal.topBar.defaultRole', 'Participant')
+
+  // Read participation role from CompetitionContext's localStorage (set by CompetitionProvider)
+  const [participationRole, setParticipationRole] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    setParticipationRole(localStorage.getItem('hackon:selected-competition-role'))
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'hackon:selected-competition-role') setParticipationRole(e.newValue)
+    }
+    function onRoleChanged(e: Event) {
+      const detail = (e as CustomEvent).detail as { role?: string } | undefined
+      if (detail?.role) setParticipationRole(detail.role)
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('competition-role-changed', onRoleChanged)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('competition-role-changed', onRoleChanged)
+    }
+  }, [])
+  const displayRole = userRole || participationRole || t('competitions.portal.topBar.defaultRole', 'Participant')
   const prefix = `/${orgSlug}/portal`
   return (
     <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900 px-3 sm:px-6" data-portal-handle="section:portal:header">

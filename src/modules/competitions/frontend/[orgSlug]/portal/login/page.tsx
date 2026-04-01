@@ -101,28 +101,6 @@ export default function HackathonLoginPage({ params }: Props) {
                 'Join the most exciting hackathon experience. Collaborate with talented developers, designers, and innovators to create something extraordinary.',
               )}
             </p>
-            <div className="mt-8 flex items-center gap-6">
-              <div>
-                <p className="text-3xl font-bold">48h</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">
-                  {t('competitions.portal.login.hero.stats.building', 'Of Building')}
-                </p>
-              </div>
-              <div className="h-8 w-px bg-white/20" />
-              <div>
-                <p className="text-3xl font-bold">$25K</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">
-                  {t('competitions.portal.login.hero.stats.prizes', 'In Prizes')}
-                </p>
-              </div>
-              <div className="h-8 w-px bg-white/20" />
-              <div>
-                <p className="text-3xl font-bold">3</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider">
-                  {t('competitions.portal.login.hero.stats.tracks', 'Tracks')}
-                </p>
-              </div>
-            </div>
           </div>
 
           <p className="text-xs text-white/30">

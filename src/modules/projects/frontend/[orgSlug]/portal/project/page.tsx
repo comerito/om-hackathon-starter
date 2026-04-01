@@ -88,7 +88,7 @@ const labelClass = 'text-xs font-bold uppercase tracking-widest text-foreground 
 function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const { selectedId: competitionId } = useCompetitionContext()
+  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
 
   // Form state
   const [title, setTitle] = React.useState('')
@@ -554,8 +554,13 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center py-12 text-muted-foreground">{t('common.loading', 'Loading...')}</div>
+  if (contextLoading || isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+        <div className="h-32 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
+      </div>
+    )
   }
 
   // Track tab switcher for multi-project teams
