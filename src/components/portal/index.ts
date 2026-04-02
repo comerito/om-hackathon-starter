@@ -21,6 +21,7 @@ export { PortalBadge } from './PortalBadge'
 export { AvatarStack } from './AvatarStack'
 export { ToggleSwitch } from './ToggleSwitch'
 export { ActionLink } from './ActionLink'
+export { AnnouncementRichText } from './AnnouncementRichText'
 
 // Theme
 export { PortalThemeToggle } from './PortalThemeToggle'

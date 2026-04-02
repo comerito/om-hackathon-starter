@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
-import { sendEmail } from '@open-mercato/shared/lib/email/send'
 import { hashForLookup } from '@open-mercato/shared/lib/encryption/aes'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
@@ -10,7 +9,7 @@ import { CustomerInvitationService } from '@open-mercato/core/modules/customer_a
 import { CustomerRole, CustomerUser, CustomerUserInvitation } from '@open-mercato/core/modules/customer_accounts/data/entities'
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { bulkInviteSchema } from '../../../data/validators'
-import { InvitationEmail } from '../../../emails/InvitationEmail'
+import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -79,7 +78,7 @@ export async function POST(req: Request) {
 
     // Process each invitee
     const results: InviteResult[] = []
-    const emailsToSend: Array<{ to: string; subject: string; react: React.ReactElement }> = []
+    const emailsToSend: Array<{ to: string; competitionName: string; displayName: string; role: string; acceptUrl: string }> = []
 
     for (const invitee of parsed.invitees) {
       const emailLower = invitee.email.toLowerCase().trim()
@@ -136,13 +135,10 @@ export async function POST(req: Request) {
 
         emailsToSend.push({
           to: emailLower,
-          subject: `You're invited to ${competition.name}`,
-          react: InvitationEmail({
-            competitionName: competition.name,
-            displayName: invitee.display_name,
-            role: invitee.role,
-            acceptUrl,
-          }) as React.ReactElement,
+          competitionName: competition.name,
+          displayName: invitee.display_name,
+          role: invitee.role,
+          acceptUrl,
         })
 
         results.push({ email: emailLower, status: 'sent' })
@@ -159,7 +155,7 @@ export async function POST(req: Request) {
     for (let i = 0; i < emailsToSend.length; i += CONCURRENCY) {
       const batch = emailsToSend.slice(i, i + CONCURRENCY)
       const emailResults = await Promise.allSettled(
-        batch.map(e => sendEmail(e)),
+        batch.map(e => sendInvitationEmail(e)),
       )
       // Mark failures
       emailResults.forEach((result, idx) => {
