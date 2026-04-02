@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { sendEmail } from '@open-mercato/shared/lib/email/send'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { CustomerInvitationService } from '@open-mercato/core/modules/customer_accounts/services/customerInvitationService'
 import { CustomerUserInvitation } from '@open-mercato/core/modules/customer_accounts/data/entities'
 import { Competition, CompetitionInvitation } from '../../../data/entities'
-import { InvitationEmail } from '../../../emails/InvitationEmail'
+import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const schema = z.object({
@@ -123,15 +122,12 @@ export async function POST(req: Request) {
     const acceptUrl = `${origin}/${orgSlug}/portal/accept-invite?token=${encodeURIComponent(rawToken)}`
 
     // Send email
-    await sendEmail({
+    await sendInvitationEmail({
       to: invitation.email,
-      subject: `You're invited to ${competition?.name ?? 'a hackathon'}`,
-      react: InvitationEmail({
-        competitionName: competition?.name ?? 'Hackathon',
-        displayName: invitation.displayName ?? invitation.email.split('@')[0],
-        role: compInvite.participationRole,
-        acceptUrl,
-      }) as React.ReactElement,
+      competitionName: competition?.name ?? 'Hackathon',
+      displayName: invitation.displayName ?? invitation.email.split('@')[0],
+      role: compInvite.participationRole,
+      acceptUrl,
     })
 
     return NextResponse.json({ ok: true })

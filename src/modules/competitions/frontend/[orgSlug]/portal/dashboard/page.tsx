@@ -29,6 +29,7 @@ import {
   ProgressBar,
   PortalBadge,
   ActionLink,
+  AnnouncementRichText,
 } from '@/components/portal'
 
 /* ---------- types ---------- */
@@ -91,12 +92,12 @@ function formatTimeAgo(dateStr: string, t: ReturnType<typeof useT>): string {
 function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const t = useT()
   const [expanded, setExpanded] = React.useState(false)
-  const contentRef = React.useRef<HTMLParagraphElement>(null)
+  const contentRef = React.useRef<HTMLDivElement>(null)
   const [isClamped, setIsClamped] = React.useState(false)
 
   const category = announcement.category || 'general'
-  const actionUrl = announcement.action_url
-  const actionLabel = announcement.action_label
+  const actionUrl = announcement.action_url?.trim() || null
+  const actionLabel = announcement.action_label?.trim() || null
   const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
 
   const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
@@ -124,28 +125,32 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
           <PriorityIcon className={`size-4 ${priority.fg}`} />
         </div>
       </div>
-      <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
+      <h4 className="mb-2 text-base font-semibold leading-6 text-foreground sm:text-lg">{announcement.title}</h4>
       {isCode ? (
-        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-xs text-portal-secondary">
+        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-sm text-portal-secondary sm:text-[15px]">
           <span className="flex-1 truncate">{announcement.content}</span>
-          <button type="button" className="shrink-0 text-gray-400 dark:text-slate-500 hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => { navigator.clipboard.writeText(announcement.content) }}
+            className="shrink-0 text-gray-400 dark:text-slate-500 hover:text-foreground"
+          >
             <Copy className="size-3.5" />
           </button>
         </div>
       ) : (
-        <p
+        <div
           ref={contentRef}
-          className={`text-xs text-portal-secondary whitespace-pre-wrap ${expanded ? '' : 'line-clamp-2'}`}
+          className={expanded ? '' : 'line-clamp-3'}
         >
-          {announcement.content}
-        </p>
+          <AnnouncementRichText content={announcement.content} />
+        </div>
       )}
       <div className="flex items-center gap-3 mt-2">
         {!isCode && isClamped && (
           <button
             type="button"
             onClick={() => setExpanded(prev => !prev)}
-            className="flex items-center gap-0.5 text-xs font-medium text-portal-primary hover:text-portal-primary-light transition-colors"
+            className="flex items-center gap-0.5 text-sm font-medium text-portal-primary hover:text-portal-primary-light transition-colors"
           >
             {expanded
               ? t('competitions.portal.dashboard.announcements.showLess', 'Show less')
@@ -153,8 +158,8 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
             {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
           </button>
         )}
-        {actionUrl && actionLabel && (
-          <ActionLink href={actionUrl}>{actionLabel}</ActionLink>
+        {actionUrl && (
+          <ActionLink href={actionUrl}>{actionLabel || actionUrl}</ActionLink>
         )}
       </div>
     </div>

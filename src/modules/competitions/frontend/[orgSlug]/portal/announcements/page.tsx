@@ -9,7 +9,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { usePortalAppEvent } from '@open-mercato/ui/portal/hooks/usePortalAppEvent'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
-import { PortalPageTitle, PortalBadge, ActionLink } from '@/components/portal'
+import { PortalPageTitle, PortalBadge, ActionLink, AnnouncementRichText } from '@/components/portal'
 import { Info, AlertTriangle, AlertCircle, Copy, Pin } from 'lucide-react'
 
 type Announcement = {
@@ -48,8 +48,8 @@ function formatTimeAgo(dateStr: string, t: ReturnType<typeof useT>): string {
 function AnnouncementCard({ announcement, showPinned }: { announcement: Announcement; showPinned?: boolean }) {
   const t = useT()
   const category = announcement.category || 'general'
-  const actionUrl = announcement.action_url
-  const actionLabel = announcement.action_label
+  const actionUrl = announcement.action_url?.trim() || null
+  const actionLabel = announcement.action_label?.trim() || null
   const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
   const priority = priorityIcons[announcement.priority] ?? priorityIcons.info
   const PriorityIcon = announcement.priority === 'urgent' ? AlertCircle : announcement.priority === 'warning' ? AlertTriangle : Info
@@ -75,9 +75,9 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
           <PriorityIcon className={`size-3.5 sm:size-4 ${priority.fg}`} />
         </div>
       </div>
-      <h4 className="font-semibold text-sm text-foreground mb-1">{announcement.title}</h4>
+      <h4 className="mb-2 text-base font-semibold leading-6 text-foreground sm:text-lg">{announcement.title}</h4>
       {isCode ? (
-        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-xs text-portal-secondary">
+        <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 dark:bg-white/5 px-3 py-2 font-mono text-sm text-portal-secondary sm:text-[15px]">
           <span className="flex-1 truncate">{announcement.content}</span>
           <button
             type="button"
@@ -88,11 +88,11 @@ function AnnouncementCard({ announcement, showPinned }: { announcement: Announce
           </button>
         </div>
       ) : (
-        <p className="text-xs text-portal-secondary whitespace-pre-wrap">{announcement.content}</p>
+        <AnnouncementRichText content={announcement.content} />
       )}
-      {actionUrl && actionLabel && (
+      {actionUrl && (
         <div className="mt-3">
-          <ActionLink href={actionUrl}>{actionLabel}</ActionLink>
+          <ActionLink href={actionUrl}>{actionLabel || actionUrl}</ActionLink>
         </div>
       )}
     </div>
