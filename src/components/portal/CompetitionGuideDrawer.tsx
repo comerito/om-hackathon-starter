@@ -230,7 +230,7 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                             'flex size-8 items-center justify-center rounded-full border transition-all',
                             state === 'completed' && 'border-emerald-500/50 bg-emerald-500/20 text-emerald-400',
                             state === 'current' && 'border-portal-primary bg-portal-primary text-white shadow-[0_0_12px_rgba(79,70,229,0.4)]',
-                            state === 'upcoming' && 'border-white/8 bg-white/[0.03] text-gray-600',
+                            state === 'upcoming' && 'border-white/8 bg-white/[0.03] text-gray-500',
                           )}
                         >
                           {state === 'completed' ? <Check className="size-3.5" strokeWidth={2.5} /> : <span className="text-[11px] font-bold tabular-nums">{index + 1}</span>}
@@ -243,7 +243,7 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                           'flex-1 rounded-2xl border transition-all',
                           state === 'current' && 'border-portal-primary/30 bg-gradient-to-br from-portal-primary/[0.08] to-portal-primary/[0.02]',
                           state === 'completed' && 'border-white/8 bg-white/[0.03]',
-                          state === 'upcoming' && 'border-white/5 bg-white/[0.015]',
+                          state === 'upcoming' && 'border-white/8 bg-white/[0.025]',
                         )}
                       >
                         {/* Card header */}
@@ -255,20 +255,20 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                                   'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em]',
                                   state === 'completed' && 'bg-emerald-500/10 text-emerald-400',
                                   state === 'current' && 'bg-portal-primary/15 text-portal-primary-light',
-                                  state === 'upcoming' && 'bg-white/5 text-gray-500',
+                                  state === 'upcoming' && 'bg-white/6 text-gray-400',
                                 )}>
                                   {formatStateLabel(state, t)}
                                 </span>
                               </div>
                               <h3 className={cn(
                                 'mt-2 text-[15px] font-bold leading-snug sm:text-base',
-                                state === 'upcoming' ? 'text-gray-400' : 'text-white',
+                                state === 'upcoming' ? 'text-gray-300' : 'text-white',
                               )}>
                                 {stage.title}
                               </h3>
                               <p className={cn(
                                 'mt-1.5 text-[13px] leading-relaxed',
-                                state === 'upcoming' ? 'text-gray-600' : 'text-gray-400',
+                                state === 'upcoming' ? 'text-gray-500' : 'text-gray-400',
                               )}>
                                 {stage.summary}
                               </p>
@@ -277,7 +277,7 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                               'flex size-9 shrink-0 items-center justify-center rounded-xl border',
                               state === 'current' && 'border-portal-primary/30 bg-portal-primary/10 text-portal-primary-light',
                               state === 'completed' && 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400/70',
-                              state === 'upcoming' && 'border-white/5 bg-white/[0.02] text-gray-600',
+                              state === 'upcoming' && 'border-white/8 bg-white/[0.03] text-gray-500',
                             )}>
                               <Icon className="size-4" />
                             </div>
@@ -289,7 +289,7 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                           'border-t px-4 py-3 sm:px-5',
                           state === 'current' && 'border-portal-primary/15',
                           state === 'completed' && 'border-white/5',
-                          state === 'upcoming' && 'border-white/[0.03]',
+                          state === 'upcoming' && 'border-white/5',
                         )}>
                           <div className="space-y-1.5">
                             {stage.tasks.map((task) => (
@@ -301,11 +301,11 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                                   'mt-0.5 size-3.5 shrink-0',
                                   state === 'completed' && 'text-emerald-500/40',
                                   state === 'current' && 'text-portal-primary-light/60',
-                                  state === 'upcoming' && 'text-gray-700',
+                                  state === 'upcoming' && 'text-gray-600',
                                 )} />
                                 <p className={cn(
                                   'text-[12.5px] leading-relaxed',
-                                  state === 'upcoming' ? 'text-gray-600' : 'text-gray-400',
+                                  state === 'upcoming' ? 'text-gray-500' : 'text-gray-400',
                                 )}>
                                   {task}
                                 </p>
