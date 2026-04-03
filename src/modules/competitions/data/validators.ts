@@ -213,18 +213,38 @@ export type UpdateAgendaItemInput = z.infer<typeof updateAgendaItemSchema>
 // ── Announcement ────────────────────────────────────────────────────
 
 export const announcementPriorityValues = ['info', 'warning', 'urgent'] as const
+export const announcementCategoryValues = ['general', 'logistics', 'technical', 'schedule', 'judging'] as const
 
 export const createAnnouncementSchema = z.object({
   competition_id: z.string().uuid(),
   title: z.string().min(1).max(255),
   content: z.string().min(1),
   priority: z.enum(announcementPriorityValues).default('info'),
+  category: z.enum(announcementCategoryValues).default('general'),
+  action_url: z.string().url().max(1000).nullable().optional(),
+  action_label: z.string().max(255).nullable().optional(),
   target_roles: z.array(z.string()).default([]),
   target_track_ids: z.array(z.string().uuid()).default([]),
   pinned: z.boolean().default(false),
 })
 
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>
+
+export const updateAnnouncementSchema = z.object({
+  id: z.string().uuid(),
+  competition_id: z.string().uuid().optional(),
+  title: z.string().min(1).max(255).optional(),
+  content: z.string().min(1).optional(),
+  priority: z.enum(announcementPriorityValues).optional(),
+  category: z.enum(announcementCategoryValues).optional(),
+  action_url: z.string().url().max(1000).nullable().optional(),
+  action_label: z.string().max(255).nullable().optional(),
+  target_roles: z.array(z.string()).optional(),
+  target_track_ids: z.array(z.string().uuid()).optional(),
+  pinned: z.boolean().optional(),
+})
+
+export type UpdateAnnouncementInput = z.infer<typeof updateAnnouncementSchema>
 
 // ── Milestone ────────────────────────────────────────────────────────
 

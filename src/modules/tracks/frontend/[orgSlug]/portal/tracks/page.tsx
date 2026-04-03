@@ -15,7 +15,7 @@ import {
   GradientCard,
   PortalBadge,
   ActionLink,
-  CountdownWidget,
+  CompetitionCountdown,
 } from '@/components/portal'
 
 type Track = {
@@ -292,7 +292,6 @@ function TracksContent() {
         <PortalPageTitle
           label={t('tracks.portal.hubLabel', 'Competition Hub')}
           title={t('tracks.portal.title', 'Competition Tracks')}
-          rightElement={selected?.ends_at ? <CountdownWidget targetDate={selected.ends_at} /> : undefined}
         />
         <PortalEmptyState title={t('tracks.portal.empty', 'No tracks available')} description={t('tracks.portal.emptyDesc', 'Tracks will be published by the organizers soon.')} />
       </div>
@@ -305,7 +304,6 @@ function TracksContent() {
       <PortalPageTitle
         label={t('tracks.portal.hubLabel', 'Competition Hub')}
         title={t('tracks.portal.title', 'Competition Tracks')}
-        rightElement={selected?.ends_at ? <CountdownWidget targetDate={selected.ends_at} /> : undefined}
       />
 
       {/* ---- Error banner ---- */}
@@ -401,18 +399,26 @@ function TracksContent() {
           </div>
         </div>
 
-        {/* Prize pool gradient card */}
+        {/* Hackathon progress countdown card */}
         <GradientCard className="lg:col-span-2 flex flex-col justify-between">
           <div>
-            <SectionLabel className="mb-2 !text-white/70">{t('tracks.portal.totalPrizePool', 'Total Prize Pool')}</SectionLabel>
-            <p className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-              {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : t('tracks.portal.tbd', 'TBD')}
-            </p>
-          </div>
-          <div className="mt-6">
-            <ActionLink href={`/${orgSlug}/portal/sponsors`} className="!text-white/90 hover:!text-white">
-              {t('tracks.portal.viewRewards', 'View Reward Breakdown')}
-            </ActionLink>
+            <SectionLabel className="mb-2 !text-white/70">
+              {t('teams.portal.myTeam.section.hackathonProgress', 'Hackathon Progress')}
+            </SectionLabel>
+            {selected?.starts_at || selected?.ends_at ? (
+              <CompetitionCountdown
+                stage={selected?.stage}
+                startsAt={selected?.starts_at}
+                endsAt={selected?.ends_at}
+                tone="inverse"
+                align="start"
+                size="sm"
+              />
+            ) : (
+              <p className="text-sm text-white/70">
+                {t('teams.portal.myTeam.progress.noEndDate', 'No end date set')}
+              </p>
+            )}
           </div>
         </GradientCard>
       </div>

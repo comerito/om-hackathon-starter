@@ -14,7 +14,9 @@ export { SectionLabel } from './SectionLabel'
 export { StatCard } from './StatCard'
 export { GradientCard } from './GradientCard'
 export { CountdownWidget } from './CountdownWidget'
+export { CompetitionCountdown } from './CompetitionCountdown'
 export { ProgressBar } from './ProgressBar'
+export { ProfileCompletionCard } from './ProfileCompletionCard'
 
 // Primitives
 export { PortalBadge } from './PortalBadge'

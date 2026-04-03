@@ -61,14 +61,20 @@ export default function AnnouncementsListPage() {
           columns={columns} data={data?.items ?? []}
           sortable sorting={sorting} onSortingChange={(s) => { setSorting(s); setPage(1) }}
           rowActions={(row) => (
-            <RowActions items={[{
-              label: t('competitions.announcements.delete', 'Delete'), destructive: true,
-              onSelect: async () => {
-                if (!await confirm({ title: t('competitions.announcements.confirmDelete', 'Delete this announcement?'), variant: 'destructive' })) return
-                try { await deleteCrud('competitions/announcements', row.id); flash(t('competitions.announcements.flash.deleted', 'Announcement deleted'), 'success'); queryClient.invalidateQueries({ queryKey: ['announcements'] }) }
-                catch (err) { flash(err instanceof Error ? err.message : t('competitions.announcements.error.delete', 'Failed to delete'), 'error') }
+            <RowActions items={[
+              {
+                label: t('common.edit', 'Edit'),
+                href: `/backend/competitions/announcements/${row.id}/edit`,
               },
-            }]} />
+              {
+                label: t('competitions.announcements.delete', 'Delete'), destructive: true,
+                onSelect: async () => {
+                  if (!await confirm({ title: t('competitions.announcements.confirmDelete', 'Delete this announcement?'), variant: 'destructive' })) return
+                  try { await deleteCrud('competitions/announcements', row.id); flash(t('competitions.announcements.flash.deleted', 'Announcement deleted'), 'success'); queryClient.invalidateQueries({ queryKey: ['announcements'] }) }
+                  catch (err) { flash(err instanceof Error ? err.message : t('competitions.announcements.error.delete', 'Failed to delete'), 'error') }
+                },
+              },
+            ]} />
           )}
           pagination={{ page, pageSize: 50, total: data?.total || 0, totalPages: data?.totalPages || 0, onPageChange: setPage }}
           isLoading={isLoading}

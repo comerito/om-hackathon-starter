@@ -20,6 +20,7 @@ import {
   PortalBadge,
   ProgressBar,
   ToggleSwitch,
+  CompetitionCountdown,
 } from '@/components/portal'
 import Link from 'next/link'
 
@@ -1132,17 +1133,15 @@ function TeamView({
         {/* Hackathon Progress */}
         <GradientCard>
           <SectionLabel className="!text-white/70 mb-2 block">{t('teams.portal.myTeam.section.hackathonProgress', 'Hackathon Progress')}</SectionLabel>
-          {selected?.ends_at ? (
-            <>
-              <p className="font-mono text-4xl font-bold leading-none tracking-tight text-white">
-                {(() => {
-                  const diff = new Date(selected.ends_at).getTime() - Date.now()
-                  const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)))
-                  return String(hours).padStart(2, '0')
-                })()}h
-              </p>
-              <p className="mt-1 text-sm text-white/70">{t('teams.portal.myTeam.progress.remaining', 'Remaining until final presentation')}</p>
-            </>
+          {selected?.starts_at || selected?.ends_at ? (
+            <CompetitionCountdown
+              stage={selected?.stage}
+              startsAt={selected?.starts_at}
+              endsAt={selected?.ends_at}
+              tone="inverse"
+              align="start"
+              size="sm"
+            />
           ) : (
             <p className="text-sm text-white/70">{t('teams.portal.myTeam.progress.noEndDate', 'No end date set')}</p>
           )}
