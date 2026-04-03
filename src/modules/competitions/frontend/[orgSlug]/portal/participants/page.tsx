@@ -6,12 +6,15 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Input } from '@open-mercato/ui/primitives/input'
+import { Button } from '@open-mercato/ui/primitives/button'
+import { Checkbox } from '@open-mercato/ui/primitives/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@open-mercato/ui/primitives/popover'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { cn } from '@open-mercato/shared/lib/utils'
 import {
   MessageCircle, Search, Users, X,
-  ExternalLink, Briefcase,
+  ExternalLink, Briefcase, UserPlus, Check, SlidersHorizontal,
 } from 'lucide-react'
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
@@ -28,6 +31,7 @@ type Participant = {
   specialty: string | null
   skills: string[]
   looking_for_team: boolean
+  has_team: boolean
   bio: string | null
   avatar_url: string | null
   portfolio_url: string | null
@@ -54,6 +58,109 @@ const PAGE_SIZE = 24
 
 /* ---------- profile modal ---------- */
 
+function InviteParticipantModal({
+  participant,
+  onClose,
+  onSubmit,
+  invitingId,
+}: {
+  participant: Participant
+  onClose: () => void
+  onSubmit: (userId: string, message: string) => Promise<void>
+  invitingId: string | null
+}) {
+  const t = useT()
+  const [message, setMessage] = React.useState('')
+  const isSubmitting = invitingId === participant.customer_user_id
+
+  React.useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && !isSubmitting) {
+        event.preventDefault()
+        void onSubmit(participant.customer_user_id, message.trim())
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isSubmitting, message, onClose, onSubmit, participant.customer_user_id])
+
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative z-10 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-white/10">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              {t('competitions.portal.participants.inviteToTeam', 'Invite to Team')}
+            </h3>
+            <p className="mt-1 text-sm text-portal-secondary">
+              {t('competitions.portal.participants.inviteModalDesc', 'Send an optional message to {name}.', { name: participant.display_name })}
+            </p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close', 'Close')}>
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-4 px-5 py-4">
+          <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+            <p className="text-sm font-medium text-foreground">{participant.display_name}</p>
+            <p className="text-xs text-portal-secondary">{participant.email}</p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-portal-secondary">
+              {t('competitions.portal.participants.inviteMessage', 'Message (optional)')}
+            </label>
+            <textarea
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder={t('competitions.portal.participants.inviteMessagePlaceholder', 'Hey, want to join our team?')}
+              className="w-full rounded-xl border border-gray-200 bg-background px-3 py-2 text-sm min-h-[96px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-portal-primary dark:border-white/10 dark:placeholder:text-slate-500"
+              rows={4}
+              autoFocus
+            />
+            <p className="mt-2 text-[11px] text-portal-secondary">
+              {t('competitions.portal.participants.inviteModalShortcut', 'Press Ctrl/Cmd+Enter to send, Escape to cancel.')}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 border-t border-gray-100 px-5 py-4 dark:border-white/10">
+          <Button
+            type="button"
+            onClick={() => void onSubmit(participant.customer_user_id, message.trim())}
+            disabled={isSubmitting}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <UserPlus className="size-4" />
+            {isSubmitting
+              ? t('competitions.portal.participants.inviting', 'Sending...')
+              : t('competitions.portal.participants.sendInvite', 'Send Invite')}
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            {t('common.cancel', 'Cancel')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId }: {
   participant: Participant
   onClose: () => void
@@ -64,7 +171,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
   const t = useT()
   const initials = p.display_name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
   const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
-  const canInvite = p.looking_for_team && myTeamId
+  const canInvite = !p.has_team && myTeamId
   const roleLabel = t(`competitions.portal.participants.role.${p.role}`, p.role)
 
   React.useEffect(() => {
@@ -130,6 +237,15 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Looking for team + Organization */}
           <div className="flex flex-wrap items-center gap-2">
+            <span className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide',
+              p.has_team ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600',
+            )}>
+              {p.has_team ? <Check className="size-3" /> : <Users className="size-3" />}
+              {p.has_team
+                ? t('competitions.portal.participants.inTeam', 'In Team')
+                : t('competitions.portal.participants.noTeam', 'No Team')}
+            </span>
             {p.looking_for_team && (
               <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-green-700">
                 <Users className="size-3" />
@@ -199,28 +315,26 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
         {/* Footer actions */}
         <div className="px-5 py-4 border-t border-gray-100 dark:border-white/10 flex gap-2">
           {canInvite && (
-            <button
+            <Button
               type="button"
               onClick={() => onInvite(p.customer_user_id)}
               disabled={invitingId === p.customer_user_id}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors disabled:opacity-60"
+              className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              <Users className="size-4" />
+              <UserPlus className="size-4" />
               {invitingId === p.customer_user_id
                 ? t('competitions.portal.participants.inviting', 'Sending...')
                 : t('competitions.portal.participants.inviteToTeam', 'Invite to Team')}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className={cn(
-              'rounded-lg border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors',
-              !canInvite && 'flex-1',
-            )}
+            variant="outline"
+            className={cn(!canInvite && 'flex-1')}
           >
             {t('competitions.portal.participants.close', 'Close')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -229,7 +343,19 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
 
 /* ---------- participant card ---------- */
 
-function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: () => void }) {
+function ParticipantCard({
+  p,
+  onViewProfile,
+  canInvite,
+  onInvite,
+  invitingId,
+}: {
+  p: Participant
+  onViewProfile: () => void
+  canInvite: boolean
+  onInvite: (userId: string) => void
+  invitingId: string | null
+}) {
   const t = useT()
   const initials = p.display_name
     .split(' ')
@@ -280,6 +406,18 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <span className={cn(
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+          p.has_team ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600',
+        )}>
+          {p.has_team ? <Check className="size-3" /> : <Users className="size-3" />}
+          {p.has_team
+            ? t('competitions.portal.participants.inTeam', 'In Team')
+            : t('competitions.portal.participants.noTeam', 'No Team')}
+        </span>
+      </div>
+
       {/* Skills Tags */}
       {p.skills.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -306,13 +444,28 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
           {t('competitions.portal.participants.viewProfile', 'View Profile')}
           <span className="text-xs">&rarr;</span>
         </button>
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
-          aria-label={t('competitions.portal.participants.messageAria', 'Message {name}', { name: p.display_name })}
-        >
-          <MessageCircle className="size-4" />
-        </button>
+        {canInvite ? (
+          <Button
+            type="button"
+            onClick={() => onInvite(p.customer_user_id)}
+            disabled={invitingId === p.customer_user_id}
+            size="sm"
+            className="bg-green-600 text-[11px] uppercase tracking-wide hover:bg-green-700"
+          >
+            <UserPlus className="size-3.5" />
+            {invitingId === p.customer_user_id
+              ? t('competitions.portal.participants.inviting', 'Sending...')
+              : t('competitions.portal.participants.invite', 'Invite')}
+          </Button>
+        ) : (
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+            aria-label={t('competitions.portal.participants.messageAria', 'Message {name}', { name: p.display_name })}
+          >
+            <MessageCircle className="size-4" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -321,6 +474,81 @@ function ParticipantCard({ p, onViewProfile }: { p: Participant; onViewProfile: 
 /* ---------- filter pills ---------- */
 
 type FilterOption = { id: string; label: string; count: number }
+
+function SkillsFilter({
+  availableSkills,
+  selectedSkills,
+  onToggleSkill,
+  onClear,
+}: {
+  availableSkills: string[]
+  selectedSkills: string[]
+  onToggleSkill: (skill: string) => void
+  onClear: () => void
+}) {
+  const t = useT()
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="gap-2 rounded-full">
+          <SlidersHorizontal className="size-4" />
+          {t('competitions.portal.participants.skillsFilter', 'Skills')}
+          {selectedSkills.length > 0 && (
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-portal-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {selectedSkills.length}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="end">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-white/10">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {t('competitions.portal.participants.skillsFilter', 'Skills')}
+              </p>
+              <p className="text-xs text-portal-secondary">
+                {t('competitions.portal.participants.skillsFilterHint', 'Select one or more skills')}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              disabled={selectedSkills.length === 0}
+              className="h-auto px-2 py-1 text-xs"
+            >
+              {t('common.clear', 'Clear')}
+            </Button>
+          </div>
+        </div>
+
+        {availableSkills.length === 0 ? (
+          <div className="px-4 py-5 text-sm text-portal-secondary">
+            {t('competitions.portal.participants.skillsFilterEmpty', 'No skills available yet')}
+          </div>
+        ) : (
+          <div className="max-h-72 overflow-y-auto px-2 py-2">
+            {availableSkills.map((skill) => {
+              const checked = selectedSkills.includes(skill)
+              return (
+                <label
+                  key={skill}
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5"
+                >
+                  <Checkbox checked={checked} onCheckedChange={() => onToggleSkill(skill)} />
+                  <span className="min-w-0 flex-1 truncate text-foreground">{skill}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 function FilterPills({
   filters,
@@ -392,13 +620,16 @@ function FilterPills({
 
 function ParticipantsContent() {
   const t = useT()
+  const { auth } = usePortalContext()
   const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [search, setSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
   const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE)
   const [roleFilter, setRoleFilter] = React.useState('all')
   const [showLookingForTeam, setShowLookingForTeam] = React.useState(false)
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([])
   const [selectedParticipant, setSelectedParticipant] = React.useState<Participant | null>(null)
+  const [inviteTarget, setInviteTarget] = React.useState<Participant | null>(null)
   const [invitingId, setInvitingId] = React.useState<string | null>(null)
 
   // Fetch my team membership for invite functionality
@@ -417,18 +648,19 @@ function ParticipantsContent() {
   const myTeamId = membershipData?.team_id ?? null
   const isTeamOwner = membershipData?.role === 'owner'
 
-  async function handleInvite(userId: string) {
+  async function handleInvite(userId: string, message?: string) {
     if (!myTeamId) return
     setInvitingId(userId)
     try {
       const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/teams/portal/invite-member', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ team_id: myTeamId, invitee_id: userId }),
+        body: JSON.stringify({ team_id: myTeamId, invitee_id: userId, message: message?.trim() || undefined }),
       })
       if (ok) {
         flash(t('competitions.portal.participants.flash.invitationSent', 'Invitation sent!'), 'success')
         setSelectedParticipant(null)
+        setInviteTarget(null)
       } else {
         flash(result?.error ?? t('competitions.portal.participants.flash.invitationFailed', 'Failed to send invitation'), 'error')
       }
@@ -442,15 +674,14 @@ function ParticipantsContent() {
     return () => clearTimeout(timer)
   }, [search])
 
-  React.useEffect(() => { setVisibleCount(PAGE_SIZE) }, [debouncedSearch, roleFilter, showLookingForTeam])
+  React.useEffect(() => { setVisibleCount(PAGE_SIZE) }, [debouncedSearch, roleFilter, selectedSkills, showLookingForTeam])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['portal-participants', selectedId, debouncedSearch],
+    queryKey: ['portal-participants', selectedId],
     queryFn: async () => {
       if (!selectedId) return { items: [] as Participant[] }
-      const searchParam = debouncedSearch.length >= 2 ? `&search=${encodeURIComponent(debouncedSearch)}` : ''
       const { ok, result } = await apiCall<{ items: Participant[] }>(
-        `/api/competitions/portal/participants?competition_id=${selectedId}${searchParam}`,
+        `/api/competitions/portal/participants?competition_id=${selectedId}`,
       )
       if (!ok || !result) throw new Error(t('competitions.portal.participants.errors.load', 'Failed to load participants'))
       return result
@@ -484,12 +715,62 @@ function ParticipantsContent() {
 
   const lookingForTeamCount = React.useMemo(() => allParticipants.filter(p => p.looking_for_team).length, [allParticipants])
 
+  const availableSkills = React.useMemo(() => {
+    const byNormalized = new Map<string, string>()
+
+    for (const participant of allParticipants) {
+      for (const skill of participant.skills) {
+        const trimmed = skill.trim()
+        if (!trimmed) continue
+        const normalized = trimmed.toLocaleLowerCase()
+        if (!byNormalized.has(normalized)) {
+          byNormalized.set(normalized, trimmed)
+        }
+      }
+    }
+
+    return [...byNormalized.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  }, [allParticipants])
+
   const filteredParticipants = React.useMemo(() => {
     let result = allParticipants
+    const normalizedSearch = debouncedSearch.trim().toLowerCase()
+
+    if (normalizedSearch.length >= 2) {
+      result = result.filter((participant) => {
+        const haystacks = [
+          participant.display_name,
+          participant.email,
+          participant.organization ?? '',
+          participant.specialty ?? '',
+          ...participant.skills,
+        ]
+
+        return haystacks.some(value => value.toLowerCase().includes(normalizedSearch))
+      })
+    }
+
+    if (selectedSkills.length > 0) {
+      result = result.filter((participant) => {
+        const participantSkills = new Set(participant.skills.map(skill => skill.trim().toLocaleLowerCase()))
+        return selectedSkills.some(skill => participantSkills.has(skill.toLocaleLowerCase()))
+      })
+    }
+
     if (roleFilter !== 'all') result = result.filter(p => p.role === roleFilter)
     if (showLookingForTeam) result = result.filter(p => p.looking_for_team)
     return result
-  }, [allParticipants, roleFilter, showLookingForTeam])
+  }, [allParticipants, debouncedSearch, roleFilter, selectedSkills, showLookingForTeam])
+
+  const currentUserId = auth.user?.id ?? null
+
+  function toggleSelectedSkill(skill: string) {
+    setSelectedSkills((current) => (
+      current.includes(skill)
+        ? current.filter((value) => value !== skill)
+        : [...current, skill].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    ))
+  }
 
   const visibleParticipants = filteredParticipants.slice(0, visibleCount)
   const hasMore = visibleCount < filteredParticipants.length
@@ -510,27 +791,63 @@ function ParticipantsContent() {
 
   return (
     <div className="space-y-5">
+      {inviteTarget && (
+        <InviteParticipantModal
+          participant={inviteTarget}
+          onClose={() => setInviteTarget(null)}
+          onSubmit={async (userId, message) => { await handleInvite(userId, message) }}
+          invitingId={invitingId}
+        />
+      )}
+
       {/* Profile Modal */}
       {selectedParticipant && (
         <ProfileModal
           participant={selectedParticipant}
           onClose={() => setSelectedParticipant(null)}
           myTeamId={isTeamOwner ? myTeamId : null}
-          onInvite={handleInvite}
+          onInvite={(userId) => {
+            const participant = allParticipants.find(item => item.customer_user_id === userId)
+            if (participant) setInviteTarget(participant)
+          }}
           invitingId={invitingId}
         />
       )}
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500" />
-        <Input
-          placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name or email...')}
-          value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-          className="pl-9"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500" />
+          <Input
+            placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name, email, or skill...')}
+            value={search}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <SkillsFilter
+          availableSkills={availableSkills}
+          selectedSkills={selectedSkills}
+          onToggleSkill={toggleSelectedSkill}
+          onClear={() => setSelectedSkills([])}
         />
       </div>
+
+      {selectedSkills.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedSkills.map((skill) => (
+            <button
+              key={skill}
+              type="button"
+              onClick={() => toggleSelectedSkill(skill)}
+              className="inline-flex items-center gap-1 rounded-full bg-portal-primary/10 px-3 py-1 text-xs font-medium text-portal-primary transition-colors hover:bg-portal-primary/15"
+            >
+              {skill}
+              <X className="size-3" />
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Dynamic Filters */}
       {!isLoading && allParticipants.length > 0 && (
@@ -559,6 +876,7 @@ function ParticipantsContent() {
           title={t('competitions.portal.participants.empty', 'No participants found')}
           description={
             debouncedSearch || roleFilter !== 'all' || showLookingForTeam
+              || selectedSkills.length > 0
               ? t('competitions.portal.participants.emptySearch', 'Try adjusting your search or filters.')
               : t('competitions.portal.participants.emptyDesc', 'No one has joined this competition yet.')
           }
@@ -570,7 +888,17 @@ function ParticipantsContent() {
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {visibleParticipants.map((p) => (
-              <ParticipantCard key={p.customer_user_id} p={p} onViewProfile={() => setSelectedParticipant(p)} />
+              <ParticipantCard
+                key={p.customer_user_id}
+                p={p}
+                onViewProfile={() => setSelectedParticipant(p)}
+                canInvite={Boolean(isTeamOwner && myTeamId && !p.has_team && p.customer_user_id !== currentUserId)}
+                onInvite={(userId) => {
+                  const participant = allParticipants.find(item => item.customer_user_id === userId)
+                  if (participant) setInviteTarget(participant)
+                }}
+                invitingId={invitingId}
+              />
             ))}
           </div>
 
