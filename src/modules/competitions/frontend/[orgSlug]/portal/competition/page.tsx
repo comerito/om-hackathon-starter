@@ -13,10 +13,9 @@ import {
   ArrowRight,
   Compass,
   FileText,
-  Plus,
   User,
 } from 'lucide-react'
-import { PortalPageTitle, PortalBadge, ProgressBar, GradientCard } from '@/components/portal'
+import { PortalPageTitle, PortalBadge, ProgressBar, GradientCard, CompetitionCountdown } from '@/components/portal'
 
 type MyCompetition = {
   id: string; name: string; slug: string; stage: string; role: string
@@ -27,11 +26,6 @@ type MyCompetition = {
 
 type Milestone = {
   id: string; name: string; due_date: string; status: string
-}
-
-function getTimeRemaining(endDate: string): { hours: number; minutes: number } {
-  const diff = Math.max(0, new Date(endDate).getTime() - Date.now())
-  return { hours: Math.floor(diff / (1000 * 60 * 60)), minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)) }
 }
 
 function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
@@ -113,8 +107,6 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
   // Active competition = selected one
   const activeComp = items.find(c => c.id === selectedId) ?? items[0]
   const pastComps = items.filter(c => c.id !== activeComp.id)
-  const isPreStart = ['draft', 'open'].includes(activeComp.stage)
-  const timeLeft = getTimeRemaining(isPreStart ? activeComp.starts_at : activeComp.ends_at)
   const infoCards = activeComp.info_cards ?? []
 
   return (
@@ -128,10 +120,6 @@ function CompetitionsContent({ orgSlug }: { orgSlug: string }) {
             <span className="flex items-center gap-1 text-xs text-portal-secondary">
               <User className="size-3" /> {roleLabels[activeComp.role] ?? activeComp.role}
             </span>
-            <div className="ml-auto text-right">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary block">{isPreStart ? t('competitions.portal.competition.startsIn', 'Starts in') : t('competitions.portal.competition.timeRemaining', 'Time Remaining')}</span>
-              <span className="text-lg font-bold text-portal-primary">{timeLeft.hours}h {String(timeLeft.minutes).padStart(2, '0')}m</span>
-            </div>
           </div>
 
           <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">{activeComp.name}</h2>
@@ -284,6 +272,7 @@ export default function MyCompetitionsPage({ params }: { params: { orgSlug: stri
   const t = useT()
   const router = useRouter()
   const { auth, orgSlug } = usePortalContext()
+  const { selected } = useCompetitionContext()
 
   React.useEffect(() => {
     if (!auth.loading && !auth.user) router.replace(`/${params.orgSlug}/portal/login`)
@@ -296,14 +285,7 @@ export default function MyCompetitionsPage({ params }: { params: { orgSlug: stri
       <PortalPageTitle
         label={t('competitions.portal.competition.page.label', 'Track your progress and manage your active hackathon entries.')}
         title={t('competitions.portal.competition.page.title', 'My Competitions')}
-        rightElement={
-          <Link
-            href={`/${orgSlug}/portal/tracks`}
-            className="flex items-center gap-1.5 rounded-lg border border-portal-primary px-4 py-2 text-sm font-semibold text-portal-primary hover:bg-portal-primary/5 transition-colors"
-          >
-            <Plus className="size-4" /> {t('competitions.portal.competition.page.joinNew', 'Join New')}
-          </Link>
-        }
+        rightElement={<CompetitionCountdown stage={selected?.stage} startsAt={selected?.starts_at} endsAt={selected?.ends_at} />}
       />
       <CompetitionsContent orgSlug={params.orgSlug} />
     </PortalCompetitionLayout>

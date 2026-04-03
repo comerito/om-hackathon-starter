@@ -21,10 +21,11 @@ const querySchema = z
 
 const rawBodySchema = z.object({}).passthrough()
 
-export const { metadata, GET, POST, DELETE } = makeCrudRoute({
+export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   metadata: {
     GET: { requireAuth: true, requireFeatures: ['competitions.view'] },
     POST: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
+    PUT: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
     DELETE: { requireAuth: true, requireFeatures: ['competitions.announcements.manage'] },
   },
   orm: {
@@ -74,6 +75,12 @@ export const { metadata, GET, POST, DELETE } = makeCrudRoute({
       response: ({ result }) => ({ id: String(result.id) }),
       status: 201,
     },
+    update: {
+      commandId: 'competitions.announcements.update',
+      schema: rawBodySchema,
+      mapInput: ({ parsed }) => parsed,
+      response: () => ({ ok: true }),
+    },
     delete: {
       commandId: 'competitions.announcements.delete',
       response: () => ({ ok: true }),
@@ -87,6 +94,7 @@ export const openApi: OpenApiRouteDoc = {
   methods: {
     GET: { summary: 'List announcements' },
     POST: { summary: 'Create an announcement' },
+    PUT: { summary: 'Update an announcement' },
     DELETE: { summary: 'Delete an announcement' },
   },
 }

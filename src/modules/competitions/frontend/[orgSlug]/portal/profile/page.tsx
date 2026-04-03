@@ -13,6 +13,7 @@ import {
   PortalPageTitle,
   SectionLabel,
   PortalBadge,
+  ProfileCompletionCard,
 } from '@/components/portal'
 import {
   Shield,
@@ -504,6 +505,14 @@ function ProfileContent() {
 
           {/* ---------- Right Column ---------- */}
           <div className="space-y-4">
+            {/* Profile Completion */}
+            {!editing && (
+              <ProfileCompletionCard
+                profileLink="#"
+                onAction={() => setEditing(true)}
+              />
+            )}
+
             {/* Assigned Roles Card */}
             <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5">
               <div className="flex items-center justify-between px-4 sm:px-5 py-4">

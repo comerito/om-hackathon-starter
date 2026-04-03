@@ -1,68 +1,53 @@
 "use client"
 
 import * as React from 'react'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'om-theme'
 
-function getSystemTheme(): 'light' | 'dark' {
+function getSystemTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function applyTheme(theme: Theme) {
-  const resolved = theme === 'system' ? getSystemTheme() : theme
-  document.documentElement.classList.toggle('dark', resolved === 'dark')
+  document.documentElement.classList.toggle('dark', theme === 'dark')
 }
 
 export function PortalThemeToggle({ className }: { className?: string }) {
   const t = useT()
-  const [theme, setTheme] = React.useState<Theme>('system')
+  const [theme, setTheme] = React.useState<Theme>('light')
 
   React.useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
     if (stored === 'dark' || stored === 'light') {
       setTheme(stored)
     } else {
-      setTheme('system')
+      setTheme(getSystemTheme())
     }
   }, [])
 
   React.useEffect(() => {
     applyTheme(theme)
-    if (theme === 'system') {
-      localStorage.removeItem(STORAGE_KEY)
-    } else {
-      localStorage.setItem(STORAGE_KEY, theme)
-    }
-
-    if (theme === 'system') {
-      const mq = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = () => applyTheme('system')
-      mq.addEventListener('change', handler)
-      return () => mq.removeEventListener('change', handler)
-    }
+    localStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
   const cycle = React.useCallback(() => {
-    setTheme((prev) => {
-      if (prev === 'light') return 'dark'
-      if (prev === 'dark') return 'system'
-      return 'light'
-    })
+    setTheme((prev) => prev === 'light' ? 'dark' : 'light')
   }, [])
 
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor
-  const label = theme === 'dark'
+  const Icon = theme === 'dark' ? Moon : Sun
+  const currentLabel = theme === 'dark'
     ? t('common.theme.dark', 'Dark')
-    : theme === 'light'
-      ? t('common.theme.light', 'Light')
-      : t('common.theme.system', 'System')
-  const title = t('common.theme.toggle', 'Toggle theme')
+    : t('common.theme.light', 'Light')
+  const nextLabel = theme === 'dark'
+    ? t('common.theme.light', 'Light')
+    : t('common.theme.dark', 'Dark')
+  const title = t('common.theme.toggleTo', 'Switch to {theme} theme', { theme: nextLabel })
 
   return (
     <button
@@ -72,8 +57,8 @@ export function PortalThemeToggle({ className }: { className?: string }) {
         'rounded-lg p-1.5 text-portal-secondary hover:bg-gray-100 dark:hover:bg-white/10 transition-colors',
         className,
       )}
-      aria-label={`${title}: ${label}`}
-      title={`${title}: ${label}`}
+      aria-label={`${t('common.theme.toggle', 'Toggle theme')}: ${currentLabel}. ${title}`}
+      title={title}
     >
       <Icon className="size-[18px]" />
     </button>

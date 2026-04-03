@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, ParticipantProfile } from '../../../data/entities'
+import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -51,6 +52,14 @@ export async function GET(req: Request) {
     }
 
     const participantUserIds = participations.map(p => p.customerUserId)
+
+    const teamMembers = await em.find(TeamMember, {
+      competitionId,
+      customerUserId: { $in: participantUserIds },
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    })
+    const teamMemberIds = new Set(teamMembers.map(member => member.customerUserId))
 
     // Load profiles for all participants
     const profiles = await em.find(ParticipantProfile, {
@@ -117,6 +126,7 @@ export async function GET(req: Request) {
         organization: profile?.organization ?? null,
         skills: profile?.skills ?? [],
         looking_for_team: participation?.lookingForTeam ?? false,
+        has_team: teamMemberIds.has(userId),
         bio: profile?.bio ?? null,
         avatar_url: profile?.avatarUrl ?? null,
         portfolio_url: profile?.portfolioUrl ?? null,

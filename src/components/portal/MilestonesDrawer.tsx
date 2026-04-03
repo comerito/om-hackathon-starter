@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { Check, X, ExternalLink, Settings, HelpCircle } from 'lucide-react'
+import { Check, X, ExternalLink } from 'lucide-react'
 
 type Milestone = {
   id: string
@@ -172,14 +172,6 @@ export function MilestonesDrawer({ competitionId, open, onClose, orgSlug, rulesU
               {t('portal.drawer.milestones.viewRules', 'View Rules')} <ExternalLink className="size-4" />
             </a>
           )}
-          <div className="flex items-center justify-between">
-            <button type="button" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              <Settings className="size-3.5" /> {t('portal.drawer.milestones.settings', 'Settings')}
-            </button>
-            <button type="button" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              <HelpCircle className="size-3.5" /> {t('portal.drawer.milestones.support', 'Support')}
-            </button>
-          </div>
         </div>
 
         {/* Dot pattern decoration */}

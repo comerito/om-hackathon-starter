@@ -230,6 +230,22 @@ export const createAnnouncementSchema = z.object({
 
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>
 
+export const updateAnnouncementSchema = z.object({
+  id: z.string().uuid(),
+  competition_id: z.string().uuid().optional(),
+  title: z.string().min(1).max(255).optional(),
+  content: z.string().min(1).optional(),
+  priority: z.enum(announcementPriorityValues).optional(),
+  category: z.enum(announcementCategoryValues).optional(),
+  action_url: z.string().url().max(1000).nullable().optional(),
+  action_label: z.string().max(255).nullable().optional(),
+  target_roles: z.array(z.string()).optional(),
+  target_track_ids: z.array(z.string().uuid()).optional(),
+  pinned: z.boolean().optional(),
+})
+
+export type UpdateAnnouncementInput = z.infer<typeof updateAnnouncementSchema>
+
 // ── Milestone ────────────────────────────────────────────────────────
 
 export const milestoneStatusValues = ['upcoming', 'active', 'completed'] as const

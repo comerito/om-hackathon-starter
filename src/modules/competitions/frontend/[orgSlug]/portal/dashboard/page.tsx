@@ -29,6 +29,7 @@ import {
   ProgressBar,
   PortalBadge,
   ActionLink,
+  ProfileCompletionCard,
   AnnouncementRichText,
 } from '@/components/portal'
 
@@ -368,8 +369,19 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
         <div className="flex flex-col gap-4">
           {/* Stat cards row */}
           <div className="grid grid-cols-2 gap-4">
-            <StatCard icon={Users} value={participantCount.toLocaleString()} label={t('competitions.portal.dashboard.stats.participants', 'Participants')} />
-            <StatCard icon={Compass} value={String(trackCount).padStart(2, '0')} label={t('competitions.portal.dashboard.stats.activeTracks', 'Active Tracks')} variant="primary" />
+            <StatCard
+              icon={Users}
+              value={participantCount.toLocaleString()}
+              label={t('competitions.portal.dashboard.stats.participants', 'Participants')}
+              href={`${prefix}/portal/participants`}
+            />
+            <StatCard
+              icon={Compass}
+              value={String(trackCount).padStart(2, '0')}
+              label={t('competitions.portal.dashboard.stats.activeTracks', 'Active Tracks')}
+              variant="primary"
+              href={`${prefix}/portal/tracks`}
+            />
           </div>
 
           {/* Next Deadline — click opens milestones drawer */}
@@ -437,6 +449,9 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
 
         {/* Right: Sidebar widgets */}
         <div className="space-y-4">
+          {/* Profile Completion */}
+          <ProfileCompletionCard profileLink={`${prefix}/portal/profile`} />
+
           {/* Quick Actions */}
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-portal-secondary">
