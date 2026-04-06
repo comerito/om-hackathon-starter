@@ -25,7 +25,6 @@ import { PortalPageTitle, PortalBadge } from '@/components/portal'
 type Participant = {
   customer_user_id: string
   display_name: string
-  email: string
   role: string
   organization: string | null
   specialty: string | null
@@ -119,7 +118,6 @@ function InviteParticipantModal({
         <div className="space-y-4 px-5 py-4">
           <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3 dark:border-white/10 dark:bg-white/5">
             <p className="text-sm font-medium text-foreground">{participant.display_name}</p>
-            <p className="text-xs text-portal-secondary">{participant.email}</p>
           </div>
 
           <div>
@@ -218,7 +216,6 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
             )}
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-white truncate">{p.display_name}</h2>
-              <p className="text-sm text-white/70 truncate">{p.email}</p>
               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                 <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                   {roleLabel}
@@ -391,7 +388,6 @@ function ParticipantCard({
               </span>
             )}
           </div>
-          <p className="text-xs text-portal-secondary truncate">{p.email}</p>
         </div>
       </div>
 
@@ -740,7 +736,6 @@ function ParticipantsContent() {
       result = result.filter((participant) => {
         const haystacks = [
           participant.display_name,
-          participant.email,
           participant.organization ?? '',
           participant.specialty ?? '',
           ...participant.skills,
@@ -819,7 +814,7 @@ function ParticipantsContent() {
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-slate-500" />
           <Input
-            placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name, email, or skill...')}
+            placeholder={t('competitions.portal.participants.searchPlaceholder', 'Search participants by name or skill...')}
             value={search}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             className="pl-9"

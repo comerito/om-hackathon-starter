@@ -90,7 +90,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Load customer_users for display names and emails
+    // Load customer_users for display names
     const knex = (em as any).getConnection().getKnex()
 
     let usersQuery = knex('customer_users')
@@ -101,16 +101,14 @@ export async function GET(req: Request) {
       const searchPattern = `%${search}%`
       usersQuery = usersQuery.andWhere(function (this: any) {
         this.whereILike('display_name', searchPattern)
-          .orWhereILike('email', searchPattern)
       })
     }
 
     const userRows = await usersQuery.limit(100)
 
-    const userMap = new Map<string, { display_name: string; email: string }>(
+    const userMap = new Map<string, { display_name: string }>(
       userRows.map((row: any) => [row.id, {
         display_name: row.display_name || row.email?.split('@')[0] || 'Unknown',
-        email: row.email || '',
       }]),
     )
 
@@ -130,7 +128,6 @@ export async function GET(req: Request) {
       return {
         customer_user_id: userId,
         display_name: user?.display_name ?? userId.slice(0, 8) + '...',
-        email: user?.email ?? '',
         role: participation?.role ?? 'participant',
         specialty: profile?.specialty ?? null,
         organization: profile?.organization ?? null,
