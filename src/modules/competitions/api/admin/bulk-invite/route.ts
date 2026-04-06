@@ -150,9 +150,14 @@ export async function POST(req: Request) {
     // Flush all competition invitation records
     await em.flush()
 
-    // Send emails with concurrency limit (10 at a time)
-    const CONCURRENCY = 10
+    // Send emails with concurrency limit (4 at a time, with 1s delay between batches)
+    // Resend allows max 5 requests/second
+    const CONCURRENCY = 4
+    const BATCH_DELAY_MS = 1000
     for (let i = 0; i < emailsToSend.length; i += CONCURRENCY) {
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS))
+      }
       const batch = emailsToSend.slice(i, i + CONCURRENCY)
       const emailResults = await Promise.allSettled(
         batch.map(e => sendInvitationEmail(e)),
