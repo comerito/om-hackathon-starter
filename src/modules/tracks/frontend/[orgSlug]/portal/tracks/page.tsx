@@ -166,12 +166,12 @@ function TracksContent() {
   })
 
   // Fetch teams to count per track
-  const { data: teamsData } = useQuery({
+  const { data: teamsData, refetch: refetchTeams } = useQuery({
     queryKey: ['portal-tracks-teams', selectedId],
     queryFn: async () => {
       if (!selectedId) return { items: [] }
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; track_id: string | null; name: string }> }>(
-        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=projects`,
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; track_id: string | null; track_ids?: string[]; name: string }> }>(
+        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=teams`,
       )
       return ok && result ? result : { items: [] }
     },
@@ -226,6 +226,7 @@ function TracksContent() {
         setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
       } else {
         refetchMembership()
+        refetchTeams()
       }
     } finally {
       setSelectingTrackId(null)
@@ -235,9 +236,10 @@ function TracksContent() {
   // Compute team counts per track
   const teamCountByTrack = React.useMemo<TeamsByTrack>(() => {
     const counts: TeamsByTrack = {}
-    for (const project of teamsData?.items ?? []) {
-      if (project.track_id) {
-        counts[project.track_id] = (counts[project.track_id] ?? 0) + 1
+    for (const team of teamsData?.items ?? []) {
+      const trackIds = team.track_ids ?? (team.track_id ? [team.track_id] : [])
+      for (const trackId of trackIds) {
+        counts[trackId] = (counts[trackId] ?? 0) + 1
       }
     }
     return counts
