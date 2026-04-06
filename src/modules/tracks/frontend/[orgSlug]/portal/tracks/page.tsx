@@ -142,6 +142,7 @@ function TracksContent() {
   })
 
   const myTeamId = membershipData?.team?.id ?? membershipData?.membership?.team_id ?? null
+  const isOwner = membershipData?.membership?.role === 'owner'
   const myTrackIds: string[] = membershipData?.team?.track_ids ?? (membershipData?.team?.track_id ? [membershipData.team.track_id] : [])
   const membershipReady = !membershipLoading
   const maxTracksPerTeam = (selected as any)?.max_tracks_per_team ?? 1
@@ -528,6 +529,9 @@ function TracksContent() {
                       >
                         {t('tracks.portal.createTeamFirst', 'Create a Team to Join')}
                       </a>
+                    ) : !isOwner ? (
+                      /* Has team but not owner — no track actions */
+                      null
                     ) : isMyTrack ? (
                       /* Already selected — show leave button */
                       <button
