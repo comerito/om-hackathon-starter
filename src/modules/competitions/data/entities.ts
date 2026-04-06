@@ -291,6 +291,9 @@ export class CompetitionParticipation {
   @Property({ name: 'looking_for_team_description', type: 'text', nullable: true })
   lookingForTeamDescription?: string | null
 
+  @Property({ name: 'github_username', type: 'varchar', length: 255, nullable: true })
+  githubUsername?: string | null
+
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string

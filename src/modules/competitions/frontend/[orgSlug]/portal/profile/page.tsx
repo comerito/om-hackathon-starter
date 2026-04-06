@@ -42,6 +42,7 @@ type ProfileData = {
   specialty: string | null
   skills: string[]
   social_links: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string }
+  github_username: string | null
 }
 
 /* ---------- role dot colors ---------- */
@@ -196,6 +197,7 @@ function ProfileContent() {
   const [portfolioUrl, setPortfolioUrl] = React.useState('')
   const [officeHoursUrl, setOfficeHoursUrl] = React.useState('')
   const [socialLinks, setSocialLinks] = React.useState<{ github?: string; linkedin?: string; x?: string; website?: string; discord?: string }>({})
+  const [githubUsername, setGithubUsername] = React.useState('')
 
   // Fetch profile
   const { data, isLoading } = useQuery({
@@ -219,6 +221,7 @@ function ProfileContent() {
       setPortfolioUrl(data.portfolio_url ?? '')
       setOfficeHoursUrl(data.office_hours_url ?? '')
       setSocialLinks(data.social_links ?? {})
+      setGithubUsername(data.github_username ?? '')
     }
   }, [data])
 
@@ -270,6 +273,7 @@ function ProfileContent() {
             portfolio_url: portfolioUrl || null,
             office_hours_url: officeHoursUrl || null,
             social_links: socialLinks,
+            github_username: githubUsername || null,
           }),
         },
       )
@@ -446,6 +450,11 @@ function ProfileContent() {
                       <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.specialty.label', 'Specialty')}</label>
                       <Input value={specialty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSpecialty(e.target.value)} placeholder={t('competitions.portal.profile.specialty.placeholder', 'e.g. Full-Stack, Design, AI')} />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.github.label', 'GitHub Username')}</label>
+                    <Input value={githubUsername} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGithubUsername(e.target.value)} placeholder={t('competitions.portal.profile.github.placeholder', 'e.g. octocat (for Bounty Hunting track)')} />
+                    <p className="mt-1 text-xs text-portal-secondary">{t('competitions.portal.profile.github.hint', 'Required for the Bounty Hunting track. Your GitHub PRs will be matched using this username.')}</p>
                   </div>
                 </div>
 

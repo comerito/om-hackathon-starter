@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
-import { ParticipantProfile } from '../../../data/entities'
+import { ParticipantProfile, CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const ALLOWED_SKILLS = new Set([
@@ -41,6 +41,13 @@ export async function GET(req: Request) {
       tenantId: auth.tenantId,
     })
 
+    // Also fetch github_username from participation record
+    const participation = await em.findOne(CompetitionParticipation, {
+      customerUserId: auth.sub,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    })
+
     return NextResponse.json({
       ok: true,
       profile: profile ? {
@@ -54,6 +61,7 @@ export async function GET(req: Request) {
         skills: profile.skills,
         social_links: profile.socialLinks,
         notification_preferences: profile.notificationPreferences,
+        github_username: participation?.githubUsername ?? null,
       } : null,
     })
   } catch (error) {
@@ -101,6 +109,18 @@ export async function PUT(req: Request) {
     if (body.specialty !== undefined) profile.specialty = body.specialty
     if (body.notification_preferences !== undefined) profile.notificationPreferences = body.notification_preferences
 
+    // Update github_username on participation record
+    if (body.github_username !== undefined) {
+      const participation = await em.findOne(CompetitionParticipation, {
+        customerUserId: auth.sub,
+        tenantId: auth.tenantId,
+        deletedAt: null,
+      })
+      if (participation) {
+        participation.githubUsername = body.github_username || null
+      }
+    }
+
     await em.flush()
 
     return NextResponse.json({ ok: true, profile: {
@@ -114,6 +134,7 @@ export async function PUT(req: Request) {
       skills: profile.skills,
       social_links: profile.socialLinks,
       notification_preferences: profile.notificationPreferences,
+      github_username: body.github_username ?? null,
     }})
   } catch (error) {
     console.error('[portal/update-profile] PUT error:', error)

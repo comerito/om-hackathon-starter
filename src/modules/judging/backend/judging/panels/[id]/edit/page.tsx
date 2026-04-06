@@ -13,7 +13,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 
 type PanelData = {
-  panel: { id: string; name: string; round: string; competition_id: string }
+  panel: { id: string; name: string; round: string; competition_id: string; _competitions?: { name: string | null } }
   judges: Array<{ id: string; judge_id: string; display_name: string; email: string | null }>
   tracks: Array<{ id: string; track_id: string; track_name: string; color: string }>
 }
@@ -49,13 +49,17 @@ export default function EditPanelPage({ params }: { params?: { id?: string } }) 
     },
   })
 
-  // Load available tracks
+  // Load available tracks — filtered by the panel's competition
+  const competitionId = data?.panel?.competition_id
   const { data: availableTracks } = useQuery({
-    queryKey: ['available-tracks-for-panel'],
+    queryKey: ['available-tracks-for-panel', competitionId],
     queryFn: async () => {
-      const res = await fetchCrudList<TrackOption>('tracks/tracks', { pageSize: '100' })
+      const params: Record<string, string> = { pageSize: '100' }
+      if (competitionId) params.competition_id = competitionId
+      const res = await fetchCrudList<TrackOption>('tracks/tracks', params)
       return res?.items ?? []
     },
+    enabled: !!competitionId,
   })
 
   const [addingJudge, setAddingJudge] = React.useState(false)
