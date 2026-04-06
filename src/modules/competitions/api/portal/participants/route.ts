@@ -5,6 +5,16 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, ParticipantProfile } from '../../../data/entities'
 import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { buildAttachmentImageUrl } from '@open-mercato/core/modules/attachments/lib/imageUrls'
+
+const AVATAR_THUMBNAIL_SIZE = 128
+
+function toThumbnailUrl(avatarUrl: string | null | undefined): string | null {
+  if (!avatarUrl) return null
+  const match = avatarUrl.match(/\/api\/attachments\/file\/([^/?]+)/)
+  if (!match) return avatarUrl
+  return buildAttachmentImageUrl(match[1], { width: AVATAR_THUMBNAIL_SIZE, height: AVATAR_THUMBNAIL_SIZE, cropType: 'cover' })
+}
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -128,7 +138,7 @@ export async function GET(req: Request) {
         looking_for_team: participation?.lookingForTeam ?? false,
         has_team: teamMemberIds.has(userId),
         bio: profile?.bio ?? null,
-        avatar_url: profile?.avatarUrl ?? null,
+        avatar_url: toThumbnailUrl(profile?.avatarUrl),
         portfolio_url: profile?.portfolioUrl ?? null,
         office_hours_url: profile?.officeHoursUrl ?? null,
       }

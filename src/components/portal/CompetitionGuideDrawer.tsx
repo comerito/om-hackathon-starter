@@ -228,9 +228,9 @@ export function CompetitionGuideDrawer({ open, onClose, currentStage }: Competit
                         <div
                           className={cn(
                             'flex size-8 items-center justify-center rounded-full border transition-all',
-                            state === 'completed' && 'border-emerald-500/50 bg-emerald-500/20 text-emerald-400',
+                            state === 'completed' && 'border-emerald-500/50 bg-emerald-900 text-emerald-400',
                             state === 'current' && 'border-portal-primary bg-portal-primary text-white shadow-[0_0_12px_rgba(79,70,229,0.4)]',
-                            state === 'upcoming' && 'border-white/8 bg-white/[0.03] text-gray-500',
+                            state === 'upcoming' && 'border-white/8 bg-portal-dark text-gray-500',
                           )}
                         >
                           {state === 'completed' ? <Check className="size-3.5" strokeWidth={2.5} /> : <span className="text-[11px] font-bold tabular-nums">{index + 1}</span>}
