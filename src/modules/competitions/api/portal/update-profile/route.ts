@@ -14,9 +14,14 @@ const ALLOWED_SKILLS = new Set([
   'PostgreSQL', 'MongoDB', 'Redis', 'Firebase',
   'AWS', 'Google Cloud', 'Azure', 'Docker', 'Kubernetes', 'CI/CD',
   'Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'LLM/AI Agents',
+  'Data Analysis', 'Data Visualization', 'Data Engineering',
   'Blockchain', 'Smart Contracts', 'Web3',
-  'UI/UX Design', 'Figma', 'Product Management', 'Project Management',
-  'Data Analysis', 'Data Visualization',
+  'Software Architecture', 'System Design', 'API Design', 'Microservices',
+  'UI/UX Design', 'Figma', 'Graphic Design', 'Prototyping', 'User Research',
+  'Interaction Design', 'Design Systems', 'Accessibility',
+  'Manual Testing', 'Test Automation', 'Performance Testing', 'Security Testing',
+  'Product Management', 'Project Management', 'Agile/Scrum', 'Technical Writing',
+  'Public Speaking', 'Pitch/Presentation', 'Business Strategy', 'Marketing',
   'Cybersecurity', 'DevOps', 'Embedded Systems', 'IoT',
 ])
 const MAX_SKILLS = 10

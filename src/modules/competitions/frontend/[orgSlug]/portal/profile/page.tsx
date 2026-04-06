@@ -60,17 +60,34 @@ function getInitials(name: string): string {
 /* ---------- predefined skills ---------- */
 
 const HACKATHON_SKILLS = [
+  // Programming languages
   'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'Swift',
   'Kotlin', 'PHP', 'SQL', 'HTML/CSS', 'Solidity',
+  // Frameworks & libraries
   'React', 'Next.js', 'Vue.js', 'Angular', 'Svelte', 'Node.js', 'Express', 'Django', 'Flask', 'Spring Boot',
   'React Native', 'Flutter', 'iOS Development', 'Android Development',
+  // APIs & protocols
   'REST APIs', 'GraphQL', 'WebSockets',
+  // Databases
   'PostgreSQL', 'MongoDB', 'Redis', 'Firebase',
+  // Cloud & infrastructure
   'AWS', 'Google Cloud', 'Azure', 'Docker', 'Kubernetes', 'CI/CD',
+  // AI & data
   'Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'LLM/AI Agents',
+  'Data Analysis', 'Data Visualization', 'Data Engineering',
+  // Web3
   'Blockchain', 'Smart Contracts', 'Web3',
-  'UI/UX Design', 'Figma', 'Product Management', 'Project Management',
-  'Data Analysis', 'Data Visualization',
+  // Architecture & engineering
+  'Software Architecture', 'System Design', 'API Design', 'Microservices',
+  // Design
+  'UI/UX Design', 'Figma', 'Graphic Design', 'Prototyping', 'User Research',
+  'Interaction Design', 'Design Systems', 'Accessibility',
+  // Testing & QA
+  'Manual Testing', 'Test Automation', 'Performance Testing', 'Security Testing',
+  // Management & soft skills
+  'Product Management', 'Project Management', 'Agile/Scrum', 'Technical Writing',
+  'Public Speaking', 'Pitch/Presentation', 'Business Strategy', 'Marketing',
+  // Other technical
   'Cybersecurity', 'DevOps', 'Embedded Systems', 'IoT',
 ] as const
 
