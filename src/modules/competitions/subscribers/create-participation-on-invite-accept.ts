@@ -1,5 +1,8 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
+import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
+import { emitCrudSideEffects } from '@open-mercato/shared/lib/commands/helpers'
 import { CompetitionInvitation, CompetitionParticipation } from '../data/entities'
+import { participationCrudEvents, participationCrudIndexer } from '../commands/participations'
 
 export const metadata = {
   event: 'customer_accounts.invitation.accepted',
@@ -66,6 +69,21 @@ export default async function handler(
     })
     await em.persistAndFlush(participation)
     console.log(LOG, `Created participation: id=${participation.id} for userId=${payload.userId} in competition=${competitionInvitation.competitionId}`)
+
+    // Index the participation so it appears in back office listings
+    const de = ctx.resolve('dataEngine') as DataEngine
+    await emitCrudSideEffects({
+      dataEngine: de,
+      action: 'created',
+      entity: participation,
+      identifiers: {
+        id: String(participation.id),
+        tenantId: competitionInvitation.tenantId,
+        organizationId: competitionInvitation.organizationId,
+      },
+      events: participationCrudEvents,
+      indexer: participationCrudIndexer,
+    })
   } catch (error) {
     console.error(LOG, 'Failed to create participation:', error)
     throw error
