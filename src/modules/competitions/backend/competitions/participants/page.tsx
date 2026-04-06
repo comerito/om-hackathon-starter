@@ -97,12 +97,12 @@ export default function ParticipantsListPage() {
     queryKey: ['customer-users-lookup', userIds],
     queryFn: async () => {
       if (userIds.length === 0) return new Map<string, { name: string | null; email: string }>()
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; display_name: string; email: string }> }>(
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; displayName: string; email: string }> }>(
         `/api/customer_accounts/admin/users?pageSize=100&ids=${userIds.join(',')}`,
       )
       const map = new Map<string, { name: string | null; email: string }>()
       if (ok && result?.items) {
-        for (const u of result.items) map.set(u.id, { name: u.display_name || null, email: u.email })
+        for (const u of result.items) map.set(u.id, { name: u.displayName || null, email: u.email })
       }
       return map
     },
@@ -155,11 +155,16 @@ export default function ParticipantsListPage() {
       cell: ({ getValue }) => {
         const id = String(getValue())
         const user = userNameMap.get(id)
-        if (!user) return id
-        if (user.name) {
-          return <div><div className="font-medium">{user.name}</div><div className="text-xs text-muted-foreground">{user.email}</div></div>
-        }
-        return user.email
+        return user?.email ?? id
+      },
+    },
+    {
+      id: 'name',
+      header: t('competitions.participants.name', 'Name'),
+      meta: { priority: 2 },
+      cell: ({ row }) => {
+        const user = userNameMap.get(row.original.customer_user_id)
+        return user?.name ?? '—'
       },
     },
     {
