@@ -11,12 +11,9 @@ export default async function handler(
 ) {
   const queue = createQueue('bounties-queue', 'local')
 
-  await queue.add({
-    workerId: 'classify-pr',
-    data: {
-      pullRequestId: payload.pullRequestId,
-      tenantId: payload.tenantId,
-      organizationId: payload.organizationId,
-    },
+  await queue.enqueue({
+    pullRequestId: payload.pullRequestId,
+    tenantId: payload.tenantId,
+    organizationId: payload.organizationId,
   })
 }
