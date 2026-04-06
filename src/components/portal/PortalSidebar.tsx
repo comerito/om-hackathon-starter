@@ -38,6 +38,9 @@ const NAV_ORDER: string[] = [
   'judging.portal-results',
   'sponsors.portal-voting',
   'judging.portal-judging',
+  // Bounty Hunting
+  'bounties.portal-leaderboard',
+  'bounties.portal-my-prs',
   // Tools
   'competitions.portal-qr',
   'incidents.portal-report',
@@ -49,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
   { id: 'main', fallbackLabel: '', itemIds: ['competitions.portal-dashboard', 'competitions.portal-agenda', 'competitions.portal-announcements'] },
   { id: 'hackathon', labelKey: 'portal.sidebar.group.hackathon', fallbackLabel: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
   { id: 'results', labelKey: 'portal.sidebar.group.results', fallbackLabel: 'Judging & Results', itemIds: ['judging.portal-presentations', 'judging.portal-results', 'sponsors.portal-voting', 'judging.portal-judging'] },
+  { id: 'bounties', labelKey: 'portal.sidebar.group.bounties', fallbackLabel: 'Bounty Hunting', itemIds: ['bounties.portal-leaderboard', 'bounties.portal-my-prs'] },
   { id: 'tools', labelKey: 'portal.sidebar.group.tools', fallbackLabel: 'Tools', itemIds: ['competitions.portal-qr', 'incidents.portal-report'] },
 ]
 

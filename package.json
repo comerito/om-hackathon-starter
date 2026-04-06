@@ -19,6 +19,7 @@
     "preinstall": "node -e \"const v = process.versions.node.split('.').map(Number); if (v[0] < 24) { console.error('Node >= 24 required'); process.exit(1); }\""
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.66",
     "@ai-sdk/openai": "^2.0.80",
     "@mikro-orm/core": "^6.6.2",
     "@mikro-orm/migrations": "^6.6.2",
@@ -47,7 +48,7 @@
     "@tanstack/react-table": "^8.20.5",
     "@uiw/react-markdown-preview": "^5.1.5",
     "@uiw/react-md-editor": "^4.0.11",
-    "ai": "^6.0.0",
+    "ai": "^6.0.146",
     "awilix": "^12.0.5",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -57,6 +58,7 @@
     "lucide-react": "^0.556.0",
     "newrelic": "^13.7.0",
     "next": "16.1.5",
+    "octokit": "^5.0.5",
     "pdf2pic": "^3.2.0",
     "pg": "8.20.0",
     "qrcode.react": "^4.2.0",

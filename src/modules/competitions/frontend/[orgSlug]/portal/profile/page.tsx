@@ -16,7 +16,6 @@ import {
   ProfileCompletionCard,
 } from '@/components/portal'
 import {
-  Shield,
   ChevronRight,
   Camera,
   X,
@@ -42,6 +41,7 @@ type ProfileData = {
   specialty: string | null
   skills: string[]
   social_links: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string }
+  github_username: string | null
 }
 
 /* ---------- role dot colors ---------- */
@@ -180,7 +180,6 @@ function ProfileContent() {
   const queryClient = useQueryClient()
   const user = auth.user!
   const roles = auth.roles
-  const features = auth.resolvedFeatures
 
   const [editing, setEditing] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
@@ -196,6 +195,7 @@ function ProfileContent() {
   const [portfolioUrl, setPortfolioUrl] = React.useState('')
   const [officeHoursUrl, setOfficeHoursUrl] = React.useState('')
   const [socialLinks, setSocialLinks] = React.useState<{ github?: string; linkedin?: string; x?: string; website?: string; discord?: string }>({})
+  const [githubUsername, setGithubUsername] = React.useState('')
 
   // Fetch profile
   const { data, isLoading } = useQuery({
@@ -219,6 +219,7 @@ function ProfileContent() {
       setPortfolioUrl(data.portfolio_url ?? '')
       setOfficeHoursUrl(data.office_hours_url ?? '')
       setSocialLinks(data.social_links ?? {})
+      setGithubUsername(data.github_username ?? '')
     }
   }, [data])
 
@@ -270,6 +271,7 @@ function ProfileContent() {
             portfolio_url: portfolioUrl || null,
             office_hours_url: officeHoursUrl || null,
             social_links: socialLinks,
+            github_username: githubUsername || null,
           }),
         },
       )
@@ -447,6 +449,11 @@ function ProfileContent() {
                       <Input value={specialty} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSpecialty(e.target.value)} placeholder={t('competitions.portal.profile.specialty.placeholder', 'e.g. Full-Stack, Design, AI')} />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-portal-secondary mb-1">{t('competitions.portal.profile.github.label', 'GitHub Username')}</label>
+                    <Input value={githubUsername} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGithubUsername(e.target.value)} placeholder={t('competitions.portal.profile.github.placeholder', 'e.g. octocat (for Bounty Hunting track)')} />
+                    <p className="mt-1 text-xs text-portal-secondary">{t('competitions.portal.profile.github.hint', 'Required for the Bounty Hunting track. Your GitHub PRs will be matched using this username.')}</p>
+                  </div>
                 </div>
 
                 {/* Skills */}
@@ -550,26 +557,6 @@ function ProfileContent() {
               </div>
             )}
 
-            {/* Access Permissions Card */}
-            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5">
-                    <Shield className="size-4 text-portal-secondary" />
-                  </div>
-                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.permissions.title', 'Access Permissions')}</h3>
-                </div>
-              </div>
-              {features.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {features.map((feature) => (
-                    <span key={feature} className="inline-flex items-center rounded-md bg-gray-50 dark:bg-white/5 px-3 py-1.5 font-mono text-[11px] text-portal-secondary">{feature}</span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-portal-secondary">{t('competitions.portal.profile.permissions.empty', 'No permissions assigned.')}</p>
-              )}
-            </div>
           </div>
 
           {/* ---------- Right Column ---------- */}

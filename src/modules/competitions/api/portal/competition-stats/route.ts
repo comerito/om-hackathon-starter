@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     // Avg score (from judging scores if exists — use try/catch)
     let avgScore = 0
     try {
-      const [row] = await knex('judging_score')
+      const [row] = await knex('judging_project_score')
         .where({ competition_id: competitionId, tenant_id: auth.tenantId })
         .avg('total_score as avg')
       avgScore = row?.avg ? parseFloat(row.avg) : 0
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     // Peer vote count
     let totalPeerVotes = 0
     try {
-      const [row] = await knex('sponsors_vote')
+      const [row] = await knex('sponsors_peer_vote')
         .where({ competition_id: competitionId, tenant_id: auth.tenantId })
         .count('* as count')
       totalPeerVotes = parseInt(row?.count ?? '0', 10)

@@ -54,6 +54,7 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'judging', from: '@app' },
   { id: 'sponsors', from: '@app' },
   { id: 'incidents', from: '@app' },
+  { id: 'bounties', from: '@app' },
   { id: 'portal', from: '@open-mercato/core' },
   // { id: 'example', from: '@app' },
 

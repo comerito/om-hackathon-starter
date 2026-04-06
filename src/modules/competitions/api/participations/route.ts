@@ -16,6 +16,7 @@ const querySchema = z
     competition_id: z.string().uuid().optional(),
     role: z.string().optional(),
     checked_in: z.coerce.boolean().optional(),
+    coc_accepted: z.coerce.boolean().optional(),
     organizationId: z.string().uuid().optional(),
   })
   .passthrough()
@@ -49,6 +50,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       if (q.competition_id) filters.competition_id = q.competition_id
       if (q.role) filters.role = q.role
       if (q.checked_in !== undefined) filters.checked_in = q.checked_in
+      if (q.coc_accepted !== undefined) filters.coc_accepted = q.coc_accepted
       if (q.organizationId) filters.organization_id = q.organizationId
       return filters
     },

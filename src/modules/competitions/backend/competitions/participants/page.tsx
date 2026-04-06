@@ -26,6 +26,7 @@ type ParticipationRow = {
   coc_accepted: boolean
   privacy_policy_accepted: boolean
   looking_for_team: boolean
+  organization_id: string
   created_at: string
 }
 
@@ -74,7 +75,9 @@ export default function ParticipantsListPage() {
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
     if (filterValues.role && typeof filterValues.role === 'string') params.role = filterValues.role
+    if (filterValues.competition_id && typeof filterValues.competition_id === 'string') params.competition_id = filterValues.competition_id
     if (filterValues.checked_in === true || filterValues.checked_in === false) params.checked_in = String(filterValues.checked_in)
+    if (filterValues.coc_accepted === true || filterValues.coc_accepted === false) params.coc_accepted = String(filterValues.coc_accepted)
     return new URLSearchParams(params).toString()
   }, [page, sorting, filterValues])
 
@@ -93,41 +96,35 @@ export default function ParticipantsListPage() {
   const { data: usersData } = useQuery({
     queryKey: ['customer-users-lookup', userIds],
     queryFn: async () => {
-      if (userIds.length === 0) return new Map<string, string>()
+      if (userIds.length === 0) return new Map<string, { name: string | null; email: string }>()
       const { ok, result } = await apiCall<{ items: Array<{ id: string; display_name: string; email: string }> }>(
         `/api/customer_accounts/admin/users?pageSize=100&ids=${userIds.join(',')}`,
       )
-      const map = new Map<string, string>()
+      const map = new Map<string, { name: string | null; email: string }>()
       if (ok && result?.items) {
-        for (const u of result.items) map.set(u.id, u.display_name || u.email || u.id.slice(0, 8))
+        for (const u of result.items) map.set(u.id, { name: u.display_name || null, email: u.email })
       }
       return map
     },
     enabled: userIds.length > 0,
   })
-  const userNameMap = usersData ?? new Map<string, string>()
+  const userNameMap = usersData ?? new Map<string, { name: string | null; email: string }>()
 
-  // Resolve competition names
-  const competitionIds = React.useMemo(() => {
-    const ids = new Set<string>()
-    for (const item of data?.items ?? []) ids.add(item.competition_id)
-    return [...ids]
-  }, [data])
-
+  // Load all competitions (used for both name resolution and the filter dropdown)
   const { data: competitionsData } = useQuery({
-    queryKey: ['competitions-lookup', competitionIds],
+    queryKey: ['competitions-all', scopeVersion],
     queryFn: async () => {
+      const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', { pageSize: '100' })
       const map = new Map<string, string>()
-      for (const cid of competitionIds) {
-        const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', { id: cid, pageSize: '1' })
-        const item = res?.items?.[0]
-        if (item) map.set(item.id, item.name)
-      }
+      for (const c of res?.items ?? []) map.set(c.id, c.name)
       return map
     },
-    enabled: competitionIds.length > 0,
   })
   const competitionNameMap = competitionsData ?? new Map<string, string>()
+  const competitionOptions = React.useMemo(() =>
+    [...competitionNameMap.entries()].map(([value, label]) => ({ value, label })),
+    [competitionNameMap],
+  )
 
   // Invitations query
   const { data: invitationsData, isLoading: invitationsLoading } = useQuery({
@@ -157,8 +154,12 @@ export default function ParticipantsListPage() {
       meta: { priority: 1 },
       cell: ({ getValue }) => {
         const id = String(getValue())
-        const name = userNameMap.get(id)
-        return name ?? id.slice(0, 12) + '...'
+        const user = userNameMap.get(id)
+        if (!user) return id
+        if (user.name) {
+          return <div><div className="font-medium">{user.name}</div><div className="text-xs text-muted-foreground">{user.email}</div></div>
+        }
+        return user.email
       },
     },
     {
@@ -247,6 +248,12 @@ export default function ParticipantsListPage() {
             onSortingChange={(s) => { setSorting(s); setPage(1) }}
             filters={[
               {
+                id: 'competition_id',
+                label: t('competitions.participants.filterCompetition', 'Competition'),
+                type: 'select',
+                options: competitionOptions,
+              },
+              {
                 id: 'role',
                 label: t('competitions.participants.filterRole', 'Role'),
                 type: 'select',
@@ -257,6 +264,7 @@ export default function ParticipantsListPage() {
                 ],
               },
               { id: 'checked_in', label: t('competitions.participants.filterCheckedIn', 'Checked In'), type: 'checkbox' },
+              { id: 'coc_accepted', label: t('competitions.participants.filterCoC', 'CoC Accepted'), type: 'checkbox' },
             ]}
             filterValues={filterValues}
             onFiltersApply={(vals: FilterValues) => { setFilterValues(vals); setPage(1) }}

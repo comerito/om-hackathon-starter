@@ -692,7 +692,7 @@ function LeaveTeamButton({ teamId, isOwner, memberCount, orgSlug, competitionSta
   const [error, setError] = React.useState<string | null>(null)
 
   // Only allow during early stages
-  const ALLOWED_LEAVE_STAGES = ['open', 'team_formation', 'track_selection']
+  const ALLOWED_LEAVE_STAGES = ['draft', 'open', 'team_formation', 'track_selection']
   const canLeave = competitionStage ? ALLOWED_LEAVE_STAGES.includes(competitionStage) : false
 
   if (!canLeave) return null
