@@ -365,11 +365,11 @@ function TeamsContent() {
   const { data: myInvData } = useQuery({
     queryKey: ['portal-my-join-requests', selectedId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ received: Invitation[]; team_requests: Invitation[] }>(
+      const { ok, result } = await apiCall<{ received: Invitation[]; sent: Invitation[] }>(
         `/api/teams/portal/my-invitations?competition_id=${selectedId}`,
       )
       if (ok && result) return result
-      return { received: [] as Invitation[], team_requests: [] as Invitation[] }
+      return { received: [] as Invitation[], sent: [] as Invitation[] }
     },
     enabled: !!selectedId,
   })
@@ -377,12 +377,8 @@ function TeamsContent() {
   // Build a set of team IDs with pending outgoing join requests
   const pendingTeamIds = React.useMemo(() => {
     const ids = new Set<string>()
-    // team_requests are join_request type invitations where I am the invitee (requesting to join)
-    // We also check received for any outgoing requests
-    // The API should return join requests I've sent as part of the response
-    const allInvitations = [...(myInvData?.received ?? []), ...(myInvData?.team_requests ?? [])]
-    for (const inv of allInvitations) {
-      if (inv.type === 'join_request' && inv.status === 'pending') {
+    for (const inv of myInvData?.sent ?? []) {
+      if (inv.status === 'pending') {
         ids.add(inv.team_id)
       }
     }
