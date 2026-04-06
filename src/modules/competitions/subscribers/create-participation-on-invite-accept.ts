@@ -17,7 +17,10 @@ export default async function handler(
   payload: Payload,
   ctx: { resolve: <T = unknown>(name: string) => T },
 ) {
+  const LOG = '[create-participation-on-invite-accept]'
   const em = ctx.resolve('em') as EntityManager
+
+  console.log(LOG, 'Event received:', JSON.stringify(payload))
 
   // Look up competition invitation metadata
   const competitionInvitation = await em.findOne(CompetitionInvitation, {
@@ -25,7 +28,12 @@ export default async function handler(
   } as FilterQuery<CompetitionInvitation>)
 
   // If this invitation wasn't a competition invite, do nothing
-  if (!competitionInvitation) return
+  if (!competitionInvitation) {
+    console.log(LOG, `No CompetitionInvitation found for customerInvitationId=${payload.invitationId} — not a competition invite or record missing`)
+    return
+  }
+
+  console.log(LOG, `Found CompetitionInvitation: id=${competitionInvitation.id}, competitionId=${competitionInvitation.competitionId}, role=${competitionInvitation.participationRole}`)
 
   // Check for existing participation (idempotency)
   const existing = await em.findOne(CompetitionParticipation, {
@@ -34,23 +42,32 @@ export default async function handler(
     tenantId: payload.tenantId,
     deletedAt: null,
   } as FilterQuery<CompetitionParticipation>)
-  if (existing) return
+  if (existing) {
+    console.log(LOG, `Participation already exists: id=${existing.id} — skipping`)
+    return
+  }
 
-  // Create participation
-  const participation = em.create(CompetitionParticipation, {
-    competitionId: competitionInvitation.competitionId,
-    customerUserId: payload.userId,
-    role: competitionInvitation.participationRole,
-    checkedIn: false,
-    badgePrinted: false,
-    cocAccepted: false,
-    privacyPolicyAccepted: false,
-    profileComplete: false,
-    lookingForTeam: false,
-    tenantId: competitionInvitation.tenantId,
-    organizationId: competitionInvitation.organizationId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  })
-  await em.persistAndFlush(participation)
+  try {
+    // Create participation
+    const participation = em.create(CompetitionParticipation, {
+      competitionId: competitionInvitation.competitionId,
+      customerUserId: payload.userId,
+      role: competitionInvitation.participationRole,
+      checkedIn: false,
+      badgePrinted: false,
+      cocAccepted: false,
+      privacyPolicyAccepted: false,
+      profileComplete: false,
+      lookingForTeam: false,
+      tenantId: competitionInvitation.tenantId,
+      organizationId: competitionInvitation.organizationId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    await em.persistAndFlush(participation)
+    console.log(LOG, `Created participation: id=${participation.id} for userId=${payload.userId} in competition=${competitionInvitation.competitionId}`)
+  } catch (error) {
+    console.error(LOG, 'Failed to create participation:', error)
+    throw error
+  }
 }
