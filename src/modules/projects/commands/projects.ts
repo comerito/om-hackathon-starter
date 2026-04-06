@@ -126,6 +126,24 @@ const updateProjectCommand: CommandHandler<Record<string, unknown>, Project> = {
         if (parsed.uses_preexisting_code !== undefined) entity.usesPreexistingCode = parsed.uses_preexisting_code
         if (parsed.preexisting_code_description !== undefined) entity.preexistingCodeDescription = parsed.preexisting_code_description
         if (parsed.built_during_hackathon_description !== undefined) entity.builtDuringHackathonDescription = parsed.built_during_hackathon_description
+        if (parsed.flagged_for_reuse !== undefined) {
+          entity.flaggedForReuse = parsed.flagged_for_reuse
+          if (parsed.flagged_for_reuse) {
+            entity.flaggedBy = ctx.auth?.userId ?? ctx.auth?.sub ?? entity.flaggedBy ?? null
+            entity.flaggedAt = entity.flaggedAt ?? new Date()
+          } else {
+            entity.flaggedBy = null
+            entity.flaggedAt = null
+            entity.flaggedReason = null
+          }
+        }
+        if (parsed.flagged_reason !== undefined) entity.flaggedReason = parsed.flagged_reason
+        if (parsed.status !== undefined) {
+          entity.status = parsed.status
+          entity.submittedAt = parsed.status === ProjectStatus.PUBLISHED
+            ? (entity.submittedAt ?? new Date())
+            : null
+        }
       },
     })
     if (!project) throw new CrudHttpError(404, { error: 'Project not found' })
