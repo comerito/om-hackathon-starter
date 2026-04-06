@@ -5,6 +5,22 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { ParticipantProfile } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
+const ALLOWED_SKILLS = new Set([
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'Swift',
+  'Kotlin', 'PHP', 'SQL', 'HTML/CSS', 'Solidity',
+  'React', 'Next.js', 'Vue.js', 'Angular', 'Svelte', 'Node.js', 'Express', 'Django', 'Flask', 'Spring Boot',
+  'React Native', 'Flutter', 'iOS Development', 'Android Development',
+  'REST APIs', 'GraphQL', 'WebSockets',
+  'PostgreSQL', 'MongoDB', 'Redis', 'Firebase',
+  'AWS', 'Google Cloud', 'Azure', 'Docker', 'Kubernetes', 'CI/CD',
+  'Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'LLM/AI Agents',
+  'Blockchain', 'Smart Contracts', 'Web3',
+  'UI/UX Design', 'Figma', 'Product Management', 'Project Management',
+  'Data Analysis', 'Data Visualization',
+  'Cybersecurity', 'DevOps', 'Embedded Systems', 'IoT',
+])
+const MAX_SKILLS = 10
+
 export const metadata = { GET: { requireCustomerAuth: true }, PUT: { requireCustomerAuth: true } }
 
 export async function GET(req: Request) {
@@ -66,7 +82,13 @@ export async function PUT(req: Request) {
     // Update fields if provided
     if (body.bio !== undefined) profile.bio = body.bio
     if (body.organization !== undefined) profile.organization = body.organization
-    if (body.skills !== undefined) profile.skills = body.skills
+    if (body.skills !== undefined) {
+      if (!Array.isArray(body.skills)) return NextResponse.json({ error: 'skills must be an array' }, { status: 422 })
+      if (body.skills.length > MAX_SKILLS) return NextResponse.json({ error: `Maximum ${MAX_SKILLS} skills allowed` }, { status: 422 })
+      const invalid = body.skills.filter((s: unknown) => typeof s !== 'string' || !ALLOWED_SKILLS.has(s))
+      if (invalid.length > 0) return NextResponse.json({ error: 'Invalid skills: ' + invalid.join(', ') }, { status: 422 })
+      profile.skills = body.skills
+    }
     if (body.social_links !== undefined) profile.socialLinks = body.social_links
     if (body.avatar_url !== undefined) profile.avatarUrl = body.avatar_url
     if (body.portfolio_url !== undefined) profile.portfolioUrl = body.portfolio_url
