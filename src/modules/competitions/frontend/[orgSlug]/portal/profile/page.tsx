@@ -16,7 +16,6 @@ import {
   ProfileCompletionCard,
 } from '@/components/portal'
 import {
-  Shield,
   ChevronRight,
   Camera,
   X,
@@ -181,7 +180,6 @@ function ProfileContent() {
   const queryClient = useQueryClient()
   const user = auth.user!
   const roles = auth.roles
-  const features = auth.resolvedFeatures
 
   const [editing, setEditing] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
@@ -559,26 +557,6 @@ function ProfileContent() {
               </div>
             )}
 
-            {/* Access Permissions Card */}
-            <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5">
-                    <Shield className="size-4 text-portal-secondary" />
-                  </div>
-                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.permissions.title', 'Access Permissions')}</h3>
-                </div>
-              </div>
-              {features.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {features.map((feature) => (
-                    <span key={feature} className="inline-flex items-center rounded-md bg-gray-50 dark:bg-white/5 px-3 py-1.5 font-mono text-[11px] text-portal-secondary">{feature}</span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-portal-secondary">{t('competitions.portal.profile.permissions.empty', 'No permissions assigned.')}</p>
-              )}
-            </div>
           </div>
 
           {/* ---------- Right Column ---------- */}
