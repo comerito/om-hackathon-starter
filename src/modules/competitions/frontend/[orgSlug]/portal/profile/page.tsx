@@ -33,6 +33,7 @@ import {
 
 type ProfileData = {
   id: string
+  display_name: string | null
   bio: string | null
   organization: string | null
   avatar_url: string | null
@@ -187,6 +188,7 @@ function ProfileContent() {
   const avatarInputRef = React.useRef<HTMLInputElement>(null)
 
   // Form state
+  const [displayName, setDisplayName] = React.useState('')
   const [bio, setBio] = React.useState('')
   const [organization, setOrganization] = React.useState('')
   const [specialty, setSpecialty] = React.useState('')
@@ -211,6 +213,7 @@ function ProfileContent() {
   // Populate form from fetched data
   React.useEffect(() => {
     if (data) {
+      setDisplayName(data.display_name ?? user.displayName ?? '')
       setBio(data.bio ?? '')
       setOrganization(data.organization ?? '')
       setSpecialty(data.specialty ?? '')
@@ -264,6 +267,7 @@ function ProfileContent() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            display_name: displayName.trim() || null,
             bio: bio || null,
             organization: organization || null,
             specialty: specialty || null,
@@ -372,10 +376,24 @@ function ProfileContent() {
 
                 {/* Name + Email + Bio */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 justify-center sm:justify-start">
-                    <h2 className="text-xl font-bold text-foreground truncate">{user.displayName}</h2>
-                    {specialty && <PortalBadge variant="primary">{specialty}</PortalBadge>}
-                  </div>
+                  {editing ? (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-portal-secondary">
+                        {t('competitions.portal.profile.displayName.label', 'Display Name')}
+                      </label>
+                      <Input
+                        value={displayName}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDisplayName(e.target.value)}
+                        placeholder={t('competitions.portal.profile.displayName.placeholder', 'Your display name')}
+                        className="max-w-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                      <h2 className="text-xl font-bold text-foreground truncate">{displayName || user.displayName}</h2>
+                      {specialty && <PortalBadge variant="primary">{specialty}</PortalBadge>}
+                    </div>
+                  )}
 
                   <div className="mt-1 flex items-center gap-2 justify-center sm:justify-start">
                     <span className="text-sm text-portal-secondary truncate">{user.email}</span>

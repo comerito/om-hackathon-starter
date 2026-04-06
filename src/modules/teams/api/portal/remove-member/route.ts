@@ -83,11 +83,8 @@ export async function POST(req: Request) {
       )
     }
 
-    // Soft-delete the membership
-    member.deletedAt = new Date()
-    member.leftAt = new Date()
-    em.persist(member)
-    await em.flush()
+    // Hard-delete the membership
+    await em.nativeDelete(TeamMember, { id: member.id } as FilterQuery<TeamMember>)
 
     return NextResponse.json({ ok: true })
   } catch (error) {

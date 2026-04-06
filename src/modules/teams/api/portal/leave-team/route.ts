@@ -3,7 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Team, TeamMember, TeamRole } from '../../../data/entities'
+import { Team, TeamMember, TeamRole, TeamTrack, TeamInvitation, TeamResource } from '../../../data/entities'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -82,17 +82,17 @@ export async function POST(req: Request) {
         )
       }
 
-      // Solo owner — soft-delete the team entirely
-      team.deletedAt = new Date()
-      em.persist(team)
+      // Solo owner — hard-delete the team and all related records
+      const teamId = team.id
+      await em.nativeDelete(TeamMember, { teamId } as FilterQuery<TeamMember>)
+      await em.nativeDelete(TeamTrack, { teamId } as FilterQuery<TeamTrack>)
+      await em.nativeDelete(TeamInvitation, { teamId } as FilterQuery<TeamInvitation>)
+      await em.nativeDelete(TeamResource, { teamId } as FilterQuery<TeamResource>)
+      await em.nativeDelete(Team, { id: teamId } as FilterQuery<Team>)
+    } else {
+      // Regular member — hard-delete the membership
+      await em.nativeDelete(TeamMember, { id: membership.id } as FilterQuery<TeamMember>)
     }
-
-    // Soft-delete the membership
-    membership.deletedAt = new Date()
-    membership.leftAt = new Date()
-    em.persist(membership)
-
-    await em.flush()
 
     return NextResponse.json({ ok: true })
   } catch (error) {

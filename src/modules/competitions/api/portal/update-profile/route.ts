@@ -48,10 +48,15 @@ export async function GET(req: Request) {
       deletedAt: null,
     })
 
+    // Fetch display_name from customer_users
+    const knex = (em as any).getConnection().getKnex()
+    const userRow = await knex('customer_users').select('display_name').where('id', auth.sub).first()
+
     return NextResponse.json({
       ok: true,
       profile: profile ? {
         id: profile.id,
+        display_name: userRow?.display_name ?? null,
         bio: profile.bio,
         organization: profile.organization,
         avatar_url: profile.avatarUrl,
@@ -109,6 +114,14 @@ export async function PUT(req: Request) {
     if (body.specialty !== undefined) profile.specialty = body.specialty
     if (body.notification_preferences !== undefined) profile.notificationPreferences = body.notification_preferences
 
+    // Update display_name on customer_users record
+    if (typeof body.display_name === 'string' && body.display_name.trim()) {
+      const knex = (em as any).getConnection().getKnex()
+      await knex('customer_users')
+        .where('id', auth.sub)
+        .update({ display_name: body.display_name.trim() })
+    }
+
     // Update github_username on participation record
     if (body.github_username !== undefined) {
       const participation = await em.findOne(CompetitionParticipation, {
@@ -125,6 +138,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ ok: true, profile: {
       id: profile.id,
+      display_name: body.display_name?.trim() ?? null,
       bio: profile.bio,
       organization: profile.organization,
       avatar_url: profile.avatarUrl,

@@ -5,7 +5,7 @@ import type { CrudEmitContext, CrudEventsConfig, CrudIndexerConfig } from '@open
 import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { CommandRuntimeContext } from '@open-mercato/shared/lib/commands'
-import type { FilterQuery } from '@mikro-orm/postgresql'
+import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { TeamMember } from '../data/entities'
 import { createTeamMemberSchema } from '../data/validators'
 
@@ -85,18 +85,15 @@ const deleteMemberCommand: CommandHandler<{ body?: Record<string, unknown>; quer
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
 
-    const member = await de.deleteOrmEntity({
-      entity: TeamMember,
-      where: {
-        id,
-        tenantId: scope.tenantId,
-        organizationId: scope.organizationId,
-        deletedAt: null,
-      } as FilterQuery<TeamMember>,
-      soft: true,
-      softDeleteField: 'deletedAt',
-    })
+    const em = ctx.container.resolve('em') as EntityManager
+    const member = await em.findOne(TeamMember, {
+      id,
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+    } as FilterQuery<TeamMember>)
     if (!member) throw new CrudHttpError(404, { error: 'Team member not found' })
+
+    await em.nativeDelete(TeamMember, { id } as FilterQuery<TeamMember>)
 
     await emitCrudSideEffects({
       dataEngine: de,

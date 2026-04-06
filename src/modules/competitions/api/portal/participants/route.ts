@@ -5,6 +5,16 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, ParticipantProfile } from '../../../data/entities'
 import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { buildAttachmentImageUrl } from '@open-mercato/core/modules/attachments/lib/imageUrls'
+
+const AVATAR_THUMBNAIL_SIZE = 128
+
+function toThumbnailUrl(avatarUrl: string | null | undefined): string | null {
+  if (!avatarUrl) return null
+  const match = avatarUrl.match(/\/api\/attachments\/file\/([^/?]+)/)
+  if (!match) return avatarUrl
+  return buildAttachmentImageUrl(match[1], { width: AVATAR_THUMBNAIL_SIZE, height: AVATAR_THUMBNAIL_SIZE, cropType: 'cover' })
+}
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -80,7 +90,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Load customer_users for display names and emails
+    // Load customer_users for display names
     const knex = (em as any).getConnection().getKnex()
 
     let usersQuery = knex('customer_users')
@@ -91,16 +101,14 @@ export async function GET(req: Request) {
       const searchPattern = `%${search}%`
       usersQuery = usersQuery.andWhere(function (this: any) {
         this.whereILike('display_name', searchPattern)
-          .orWhereILike('email', searchPattern)
       })
     }
 
     const userRows = await usersQuery.limit(100)
 
-    const userMap = new Map<string, { display_name: string; email: string }>(
+    const userMap = new Map<string, { display_name: string }>(
       userRows.map((row: any) => [row.id, {
         display_name: row.display_name || row.email?.split('@')[0] || 'Unknown',
-        email: row.email || '',
       }]),
     )
 
@@ -120,7 +128,6 @@ export async function GET(req: Request) {
       return {
         customer_user_id: userId,
         display_name: user?.display_name ?? userId.slice(0, 8) + '...',
-        email: user?.email ?? '',
         role: participation?.role ?? 'participant',
         specialty: profile?.specialty ?? null,
         organization: profile?.organization ?? null,
@@ -128,7 +135,7 @@ export async function GET(req: Request) {
         looking_for_team: participation?.lookingForTeam ?? false,
         has_team: teamMemberIds.has(userId),
         bio: profile?.bio ?? null,
-        avatar_url: profile?.avatarUrl ?? null,
+        avatar_url: toThumbnailUrl(profile?.avatarUrl),
         portfolio_url: profile?.portfolioUrl ?? null,
         office_hours_url: profile?.officeHoursUrl ?? null,
       }
