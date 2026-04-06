@@ -8,6 +8,7 @@ import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Input } from '@open-mercato/ui/primitives/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@open-mercato/ui/primitives/dialog'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
@@ -64,6 +65,7 @@ function TeamsTab({
   const t = useT()
   const [search, setSearch] = React.useState('')
   const [requestingId, setRequestingId] = React.useState<string | null>(null)
+  const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['portal-teams', competitionId, search],
@@ -95,6 +97,38 @@ function TeamsTab({
     }
   }
 
+  function renderAction(team: Team) {
+    const hasPending = pendingTeamIds.has(team.id)
+    if (myMembership) {
+      if (myMembership.teamId === team.id) {
+        return <span className="text-xs text-primary font-medium">{t('teams.portal.browse.yourTeam', 'Your team')}</span>
+      }
+      return null
+    }
+    if (hasPending) {
+      return (
+        <span className="text-xs text-muted-foreground italic">
+          {t('teams.portal.browse.pendingRequest', 'Request pending')}
+        </span>
+      )
+    }
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={requestingId === team.id}
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation()
+          handleRequest(team.id)
+        }}
+      >
+        {requestingId === team.id
+          ? t('common.sending', 'Sending...')
+          : t('teams.portal.browse.requestJoin', 'Request to Join')}
+      </Button>
+    )
+  }
+
   return (
     <>
       <div className="flex items-center gap-3 mb-4">
@@ -122,53 +156,66 @@ function TeamsTab({
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {teams.map((team) => {
-            const hasPending = pendingTeamIds.has(team.id)
-            return (
-              <PortalCard key={team.id}>
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">{team.name}</h3>
-                    <span
-                      className={`text-xs rounded px-1.5 py-0.5 capitalize ${statusStyles[team.status] ?? 'bg-muted'}`}
-                    >
-                      {t(`teams.portal.myTeam.status.${team.status}`, team.status)}
-                    </span>
-                  </div>
-                  {team.description && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{team.description}</p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {team._teams?.memberCount ?? '?'} {t('teams.portal.browse.members', 'members')}
-                    </span>
-                    {myMembership ? (
-                      myMembership.teamId === team.id ? (
-                        <span className="text-xs text-primary font-medium">{t('teams.portal.browse.yourTeam', 'Your team')}</span>
-                      ) : null
-                    ) : hasPending ? (
-                      <span className="text-xs text-muted-foreground italic">
-                        {t('teams.portal.browse.pendingRequest', 'Request pending')}
-                      </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={requestingId === team.id}
-                        onClick={() => handleRequest(team.id)}
-                      >
-                        {requestingId === team.id
-                          ? t('common.sending', 'Sending...')
-                          : t('teams.portal.browse.requestJoin', 'Request to Join')}
-                      </Button>
-                    )}
-                  </div>
+          {teams.map((team) => (
+            <PortalCard key={team.id}>
+              <div
+                className="p-5 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedTeam(team)}
+                onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedTeam(team) } }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">{team.name}</h3>
+                  <span
+                    className={`text-xs rounded px-1.5 py-0.5 capitalize ${statusStyles[team.status] ?? 'bg-muted'}`}
+                  >
+                    {t(`teams.portal.myTeam.status.${team.status}`, team.status)}
+                  </span>
                 </div>
-              </PortalCard>
-            )
-          })}
+                {team.description && (
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{team.description}</p>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {team._teams?.memberCount ?? '?'} {t('teams.portal.browse.members', 'members')}
+                  </span>
+                  {renderAction(team)}
+                </div>
+              </div>
+            </PortalCard>
+          ))}
         </div>
       )}
+
+      {/* Team detail dialog */}
+      <Dialog open={!!selectedTeam} onOpenChange={(open) => { if (!open) setSelectedTeam(null) }}>
+        <DialogContent>
+          {selectedTeam && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <DialogTitle>{selectedTeam.name}</DialogTitle>
+                  <span
+                    className={`text-xs rounded px-1.5 py-0.5 capitalize ${statusStyles[selectedTeam.status] ?? 'bg-muted'}`}
+                  >
+                    {t(`teams.portal.myTeam.status.${selectedTeam.status}`, selectedTeam.status)}
+                  </span>
+                </div>
+                <DialogDescription>
+                  {selectedTeam._teams?.memberCount ?? '?'} {t('teams.portal.browse.members', 'members')}
+                </DialogDescription>
+              </DialogHeader>
+              {selectedTeam.description && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedTeam.description}</p>
+              )}
+              <div className="flex justify-end pt-2">
+                {renderAction(selectedTeam)}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
