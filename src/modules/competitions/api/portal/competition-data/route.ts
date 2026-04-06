@@ -5,7 +5,7 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { AgendaItem, Announcement, CompetitionParticipation, Milestone } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
 import { Project } from '../../../../projects/data/entities'
-import { Team } from '../../../../teams/data/entities'
+import { Team, TeamTrack } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
@@ -149,6 +149,36 @@ export async function GET(req: Request) {
       })
     }
 
+    if (dataType === 'teams') {
+      const items = await em.find(Team, {
+        competitionId,
+        tenantId: auth.tenantId,
+        deletedAt: null,
+      } as any, { orderBy: { name: 'asc' } })
+
+      // Fetch multi-track associations
+      const teamTrackEntries = await em.find(TeamTrack, {
+        competitionId,
+        tenantId: auth.tenantId,
+      } as any)
+
+      const trackIdsByTeam = new Map<string, string[]>()
+      for (const tt of teamTrackEntries) {
+        const arr = trackIdsByTeam.get(tt.teamId) ?? []
+        arr.push(tt.trackId)
+        trackIdsByTeam.set(tt.teamId, arr)
+      }
+
+      return NextResponse.json({
+        items: items.map(t => ({
+          id: t.id,
+          name: t.name,
+          track_id: t.trackId ?? null,
+          track_ids: trackIdsByTeam.get(t.id) ?? (t.trackId ? [t.trackId] : []),
+        })),
+      })
+    }
+
     if (dataType === 'projects') {
       const statusFilter = url.searchParams.get('status') ?? 'published'
       const items = await em.find(Project, {
@@ -186,7 +216,7 @@ export async function GET(req: Request) {
       })
     }
 
-    return NextResponse.json({ error: 'Invalid type parameter. Supported: agenda, announcements, tracks, milestones, projects' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid type parameter. Supported: agenda, announcements, tracks, milestones, teams, projects' }, { status: 400 })
   } catch (error) {
     console.error('[portal/competition-data] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -197,6 +227,6 @@ export const openApi: OpenApiRouteDoc = {
   tag: 'Portal',
   summary: 'Competition data',
   methods: {
-    GET: { summary: 'Get agenda, announcements, tracks, milestones, or projects for a competition (portal)' },
+    GET: { summary: 'Get agenda, announcements, tracks, milestones, teams, or projects for a competition (portal)' },
   },
 }

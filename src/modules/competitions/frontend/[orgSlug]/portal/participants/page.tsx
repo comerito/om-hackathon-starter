@@ -273,7 +273,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {p.skills.map((skill) => (
-                  <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">
+                  <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400 max-w-[200px] truncate">
                     {skill}
                   </span>
                 ))}
@@ -422,7 +422,7 @@ function ParticipantCard({
       {p.skills.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {p.skills.slice(0, 4).map((skill) => (
-            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-600 dark:text-slate-400">
+            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-600 dark:text-slate-400 max-w-[150px] truncate">
               {skill}
             </span>
           ))}

@@ -57,48 +57,117 @@ function getInitials(name: string): string {
   return name.split(' ').map((p) => p.charAt(0)).join('').toUpperCase().slice(0, 2)
 }
 
+/* ---------- predefined skills ---------- */
+
+const HACKATHON_SKILLS = [
+  // Programming languages
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'Swift',
+  'Kotlin', 'PHP', 'SQL', 'HTML/CSS', 'Solidity',
+  // Frameworks & libraries
+  'React', 'Next.js', 'Vue.js', 'Angular', 'Svelte', 'Node.js', 'Express', 'Django', 'Flask', 'Spring Boot',
+  'React Native', 'Flutter', 'iOS Development', 'Android Development',
+  // APIs & protocols
+  'REST APIs', 'GraphQL', 'WebSockets',
+  // Databases
+  'PostgreSQL', 'MongoDB', 'Redis', 'Firebase',
+  // Cloud & infrastructure
+  'AWS', 'Google Cloud', 'Azure', 'Docker', 'Kubernetes', 'CI/CD',
+  // AI & data
+  'Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'LLM/AI Agents',
+  'Data Analysis', 'Data Visualization', 'Data Engineering',
+  // Web3
+  'Blockchain', 'Smart Contracts', 'Web3',
+  // Architecture & engineering
+  'Software Architecture', 'System Design', 'API Design', 'Microservices',
+  // Design
+  'UI/UX Design', 'Figma', 'Graphic Design', 'Prototyping', 'User Research',
+  'Interaction Design', 'Design Systems', 'Accessibility',
+  // Testing & QA
+  'Manual Testing', 'Test Automation', 'Performance Testing', 'Security Testing',
+  // Management & soft skills
+  'Product Management', 'Project Management', 'Agile/Scrum', 'Technical Writing',
+  'Public Speaking', 'Pitch/Presentation', 'Business Strategy', 'Marketing',
+  // Other technical
+  'Cybersecurity', 'DevOps', 'Embedded Systems', 'IoT',
+] as const
+
+const MAX_SKILLS = 10
+
 /* ---------- skill input ---------- */
 
 function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: string[]) => void }) {
   const t = useT()
-  const [input, setInput] = React.useState('')
+  const [search, setSearch] = React.useState('')
+  const [open, setOpen] = React.useState(false)
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
 
-  function addSkill() {
-    const trimmed = input.trim()
-    if (trimmed && !skills.includes(trimmed)) {
-      onChange([...skills, trimmed])
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false)
     }
-    setInput('')
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return HACKATHON_SKILLS.filter(s => !skills.includes(s))
+    return HACKATHON_SKILLS.filter(s => !skills.includes(s) && s.toLowerCase().includes(q))
+  }, [search, skills])
+
+  function addSkill(skill: string) {
+    if (!skills.includes(skill) && skills.length < MAX_SKILLS) {
+      onChange([...skills, skill])
+    }
+    setSearch('')
   }
 
   return (
     <div>
+      {/* Selected skills */}
       <div className="flex flex-wrap gap-1.5 mb-2">
         {skills.map((skill) => (
-          <span key={skill} className="inline-flex items-center gap-1 rounded-full bg-portal-primary/10 px-2.5 py-1 text-xs font-medium text-portal-primary">
-            {skill}
-            <button type="button" onClick={() => onChange(skills.filter(s => s !== skill))} className="hover:text-portal-danger transition-colors">
+          <span key={skill} className="inline-flex items-center gap-1 rounded-full bg-portal-primary/10 px-2.5 py-1 text-xs font-medium text-portal-primary max-w-[200px]">
+            <span className="truncate">{skill}</span>
+            <button type="button" onClick={() => onChange(skills.filter(s => s !== skill))} className="shrink-0 hover:text-portal-danger transition-colors">
               <X className="size-3" />
             </button>
           </span>
         ))}
       </div>
-      <div className="flex gap-2">
-        <Input
-          placeholder={t('competitions.portal.profile.skills.placeholder', 'Add a skill...')}
-          value={input}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-          onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
-          className="flex-1"
-        />
-        <button
-          type="button"
-          onClick={addSkill}
-          className="shrink-0 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2 text-xs font-medium text-portal-secondary hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-        >
-          <Plus className="size-4" />
-        </button>
-      </div>
+
+      {/* Search / picker */}
+      {skills.length < MAX_SKILLS && (
+        <div ref={wrapperRef} className="relative">
+          <Input
+            placeholder={t('competitions.portal.profile.skills.placeholder', 'Search skills...')}
+            value={search}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearch(e.target.value); setOpen(true) }}
+            onFocus={() => setOpen(true)}
+            className="w-full"
+          />
+          {open && filtered.length > 0 && (
+            <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-lg">
+              {filtered.map((skill) => (
+                <button
+                  key={skill}
+                  type="button"
+                  className="flex w-full items-center px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  onClick={() => { addSkill(skill); setOpen(false) }}
+                >
+                  <Plus className="size-3.5 mr-2 text-portal-primary shrink-0" />
+                  {skill}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {skills.length >= MAX_SKILLS && (
+        <p className="text-xs text-muted-foreground">
+          {t('competitions.portal.profile.skills.max', 'Maximum {count} skills reached', { count: MAX_SKILLS })}
+        </p>
+      )}
     </div>
   )
 }
@@ -464,7 +533,7 @@ function ProfileContent() {
                     <SectionLabel>{t('competitions.portal.profile.skills.title', 'Skills')}</SectionLabel>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {skills.map((skill) => (
-                        <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400">{skill}</span>
+                        <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs text-gray-600 dark:text-slate-400 max-w-[200px] truncate">{skill}</span>
                       ))}
                     </div>
                   </div>

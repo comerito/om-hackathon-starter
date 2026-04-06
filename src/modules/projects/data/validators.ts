@@ -42,6 +42,9 @@ export const updateProjectSchema = z.object({
   uses_preexisting_code: z.boolean().optional(),
   preexisting_code_description: z.string().nullable().optional(),
   built_during_hackathon_description: z.string().nullable().optional(),
+  flagged_for_reuse: z.boolean().optional(),
+  flagged_reason: z.string().nullable().optional(),
+  status: z.enum(projectStatusValues).optional(),
 })
 
 export const flagProjectSchema = z.object({

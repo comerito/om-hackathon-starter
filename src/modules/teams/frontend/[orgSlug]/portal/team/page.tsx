@@ -94,11 +94,11 @@ function NoTeamView({
   const { data: invData } = useQuery({
     queryKey: ['portal-invitations', competitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ received: Invitation[]; team_requests: Invitation[] }>(
+      const { ok, result } = await apiCall<{ received: Invitation[]; team_join_requests: Invitation[] }>(
         `/api/teams/portal/my-invitations?competition_id=${competitionId}`,
       )
       if (ok && result) return result
-      return { received: [] as Invitation[], team_requests: [] as Invitation[] }
+      return { received: [] as Invitation[], team_join_requests: [] as Invitation[] }
     },
     enabled: !!competitionId,
   })
@@ -802,18 +802,18 @@ function TeamView({
   const { data: invData } = useQuery({
     queryKey: ['portal-invitations', competitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ received: Invitation[]; team_requests: Invitation[] }>(
+      const { ok, result } = await apiCall<{ received: Invitation[]; team_join_requests: Invitation[] }>(
         `/api/teams/portal/my-invitations?competition_id=${competitionId}`,
       )
       if (ok && result) return result
-      return { received: [] as Invitation[], team_requests: [] as Invitation[] }
+      return { received: [] as Invitation[], team_join_requests: [] as Invitation[] }
     },
     enabled: !!competitionId,
   })
 
   const members = preloadedMembers ?? []
   const tracks = tracksData?.items ?? []
-  const teamRequests = invData?.team_requests ?? []
+  const teamRequests = invData?.team_join_requests ?? []
   const receivedInvitations = invData?.received ?? []
 
   // Build name lookup from preloaded members + resolve for invitation users

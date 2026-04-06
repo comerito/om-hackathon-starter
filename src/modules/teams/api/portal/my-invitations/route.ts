@@ -29,6 +29,7 @@ export async function GET(req: Request) {
     const received = await em.find(TeamInvitation, {
       inviteeId: auth.sub,
       competitionId,
+      type: 'invite',
       status: InvitationStatus.PENDING,
       tenantId: auth.tenantId,
     } as FilterQuery<TeamInvitation>)

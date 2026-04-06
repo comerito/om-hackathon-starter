@@ -142,6 +142,7 @@ function TracksContent() {
   })
 
   const myTeamId = membershipData?.team?.id ?? membershipData?.membership?.team_id ?? null
+  const isOwner = membershipData?.membership?.role === 'owner'
   const myTrackIds: string[] = membershipData?.team?.track_ids ?? (membershipData?.team?.track_id ? [membershipData.team.track_id] : [])
   const membershipReady = !membershipLoading
   const maxTracksPerTeam = (selected as any)?.max_tracks_per_team ?? 1
@@ -165,12 +166,12 @@ function TracksContent() {
   })
 
   // Fetch teams to count per track
-  const { data: teamsData } = useQuery({
+  const { data: teamsData, refetch: refetchTeams } = useQuery({
     queryKey: ['portal-tracks-teams', selectedId],
     queryFn: async () => {
       if (!selectedId) return { items: [] }
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; track_id: string | null; name: string }> }>(
-        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=projects`,
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; track_id: string | null; track_ids?: string[]; name: string }> }>(
+        `/api/competitions/portal/competition-data?competition_id=${selectedId}&type=teams`,
       )
       return ok && result ? result : { items: [] }
     },
@@ -225,6 +226,7 @@ function TracksContent() {
         setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
       } else {
         refetchMembership()
+        refetchTeams()
       }
     } finally {
       setSelectingTrackId(null)
@@ -234,9 +236,10 @@ function TracksContent() {
   // Compute team counts per track
   const teamCountByTrack = React.useMemo<TeamsByTrack>(() => {
     const counts: TeamsByTrack = {}
-    for (const project of teamsData?.items ?? []) {
-      if (project.track_id) {
-        counts[project.track_id] = (counts[project.track_id] ?? 0) + 1
+    for (const team of teamsData?.items ?? []) {
+      const trackIds = team.track_ids ?? (team.track_id ? [team.track_id] : [])
+      for (const trackId of trackIds) {
+        counts[trackId] = (counts[trackId] ?? 0) + 1
       }
     }
     return counts
@@ -528,6 +531,9 @@ function TracksContent() {
                       >
                         {t('tracks.portal.createTeamFirst', 'Create a Team to Join')}
                       </a>
+                    ) : !isOwner ? (
+                      /* Has team but not owner — no track actions */
+                      null
                     ) : isMyTrack ? (
                       /* Already selected — show leave button */
                       <button
