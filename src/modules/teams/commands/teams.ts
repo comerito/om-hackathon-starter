@@ -5,7 +5,7 @@ import type { CrudEmitContext, CrudEventsConfig, CrudIndexerConfig } from '@open
 import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { Team, TeamStatus, TeamTrack } from '../data/entities'
+import { Team, TeamStatus, TeamTrack, TeamMember, TeamInvitation, TeamResource } from '../data/entities'
 import { createTeamSchema, updateTeamSchema, disqualifyTeamSchema } from '../data/validators'
 
 const ENTITY_ID = 'teams:team'
@@ -179,19 +179,22 @@ const deleteTeamCommand: CommandHandler<{ body?: Record<string, unknown>; query?
     const id = requireId(input, 'Team id required')
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
+    const em = ctx.container.resolve('em') as EntityManager
 
-    const team = await de.deleteOrmEntity({
-      entity: Team,
-      where: {
-        id,
-        tenantId: scope.tenantId,
-        organizationId: scope.organizationId,
-        deletedAt: null,
-      } as FilterQuery<Team>,
-      soft: true,
-      softDeleteField: 'deletedAt',
-    })
+    const team = await em.findOne(Team, {
+      id,
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+    } as FilterQuery<Team>)
     if (!team) throw new CrudHttpError(404, { error: 'Team not found' })
+
+    // Hard-delete all related records
+    const teamFilter = { teamId: id } as FilterQuery<TeamMember>
+    await em.nativeDelete(TeamMember, teamFilter)
+    await em.nativeDelete(TeamTrack, { teamId: id } as FilterQuery<TeamTrack>)
+    await em.nativeDelete(TeamInvitation, { teamId: id } as FilterQuery<TeamInvitation>)
+    await em.nativeDelete(TeamResource, { teamId: id } as FilterQuery<TeamResource>)
+    await em.nativeDelete(Team, { id } as FilterQuery<Team>)
 
     await emitCrudSideEffects({
       dataEngine: de,
