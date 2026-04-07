@@ -13,6 +13,8 @@ const events = [
   { id: 'competitions.announcement.created', label: 'Announcement Published', entity: 'announcement', category: 'crud', clientBroadcast: true, portalBroadcast: true },
   { id: 'competitions.announcement.updated', label: 'Announcement Updated', entity: 'announcement', category: 'crud', clientBroadcast: true },
   { id: 'competitions.announcement.deleted', label: 'Announcement Deleted', entity: 'announcement', category: 'crud', clientBroadcast: true },
+  { id: 'competitions.chat.message_sent', label: 'Chat Message Sent', entity: 'chat_message', category: 'custom', portalBroadcast: true },
+  { id: 'competitions.chat.message_read', label: 'Chat Message Read', entity: 'chat_message', category: 'custom', portalBroadcast: true },
 ] as const
 
 export const eventsConfig = createModuleEvents({
