@@ -138,6 +138,7 @@ export async function GET(req: Request) {
         avatar_url: toThumbnailUrl(profile?.avatarUrl),
         portfolio_url: profile?.portfolioUrl ?? null,
         office_hours_url: profile?.officeHoursUrl ?? null,
+        discord_nick: profile?.discordNick ?? null,
       }
     })
 
