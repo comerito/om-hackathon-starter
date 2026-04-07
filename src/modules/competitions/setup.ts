@@ -97,13 +97,13 @@ export const setup: ModuleSetupConfig = {
   },
   defaultCustomerRoleFeatures: {
     participant: [
-      'portal.competitions.view', 'portal.competitions.checkin',
+      'portal.competitions.view', 'portal.competitions.checkin', 'portal.competitions.chat',
     ],
     mentor: [
-      'portal.competitions.view', 'portal.competitions.checkin',
+      'portal.competitions.view', 'portal.competitions.checkin', 'portal.competitions.chat',
     ],
     judge: [
-      'portal.competitions.view', 'portal.competitions.checkin',
+      'portal.competitions.view', 'portal.competitions.checkin', 'portal.competitions.chat',
     ],
   },
 

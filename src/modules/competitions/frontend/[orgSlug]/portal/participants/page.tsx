@@ -362,11 +362,13 @@ function ParticipantCard({
   onViewProfile,
   canInvite,
   onInvite,
+  onMessage,
   invitingId,
 }: {
   p: Participant
   onViewProfile: () => void
   canInvite: boolean
+  onMessage: () => void
   onInvite: (userId: string) => void
   invitingId: string | null
 }) {
@@ -467,28 +469,30 @@ function ParticipantCard({
           {t('competitions.portal.participants.viewProfile', 'View Profile')}
           <span className="text-xs">&rarr;</span>
         </button>
-        {canInvite ? (
-          <Button
-            type="button"
-            onClick={() => onInvite(p.customer_user_id)}
-            disabled={invitingId === p.customer_user_id}
-            size="sm"
-            className="bg-green-600 text-[11px] uppercase tracking-wide hover:bg-green-700"
-          >
-            <UserPlus className="size-3.5" />
-            {invitingId === p.customer_user_id
-              ? t('competitions.portal.participants.inviting', 'Sending...')
-              : t('competitions.portal.participants.invite', 'Invite')}
-          </Button>
-        ) : (
+        <div className="flex items-center gap-1">
           <button
             type="button"
+            onClick={onMessage}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
             aria-label={t('competitions.portal.participants.messageAria', 'Message {name}', { name: p.display_name })}
           >
             <MessageCircle className="size-4" />
           </button>
-        )}
+          {canInvite && (
+            <Button
+              type="button"
+              onClick={() => onInvite(p.customer_user_id)}
+              disabled={invitingId === p.customer_user_id}
+              size="sm"
+              className="bg-green-600 text-[11px] uppercase tracking-wide hover:bg-green-700"
+            >
+              <UserPlus className="size-3.5" />
+              {invitingId === p.customer_user_id
+                ? t('competitions.portal.participants.inviting', 'Sending...')
+                : t('competitions.portal.participants.invite', 'Invite')}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -915,6 +919,10 @@ function ParticipantsContent() {
                 p={p}
                 onViewProfile={() => setSelectedParticipant(p)}
                 canInvite={Boolean(isTeamOwner && myTeamId && !p.has_team && p.customer_user_id !== currentUserId)}
+                onMessage={() => {
+                  const slug = window.location.pathname.match(/^\/([^/]+)\/portal/)?.[1] ?? ''
+                  window.location.href = `/${slug}/portal/chat?recipient=${p.customer_user_id}`
+                }}
                 onInvite={(userId) => {
                   const participant = allParticipants.find(item => item.customer_user_id === userId)
                   if (participant) setInviteTarget(participant)

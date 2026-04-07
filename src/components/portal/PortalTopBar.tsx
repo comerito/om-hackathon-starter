@@ -7,6 +7,7 @@ import { PortalLocaleSwitcher } from './PortalLocaleSwitcher'
 import { PortalThemeToggle } from './PortalThemeToggle'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalNotificationBell } from '@open-mercato/ui/portal/components/PortalNotificationBell'
+import { PortalChatIcon } from './PortalChatIcon'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
 
@@ -115,7 +116,8 @@ export function PortalTopBar({
       <div className="ml-auto flex shrink-0 items-center gap-3" data-portal-handle="section:portal:header:actions">
         <PortalLocaleSwitcher />
 
-        {/* Notification bell + panel */}
+        {/* Chat + Notification bell */}
+        <PortalChatIcon />
         <PortalNotificationBell t={t} />
 
         {/* Theme toggle */}
