@@ -6,8 +6,15 @@ import { z } from 'zod'
 import { CompetitionParticipation } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const checkinSchema = z.object({
+const checkinByIdSchema = z.object({
   participation_id: z.string().uuid(),
+  email: z.undefined().optional(),
+})
+
+const checkinByEmailSchema = z.object({
+  email: z.string().email(),
+  competition_id: z.string().uuid(),
+  participation_id: z.undefined().optional(),
 })
 
 export const metadata = {
@@ -21,28 +28,54 @@ export async function POST(req: Request) {
     if (!auth) return NextResponse.json({ error: 'Auth required' }, { status: 401 })
 
     const body = await req.json()
-    const parsed = checkinSchema.parse(body)
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
+    const knex = (em as any).getConnection().getKnex()
 
-    const participation = await em.findOne(CompetitionParticipation, {
-      id: parsed.participation_id, tenantId: auth.tenantId, deletedAt: null,
-    } as FilterQuery<CompetitionParticipation>)
+    let participation: CompetitionParticipation | null = null
+
+    const byId = checkinByIdSchema.safeParse(body)
+    const byEmail = checkinByEmailSchema.safeParse(body)
+
+    if (byId.success && byId.data.participation_id) {
+      participation = await em.findOne(CompetitionParticipation, {
+        id: byId.data.participation_id, tenantId: auth.tenantId, deletedAt: null,
+      } as FilterQuery<CompetitionParticipation>)
+    } else if (byEmail.success && byEmail.data.email) {
+      const userRow = await knex('customer_users')
+        .select('id')
+        .where('email', byEmail.data.email)
+        .where('tenant_id', auth.tenantId)
+        .first()
+      if (userRow) {
+        participation = await em.findOne(CompetitionParticipation, {
+          customerUserId: userRow.id,
+          competitionId: byEmail.data.competition_id,
+          tenantId: auth.tenantId,
+          deletedAt: null,
+        } as FilterQuery<CompetitionParticipation>)
+      }
+    } else {
+      return NextResponse.json({ error: 'Provide participation_id or email + competition_id' }, { status: 422 })
+    }
+
     if (!participation) return NextResponse.json({ error: 'Participation not found' }, { status: 404 })
-    if (participation.checkedIn) return NextResponse.json({ ok: true, already: true })
+    if (participation.checkedIn) {
+      const alreadyRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+      return NextResponse.json({ ok: true, already: true, displayName: alreadyRow?.display_name ?? null, email: alreadyRow?.email ?? null })
+    }
 
     participation.checkedIn = true
     participation.checkedInAt = new Date()
     await em.persistAndFlush(participation)
 
     // Resolve display name for response
-    const knex = (em as any).getConnection().getKnex()
-    const userRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+    const displayRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
 
     return NextResponse.json({
       ok: true,
-      displayName: userRow?.display_name ?? null,
-      email: userRow?.email ?? null,
+      displayName: displayRow?.display_name ?? null,
+      email: displayRow?.email ?? null,
       checkedInAt: participation.checkedInAt,
     })
   } catch (error) {

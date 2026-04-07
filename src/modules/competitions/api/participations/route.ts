@@ -4,7 +4,7 @@ import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { CompetitionParticipation } from '../../data/entities'
+import { CompetitionParticipation, ParticipantProfile } from '../../data/entities'
 import { participationCrudEvents, participationCrudIndexer } from '../../commands/participations'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -20,6 +20,7 @@ const querySchema = z.object({
   role: z.string().optional(),
   checked_in: z.coerce.boolean().optional(),
   coc_accepted: z.coerce.boolean().optional(),
+  has_discord: z.enum(['true', 'false']).optional(),
 })
 
 const SORT_ALLOWED: Record<string, string> = { id: 'id', role: 'role', checked_in: 'checkedIn', created_at: 'createdAt' }
@@ -55,24 +56,45 @@ export async function GET(request: Request) {
     offset: (q.page - 1) * q.pageSize,
   })
 
+  // Resolve discord nicks from participant profiles
+  const customerUserIds = items.map((p) => p.customerUserId)
+  const profiles = customerUserIds.length > 0
+    ? await em.find(ParticipantProfile, {
+        customerUserId: { $in: customerUserIds },
+        tenantId: auth.tenantId,
+      } as FilterQuery<ParticipantProfile>)
+    : []
+  const profileMap = new Map(profiles.map((p) => [p.customerUserId, p]))
+
+  let mapped = items.map((p) => ({
+    id: p.id,
+    competition_id: p.competitionId,
+    customer_user_id: p.customerUserId,
+    role: p.role,
+    checked_in: p.checkedIn,
+    checked_in_at: p.checkedInAt ?? null,
+    coc_accepted: p.cocAccepted,
+    privacy_policy_accepted: p.privacyPolicyAccepted,
+    profile_complete: p.profileComplete,
+    looking_for_team: p.lookingForTeam,
+    discord_nick: profileMap.get(p.customerUserId)?.discordNick ?? null,
+    created_at: p.createdAt,
+  }))
+
+  // Apply has_discord filter (post-join filter)
+  let filteredTotal = total
+  if (q.has_discord !== undefined) {
+    const hasDiscord = q.has_discord === 'true'
+    mapped = mapped.filter((p) => hasDiscord ? !!p.discord_nick : !p.discord_nick)
+    filteredTotal = mapped.length
+  }
+
   return NextResponse.json({
-    items: items.map((p) => ({
-      id: p.id,
-      competition_id: p.competitionId,
-      customer_user_id: p.customerUserId,
-      role: p.role,
-      checked_in: p.checkedIn,
-      checked_in_at: p.checkedInAt ?? null,
-      coc_accepted: p.cocAccepted,
-      privacy_policy_accepted: p.privacyPolicyAccepted,
-      profile_complete: p.profileComplete,
-      looking_for_team: p.lookingForTeam,
-      created_at: p.createdAt,
-    })),
-    total,
+    items: mapped,
+    total: filteredTotal,
     page: q.page,
     pageSize: q.pageSize,
-    totalPages: Math.ceil(total / q.pageSize),
+    totalPages: Math.ceil(filteredTotal / q.pageSize),
   })
 }
 

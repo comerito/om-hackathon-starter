@@ -27,6 +27,9 @@ import {
   MessageCircle,
   Save,
   Loader2,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 /* ---------- types ---------- */
@@ -42,6 +45,7 @@ type ProfileData = {
   specialty: string | null
   skills: string[]
   social_links: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string }
+  discord_nick: string | null
   github_username: string | null
 }
 
@@ -173,6 +177,197 @@ function SkillInput({ skills, onChange }: { skills: string[]; onChange: (s: stri
   )
 }
 
+/* ---------- change password dialog ---------- */
+
+function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT()
+  const [currentPassword, setCurrentPassword] = React.useState('')
+  const [newPassword, setNewPassword] = React.useState('')
+  const [confirmPassword, setConfirmPassword] = React.useState('')
+  const [showCurrent, setShowCurrent] = React.useState(false)
+  const [showNew, setShowNew] = React.useState(false)
+  const [showConfirm, setShowConfirm] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
+  const [saving, setSaving] = React.useState(false)
+
+  function reset() {
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setShowCurrent(false)
+    setShowNew(false)
+    setShowConfirm(false)
+    setError(null)
+    setFieldErrors({})
+    setSaving(false)
+  }
+
+  function handleClose() {
+    reset()
+    onClose()
+  }
+
+  function validate(): boolean {
+    const errors: Record<string, string> = {}
+    if (!currentPassword) errors.currentPassword = t('competitions.portal.profile.changePassword.errors.required', 'This field is required')
+    if (!newPassword) errors.newPassword = t('competitions.portal.profile.changePassword.errors.required', 'This field is required')
+    else if (newPassword.length < 8) errors.newPassword = t('competitions.portal.profile.changePassword.errors.tooShort', 'Password must be at least 8 characters')
+    if (!confirmPassword) errors.confirmPassword = t('competitions.portal.profile.changePassword.errors.required', 'This field is required')
+    else if (newPassword !== confirmPassword) errors.confirmPassword = t('competitions.portal.profile.changePassword.errors.mismatch', 'Passwords do not match')
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!validate()) return
+
+    setSaving(true)
+    try {
+      const { ok, status, result } = await apiCall<{ ok: boolean; error?: string }>(
+        '/api/customer_accounts/portal/password-change',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        },
+      )
+
+      if (ok && result?.ok) {
+        flash(t('competitions.portal.profile.changePassword.success', 'Password changed successfully'), 'success')
+        handleClose()
+      } else if (status === 400 && result?.error === 'Current password is incorrect') {
+        setFieldErrors({ currentPassword: t('competitions.portal.profile.changePassword.errors.incorrect', 'Current password is incorrect') })
+      } else {
+        setError(result?.error ?? t('competitions.portal.profile.changePassword.errors.failed', 'Failed to change password'))
+      }
+    } catch {
+      setError(t('competitions.portal.profile.changePassword.errors.failed', 'Failed to change password'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  React.useEffect(() => {
+    if (!open) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') handleClose()
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        document.getElementById('change-password-submit')?.click()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+      <div className="relative w-full max-w-md mx-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 shadow-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <Lock className="size-4 text-portal-primary" />
+            <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.changePassword.title', 'Change Password')}</h3>
+          </div>
+          <button type="button" onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <X className="size-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
+          {error && (
+            <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
+          )}
+
+          {/* Current Password */}
+          <div>
+            <label className="block text-xs font-medium text-portal-secondary mb-1">
+              {t('competitions.portal.profile.changePassword.currentPassword', 'Current Password')}
+            </label>
+            <div className="relative">
+              <Input
+                type={showCurrent ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setCurrentPassword(e.target.value); setFieldErrors((p) => ({ ...p, currentPassword: '' })) }}
+                className="w-full pr-9"
+                autoFocus
+              />
+              <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                {showCurrent ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+            {fieldErrors.currentPassword && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{fieldErrors.currentPassword}</p>}
+          </div>
+
+          {/* New Password */}
+          <div>
+            <label className="block text-xs font-medium text-portal-secondary mb-1">
+              {t('competitions.portal.profile.changePassword.newPassword', 'New Password')}
+            </label>
+            <div className="relative">
+              <Input
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setNewPassword(e.target.value); setFieldErrors((p) => ({ ...p, newPassword: '' })) }}
+                className="w-full pr-9"
+              />
+              <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+            {fieldErrors.newPassword && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{fieldErrors.newPassword}</p>}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-xs font-medium text-portal-secondary mb-1">
+              {t('competitions.portal.profile.changePassword.confirmPassword', 'Confirm New Password')}
+            </label>
+            <div className="relative">
+              <Input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setConfirmPassword(e.target.value); setFieldErrors((p) => ({ ...p, confirmPassword: '' })) }}
+                className="w-full pr-9"
+              />
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+            {fieldErrors.confirmPassword && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{fieldErrors.confirmPassword}</p>}
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              {t('common.cancel', 'Cancel')}
+            </button>
+            <button
+              id="change-password-submit"
+              type="submit"
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-portal-primary px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-portal-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {saving
+                ? t('competitions.portal.profile.changePassword.submitting', 'Updating...')
+                : t('competitions.portal.profile.changePassword.submit', 'Update Password')
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 /* ---------- profile content ---------- */
 
 function ProfileContent() {
@@ -185,6 +380,7 @@ function ProfileContent() {
   const [editing, setEditing] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [uploadingAvatar, setUploadingAvatar] = React.useState(false)
+  const [showChangePassword, setShowChangePassword] = React.useState(false)
   const avatarInputRef = React.useRef<HTMLInputElement>(null)
 
   // Form state
@@ -197,6 +393,7 @@ function ProfileContent() {
   const [portfolioUrl, setPortfolioUrl] = React.useState('')
   const [officeHoursUrl, setOfficeHoursUrl] = React.useState('')
   const [socialLinks, setSocialLinks] = React.useState<{ github?: string; linkedin?: string; x?: string; website?: string; discord?: string }>({})
+  const [discordNick, setDiscordNick] = React.useState('')
   const [githubUsername, setGithubUsername] = React.useState('')
 
   // Fetch profile
@@ -222,6 +419,7 @@ function ProfileContent() {
       setPortfolioUrl(data.portfolio_url ?? '')
       setOfficeHoursUrl(data.office_hours_url ?? '')
       setSocialLinks(data.social_links ?? {})
+      setDiscordNick(data.discord_nick ?? data.social_links?.discord ?? '')
       setGithubUsername(data.github_username ?? '')
     }
   }, [data])
@@ -274,7 +472,7 @@ function ProfileContent() {
             skills,
             portfolio_url: portfolioUrl || null,
             office_hours_url: officeHoursUrl || null,
-            social_links: socialLinks,
+            social_links: { ...socialLinks, discord: discordNick || undefined },
             github_username: githubUsername || null,
           }),
         },
@@ -417,7 +615,7 @@ function ProfileContent() {
                   )}
 
                   {/* Social Links */}
-                  {!editing && (socialLinks.github || socialLinks.linkedin || socialLinks.x || socialLinks.website || socialLinks.discord) && (
+                  {!editing && (socialLinks.github || socialLinks.linkedin || socialLinks.x || socialLinks.website || discordNick) && (
                     <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
                       {socialLinks.github && (
                         <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 hover:text-foreground">
@@ -439,10 +637,10 @@ function ProfileContent() {
                           <Globe className="size-4" />
                         </a>
                       )}
-                      {socialLinks.discord && (
+                      {discordNick && (
                         <span className="flex items-center gap-1.5 rounded-lg bg-gray-50 dark:bg-white/5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-slate-400">
                           <MessageCircle className="size-4" />
-                          {socialLinks.discord}
+                          {discordNick}
                         </span>
                       )}
                     </div>
@@ -516,15 +714,21 @@ function ProfileContent() {
                         placeholder={t('competitions.portal.profile.social.website.placeholder', 'https://yourwebsite.com')}
                       />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="size-4 text-portal-secondary shrink-0" />
-                      <Input
-                        value={socialLinks.discord ?? ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSocialLinks(prev => ({ ...prev, discord: e.target.value }))}
-                        placeholder={t('competitions.portal.profile.social.discord.placeholder', 'Discord nick')}
-                      />
-                    </div>
                   </div>
+                </div>
+
+                {/* Discord Nick */}
+                <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 sm:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground">{t('competitions.portal.profile.discord.title', 'Discord')}</h3>
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="size-4 text-portal-secondary shrink-0" />
+                    <Input
+                      value={discordNick}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDiscordNick(e.target.value)}
+                      placeholder={t('competitions.portal.profile.discord.placeholder', 'username#1234')}
+                    />
+                  </div>
+                  <p className="text-xs text-portal-secondary">{t('competitions.portal.profile.discord.hint', 'Your Discord username so teammates and organizers can reach you.')}</p>
                 </div>
 
                 {/* Portfolio & Office Hours */}
@@ -610,9 +814,22 @@ function ProfileContent() {
               </div>
             </div>
 
+            {/* Change Password */}
+            <button
+              type="button"
+              onClick={() => setShowChangePassword(true)}
+              className="w-full flex items-center gap-2 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 px-4 sm:px-5 py-4 text-sm font-medium text-foreground transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <Lock className="size-4 text-portal-primary" />
+              {t('competitions.portal.profile.changePassword.title', 'Change Password')}
+              <ChevronRight className="size-4 text-gray-300 dark:text-slate-600 ml-auto" />
+            </button>
+
           </div>
         </div>
       )}
+
+      <ChangePasswordDialog open={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </div>
   )
 }

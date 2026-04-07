@@ -16,6 +16,14 @@ import {
   MessageCircle, Search, Users, X,
   ExternalLink, Briefcase, UserPlus, Check, SlidersHorizontal,
 } from 'lucide-react'
+function DiscordIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.947 2.418-2.157 2.418z" />
+    </svg>
+  )
+}
+
 import { PortalCompetitionLayout } from '../../../../components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
 import { PortalPageTitle, PortalBadge } from '@/components/portal'
@@ -35,6 +43,7 @@ type Participant = {
   avatar_url: string | null
   portfolio_url: string | null
   office_hours_url: string | null
+  discord_nick: string | null
 }
 
 /* ---------- avatar colors by role ---------- */
@@ -257,6 +266,14 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
             )}
           </div>
 
+          {/* Discord */}
+          {p.discord_nick && (
+            <div className="flex items-center gap-2 text-sm text-portal-secondary">
+              <DiscordIcon className="size-4 shrink-0" />
+              <span>{p.discord_nick}</span>
+            </div>
+          )}
+
           {/* Bio */}
           {p.bio && (
             <p className="whitespace-pre-line text-sm leading-relaxed text-portal-secondary">{p.bio}</p>
@@ -365,73 +382,83 @@ function ParticipantCard({
   const badgeVariant = roleBadgeVariant[p.role] ?? ('default' as const)
   const roleLabel = t(`competitions.portal.participants.role.${p.role}`, p.role)
 
+  const hasMeta = !!(p.organization || p.discord_nick)
+
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-5">
-      {/* Header: Avatar + Name + Email */}
-      <div className="flex items-start gap-3 mb-3">
+    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4 flex flex-col">
+      {/* Header: Avatar + Name + Role */}
+      <div className="flex items-center gap-3">
         <div className="shrink-0">
           {p.avatar_url ? (
-            <img src={p.avatar_url} alt={p.display_name} className="size-11 rounded-full object-cover" />
+            <img src={p.avatar_url} alt={p.display_name} className="size-10 rounded-full object-cover" />
           ) : (
-            <div className={cn('flex size-11 items-center justify-center rounded-full text-sm font-bold', avatarColors)}>
+            <div className={cn('flex size-10 items-center justify-center rounded-full text-sm font-bold', avatarColors)}>
               {initials}
             </div>
           )}
         </div>
-        <div className="min-w-0 flex-1 pt-0.5">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-sm truncate text-foreground">{p.display_name}</h3>
             {p.looking_for_team && (
-              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
                 <Users className="size-2.5" />
                 {t('competitions.portal.participants.lookingForTeamShort', 'LFT')}
               </span>
             )}
           </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-xs text-portal-secondary capitalize">{roleLabel}</span>
+            <span className="text-gray-300 dark:text-slate-600">&middot;</span>
+            <span className={cn(
+              'inline-flex items-center gap-1 text-xs',
+              p.has_team ? 'text-blue-600' : 'text-gray-400 dark:text-slate-500',
+            )}>
+              {p.has_team ? <Check className="size-3" /> : <Users className="size-3" />}
+              {p.has_team
+                ? t('competitions.portal.participants.inTeam', 'In Team')
+                : t('competitions.portal.participants.noTeam', 'No Team')}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Role Badge + Organization */}
-      <div className="flex items-center gap-2 mb-3">
-        <PortalBadge variant={badgeVariant}>{roleLabel}</PortalBadge>
-        {p.organization && (
-          <>
-            <span className="text-gray-300 dark:text-slate-600">&middot;</span>
-            <span className="text-xs text-portal-secondary truncate">{p.organization}</span>
-          </>
-        )}
-      </div>
+      {/* Meta: Org + Discord as a compact grid */}
+      {hasMeta && (
+        <div className="mt-2.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-xs leading-none">
+          {p.organization && (
+            <>
+              <Briefcase className="size-3 text-gray-400 dark:text-slate-500" />
+              <span className="text-portal-secondary truncate">{p.organization}</span>
+            </>
+          )}
+          {p.discord_nick && (
+            <>
+              <DiscordIcon className="size-3 text-gray-400 dark:text-slate-500" />
+              <span className="text-portal-secondary truncate">{p.discord_nick}</span>
+            </>
+          )}
+        </div>
+      )}
 
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-          p.has_team ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600',
-        )}>
-          {p.has_team ? <Check className="size-3" /> : <Users className="size-3" />}
-          {p.has_team
-            ? t('competitions.portal.participants.inTeam', 'In Team')
-            : t('competitions.portal.participants.noTeam', 'No Team')}
-        </span>
-      </div>
-
-      {/* Skills Tags */}
+      {/* Skills */}
       {p.skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {p.skills.slice(0, 4).map((skill) => (
-            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-600 dark:text-slate-400 max-w-[150px] truncate">
+        <div className="flex flex-wrap gap-1 mt-2.5">
+          {p.skills.slice(0, 3).map((skill) => (
+            <span key={skill} className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[10px] text-gray-500 dark:text-slate-400 max-w-[120px] truncate">
               {skill}
             </span>
           ))}
-          {p.skills.length > 4 && (
-            <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[11px] text-gray-500 dark:text-slate-400">
-              +{p.skills.length - 4}
+          {p.skills.length > 3 && (
+            <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-[10px] text-gray-400 dark:text-slate-500">
+              +{p.skills.length - 3}
             </span>
           )}
         </div>
       )}
 
-      {/* Bottom Row */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50 dark:border-white/5">
+      {/* Footer */}
+      <div className="flex items-center justify-between mt-auto pt-3">
         <button
           type="button"
           onClick={onViewProfile}
