@@ -1682,19 +1682,19 @@
         },
         "github_pr_id": {
           "name": "github_pr_id",
-          "type": "int4",
+          "type": "int8",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": true,
           "length": null,
-          "precision": 32,
+          "precision": 64,
           "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "integer"
+          "mappedType": "bigint"
         },
         "github_pr_number": {
           "name": "github_pr_number",
@@ -9542,6 +9542,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "json"
+        },
+        "discord_nick": {
+          "name": "discord_nick",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "name": "competitions_participant_profile",

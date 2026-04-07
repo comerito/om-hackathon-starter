@@ -26,6 +26,7 @@ type ParticipationRow = {
   coc_accepted: boolean
   privacy_policy_accepted: boolean
   looking_for_team: boolean
+  discord_nick: string | null
   organization_id: string
   created_at: string
 }
@@ -65,6 +66,7 @@ export default function ParticipantsListPage() {
   const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const [showBulkInvite, setShowBulkInvite] = React.useState(false)
   const [tab, setTab] = React.useState<'participants' | 'invitations'>('participants')
+  const [invFilterValues, setInvFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
 
   const queryParams = React.useMemo(() => {
@@ -78,6 +80,7 @@ export default function ParticipantsListPage() {
     if (filterValues.competition_id && typeof filterValues.competition_id === 'string') params.competition_id = filterValues.competition_id
     if (filterValues.checked_in === true || filterValues.checked_in === false) params.checked_in = String(filterValues.checked_in)
     if (filterValues.coc_accepted === true || filterValues.coc_accepted === false) params.coc_accepted = String(filterValues.coc_accepted)
+    if (filterValues.has_discord && typeof filterValues.has_discord === 'string') params.has_discord = filterValues.has_discord
     return new URLSearchParams(params).toString()
   }, [page, sorting, filterValues])
 
@@ -138,6 +141,20 @@ export default function ParticipantsListPage() {
     enabled: tab === 'invitations',
   })
 
+  const filteredInvitations = React.useMemo(() => {
+    let items = invitationsData ?? []
+    if (invFilterValues.status && typeof invFilterValues.status === 'string') {
+      items = items.filter(i => i.status === invFilterValues.status)
+    }
+    if (invFilterValues.competition_id && typeof invFilterValues.competition_id === 'string') {
+      items = items.filter(i => i.competition_id === invFilterValues.competition_id)
+    }
+    if (invFilterValues.participation_role && typeof invFilterValues.participation_role === 'string') {
+      items = items.filter(i => i.participation_role === invFilterValues.participation_role)
+    }
+    return items
+  }, [invitationsData, invFilterValues])
+
   const invitationColumns = React.useMemo<ColumnDef<InvitationRow>[]>(() => [
     { accessorKey: 'email', header: 'Email', meta: { priority: 1 } },
     { accessorKey: 'display_name', header: 'Name', meta: { priority: 2 }, cell: ({ getValue }) => getValue() || '—' },
@@ -193,6 +210,15 @@ export default function ParticipantsListPage() {
       header: t('competitions.participants.cocAccepted', 'CoC'),
       meta: { priority: 4 },
       cell: ({ getValue }) => <BooleanIcon value={!!getValue()} />,
+    },
+    {
+      accessorKey: 'discord_nick',
+      header: t('competitions.participants.discord', 'Discord'),
+      meta: { priority: 4 },
+      cell: ({ getValue }) => {
+        const nick = getValue() as string | null
+        return nick || <span className="text-muted-foreground">—</span>
+      },
     },
   ], [t, userNameMap, competitionNameMap])
 
@@ -270,6 +296,15 @@ export default function ParticipantsListPage() {
               },
               { id: 'checked_in', label: t('competitions.participants.filterCheckedIn', 'Checked In'), type: 'checkbox' },
               { id: 'coc_accepted', label: t('competitions.participants.filterCoC', 'CoC Accepted'), type: 'checkbox' },
+              {
+                id: 'has_discord',
+                label: t('competitions.participants.filterDiscord', 'Discord'),
+                type: 'select',
+                options: [
+                  { value: 'true', label: t('competitions.participants.filterDiscordSet', 'Has Discord') },
+                  { value: 'false', label: t('competitions.participants.filterDiscordNotSet', 'No Discord') },
+                ],
+              },
             ]}
             filterValues={filterValues}
             onFiltersApply={(vals: FilterValues) => { setFilterValues(vals); setPage(1) }}
@@ -317,8 +352,40 @@ export default function ParticipantsListPage() {
           <DataTable
             title={t('competitions.participants.invitationsTitle', 'Sent Invitations')}
             columns={invitationColumns}
-            data={invitationsData ?? []}
+            data={filteredInvitations}
             isLoading={invitationsLoading}
+            filters={[
+              {
+                id: 'status',
+                label: t('competitions.participants.filterInvStatus', 'Status'),
+                type: 'select',
+                options: [
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'accepted', label: 'Accepted' },
+                  { value: 'expired', label: 'Expired' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ],
+              },
+              {
+                id: 'competition_id',
+                label: t('competitions.participants.filterInvCompetition', 'Competition'),
+                type: 'select',
+                options: competitionOptions,
+              },
+              {
+                id: 'participation_role',
+                label: t('competitions.participants.filterInvRole', 'Role'),
+                type: 'select',
+                options: [
+                  { value: 'participant', label: 'Participant' },
+                  { value: 'mentor', label: 'Mentor' },
+                  { value: 'judge', label: 'Judge' },
+                ],
+              },
+            ]}
+            filterValues={invFilterValues}
+            onFiltersApply={(vals: FilterValues) => setInvFilterValues(vals)}
+            onFiltersClear={() => setInvFilterValues({})}
             rowActions={(row) => {
               const isPending = row.status === 'pending'
               const isExpired = row.status === 'expired'

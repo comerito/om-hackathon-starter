@@ -65,6 +65,7 @@ export async function GET(req: Request) {
         specialty: profile.specialty,
         skills: profile.skills,
         social_links: profile.socialLinks,
+        discord_nick: profile.discordNick ?? null,
         notification_preferences: profile.notificationPreferences,
         github_username: participation?.githubUsername ?? null,
       } : null,
@@ -107,7 +108,10 @@ export async function PUT(req: Request) {
       if (invalid.length > 0) return NextResponse.json({ error: 'Invalid skills: ' + invalid.join(', ') }, { status: 422 })
       profile.skills = body.skills
     }
-    if (body.social_links !== undefined) profile.socialLinks = body.social_links
+    if (body.social_links !== undefined) {
+      profile.socialLinks = body.social_links
+      profile.discordNick = body.social_links?.discord || null
+    }
     if (body.avatar_url !== undefined) profile.avatarUrl = body.avatar_url
     if (body.portfolio_url !== undefined) profile.portfolioUrl = body.portfolio_url
     if (body.office_hours_url !== undefined) profile.officeHoursUrl = body.office_hours_url
@@ -147,6 +151,7 @@ export async function PUT(req: Request) {
       specialty: profile.specialty,
       skills: profile.skills,
       social_links: profile.socialLinks,
+      discord_nick: profile.discordNick ?? null,
       notification_preferences: profile.notificationPreferences,
       github_username: body.github_username ?? null,
     }})

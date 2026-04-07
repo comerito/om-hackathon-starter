@@ -374,6 +374,9 @@ export class ParticipantProfile {
   @Property({ type: 'jsonb', default: '[]' })
   skills: string[] = []
 
+  @Property({ name: 'discord_nick', type: 'varchar', length: 255, nullable: true })
+  discordNick?: string | null
+
   @Property({ name: 'social_links', type: 'jsonb', default: '{}' })
   socialLinks: { github?: string; linkedin?: string; x?: string; website?: string; discord?: string } = {}
 
