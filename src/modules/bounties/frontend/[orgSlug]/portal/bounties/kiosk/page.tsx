@@ -27,6 +27,169 @@ type LeaderboardData = {
   lastUpdated: string
 }
 
+const PAUSE_MS = 15000
+const SCROLL_MS = 800
+
+function TeamRow({ team, idx }: { team: LeaderboardTeam; idx: number }) {
+  const isLeader = idx === 0
+  const isTop3 = idx < 3
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-4 rounded-lg px-4 flex-shrink-0',
+        isLeader
+          ? 'bg-portal-primary/[0.08] border border-portal-primary/20 py-[1.8vh]'
+          : isTop3
+            ? 'bg-white/[0.03] border border-white/[0.06] py-[1.5vh]'
+            : 'bg-transparent border border-transparent py-[1.2vh]',
+      )}
+    >
+      <div className="w-12 text-center flex-shrink-0">
+        <span className={cn(
+          'font-bold tabular-nums',
+          isLeader ? 'text-portal-primary text-[3vh]'
+            : isTop3 ? 'text-white/60 text-[2.5vh]'
+            : 'text-white/25 text-[2vh]',
+        )}>
+          {String(team.rank).padStart(2, '0')}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className={cn(
+          'font-bold uppercase tracking-wide block truncate',
+          isLeader ? 'text-white text-[2.5vh]'
+            : isTop3 ? 'text-white/90 text-[2.2vh]'
+            : 'text-white/50 text-[2vh]',
+        )}>
+          {team.teamName}
+        </span>
+        <span className="text-[1.2vh] text-white/25 truncate block">
+          {team.members.map(m => `@${m.githubUsername}`).join('  ·  ')}
+        </span>
+      </div>
+      <div className="w-20 text-right flex-shrink-0">
+        <span className={cn(
+          'font-mono tabular-nums',
+          isLeader ? 'text-white/60 text-[2vh]' : 'text-white/30 text-[1.8vh]',
+        )}>
+          {team.members.reduce((s, m) => s + m.prCount, 0)}
+        </span>
+      </div>
+      <div className="w-28 text-right flex-shrink-0">
+        <span className={cn(
+          'font-extrabold tabular-nums',
+          isLeader ? 'text-portal-primary text-[3.5vh]'
+            : isTop3 ? 'text-white text-[3vh]'
+            : 'text-white/40 text-[2.5vh]',
+        )}>
+          {team.totalPoints}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function RankingsTable({ teams }: { teams: LeaderboardTeam[] }) {
+  const viewportRef = React.useRef<HTMLDivElement>(null)
+  const measureRef = React.useRef<HTMLDivElement>(null)
+  const [perPage, setPerPage] = React.useState(0)
+  const [page, setPage] = React.useState(0)
+  const [isScrolling, setIsScrolling] = React.useState(false)
+
+  // Measure how many rows fit once after mount
+  React.useEffect(() => {
+    const viewport = viewportRef.current
+    const probe = measureRef.current
+    if (!viewport || !probe) return
+
+    const frame = requestAnimationFrame(() => {
+      const rowEl = probe.firstElementChild as HTMLElement | null
+      if (!rowEl) return
+      const rh = rowEl.getBoundingClientRect().height
+      if (rh === 0) return
+      const fits = Math.max(1, Math.floor(viewport.clientHeight / rh))
+      setPerPage(fits)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [teams.length])
+
+  const totalPages = perPage > 0 ? Math.ceil(teams.length / perPage) : 1
+  const ready = perPage > 0
+
+  // Auto-advance pages
+  React.useEffect(() => {
+    if (!ready || totalPages <= 1) return
+    const interval = setInterval(() => {
+      setIsScrolling(true)
+      setTimeout(() => {
+        setPage(p => (p + 1) % totalPages)
+        setIsScrolling(false)
+      }, SCROLL_MS)
+    }, PAUSE_MS)
+    return () => clearInterval(interval)
+  }, [ready, totalPages])
+
+  const visibleTeams = ready
+    ? teams.slice(page * perPage, (page + 1) * perPage)
+    : []
+
+  return (
+    <div className="relative flex-1 px-[4vw] pb-[2vh] flex flex-col min-h-0 overflow-hidden">
+      {/* Column headers */}
+      <div className="flex items-center gap-4 mb-[1vh] px-4 flex-shrink-0">
+        <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-12 text-center">Rank</span>
+        <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 flex-1">Team</span>
+        <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-20 text-right">PRs</span>
+        <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-28 text-right">Points</span>
+      </div>
+
+      {/* Viewport — used for measurement */}
+      <div ref={viewportRef} className="flex-1 overflow-hidden min-h-0">
+        {/* Hidden probe for measuring row height (rendered once, invisible after measurement) */}
+        {!ready && (
+          <div ref={measureRef} className="flex flex-col">
+            <TeamRow team={teams[0]} idx={0} />
+          </div>
+        )}
+
+        {/* Visible rows with transition */}
+        {ready && (
+          <div
+            className="flex flex-col transition-all ease-in-out"
+            style={{
+              opacity: isScrolling ? 0 : 1,
+              transform: isScrolling ? 'translateY(20px)' : 'translateY(0)',
+              transitionDuration: `${SCROLL_MS}ms`,
+            }}
+          >
+            {visibleTeams.map((team) => (
+              <TeamRow key={team.teamId} team={team} idx={teams.indexOf(team)} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Page dots */}
+      {ready && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-[0.4vw] pt-[1vh] flex-shrink-0">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'rounded-full transition-all duration-500',
+                i === page
+                  ? 'w-[1.2vw] h-[4px] bg-portal-primary'
+                  : 'w-[4px] h-[4px] bg-white/15',
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function KioskContent() {
   const { selectedId: competitionId } = useCompetitionContext()
   const [clock, setClock] = React.useState(() => new Date())
@@ -144,7 +307,7 @@ function KioskContent() {
   const leader = teams[0] ?? null
 
   return (
-    <div className="min-h-screen bg-portal-dark flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-portal-dark flex flex-col relative overflow-hidden">
       {/* Ambient glow behind the leader */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -258,93 +421,9 @@ function KioskContent() {
         </div>
       )}
 
-      {/* ── Rankings table ── */}
+      {/* ── Rankings table with auto-scroll ── */}
       {teams.length > 0 && (
-        <div className="relative flex-1 px-[4vw] pb-[3vh] overflow-hidden">
-          {/* Column headers */}
-          <div className="flex items-center gap-4 mb-[1.5vh] px-4">
-            <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-12 text-center">Rank</span>
-            <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 flex-1">Team</span>
-            <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-20 text-right">PRs</span>
-            <span className="text-[1.2vh] font-medium uppercase tracking-[0.2em] text-white/25 w-28 text-right">Points</span>
-          </div>
-
-          <div className="space-y-[0.6vh]">
-            {teams.map((team, idx) => {
-              const isLeader = idx === 0
-              const isTop3 = idx < 3
-
-              return (
-                <div
-                  key={team.teamId}
-                  className={cn(
-                    'flex items-center gap-4 rounded-lg px-4 transition-all duration-700',
-                    isLeader
-                      ? 'bg-portal-primary/[0.08] border border-portal-primary/20 py-[1.8vh]'
-                      : isTop3
-                        ? 'bg-white/[0.03] border border-white/[0.06] py-[1.5vh]'
-                        : 'bg-transparent border border-transparent py-[1.2vh]',
-                  )}
-                >
-                  {/* Rank */}
-                  <div className="w-12 text-center flex-shrink-0">
-                    <span
-                      className={cn(
-                        'font-bold tabular-nums',
-                        isLeader ? 'text-portal-primary text-[3vh]'
-                          : isTop3 ? 'text-white/60 text-[2.5vh]'
-                          : 'text-white/25 text-[2vh]',
-                      )}
-                    >
-                      {String(team.rank).padStart(2, '0')}
-                    </span>
-                  </div>
-
-                  {/* Team name + members */}
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className={cn(
-                        'font-bold uppercase tracking-wide block truncate',
-                        isLeader ? 'text-white text-[2.5vh]'
-                          : isTop3 ? 'text-white/90 text-[2.2vh]'
-                          : 'text-white/50 text-[2vh]',
-                      )}
-                    >
-                      {team.teamName}
-                    </span>
-                    <span className="text-[1.2vh] text-white/25 truncate block">
-                      {team.members.map(m => `@${m.githubUsername}`).join('  ·  ')}
-                    </span>
-                  </div>
-
-                  {/* PR count */}
-                  <div className="w-20 text-right flex-shrink-0">
-                    <span className={cn(
-                      'font-mono tabular-nums',
-                      isLeader ? 'text-white/60 text-[2vh]' : 'text-white/30 text-[1.8vh]',
-                    )}>
-                      {team.members.reduce((s, m) => s + m.prCount, 0)}
-                    </span>
-                  </div>
-
-                  {/* Points */}
-                  <div className="w-28 text-right flex-shrink-0">
-                    <span
-                      className={cn(
-                        'font-extrabold tabular-nums',
-                        isLeader ? 'text-portal-primary text-[3.5vh]'
-                          : isTop3 ? 'text-white text-[3vh]'
-                          : 'text-white/40 text-[2.5vh]',
-                      )}
-                    >
-                      {team.totalPoints}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <RankingsTable teams={teams} />
       )}
 
       {/* ── Bottom bar ── */}
