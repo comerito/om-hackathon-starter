@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 @import "react-big-calendar/lib/css/react-big-calendar.css";
 @import "@xyflow/react/dist/style.css";
 
