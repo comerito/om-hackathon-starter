@@ -1299,7 +1299,7 @@ type MyMembershipResponse = {
 function MyTeamContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const { auth } = usePortalContext()
-  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
+  const { selectedId, selected, isLoading: contextLoading } = useCompetitionContext()
   const userId = auth.user?.id
 
   // Fetch membership, team, and members in one call via portal API
@@ -1340,7 +1340,21 @@ function MyTeamContent({ orgSlug }: { orgSlug: string }) {
     )
   }
 
+  const isParticipant = selected?.role === 'participant'
+
   if (!myMembership || !team) {
+    if (!isParticipant) {
+      return (
+        <PortalEmptyState
+          title={t('teams.portal.myTeam.roleRestricted', 'Team features are for participants only')}
+          description={t(
+            'teams.portal.myTeam.roleRestrictedDesc',
+            'As a {{role}}, you can browse teams but cannot create or join one.',
+            { role: selected?.role ?? '' },
+          )}
+        />
+      )
+    }
     return <NoTeamView orgSlug={orgSlug} competitionId={selectedId} userId={userId!} />
   }
 
