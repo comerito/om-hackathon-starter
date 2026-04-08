@@ -24,7 +24,7 @@ function isPublicPortalRoute(pathname: string): boolean {
 
 /** Determine layout variant from the portal route path. */
 function getLayoutVariant(pathname: string): PortalLayoutVariant {
-  if (pathname.includes('/portal/kiosk')) return 'kiosk'
+  if (pathname.includes('/kiosk')) return 'kiosk'
   return 'full'
 }
 
