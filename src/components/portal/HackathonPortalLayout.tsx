@@ -192,7 +192,7 @@ export function HackathonPortalLayout({
       </div>
 
       {/* Main area offset by sidebar width on desktop */}
-      <div className="flex flex-1 flex-col lg:pl-[220px]">
+      <div className="flex flex-1 flex-col lg:pl-[220px] min-w-0">
         <PortalTopBar
           variant={variant === 'minimal' ? 'minimal' : 'full'}
           title={topBarTitle}
@@ -203,7 +203,7 @@ export function HackathonPortalLayout({
           onMenuToggle={() => setMobileMenuOpen(prev => !prev)}
           mobileMenuOpen={mobileMenuOpen}
         />
-        <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 overflow-x-hidden">
+        <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 min-w-0">
           <div className="mx-auto max-w-6xl">
             {children}
           </div>

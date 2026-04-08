@@ -135,7 +135,26 @@ function TrackDetailContent({ trackId }: { trackId: string }) {
           <MarkdownContent
             body={track.description}
             format="markdown"
-            className="prose prose-sm max-w-none text-muted-foreground dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-portal-primary [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+            className={cn(
+              'prose max-w-none dark:prose-invert',
+              'text-muted-foreground',
+              // headings
+              'prose-headings:text-foreground prose-headings:font-bold',
+              'prose-h1:text-xl prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-2 dark:prose-h1:border-white/10',
+              'prose-h2:text-lg prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-1.5 dark:prose-h2:border-white/5',
+              'prose-h3:text-base',
+              // inline
+              'prose-strong:text-foreground prose-a:text-portal-primary prose-a:no-underline hover:prose-a:underline',
+              'prose-code:rounded prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:font-normal prose-code:before:content-none prose-code:after:content-none dark:prose-code:bg-white/10',
+              // tables
+              'prose-table:text-sm',
+              'prose-th:bg-gray-50 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:text-foreground dark:prose-th:bg-white/5',
+              'prose-td:px-3 prose-td:py-2 prose-td:border-t prose-td:border-gray-100 dark:prose-td:border-white/10',
+              // lists
+              'prose-li:marker:text-portal-primary',
+              // spacing
+              '[&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
+            )}
           />
         </div>
       )}

@@ -61,6 +61,7 @@ type Invitation = {
 type Track = {
   id: string
   name: string
+  short_description: string | null
   description: string | null
   color: string
 }
@@ -1017,8 +1018,8 @@ function TeamView({
                             </span>
                           )}
                         </div>
-                        {track.description && (
-                          <p className="text-xs text-portal-secondary mt-0.5 line-clamp-2">{track.description}</p>
+                        {(track.short_description || track.description) && (
+                          <p className="text-xs text-portal-secondary mt-0.5 line-clamp-2">{track.short_description || track.description}</p>
                         )}
                       </div>
                     </button>
@@ -1038,7 +1039,7 @@ function TeamView({
                     </div>
                     <div>
                       <p className="text-sm font-bold text-foreground">{t2.name}</p>
-                      {t2.description && <p className="text-xs text-portal-secondary mt-0.5">{t2.description}</p>}
+                      {(t2.short_description || t2.description) && <p className="text-xs text-portal-secondary mt-0.5">{t2.short_description || t2.description}</p>}
                     </div>
                   </div>
                 ))}
