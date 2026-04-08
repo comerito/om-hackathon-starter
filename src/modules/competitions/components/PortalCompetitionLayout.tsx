@@ -7,7 +7,7 @@ export function PortalCompetitionLayout({ children }: { children: React.ReactNod
   return (
     <CompetitionProvider>
       <CompetitionSelector />
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 min-w-0">
         {children}
       </div>
     </CompetitionProvider>

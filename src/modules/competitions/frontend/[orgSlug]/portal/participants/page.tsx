@@ -387,7 +387,7 @@ function ParticipantCard({
   const hasMeta = !!(p.organization || p.discord_nick)
 
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4 flex flex-col">
+    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-3 sm:p-4 flex flex-col min-w-0">
       {/* Header: Avatar + Name + Role */}
       <div className="flex items-center gap-3">
         <div className="shrink-0">
@@ -460,7 +460,7 @@ function ParticipantCard({
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-auto pt-3">
+      <div className="flex items-center justify-between mt-auto pt-2 sm:pt-3">
         <button
           type="button"
           onClick={onViewProfile}
@@ -594,8 +594,9 @@ function FilterPills({
 }) {
   const t = useT()
   return (
-    <div className="overflow-x-auto">
-      <div className="flex items-center gap-1.5 flex-nowrap">
+    <div className="relative">
+      <div className="overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-1.5 flex-nowrap pr-6">
         {filters.map((f) => (
           <button
             key={f.id}
@@ -639,6 +640,8 @@ function FilterPills({
           </button>
         )}
       </div>
+      </div>
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-slate-900 sm:hidden" />
     </div>
   )
 }
@@ -816,7 +819,7 @@ function ParticipantsContent() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5 min-w-0">
       {inviteTarget && (
         <InviteParticipantModal
           participant={inviteTarget}
@@ -912,7 +915,7 @@ function ParticipantsContent() {
       {/* Cards Grid */}
       {!isLoading && filteredParticipants.length > 0 && (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2.5 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 min-w-0">
             {visibleParticipants.map((p) => (
               <ParticipantCard
                 key={p.customer_user_id}
