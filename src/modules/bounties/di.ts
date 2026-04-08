@@ -1,13 +1,14 @@
 import type { AppContainer } from '@open-mercato/shared/lib/di/container'
 import { asClass } from 'awilix'
-import { createQueue } from '@open-mercato/queue'
+import { createQueue, type Queue } from '@open-mercato/queue'
 import { ClassificationService } from './services/ClassificationService'
 import { GitHubService } from './services/GitHubService'
 import { LeaderboardService } from './services/LeaderboardService'
 import pollGithubHandler from './workers/poll-github'
 import classifyPrHandler from './workers/classify-pr'
 
-let queueStarted = false
+// Use globalThis to survive Next.js HMR — module-level `let` resets on re-evaluation
+const QUEUE_KEY = Symbol.for('bounties-queue-instance')
 
 export function register(container: AppContainer): void {
   container.register({
@@ -17,10 +18,14 @@ export function register(container: AppContainer): void {
   })
 
   // Start the local queue processor for bounties-queue once
-  if (!queueStarted && typeof process !== 'undefined' && process.env.QUEUE_STRATEGY !== 'async') {
-    queueStarted = true
+  const g = globalThis as typeof globalThis & { [QUEUE_KEY]?: Queue }
+  if (!g[QUEUE_KEY] && typeof process !== 'undefined' && process.env.QUEUE_STRATEGY !== 'async') {
+    // Close any stale instance left by a previous HMR cycle (defensive)
+    const prev = g[QUEUE_KEY]
+    if (prev) prev.close().catch(() => {})
 
     const queue = createQueue('bounties-queue', 'local')
+    g[QUEUE_KEY] = queue
     queue.process(async (job, ctx) => {
       const payload = (job as { payload?: Record<string, unknown> }).payload ?? job
       const workerId = (payload as Record<string, unknown>).payload

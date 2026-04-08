@@ -4,7 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole, TeamStatus } from '../../../data/entities'
-import { CompetitionParticipation } from '../../../../competitions/data/entities'
+import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const createTeamSchema = z.object({
@@ -38,6 +38,10 @@ export async function POST(req: Request) {
     } as FilterQuery<CompetitionParticipation>)
     if (!participation) {
       return NextResponse.json({ error: 'Not a participant in this competition' }, { status: 403 })
+    }
+
+    if (participation.role !== ParticipationRole.PARTICIPANT) {
+      return NextResponse.json({ error: 'Only participants can create teams' }, { status: 403 })
     }
 
     // Check user doesn't already have a team in this competition

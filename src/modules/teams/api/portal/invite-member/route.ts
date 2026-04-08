@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamInvitation, InvitationType, InvitationStatus, TeamRole } from '../../../data/entities'
+import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const inviteSchema = z.object({
@@ -47,6 +48,17 @@ export async function POST(req: Request) {
     } as FilterQuery<Team>)
     if (!team) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
+    }
+
+    // Check invitee is a participant (not a judge or mentor)
+    const inviteeParticipation = await em.findOne(CompetitionParticipation, {
+      customerUserId: parsed.invitee_id,
+      competitionId: team.competitionId,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    } as FilterQuery<CompetitionParticipation>)
+    if (!inviteeParticipation || inviteeParticipation.role !== ParticipationRole.PARTICIPANT) {
+      return NextResponse.json({ error: 'Only participants can be invited to teams' }, { status: 403 })
     }
 
     // Check invitee is not already on a team in this competition

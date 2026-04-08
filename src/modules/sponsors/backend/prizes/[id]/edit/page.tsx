@@ -22,6 +22,13 @@ async function loadSponsors(query?: string) {
   return (res?.items ?? []).map((s) => ({ value: s.id, label: s.name }))
 }
 
+async function loadTracks(query?: string) {
+  const params: Record<string, string> = { pageSize: '50' }
+  if (query) params.name = query
+  const res = await fetchCrudList<{ id: string; name: string }>('tracks/tracks', params)
+  return (res?.items ?? []).map((tr) => ({ value: tr.id, label: tr.name }))
+}
+
 export default function EditPrizePage({ params }: { params?: { id?: string } }) {
   const t = useT()
   const id = params?.id
@@ -44,6 +51,7 @@ export default function EditPrizePage({ params }: { params?: { id?: string } }) 
     { id: 'category', label: t('sponsors.fields.category', 'Category'), type: 'select', defaultValue: 'special_award',
       options: [{ value: 'track_placement', label: 'Track Placement' }, { value: 'special_award', label: 'Special Award' },
         { value: 'sponsor_prize', label: 'Sponsor Prize' }, { value: 'peoples_choice', label: "People's Choice" }] },
+    { id: 'track_id', label: t('sponsors.fields.track', 'Track'), type: 'combobox', loadOptions: loadTracks },
     { id: 'sponsor_id', label: t('sponsors.fields.sponsor', 'Sponsor'), type: 'combobox', loadOptions: loadSponsors },
     { id: 'value', label: t('sponsors.fields.value', 'Value'), type: 'text', placeholder: 'e.g., 5000 PLN, API Credits' },
     { id: 'rank', label: t('sponsors.fields.rank', 'Rank'), type: 'number', placeholder: '1st, 2nd, 3rd' },
@@ -51,7 +59,7 @@ export default function EditPrizePage({ params }: { params?: { id?: string } }) 
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'details', title: t('sponsors.groups.prize', 'Prize Details'), column: 1, fields: ['competition_id', 'name', 'description', 'category'] },
+    { id: 'details', title: t('sponsors.groups.prize', 'Prize Details'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'track_id'] },
     { id: 'award', title: t('sponsors.groups.award', 'Award Info'), column: 2, fields: ['sponsor_id', 'value', 'rank', 'order'] },
   ], [t])
 

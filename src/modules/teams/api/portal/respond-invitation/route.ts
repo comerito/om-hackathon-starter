@@ -4,7 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { TeamInvitation, InvitationStatus, TeamMember, TeamRole, InvitationType } from '../../../data/entities'
-import { CompetitionParticipation } from '../../../../competitions/data/entities'
+import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const respondSchema = z.object({
@@ -64,6 +64,16 @@ export async function POST(req: Request) {
       const joiningUserId = invitation.type === InvitationType.INVITE
         ? invitation.inviteeId   // The person who was invited
         : invitation.inviterId   // The person who requested to join
+
+      // Verify the joining user is a participant (not a judge or mentor)
+      const joinerParticipation = await em.findOne(CompetitionParticipation, {
+        customerUserId: joiningUserId,
+        competitionId: invitation.competitionId,
+        deletedAt: null,
+      } as FilterQuery<CompetitionParticipation>)
+      if (!joinerParticipation || joinerParticipation.role !== ParticipationRole.PARTICIPANT) {
+        return NextResponse.json({ error: 'Only participants can join teams' }, { status: 403 })
+      }
 
       // Check they're not already on a team
       const existingMember = await em.findOne(TeamMember, {

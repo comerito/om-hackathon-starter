@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 type SponsorRow = { id: string; name: string; tier: string; logo_url: string; is_visible: boolean; order: number; created_at: string }
-type PrizeRow = { id: string; name: string; category: string; value: string | null; rank: number | null; winning_project_id: string | null; awarded_at: string | null; order: number }
+type PrizeRow = { id: string; name: string; category: string; track_id: string | null; value: string | null; rank: number | null; winning_project_id: string | null; awarded_at: string | null; order: number }
 type TallyEntry = { project_id: string; vote_count: number }
 
 const tierPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -54,6 +54,17 @@ export default function SponsorsDashboard() {
     enabled: tab === 'prizes',
   })
 
+  const { data: tracksData } = useQuery({
+    queryKey: ['tracks-lookup', scopeVersion],
+    queryFn: () => fetchCrudList<{ id: string; name: string }>('tracks/tracks', { pageSize: '100' }),
+    enabled: tab === 'prizes',
+  })
+  const trackMap = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const tr of tracksData?.items ?? []) map.set(tr.id, tr.name)
+    return map
+  }, [tracksData])
+
   const { data: tallyData, isLoading: tallyLoading } = useQuery({
     queryKey: ['vote-tally', scopeVersion],
     queryFn: async () => {
@@ -73,10 +84,11 @@ export default function SponsorsDashboard() {
   const prizeColumns = React.useMemo<ColumnDef<PrizeRow>[]>(() => [
     { accessorKey: 'name', header: t('sponsors.table.name', 'Name'), meta: { priority: 1 } },
     { accessorKey: 'category', header: t('sponsors.table.category', 'Category'), meta: { priority: 2 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={categoryPreset} /> },
+    { accessorKey: 'track_id', header: t('sponsors.table.track', 'Track'), meta: { priority: 3 }, cell: ({ getValue }) => { const id = getValue() as string | null; return id ? (trackMap.get(id) ?? '—') : '—' } },
     { accessorKey: 'value', header: t('sponsors.table.value', 'Value'), meta: { priority: 3 }, cell: ({ getValue }) => getValue() ?? '—' },
     { accessorKey: 'awarded_at', header: t('sponsors.table.awarded', 'Awarded'), meta: { priority: 2 },
       cell: ({ getValue }) => getValue() ? <span className="text-green-600 font-medium">Awarded</span> : <span className="text-muted-foreground">Pending</span> },
-  ], [t])
+  ], [t, trackMap])
 
   const tabs = [
     { key: 'sponsors' as const, label: t('sponsors.tabs.sponsors', 'Sponsors') },
@@ -119,6 +131,7 @@ export default function SponsorsDashboard() {
           columns={prizeColumns} data={prizesData?.items ?? []} isLoading={prizesLoading}
           rowActions={(row) => (
             <RowActions items={[
+              { id: 'edit', label: t('common.edit', 'Edit'), href: `/backend/prizes/${row.id}/edit` },
               { id: 'delete', label: t('common.delete', 'Delete'), destructive: true, onSelect: async () => {
                 if (!await confirm({ title: t('sponsors.confirmDeletePrize', 'Delete this prize?'), variant: 'destructive' })) return
                 await deleteCrud('sponsors/prizes', row.id)

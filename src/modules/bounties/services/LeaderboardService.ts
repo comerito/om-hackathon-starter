@@ -1,5 +1,8 @@
-import type { EntityManager } from '@mikro-orm/postgresql'
+import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { BountyPullRequest, BountyPRStatus } from '../data/entities'
+import { CompetitionParticipation } from '../../competitions/data/entities'
+import { Team } from '../../teams/data/entities'
+import { CustomerUser } from '@open-mercato/core/modules/customer_accounts/data/entities'
 
 interface MemberScore {
   participantId: string
@@ -36,31 +39,39 @@ export class LeaderboardService {
     const participantIds = [...new Set(approvedPRs.map(pr => pr.participantId).filter(Boolean))] as string[]
     const teamIds = [...new Set(approvedPRs.map(pr => pr.teamId).filter(Boolean))] as string[]
 
-    // Batch resolve participant names + github usernames
+    // Batch resolve participant names + github usernames via ORM
     const participantMap = new Map<string, { name: string; githubUsername: string }>()
     if (participantIds.length > 0) {
-      const participants = await em.getConnection().execute(
-        `SELECT cp.id, cu.first_name, cu.last_name, cp.github_username
-         FROM competitions_participation cp
-         JOIN customer_accounts_user cu ON cu.id = cp.customer_user_id
-         WHERE cp.id = ANY(?)`,
-        [participantIds]
-      )
-      for (const p of participants) {
+      const participations = await em.find(CompetitionParticipation, {
+        id: { $in: participantIds },
+      } as FilterQuery<CompetitionParticipation>)
+
+      // Resolve display names from customer users
+      const customerUserIds = [...new Set(participations.map(p => p.customerUserId).filter(Boolean))]
+      const customerUserMap = new Map<string, string>()
+      if (customerUserIds.length > 0) {
+        const users = await em.find(CustomerUser, {
+          id: { $in: customerUserIds },
+        } as FilterQuery<CustomerUser>)
+        for (const u of users) {
+          customerUserMap.set(u.id, u.displayName)
+        }
+      }
+
+      for (const p of participations) {
         participantMap.set(p.id, {
-          name: [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unknown',
-          githubUsername: p.github_username ?? '',
+          name: customerUserMap.get(p.customerUserId) || 'Unknown',
+          githubUsername: p.githubUsername ?? '',
         })
       }
     }
 
-    // Batch resolve team names
+    // Batch resolve team names via ORM
     const teamMap = new Map<string, string>()
     if (teamIds.length > 0) {
-      const teams = await em.getConnection().execute(
-        `SELECT id, name FROM teams_team WHERE id = ANY(?)`,
-        [teamIds]
-      )
+      const teams = await em.find(Team, {
+        id: { $in: teamIds },
+      } as FilterQuery<Team>)
       for (const t of teams) {
         teamMap.set(t.id, t.name)
       }

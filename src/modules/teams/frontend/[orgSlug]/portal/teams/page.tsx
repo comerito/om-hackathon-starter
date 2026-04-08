@@ -56,11 +56,13 @@ function TeamsTab({
   pendingTeamIds,
   onRequestJoin,
   myMembership,
+  isParticipant,
 }: {
   competitionId: string
   pendingTeamIds: Set<string>
   onRequestJoin: (teamId: string) => Promise<void>
   myMembership: TeamMembership
+  isParticipant: boolean
 }) {
   const t = useT()
   const [search, setSearch] = React.useState('')
@@ -105,6 +107,7 @@ function TeamsTab({
       }
       return null
     }
+    if (!isParticipant) return null
     if (hasPending) {
       return (
         <span className="text-xs text-muted-foreground italic">
@@ -222,7 +225,7 @@ function TeamsTab({
 
 /* ========== PeopleTab ========== */
 
-function PeopleTab({ competitionId, myMembership }: { competitionId: string; myMembership: TeamMembership }) {
+function PeopleTab({ competitionId, myMembership, isParticipant }: { competitionId: string; myMembership: TeamMembership; isParticipant: boolean }) {
   const t = useT()
   const queryClient = useQueryClient()
   const [invitingId, setInvitingId] = React.useState<string | null>(null)
@@ -312,7 +315,7 @@ function PeopleTab({ competitionId, myMembership }: { competitionId: string; myM
                 ))}
               </div>
             )}
-            {isOwner && (
+            {isOwner && isParticipant && (
               <Button
                 size="sm"
                 variant="outline"
@@ -338,9 +341,10 @@ function TeamsContent() {
   const t = useT()
   const queryClient = useQueryClient()
   const { auth } = usePortalContext()
-  const { selectedId, isLoading: contextLoading } = useCompetitionContext()
+  const { selectedId, selected, isLoading: contextLoading } = useCompetitionContext()
   const [tab, setTab] = React.useState<'teams' | 'people'>('teams')
   const userId = auth.user?.id
+  const isParticipant = selected?.role === 'participant'
 
   // Fetch my team membership to determine if I'm an owner
   const { data: myMemberData } = useQuery({
@@ -452,9 +456,10 @@ function TeamsContent() {
           pendingTeamIds={pendingTeamIds}
           onRequestJoin={handleRequestJoin}
           myMembership={myMembership}
+          isParticipant={isParticipant}
         />
       ) : (
-        <PeopleTab competitionId={selectedId} myMembership={myMembership} />
+        <PeopleTab competitionId={selectedId} myMembership={myMembership} isParticipant={isParticipant} />
       )}
     </>
   )
