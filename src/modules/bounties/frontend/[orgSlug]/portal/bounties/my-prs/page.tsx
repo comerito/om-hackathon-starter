@@ -2,14 +2,14 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { PortalCompetitionLayout } from '../../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../../competitions/components/CompetitionContext'
 import { PortalPageTitle, SectionLabel, PortalBadge, CompetitionCountdown } from '@/components/portal'
-import { GitPullRequest, Trophy, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react'
+import { GitPullRequest, Trophy, CheckCircle, ExternalLink, AlertTriangle, Plus, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 
 type BountyPR = {
@@ -87,6 +87,7 @@ export default function PortalMyPRsPage({ params }: { params: { orgSlug: string 
 
 function MyPRsContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
+  const queryClient = useQueryClient()
   const { selectedId } = useCompetitionContext()
 
   // Check if the user's team is on the bounty track via existing APIs
@@ -169,22 +170,8 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
         rightElement={<CompetitionCountdown />}
       />
 
-      {/* GitHub identity */}
-      {githubUsername && (
-        <div className="rounded-xl border border-portal-primary/20 bg-portal-primary/5 p-4 sm:p-5 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-portal-primary/10">
-            <GitPullRequest className="size-5 text-portal-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              {t('bounties.portal.myPrs.tracking', 'Tracking PRs for')} <span className="font-bold text-portal-primary">@{githubUsername}</span>
-            </p>
-            <p className="text-xs text-portal-secondary">
-              {t('bounties.portal.myPrs.trackingHint', 'PRs with the bounty-hunting label will appear here automatically.')}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Submit PR form */}
+      <SubmitPRForm competitionId={selectedId!} onSubmitted={() => queryClient.invalidateQueries({ queryKey: ['portal-bounty-my-prs'] })} />
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
@@ -289,22 +276,115 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
                 {t('bounties.portal.myPrs.emptyTitle', 'No pull requests yet')}
               </h3>
               <p className="text-sm text-portal-secondary max-w-md mx-auto">
-                {githubUsername
-                  ? t('bounties.portal.myPrs.emptyWithGithub', 'Submit a pull request with the "bounty-hunting" label to the Open Mercato repo to get started!')
-                  : t('bounties.portal.myPrs.emptyNoGithub', 'Set your GitHub username in your profile first, then submit PRs with the "bounty-hunting" label.')}
+                {t('bounties.portal.myPrs.emptyDesc', 'Open a pull request on GitHub, then use the "Submit a Pull Request" button above to register it for bounty evaluation.')}
               </p>
-              {!githubUsername && (
-                <Link
-                  href={`/${orgSlug}/portal/profile`}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-portal-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-portal-primary/90 transition-colors"
-                >
-                  {t('bounties.portal.myPrs.setGithub', 'Set GitHub Username')}
-                </Link>
-              )}
             </div>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function SubmitPRForm({ competitionId, onSubmitted }: { competitionId: string; onSubmitted: () => void }) {
+  const t = useT()
+  const [prUrl, setPrUrl] = React.useState('')
+  const [showForm, setShowForm] = React.useState(false)
+
+  const mutation = useMutation({
+    mutationFn: async (input: string) => {
+      const res = await fetch('/api/bounties/portal/submit-pr', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pr_url: input, competition_id: competitionId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to submit PR')
+      return data as { ok: boolean; pr: { id: string; github_pr_number: number; title: string } }
+    },
+    onSuccess: () => {
+      setPrUrl('')
+      setShowForm(false)
+      onSubmitted()
+    },
+  })
+
+  if (!showForm) {
+    return (
+      <button
+        onClick={() => { setShowForm(true); mutation.reset() }}
+        className="w-full rounded-xl border-2 border-dashed border-portal-primary/30 bg-portal-primary/5 p-4 sm:p-5 flex items-center justify-center gap-2 text-sm font-semibold text-portal-primary hover:bg-portal-primary/10 hover:border-portal-primary/50 transition-colors"
+      >
+        <Plus className="size-4" />
+        {t('bounties.portal.myPrs.submitPR', 'Submit a Pull Request')}
+      </button>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-portal-primary/20 bg-white dark:bg-white/5 p-4 sm:p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <GitPullRequest className="size-4 text-portal-primary" />
+          <h3 className="text-sm font-semibold text-foreground">
+            {t('bounties.portal.myPrs.submitTitle', 'Submit PR for Bounty')}
+          </h3>
+        </div>
+        <button onClick={() => { setShowForm(false); mutation.reset() }} className="text-portal-secondary hover:text-foreground transition-colors">
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <p className="text-xs text-portal-secondary">
+        {t('bounties.portal.myPrs.submitHint', 'Paste a GitHub PR URL or enter a PR number. The PR will be automatically classified by our AI.')}
+      </p>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (prUrl.trim() && !mutation.isPending) mutation.mutate(prUrl.trim())
+        }}
+        className="flex gap-2"
+      >
+        <input
+          type="text"
+          value={prUrl}
+          onChange={(e) => setPrUrl(e.target.value)}
+          placeholder="https://github.com/owner/repo/pull/123"
+          disabled={mutation.isPending}
+          className="flex-1 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-portal-secondary/50 focus:outline-none focus:ring-2 focus:ring-portal-primary/30 focus:border-portal-primary disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={!prUrl.trim() || mutation.isPending}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-portal-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-portal-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {mutation.isPending ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              {t('bounties.portal.myPrs.submitting', 'Submitting...')}
+            </>
+          ) : (
+            t('bounties.portal.myPrs.submit', 'Submit')
+          )}
+        </button>
+      </form>
+
+      {mutation.isError && (
+        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 flex items-start gap-2">
+          <AlertTriangle className="size-4 text-red-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-red-700 dark:text-red-400">{mutation.error.message}</p>
+        </div>
+      )}
+
+      {mutation.isSuccess && (
+        <div className="rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 p-3 flex items-start gap-2">
+          <CheckCircle className="size-4 text-green-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-green-700 dark:text-green-400">
+            {t('bounties.portal.myPrs.submitted', 'PR submitted successfully! It will be classified shortly.')}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

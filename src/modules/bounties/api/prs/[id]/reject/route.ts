@@ -3,7 +3,6 @@ import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog } from '../../../../data/entities'
-import { GitHubService } from '../../../../services/GitHubService'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const rejectSchema = z.object({
@@ -55,14 +54,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     em.persist([pr, activity])
     await em.flush()
-
-    try {
-      const github = new GitHubService()
-      await github.addLabel(pr.githubPrNumber, github.rejectedLabel)
-      await github.removeLabel(pr.githubPrNumber, github.approvedLabel)
-    } catch {
-      // Best-effort label sync
-    }
 
     await eventBus.emit('bounties.pull_request.rejected', {
       pullRequestId: pr.id,

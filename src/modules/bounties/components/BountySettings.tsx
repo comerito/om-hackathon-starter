@@ -12,7 +12,6 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 type CompetitionOption = { id: string; name: string }
 type TrackOption = { id: string; name: string; color: string; competition_id: string }
 type Mappings = Record<string, string>
-type ScheduledJobRow = { id: string; name: string; isEnabled: boolean; scheduleValue: string; lastRunAt: string | null; nextRunAt: string | null }
 
 export default function BountySettings() {
   const t = useT()
@@ -21,7 +20,6 @@ export default function BountySettings() {
   const [addCompetitionId, setAddCompetitionId] = React.useState('')
   const [addTrackId, setAddTrackId] = React.useState('')
   const [saving, setSaving] = React.useState(false)
-  const [creatingSchedule, setCreatingSchedule] = React.useState(false)
 
   // Load config
   const { data: config, isLoading: configLoading } = useQuery({
@@ -49,80 +47,6 @@ export default function BountySettings() {
       return res?.items ?? []
     },
   })
-
-  // Load scheduler jobs to find bounty poll job
-  const { data: pollJob, isLoading: pollJobLoading, refetch: refetchPollJob } = useQuery({
-    queryKey: ['bounty-poll-job', scopeVersion],
-    queryFn: async () => {
-      const res = await fetchCrudList<ScheduledJobRow>('scheduler/jobs', {
-        pageSize: '100',
-        sourceModule: 'bounties',
-      })
-      return (res?.items ?? []).find(j => j.name.includes('GitHub PR Poll')) ?? null
-    },
-  })
-
-  const handleCreateSchedule = async () => {
-    setCreatingSchedule(true)
-    try {
-      const { ok } = await apiCall('/api/scheduler/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'Bounty Hunting — GitHub PR Poll',
-          description: 'Polls GitHub API every minute for new PRs with the bounty-hunting label.',
-          scopeType: 'organization',
-          scheduleType: 'cron',
-          scheduleValue: '*/1 * * * *',
-          timezone: 'UTC',
-          targetType: 'queue',
-          targetQueue: 'bounties-queue',
-          targetPayload: { workerId: 'poll-github', data: {} },
-          isEnabled: false,
-          sourceType: 'module',
-          sourceModule: 'bounties',
-        }),
-      })
-      if (ok) {
-        flash(t('bounties.settings.scheduleCreated', 'GitHub polling schedule created. Enable it when ready.'), 'success')
-        refetchPollJob()
-      } else {
-        flash('Failed to create schedule', 'error')
-      }
-    } catch (err) {
-      flash(err instanceof Error ? err.message : 'Failed to create schedule', 'error')
-    } finally {
-      setCreatingSchedule(false)
-    }
-  }
-
-  const handleToggleSchedule = async () => {
-    if (!pollJob) return
-    setSaving(true)
-    try {
-      const { ok } = await apiCall(`/api/scheduler/jobs`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: pollJob.id,
-          isEnabled: !pollJob.isEnabled,
-        }),
-      })
-      if (ok) {
-        flash(
-          pollJob.isEnabled
-            ? t('bounties.settings.schedulePaused', 'GitHub polling paused')
-            : t('bounties.settings.scheduleEnabled', 'GitHub polling enabled'),
-          'success'
-        )
-        refetchPollJob()
-      }
-    } catch (err) {
-      flash(err instanceof Error ? err.message : 'Failed to update schedule', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const mappings = config ?? {}
 
@@ -182,7 +106,7 @@ export default function BountySettings() {
     <div className="max-w-3xl">
       <h2 className="text-xl font-bold mb-1">{t('bounties.settings.heading', 'Bounty Hunting Settings')}</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('bounties.settings.description', 'Configure which track per competition is used for bounty hunting. Participants on the assigned track will see their bounty PRs and the leaderboard in the portal.')}
+        {t('bounties.settings.description', 'Configure which track per competition is used for bounty hunting. Participants on the assigned track can submit PRs through the portal for classification and judging.')}
       </p>
 
       {/* Existing mappings table */}
@@ -271,62 +195,6 @@ export default function BountySettings() {
           </div>
         </div>
       )}
-      {/* GitHub Polling Schedule */}
-      <div className="mt-8">
-        <h3 className="text-lg font-bold mb-1">{t('bounties.settings.pollingHeading', 'GitHub Polling')}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t('bounties.settings.pollingDescription', 'The polling schedule checks GitHub every minute for new PRs with the bounty-hunting label. Create the schedule and enable it when the event starts.')}
-        </p>
-
-        <div className="rounded-lg border bg-background p-5">
-          {pollJobLoading ? (
-            <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>
-          ) : pollJob ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`inline-flex size-2 rounded-full ${pollJob.isEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span className="text-sm font-medium">
-                    {pollJob.isEnabled
-                      ? t('bounties.settings.pollingActive', 'Polling active')
-                      : t('bounties.settings.pollingPaused', 'Polling paused')}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('bounties.settings.schedule', 'Schedule')}: {pollJob.scheduleValue}
-                  {pollJob.lastRunAt && (
-                    <> · {t('bounties.settings.lastRun', 'Last run')}: {new Date(pollJob.lastRunAt).toLocaleTimeString()}</>
-                  )}
-                </p>
-              </div>
-              <Button
-                variant={pollJob.isEnabled ? 'outline' : 'default'}
-                size="sm"
-                onClick={handleToggleSchedule}
-                disabled={saving}
-              >
-                {pollJob.isEnabled
-                  ? t('bounties.settings.pausePolling', 'Pause')
-                  : t('bounties.settings.enablePolling', 'Enable')}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{t('bounties.settings.noSchedule', 'No polling schedule configured')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('bounties.settings.noScheduleHint', 'Create a schedule to automatically detect new bounty hunting PRs from GitHub.')}
-                </p>
-              </div>
-              <Button size="sm" onClick={handleCreateSchedule} disabled={creatingSchedule}>
-                {creatingSchedule
-                  ? t('common.creating', 'Creating...')
-                  : t('bounties.settings.createSchedule', 'Create Poll Schedule')}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

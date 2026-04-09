@@ -39,6 +39,8 @@ export const BountyActivityType = {
   POINTS_REVOKED: 'points_revoked',
   CLASSIFICATION_OVERRIDDEN: 'classification_overridden',
   MANUAL_REFRESH: 'manual_refresh',
+  PR_SPLIT_DETECTED: 'pr_split_detected',
+  PR_SPLIT_UNGROUPED: 'pr_split_ungrouped',
 } as const
 export type BountyActivityType = (typeof BountyActivityType)[keyof typeof BountyActivityType]
 
@@ -134,6 +136,14 @@ export class BountyPullRequest {
 
   @Property({ name: 'duplicate_similarity', type: 'float', nullable: true })
   duplicateSimilarity?: number | null
+
+  // Split detection
+  @Index()
+  @Property({ name: 'split_group_id', type: 'uuid', nullable: true })
+  splitGroupId?: string | null
+
+  @Property({ name: 'is_split_child', type: 'boolean', default: false })
+  isSplitChild: boolean = false
 
   // Timestamps
   @Property({ name: 'github_created_at', type: 'timestamptz' })

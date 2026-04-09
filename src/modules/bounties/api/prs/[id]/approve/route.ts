@@ -3,7 +3,6 @@ import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog, BOUNTY_POINTS } from '../../../../data/entities'
 import type { BountyClassification } from '../../../../data/entities'
-import { GitHubService } from '../../../../services/GitHubService'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -34,7 +33,7 @@ export async function PATCH(_request: Request, { params }: { params: Promise<{ i
     }
 
     pr.status = BountyPRStatus.APPROVED
-    if (!pr.isDuplicate) {
+    if (!pr.isDuplicate && !pr.isSplitChild) {
       const classifications: BountyClassification[] = pr.pointsOverride ?? pr.classifications ?? []
       pr.totalPoints = classifications.reduce((sum, c) => sum + c.points, 0)
     }
@@ -51,15 +50,6 @@ export async function PATCH(_request: Request, { params }: { params: Promise<{ i
 
     em.persist([pr, activity])
     await em.flush()
-
-    // Add label on GitHub (best effort)
-    try {
-      const github = new GitHubService()
-      await github.addLabel(pr.githubPrNumber, github.approvedLabel)
-      await github.removeLabel(pr.githubPrNumber, github.rejectedLabel)
-    } catch {
-      // Non-blocking: label sync is best-effort
-    }
 
     await eventBus.emit('bounties.pull_request.approved', {
       pullRequestId: pr.id,

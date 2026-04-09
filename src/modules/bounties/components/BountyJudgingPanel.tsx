@@ -32,6 +32,8 @@ type BountyPRRow = {
   duplicate_marked_by: string | null
   github_created_at: string
   created_at: string
+  split_group_id?: string | null
+  is_split_child?: boolean
   _participant?: { name: string | null; github_username: string | null }
   _team?: { name: string | null }
 }
@@ -81,17 +83,6 @@ export default function BountyJudgingPanel() {
     () => data?.items?.find(pr => pr.id === selectedPRId) ?? null,
     [data, selectedPRId]
   )
-
-  const handleManualPoll = React.useCallback(async () => {
-    try {
-      // We need competition_id — for now use a placeholder approach
-      await apiCall('/api/bounties/poll', { method: 'POST', body: JSON.stringify({ competition_id: 'current' }) })
-      flash(t('bounties.flash.pollTriggered', 'GitHub poll triggered'), 'success')
-      queryClient.invalidateQueries({ queryKey: ['bounty-prs'] })
-    } catch (err) {
-      flash(err instanceof Error ? err.message : 'Failed to trigger poll', 'error')
-    }
-  }, [t, queryClient])
 
   const handleApprove = React.useCallback(async (id: string) => {
     try {
@@ -163,7 +154,12 @@ export default function BountyJudgingPanel() {
       accessorKey: 'total_points',
       header: t('bounties.table.points', 'Points'),
       meta: { priority: 1 },
-      cell: ({ getValue }) => <span className="font-semibold">{Number(getValue())}</span>,
+      cell: ({ row, getValue }) => (
+        <span className="font-semibold inline-flex items-center gap-1">
+          {Number(getValue())}
+          {row.original.is_split_child && <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1 rounded" title="Split child — points awarded to primary PR">SPLIT</span>}
+        </span>
+      ),
     },
   ], [t])
 
@@ -192,11 +188,6 @@ export default function BountyJudgingPanel() {
             {tab === 'all' ? t('bounties.filter.all', 'All') : statusPreset[tab]?.label ?? tab}
           </Button>
         ))}
-        <div className="ml-auto">
-          <Button variant="outline" size="sm" onClick={handleManualPoll}>
-            {t('bounties.actions.refresh', 'Refresh from GitHub')}
-          </Button>
-        </div>
       </div>
 
       {/* Main layout: table + detail panel */}
