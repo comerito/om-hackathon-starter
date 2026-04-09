@@ -50,6 +50,7 @@ type Invitation = {
   id: string
   team_id: string
   inviter_id: string
+  inviter_name?: string | null
   invitee_id: string
   type: string
   status: string
@@ -1065,7 +1066,7 @@ function TeamView({
                     {teamRequests.map((inv) => (
                       <div key={inv.id} className="py-3 flex items-center justify-between">
                         <div className="text-sm">
-                          <span className="font-semibold">{resolveUser(inv.inviter_id)}</span>
+                          <span className="font-semibold">{inv.inviter_name ?? resolveUser(inv.inviter_id)}</span>
                           {' '}
                           {t('teams.portal.myTeam.wantsToJoin', 'wants to join')}
                           {inv.message && (
