@@ -178,7 +178,7 @@ function ProfileModal({ participant: p, onClose, myTeamId, onInvite, invitingId 
   const t = useT()
   const initials = p.display_name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
   const avatarColors = avatarColorsByRole[p.role] ?? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-slate-300'
-  const canInvite = !p.has_team && myTeamId
+  const canInvite = !p.has_team && p.role === 'participant' && myTeamId
   const roleLabel = t(`competitions.portal.participants.role.${p.role}`, p.role)
 
   React.useEffect(() => {
@@ -921,7 +921,7 @@ function ParticipantsContent() {
                 key={p.customer_user_id}
                 p={p}
                 onViewProfile={() => setSelectedParticipant(p)}
-                canInvite={Boolean(isTeamOwner && myTeamId && !p.has_team && p.customer_user_id !== currentUserId)}
+                canInvite={Boolean(isTeamOwner && myTeamId && !p.has_team && p.role === 'participant' && p.customer_user_id !== currentUserId)}
                 onMessage={() => {
                   const slug = window.location.pathname.match(/^\/([^/]+)\/portal/)?.[1] ?? ''
                   window.location.href = `/${slug}/portal/chat?recipient=${p.customer_user_id}`
