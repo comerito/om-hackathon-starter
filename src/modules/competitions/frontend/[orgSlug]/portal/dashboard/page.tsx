@@ -314,7 +314,7 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
   // Team info
   const team = teamData?.team
   const members = teamData?.members ?? []
-  const maxTeamSize = 4 // Default; could come from competition settings
+  const maxTeamSize = selected?.max_team_size ?? 5
 
   return (
     <div className="space-y-6">

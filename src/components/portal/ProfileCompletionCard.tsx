@@ -25,6 +25,7 @@ type ProfileData = {
   specialty: string | null
   skills: string[]
   social_links: { github?: string; discord?: string; [key: string]: string | undefined }
+  github_username?: string | null
 }
 
 type RequiredItem = {
@@ -72,7 +73,7 @@ export function ProfileCompletionCard({ profileLink, onAction }: { profileLink: 
       key: 'github',
       label: t('competitions.portal.profileCompletion.github', 'Add your GitHub username'),
       icon: Github,
-      check: (p) => !!p.social_links?.github?.trim(),
+      check: (p) => !!p.github_username?.trim() || !!p.social_links?.github?.trim(),
     },
     {
       key: 'discord',
