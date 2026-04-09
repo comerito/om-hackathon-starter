@@ -103,7 +103,7 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
   const { data: bountyConfig } = useQuery<ConfigData>({
     queryKey: ['portal-bounty-config'],
     queryFn: async () => {
-      const { ok, result } = await apiCall<ConfigData>('/api/bounties/config')
+      const { ok, result } = await apiCall<ConfigData>('/api/bounties/portal/config')
       return ok && result ? result : { ok: false, mappings: {} }
     },
   })
