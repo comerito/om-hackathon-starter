@@ -132,7 +132,7 @@ export default function EditProjectPage({ params }: { params?: { id?: string } }
           if (screenshotIdList.length > 0 || attachmentIdList.length > 0) {
             try {
               const res = await apiCall(`/api/attachments/attachments?entityId=projects:project&recordId=${item.id}`)
-              const attItems: Array<{ id: string; fileName: string; mimeType: string | null; fileSize: number; createdAt: string; tags?: string[] }> = res?.items ?? []
+              const attItems: Array<{ id: string; fileName: string; mimeType: string | null; fileSize: number; createdAt: string; tags?: string[] }> = (res as Record<string, unknown> & { items?: Array<{ id: string; fileName: string; mimeType: string | null; fileSize: number; createdAt: string; tags?: string[] }> })?.items ?? []
               const ssSet = new Set(screenshotIdList)
               const atSet = new Set(attachmentIdList)
               if (!cancelled) {
