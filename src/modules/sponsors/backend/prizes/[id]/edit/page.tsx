@@ -2,8 +2,9 @@
 import * as React from 'react'
 
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
+import { CrudForm, type CrudField, type CrudFormGroup, type CrudCustomFieldRenderProps } from '@open-mercato/ui/backend/CrudForm'
 import { updateCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+import { ComboboxInput } from '@open-mercato/ui/backend/inputs/ComboboxInput'
 import { LoadingMessage, ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useQuery } from '@tanstack/react-query'
@@ -22,11 +23,25 @@ async function loadSponsors(query?: string) {
   return (res?.items ?? []).map((s) => ({ value: s.id, label: s.name }))
 }
 
-async function loadTracks(query?: string) {
-  const params: Record<string, string> = { pageSize: '50' }
+async function loadTracks(competitionId: string, query?: string) {
+  const params: Record<string, string> = { pageSize: '100', competition_id: competitionId }
   if (query) params.name = query
   const res = await fetchCrudList<{ id: string; name: string }>('tracks/tracks', params)
   return (res?.items ?? []).map((tr) => ({ value: tr.id, label: tr.name }))
+}
+
+function TrackField(props: CrudCustomFieldRenderProps) {
+  const competitionId = props.values?.competition_id as string | undefined
+  return (
+    <ComboboxInput
+      value={(props.value as string) ?? ''}
+      onChange={(v) => props.setValue(v)}
+      placeholder="Type to search..."
+      disabled={props.disabled || !competitionId}
+      autoFocus={props.autoFocus}
+      loadSuggestions={competitionId ? (q) => loadTracks(competitionId, q) : undefined}
+    />
+  )
 }
 
 export default function EditPrizePage({ params }: { params?: { id?: string } }) {
@@ -51,7 +66,7 @@ export default function EditPrizePage({ params }: { params?: { id?: string } }) 
     { id: 'category', label: t('sponsors.fields.category', 'Category'), type: 'select', defaultValue: 'special_award',
       options: [{ value: 'track_placement', label: 'Track Placement' }, { value: 'special_award', label: 'Special Award' },
         { value: 'sponsor_prize', label: 'Sponsor Prize' }, { value: 'peoples_choice', label: "People's Choice" }] },
-    { id: 'track_id', label: t('sponsors.fields.track', 'Track'), type: 'combobox', loadOptions: loadTracks },
+    { id: 'track_id', label: t('sponsors.fields.track', 'Track'), type: 'custom', component: TrackField },
     { id: 'sponsor_id', label: t('sponsors.fields.sponsor', 'Sponsor'), type: 'combobox', loadOptions: loadSponsors },
     { id: 'value', label: t('sponsors.fields.value', 'Value'), type: 'text', placeholder: 'e.g., 5000 PLN, API Credits' },
     { id: 'rank', label: t('sponsors.fields.rank', 'Rank'), type: 'number', placeholder: '1st, 2nd, 3rd' },

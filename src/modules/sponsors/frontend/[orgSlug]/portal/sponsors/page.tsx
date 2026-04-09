@@ -11,7 +11,7 @@ import { Trophy, Medal, Award, Star } from 'lucide-react'
 import { GradientCard, PortalBadge, SectionLabel } from '@/components/portal'
 
 type SponsorItem = { id: string; name: string; tier: string; logo_url: string; website_url: string | null; description: string | null; challenge_title: string | null; challenge_description: string | null }
-type PrizeItem = { id: string; name: string; description: string | null; category: string; value: string | null; rank: number | null; sponsor_id: string | null; winning_project_id: string | null; awarded_at: string | null }
+type PrizeItem = { id: string; name: string; description: string | null; category: string; value: string | null; rank: number | null; sponsor_id: string | null; track_id: string | null; track_name: string | null; winning_project_id: string | null; awarded_at: string | null }
 
 const tierOrder: Record<string, number> = { title: 0, gold: 1, silver: 2, partner: 3, in_kind: 4 }
 const tierBadgeVariants: Record<string, 'primary' | 'warning' | 'muted' | 'info'> = {
@@ -132,43 +132,70 @@ function SponsorsContent() {
         </div>
       )}
 
-      {/* Prizes Section */}
-      {prizes.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">{t('sponsors.portal.prizes.title', 'Prizes')}</h2>
-            <SectionLabel>{t('sponsors.portal.prizes.label', 'Victory Rewards')}</SectionLabel>
-          </div>
-          <div className="space-y-3">
-            {prizes.map((prize, i) => {
-              const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
-              const iconColors = ['text-yellow-500 dark:text-yellow-400', 'text-blue-500 dark:text-blue-400', 'text-amber-600 dark:text-amber-400', 'text-purple-500 dark:text-purple-400']
-              const iconBgColors = ['bg-yellow-50 dark:bg-yellow-500/10', 'bg-blue-50 dark:bg-blue-500/10', 'bg-amber-50 dark:bg-amber-500/10', 'bg-purple-50 dark:bg-purple-500/10']
-              const colorIdx = Math.min(i, iconColors.length - 1)
+      {/* Prizes Section — grouped by track */}
+      {prizes.length > 0 && (() => {
+        // Group prizes: keyed by track_id (null → 'general')
+        const groups: { key: string; label: string | null; items: PrizeItem[] }[] = []
+        const byTrack = new Map<string, PrizeItem[]>()
+        for (const p of prizes) {
+          const key = p.track_id ?? '__general__'
+          if (!byTrack.has(key)) byTrack.set(key, [])
+          byTrack.get(key)!.push(p)
+        }
+        // Track groups first, then general
+        for (const [key, items] of byTrack) {
+          if (key !== '__general__') groups.push({ key, label: items[0].track_name ?? key, items })
+        }
+        if (byTrack.has('__general__')) {
+          groups.push({ key: '__general__', label: null, items: byTrack.get('__general__')! })
+        }
 
-              return (
-                <div key={prize.id} className="flex items-center gap-5 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
-                  <div className={`size-14 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
-                    <PrizeIcon className={`size-7 ${iconColors[colorIdx]}`} />
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-foreground">{t('sponsors.portal.prizes.title', 'Prizes')}</h2>
+              <SectionLabel>{t('sponsors.portal.prizes.label', 'Victory Rewards')}</SectionLabel>
+            </div>
+            <div className="space-y-8">
+              {groups.map((group) => (
+                <div key={group.key}>
+                  <h3 className="text-sm font-semibold uppercase tracking-widest text-portal-secondary mb-3">
+                    {group.label ?? t('sponsors.portal.prizes.general', 'General Prizes')}
+                  </h3>
+                  <div className="space-y-3">
+                    {group.items.map((prize, i) => {
+                      const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
+                      const iconColors = ['text-yellow-500 dark:text-yellow-400', 'text-blue-500 dark:text-blue-400', 'text-amber-600 dark:text-amber-400', 'text-purple-500 dark:text-purple-400']
+                      const iconBgColors = ['bg-yellow-50 dark:bg-yellow-500/10', 'bg-blue-50 dark:bg-blue-500/10', 'bg-amber-50 dark:bg-amber-500/10', 'bg-purple-50 dark:bg-purple-500/10']
+                      const colorIdx = Math.min(i, iconColors.length - 1)
+
+                      return (
+                        <div key={prize.id} className="flex items-center gap-5 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+                          <div className={`size-14 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
+                            <PrizeIcon className={`size-7 ${iconColors[colorIdx]}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold text-foreground">{prize.name}</h3>
+                            {prize.description && (
+                              <p className="text-xs text-portal-secondary mt-0.5 line-clamp-1">{prize.description}</p>
+                            )}
+                          </div>
+                          {prize.value && (
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('sponsors.portal.prizes.value', 'Value')}</span>
+                              <p className="text-xl font-bold text-portal-primary">{prize.value}</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-foreground">{prize.name}</h3>
-                    {prize.description && (
-                      <p className="text-xs text-portal-secondary mt-0.5 line-clamp-1">{prize.description}</p>
-                    )}
-                  </div>
-                  {prize.value && (
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-portal-secondary">{t('sponsors.portal.prizes.value', 'Value')}</span>
-                      <p className="text-xl font-bold text-portal-primary">{prize.value}</p>
-                    </div>
-                  )}
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

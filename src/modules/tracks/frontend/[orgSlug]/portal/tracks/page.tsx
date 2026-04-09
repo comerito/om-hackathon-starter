@@ -17,10 +17,16 @@ import {
   ActionLink,
   CompetitionCountdown,
 } from '@/components/portal'
+import { Trophy, Medal, Award, Star, X } from 'lucide-react'
 
 type Track = {
   id: string; name: string; short_description: string | null; description: string | null; color: string
   icon_url: string | null; max_teams: number | null; order: number
+}
+
+type PrizeItem = {
+  id: string; name: string; description: string | null; category: string
+  value: string | null; rank: number | null; track_id: string | null; track_name: string | null
 }
 
 type TeamsByTrack = Record<string, number>
@@ -183,13 +189,16 @@ function TracksContent() {
     queryKey: ['portal-tracks-sponsors', selectedId],
     queryFn: async () => {
       if (!selectedId) return { sponsors: [], prizes: [] }
-      const { ok, result } = await apiCall<{ sponsors: unknown[]; prizes: Array<{ value: string | null }> }>(
+      const { ok, result } = await apiCall<{ sponsors: unknown[]; prizes: PrizeItem[] }>(
         `/api/sponsors/portal/sponsors-view?competition_id=${selectedId}`,
       )
       return ok && result ? result : { sponsors: [], prizes: [] }
     },
     enabled: !!selectedId,
   })
+
+  // Dialog state for track prizes
+  const [prizesDialogTrack, setPrizesDialogTrack] = React.useState<Track | null>(null)
 
   async function handleToggleTrack(trackId: string) {
     if (!myTeamId || selectingTrackId) return
@@ -507,6 +516,16 @@ function TracksContent() {
                     {teamCount} / {maxTeams} {t('tracks.portal.teams', 'Teams')}
                   </span>
                   <div className="flex items-center gap-3">
+                    {(sponsorsData?.prizes ?? []).some(p => p.track_id === track.id) && (
+                      <button
+                        type="button"
+                        onClick={() => setPrizesDialogTrack(track)}
+                        className="flex items-center gap-1 rounded-lg border border-yellow-300 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-yellow-700 dark:text-yellow-400 transition-colors hover:bg-yellow-100 dark:hover:bg-yellow-500/20"
+                      >
+                        <Trophy className="size-3" />
+                        {t('tracks.portal.viewPrizes', 'Prizes')}
+                      </button>
+                    )}
                     {showDetails && (
                       <ActionLink href={`/${orgSlug}/portal/tracks/${track.id}`} className="text-[11px]">
                         {t('tracks.portal.details', 'Details')}
@@ -574,6 +593,76 @@ function TracksContent() {
 
         </div>
       </div>
+
+      {/* Track Prizes Dialog */}
+      {prizesDialogTrack && (() => {
+        const trackPrizes = (sponsorsData?.prizes ?? []).filter(p => p.track_id === prizesDialogTrack.id)
+        const prizeIcons = [Trophy, Medal, Award, Star]
+        const iconColors = ['text-yellow-500 dark:text-yellow-400', 'text-blue-500 dark:text-blue-400', 'text-amber-600 dark:text-amber-400', 'text-purple-500 dark:text-purple-400']
+        const iconBgColors = ['bg-yellow-50 dark:bg-yellow-500/10', 'bg-blue-50 dark:bg-blue-500/10', 'bg-amber-50 dark:bg-amber-500/10', 'bg-purple-50 dark:bg-purple-500/10']
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPrizesDialogTrack(null)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div
+              className="relative w-full max-w-lg rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === 'Escape') setPrizesDialogTrack(null) }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <TrackIcon color={prizesDialogTrack.color} iconUrl={prizesDialogTrack.icon_url} size="sm" />
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">{prizesDialogTrack.name}</h3>
+                    <p className="text-xs text-muted-foreground">{t('tracks.portal.prizesFor', '{count} prize(s)', { count: trackPrizes.length })}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPrizesDialogTrack(null)}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              {/* Prize list */}
+              <div className="px-6 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                {trackPrizes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {t('tracks.portal.noPrizes', 'No prizes for this track yet.')}
+                  </p>
+                ) : (
+                  trackPrizes.map((prize, i) => {
+                    const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
+                    const colorIdx = Math.min(i, iconColors.length - 1)
+                    return (
+                      <div key={prize.id} className="flex items-center gap-4 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-4">
+                        <div className={`size-11 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
+                          <PrizeIcon className={`size-5 ${iconColors[colorIdx]}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-foreground">{prize.name}</h4>
+                          {prize.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{prize.description}</p>
+                          )}
+                        </div>
+                        {prize.value && (
+                          <div className="text-right shrink-0">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t('sponsors.portal.prizes.value', 'Value')}</span>
+                            <p className="text-lg font-bold text-portal-primary">{prize.value}</p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
