@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { Sponsor, Prize } from '../../../data/entities'
+import { Track } from '../../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
@@ -28,6 +29,14 @@ export async function GET(req: Request) {
       competitionId, deletedAt: null, tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<Prize>, { orderBy: { order: 'ASC' } })
 
+    // Build track name lookup for prizes
+    const trackIds = [...new Set(prizes.map(p => p.trackId).filter(Boolean))] as string[]
+    const trackNameMap: Record<string, string> = {}
+    if (trackIds.length > 0) {
+      const tracks = await em.find(Track, { id: { $in: trackIds } } as FilterQuery<Track>)
+      for (const tr of tracks) trackNameMap[tr.id] = tr.name
+    }
+
     const translatedSponsors = await applyPortalTranslationOverlays(
       sponsors.map(s => ({
         id: s.id, name: s.name, tier: s.tier, logo_url: s.logoUrl,
@@ -48,6 +57,7 @@ export async function GET(req: Request) {
       prizes.map(p => ({
         id: p.id, name: p.name, description: p.description, category: p.category,
         value: p.value, rank: p.rank, sponsor_id: p.sponsorId, track_id: p.trackId,
+        track_name: (p.trackId && trackNameMap[p.trackId]) || null,
         winning_project_id: p.winningProjectId, winning_team_id: p.winningTeamId,
         awarded_at: p.awardedAt?.toISOString() ?? null,
       })),

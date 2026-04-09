@@ -293,14 +293,13 @@ function SubmitPRForm({ competitionId, onSubmitted }: { competitionId: string; o
 
   const mutation = useMutation({
     mutationFn: async (input: string) => {
-      const res = await fetch('/api/bounties/portal/submit-pr', {
+      const { ok, result, error } = await apiCall<{ ok: boolean; pr: { id: string; github_pr_number: number; title: string } }>('/api/bounties/portal/submit-pr', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ pr_url: input, competition_id: competitionId }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to submit PR')
-      return data as { ok: boolean; pr: { id: string; github_pr_number: number; title: string } }
+      if (!ok) throw new Error(error ?? 'Failed to submit PR')
+      return result!
     },
     onSuccess: () => {
       setPrUrl('')
