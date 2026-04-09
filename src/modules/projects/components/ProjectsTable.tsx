@@ -104,6 +104,22 @@ export default function ProjectsTable() {
     }
   }
 
+  async function handleUnpublish(id: string) {
+    const confirmed = await confirm({
+      title: t('projects.table.confirmUnpublish', 'Unpublish this project?'),
+      description: t('projects.table.confirmUnpublishDesc', 'This will revert the project to Draft status. The team will need to re-submit.'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
+    try {
+      await updateCrud('projects/projects', { id, status: 'draft', submitted_at: null })
+      flash(t('projects.flash.unpublished', 'Project unpublished — reverted to Draft'), 'success')
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    } catch (err) {
+      flash(err instanceof Error ? err.message : t('projects.table.error', 'Error'), 'error')
+    }
+  }
+
   const columns = React.useMemo<ColumnDef<ProjectRow>[]>(() => [
     {
       accessorKey: 'title',
@@ -222,6 +238,15 @@ export default function ProjectsTable() {
           <RowActions
             items={[
               { id: 'edit', label: t('projects.table.edit', 'Edit'), href: `/backend/projects/${row.id}/edit` },
+              ...(row.status === 'published'
+                ? [{
+                    id: 'unpublish',
+                    label: t('projects.table.unpublish', 'Unpublish (revert to Draft)'),
+                    destructive: true as const,
+                    onSelect: () => handleUnpublish(row.id),
+                  }]
+                : []
+              ),
               ...(row.flagged_for_reuse
                 ? [{
                     id: 'unflag',

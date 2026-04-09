@@ -46,6 +46,7 @@ export class GitHubService {
     this.octokit = new Octokit({ auth: process.env.GITHUB_TOKEN ?? '' })
     this.repoOwner = process.env.GITHUB_REPO_OWNER ?? 'open-mercato'
     this.repoName = process.env.GITHUB_REPO_NAME ?? 'open-mercato'
+    console.log(`[GitHubService] Resolved repo: ${this.repoOwner}/${this.repoName} (env: GITHUB_REPO_OWNER=${process.env.GITHUB_REPO_OWNER}, GITHUB_REPO_NAME=${process.env.GITHUB_REPO_NAME})`)
   }
 
   /**
