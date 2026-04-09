@@ -107,7 +107,7 @@ export default function ProjectsTable() {
   async function handleUnpublish(id: string) {
     const confirmed = await confirm({
       title: t('projects.table.confirmUnpublish', 'Unpublish this project?'),
-      description: t('projects.table.confirmUnpublishDesc', 'This will revert the project to Draft status. The team will need to re-submit.'),
+      text: t('projects.table.confirmUnpublishDesc', 'This will revert the project to Draft status. The team will need to re-submit.'),
       variant: 'destructive',
     })
     if (!confirmed) return
