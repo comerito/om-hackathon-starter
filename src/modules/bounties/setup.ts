@@ -7,7 +7,7 @@ export const setup: ModuleSetupConfig = {
   },
   defaultCustomerRoleFeatures: {
     participant: ['portal.bounties.view', 'portal.bounties.register_github'],
-    judge: ['portal.bounties.view'],
+    judge: ['portal.bounties.view', 'portal.bounties.judge'],
   },
 }
 

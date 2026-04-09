@@ -4,6 +4,7 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { TrackCombobox } from '../../../../components/TrackCombobox'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -12,18 +13,22 @@ async function loadCompetitions(query?: string) {
   return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
 }
 
-async function loadTracks(query?: string) {
-  const params: Record<string, string> = { pageSize: '50' }
-  if (query) params.name = query
-  const res = await fetchCrudList<{ id: string; name: string }>('tracks/tracks', params)
-  return [{ value: '', label: 'All tracks (global)' }, ...(res?.items ?? []).map((t) => ({ value: t.id, label: t.name }))]
-}
-
 export default function CreateCriterionPage() {
   const t = useT()
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'competition_id', label: t('judging.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
-    { id: 'track_id', label: t('judging.fields.track', 'Track (optional)'), type: 'combobox', loadOptions: loadTracks },
+    {
+      id: 'track_id',
+      label: t('judging.fields.track', 'Track (optional)'),
+      type: 'custom',
+      component: (props) => (
+        <TrackCombobox
+          value={(props.value as string) ?? ''}
+          competitionId={(props.values?.competition_id as string) ?? ''}
+          onChange={props.setValue}
+        />
+      ),
+    },
     { id: 'name', label: t('judging.fields.name', 'Criterion Name'), type: 'text', required: true },
     { id: 'description', label: t('judging.fields.description', 'Description'), type: 'textarea' },
     { id: 'max_score', label: t('judging.fields.maxScore', 'Max Score'), type: 'number', defaultValue: 10 },
