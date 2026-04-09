@@ -86,6 +86,7 @@ export async function GET(req: Request) {
         ends_at: c.endsAt,
         location: c.location,
         timezone: c.timezone,
+        max_team_size: c.maxTeamSize ?? 5,
         max_tracks_per_team: c.maxTracksPerTeam ?? 1,
         allow_track_change: c.allowTrackChange ?? false,
         info_cards: infoCardsByCompetition.get(c.id) ?? [],
