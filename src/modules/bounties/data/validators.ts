@@ -85,9 +85,21 @@ export const activityQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 })
 
-export const manualPollSchema = z.object({
+export const submitPRSchema = z.object({
+  pr_url: z.string().min(1, 'PR URL or number is required').transform((val) => {
+    // Accept a full GitHub PR URL or just a number
+    const urlMatch = val.match(/github\.com\/[^/]+\/[^/]+\/pull\/(\d+)/)
+    if (urlMatch) return parseInt(urlMatch[1], 10)
+    const num = parseInt(val, 10)
+    if (!isNaN(num) && num > 0) return num
+    return null
+  }).refine((val): val is number => val !== null, {
+    message: 'Must be a valid GitHub PR URL (e.g. https://github.com/owner/repo/pull/123) or PR number',
+  }),
   competition_id: z.string().uuid(),
 })
+
+export type SubmitPRInput = z.infer<typeof submitPRSchema>
 
 export const registerGithubUsernameSchema = z.object({
   github_username: z.string().min(1).max(39).regex(
@@ -96,7 +108,33 @@ export const registerGithubUsernameSchema = z.object({
   ),
 })
 
-// ── Types ─────────────��──────────────────────────────────────────────
+// ── Split Detection Schemas ─────────────────────────────────────────
+
+export const splitAnalysisResultSchema = z.object({
+  isSplit: z.boolean().describe('Whether these PRs represent an intentionally split contribution that should logically be a single PR'),
+  confidence: z.number().min(0).max(1),
+  reasoning: z.string().describe('Explanation of why these PRs are or are not a split'),
+  suggestedGroupClassification: z.array(
+    z.object({
+      category: z.enum(bountyCategoryValues),
+      reasoning: z.string(),
+    })
+  ).describe('If this is a split, what classification would the combined contribution earn'),
+})
+
+export type SplitAnalysisResult = z.infer<typeof splitAnalysisResultSchema>
+
+export const manualSplitGroupSchema = z.object({
+  pr_ids: z.array(z.string().uuid()).min(2),
+  primary_pr_id: z.string().uuid(),
+  reason: z.string().optional(),
+})
+
+export const ungroupSplitSchema = z.object({
+  reason: z.string().optional(),
+})
+
+// ── Types ─────────────────────────────────────────────────────────────
 
 export type ListBountyPRsQuery = z.infer<typeof listBountyPRsQuerySchema>
 export type ApprovePRInput = z.infer<typeof approvePRSchema>

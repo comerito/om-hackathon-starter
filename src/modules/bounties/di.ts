@@ -4,7 +4,7 @@ import { createQueue, type Queue } from '@open-mercato/queue'
 import { ClassificationService } from './services/ClassificationService'
 import { GitHubService } from './services/GitHubService'
 import { LeaderboardService } from './services/LeaderboardService'
-import pollGithubHandler from './workers/poll-github'
+import { SplitDetectionService } from './services/SplitDetectionService'
 import classifyPrHandler from './workers/classify-pr'
 
 // Use globalThis to survive Next.js HMR — module-level `let` resets on re-evaluation
@@ -15,15 +15,12 @@ export function register(container: AppContainer): void {
     bountyGitHubService: asClass(GitHubService).scoped(),
     bountyClassificationService: asClass(ClassificationService).scoped(),
     bountyLeaderboardService: asClass(LeaderboardService).scoped(),
+    bountySplitDetectionService: asClass(SplitDetectionService).scoped(),
   })
 
   // Start the local queue processor for bounties-queue once
   const g = globalThis as typeof globalThis & { [QUEUE_KEY]?: Queue }
   if (!g[QUEUE_KEY] && typeof process !== 'undefined' && process.env.QUEUE_STRATEGY !== 'async') {
-    // Close any stale instance left by a previous HMR cycle (defensive)
-    const prev = g[QUEUE_KEY]
-    if (prev) prev.close().catch(() => {})
-
     const queue = createQueue('bounties-queue', 'local')
     g[QUEUE_KEY] = queue
     queue.process(async (job, ctx) => {
@@ -49,9 +46,7 @@ export function register(container: AppContainer): void {
         },
       }
 
-      if (workerId === 'poll-github') {
-        await pollGithubHandler(jobData as any, workerCtx)
-      } else if (workerId === 'classify-pr') {
+      if (workerId === 'classify-pr') {
         await classifyPrHandler(jobData as any, workerCtx)
       } else {
         console.warn(`[bounties-queue] Unknown workerId: ${workerId}`)

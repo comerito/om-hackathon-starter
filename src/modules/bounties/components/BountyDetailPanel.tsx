@@ -20,6 +20,8 @@ type BountyPRRow = {
   total_points: number
   is_duplicate: boolean
   duplicate_marked_by: string | null
+  split_group_id?: string | null
+  is_split_child?: boolean
   _participant?: { name: string | null; github_username: string | null }
   _team?: { name: string | null }
 }
@@ -151,6 +153,41 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
           <span className="text-amber-700 ml-1">
             ({pr.duplicate_marked_by === 'llm' ? 'by LLM' : 'by judge'})
           </span>
+        </div>
+      )}
+
+      {/* Split group info */}
+      {(pr.is_split_child || pr.split_group_id) && (
+        <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 rounded p-3 text-sm space-y-1">
+          <span className="font-semibold text-purple-800 dark:text-purple-300">
+            {pr.is_split_child
+              ? t('bounties.detail.splitChild', 'Split child — points suppressed')
+              : t('bounties.detail.splitParent', 'Primary PR in split group')}
+          </span>
+          {pr.is_split_child && (
+            <p className="text-purple-700 dark:text-purple-400 text-xs">
+              {t('bounties.detail.splitChildNote', 'Points are awarded to the primary PR in this group only.')}
+            </p>
+          )}
+          {pr.split_group_id && !pr.is_split_child && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await apiCall(`/api/bounties/splits/${pr.split_group_id}/ungroup`, { method: 'POST', body: '{}' })
+                    flash(t('bounties.flash.ungrouped', 'Split group removed — individual scoring restored'), 'success')
+                    onAction()
+                  } catch {
+                    flash('Failed to ungroup', 'error')
+                  }
+                }}
+              >
+                {t('bounties.actions.ungroup', 'Ungroup')}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

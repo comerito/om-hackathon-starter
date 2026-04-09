@@ -26,6 +26,8 @@ const typeIcons: Record<string, string> = {
   points_revoked: '⚠️',
   classification_overridden: '✏️',
   manual_refresh: '🔄',
+  pr_split_detected: '✂️',
+  pr_split_ungrouped: '🔓',
 }
 
 export default function BountyActivityFeed() {

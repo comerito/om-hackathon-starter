@@ -75,11 +75,25 @@ export async function GET(req: Request) {
       : []
     const teamMap = new Map(teams.map(t => [t.id, t.name]))
 
+    // Resolve user names for display
+    const userIds = [...new Set([
+      ...received.map(i => i.inviterId),
+      ...teamJoinRequests.map(i => i.inviterId),
+    ].filter(Boolean))]
+    const knex = (em as any).getConnection().getKnex()
+    const userRows = userIds.length > 0
+      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', userIds)
+      : []
+    const userMap = new Map<string, string>(
+      userRows.map((r: any) => [r.id, r.display_name ?? r.email?.split('@')[0] ?? 'Unknown']),
+    )
+
     const mapInvitation = (inv: TeamInvitation) => ({
       id: inv.id,
       team_id: inv.teamId,
       team_name: teamMap.get(inv.teamId) ?? 'Unknown',
       inviter_id: inv.inviterId,
+      inviter_name: userMap.get(inv.inviterId) ?? null,
       invitee_id: inv.inviteeId,
       type: inv.type,
       status: inv.status,

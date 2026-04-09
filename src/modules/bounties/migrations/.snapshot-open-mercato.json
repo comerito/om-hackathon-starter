@@ -2047,6 +2047,38 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "datetime"
+        },
+        "split_group_id": {
+          "name": "split_group_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "is_split_child": {
+          "name": "is_split_child",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
         }
       },
       "name": "bounties_pull_request",
@@ -2102,6 +2134,16 @@
           "keyName": "bounties_pull_request_pkey",
           "unique": true,
           "primary": true
+        },
+        {
+          "columnNames": [
+            "split_group_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "bounties_pull_request_split_group_id_index",
+          "unique": false,
+          "primary": false
         },
         {
           "columnNames": [
@@ -9542,6 +9584,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "json"
+        },
+        "discord_nick": {
+          "name": "discord_nick",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "name": "competitions_participant_profile",
