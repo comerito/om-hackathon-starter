@@ -638,7 +638,7 @@ function TracksContent() {
                     const PrizeIcon = prizeIcons[Math.min(i, prizeIcons.length - 1)]
                     const colorIdx = Math.min(i, iconColors.length - 1)
                     return (
-                      <div key={prize.id} className="flex items-center gap-4 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-4">
+                      <div key={prize.id} className="flex items-start gap-4 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-4">
                         <div className={`size-11 rounded-xl ${iconBgColors[colorIdx]} flex items-center justify-center shrink-0`}>
                           <PrizeIcon className={`size-5 ${iconColors[colorIdx]}`} />
                         </div>
@@ -647,13 +647,10 @@ function TracksContent() {
                           {prize.description && (
                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{prize.description}</p>
                           )}
+                          {prize.value && (
+                            <p className="text-sm font-bold text-portal-primary mt-1.5">{prize.value}</p>
+                          )}
                         </div>
-                        {prize.value && (
-                          <div className="text-right shrink-0">
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t('sponsors.portal.prizes.value', 'Value')}</span>
-                            <p className="text-lg font-bold text-portal-primary">{prize.value}</p>
-                          </div>
-                        )}
                       </div>
                     )
                   })

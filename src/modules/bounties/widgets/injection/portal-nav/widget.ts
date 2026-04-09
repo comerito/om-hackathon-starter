@@ -34,6 +34,18 @@ const widget: InjectionMenuItemWidget = {
         groupLabelKey: 'bounties.portal.nav.group',
         groupOrder: 5,
       },
+      {
+        id: 'bounties.portal-judge',
+        label: 'Bounty Judge Panel',
+        labelKey: 'bounties.portal.nav.judge',
+        icon: 'lucide:shield-check',
+        href: `${prefix}/bounties/judge`,
+        features: ['portal.bounties.judge'],
+        groupId: 'bounties',
+        groupLabel: 'Bounty Hunting',
+        groupLabelKey: 'bounties.portal.nav.group',
+        groupOrder: 5,
+      },
     ]
   },
 }
