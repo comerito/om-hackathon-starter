@@ -53,7 +53,11 @@ export async function GET(req: Request) {
         `SELECT id, file_name, file_size, url, mime_type FROM attachments WHERE entity_id = 'tracks:track' AND record_id = ? ORDER BY created_at`,
         [trackId],
       )
-      attachments = rawAttachments as typeof attachments
+      // Rewrite URLs to use the portal endpoint (core endpoint requires backend auth)
+      attachments = (rawAttachments as typeof attachments).map(att => ({
+        ...att,
+        url: `/api/tracks/portal/attachment-file/${att.id}`,
+      }))
     } catch {
       // Attachments module may not be available — continue without
     }
