@@ -18,6 +18,7 @@ type BountyPRRow = {
   classification_confidence: number | null
   classification_summary: string | null
   total_points: number
+  points_override: Array<{ category: string; points: number; reasoning: string }> | null
   is_duplicate: boolean
   duplicate_marked_by: string | null
   split_group_id?: string | null
@@ -90,6 +91,8 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
     }
   }
 
+  const displayClassifications = pr.points_override ?? pr.classifications ?? []
+  const computedTotal = displayClassifications.reduce((sum, c) => sum + c.points, 0)
   const confidencePct = pr.classification_confidence != null ? Math.round(pr.classification_confidence * 100) : null
   const isLowConfidence = pr.classification_confidence != null && pr.classification_confidence < 0.7
 
@@ -117,10 +120,12 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
       </div>
 
       {/* LLM Classification */}
-      {pr.classifications && pr.classifications.length > 0 && (
+      {displayClassifications.length > 0 && (
         <div>
           <h4 className="text-sm font-semibold mb-2">
-            {t('bounties.detail.classification', 'LLM Classification')}
+            {pr.points_override
+              ? t('bounties.detail.overriddenClassification', 'Classification (Overridden)')
+              : t('bounties.detail.classification', 'LLM Classification')}
             {confidencePct != null && (
               <span className={`ml-2 text-xs ${isLowConfidence ? 'text-amber-600' : 'text-green-600'}`}>
                 ({confidencePct}% confidence)
@@ -128,7 +133,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
             )}
           </h4>
           <div className="space-y-1">
-            {pr.classifications.map((c, i) => (
+            {displayClassifications.map((c, i) => (
               <div key={i} className="flex items-center justify-between text-sm bg-muted/50 rounded px-3 py-1.5">
                 <span>{categoryLabels[c.category] ?? c.category}</span>
                 <span className="font-semibold">{c.points} pts</span>
@@ -139,7 +144,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
             <p className="text-xs text-muted-foreground mt-1 italic">&quot;{pr.classification_summary}&quot;</p>
           )}
           <div className="text-sm font-semibold mt-2">
-            {t('bounties.detail.total', 'Total')}: {pr.total_points} pts
+            {t('bounties.detail.total', 'Total')}: {computedTotal} pts
           </div>
         </div>
       )}

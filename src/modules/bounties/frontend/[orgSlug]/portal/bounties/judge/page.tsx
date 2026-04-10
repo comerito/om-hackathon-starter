@@ -468,7 +468,9 @@ function PRDetailPanel({ pr, onAction, onBack }: { pr: BountyPR; onAction: () =>
             </p>
           </div>
           <div className="shrink-0 flex flex-col items-center rounded-lg bg-portal-primary/5 px-3 py-2">
-            <span className="text-2xl font-bold text-portal-primary">{pr.total_points}</span>
+            <span className="text-2xl font-bold text-portal-primary">
+              {(pr.points_override ?? pr.classifications ?? []).reduce((sum, c) => sum + c.points, 0)}
+            </span>
             <span className="text-[9px] font-semibold uppercase tracking-wider text-portal-secondary">pts</span>
           </div>
         </div>
@@ -476,38 +478,43 @@ function PRDetailPanel({ pr, onAction, onBack }: { pr: BountyPR; onAction: () =>
 
       <div className="p-4 sm:p-5 space-y-4">
         {/* LLM Classification */}
-        {pr.classifications && pr.classifications.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <SectionLabel className="block">
-                {t('bounties.portal.judge.classification', 'AI CLASSIFICATION')}
-              </SectionLabel>
-              {confidencePct != null && (
-                <span className={`text-[10px] font-semibold ${isLowConfidence ? 'text-amber-600' : 'text-green-600'}`}>
-                  {confidencePct}%
-                </span>
+        {(() => {
+          const effectiveClassifications = pr.points_override ?? pr.classifications ?? []
+          return effectiveClassifications.length > 0 ? (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <SectionLabel className="block">
+                  {pr.points_override
+                    ? t('bounties.portal.judge.overriddenClassification', 'CLASSIFICATION (OVERRIDDEN)')
+                    : t('bounties.portal.judge.classification', 'AI CLASSIFICATION')}
+                </SectionLabel>
+                {confidencePct != null && (
+                  <span className={`text-[10px] font-semibold ${isLowConfidence ? 'text-amber-600' : 'text-green-600'}`}>
+                    {confidencePct}%
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {effectiveClassifications.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm rounded-lg bg-gray-50 dark:bg-white/5 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium text-foreground">{categoryLabels[c.category] ?? c.category}</span>
+                      {c.reasoning && (
+                        <p className="text-[10px] text-portal-secondary mt-0.5 line-clamp-2">{c.reasoning}</p>
+                      )}
+                    </div>
+                    <span className="font-bold text-portal-primary ml-3">{c.points} pts</span>
+                  </div>
+                ))}
+              </div>
+              {pr.classification_summary && (
+                <p className="text-[11px] text-portal-secondary mt-2 italic leading-relaxed">
+                  &quot;{pr.classification_summary}&quot;
+                </p>
               )}
             </div>
-            <div className="space-y-1.5">
-              {pr.classifications.map((c, i) => (
-                <div key={i} className="flex items-center justify-between text-sm rounded-lg bg-gray-50 dark:bg-white/5 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <span className="font-medium text-foreground">{categoryLabels[c.category] ?? c.category}</span>
-                    {c.reasoning && (
-                      <p className="text-[10px] text-portal-secondary mt-0.5 line-clamp-2">{c.reasoning}</p>
-                    )}
-                  </div>
-                  <span className="font-bold text-portal-primary ml-3">{c.points} pts</span>
-                </div>
-              ))}
-            </div>
-            {pr.classification_summary && (
-              <p className="text-[11px] text-portal-secondary mt-2 italic leading-relaxed">
-                &quot;{pr.classification_summary}&quot;
-              </p>
-            )}
-          </div>
-        )}
+          ) : null
+        })()}
 
         {/* Duplicate info */}
         {pr.is_duplicate && (

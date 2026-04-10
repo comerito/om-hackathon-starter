@@ -40,7 +40,6 @@ const widget: InjectionMenuItemWidget = {
         labelKey: 'bounties.portal.nav.judge',
         icon: 'lucide:shield-check',
         href: `${prefix}/bounties/judge`,
-        features: ['portal.bounties.judge'],
         groupId: 'bounties',
         groupLabel: 'Bounty Hunting',
         groupLabelKey: 'bounties.portal.nav.group',
