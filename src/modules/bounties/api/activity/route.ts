@@ -29,27 +29,35 @@ export async function GET(request: Request) {
     })
 
     const em = container.resolve('em') as EntityManager
-    const activities = await em.find(
-      BountyActivityLog,
-      {
-        tenantId: auth.tenantId,
-        organizationId: auth.orgId,
-      },
-      {
-        orderBy: { createdAt: 'DESC' },
-        limit: parsed.limit,
-      }
-    )
+    const rows = await em.getConnection().execute(
+      `SELECT a.id, a.type, a.pull_request_id, a.actor_user_id, a.message, a.metadata, a.created_at
+       FROM bounties_activity_log a
+       LEFT JOIN bounties_pull_request pr ON pr.id = a.pull_request_id
+       WHERE a.tenant_id = ?
+         AND a.organization_id = ?
+         AND (?::uuid IS NULL OR pr.competition_id = ?::uuid)
+       ORDER BY a.created_at DESC
+       LIMIT ?`,
+      [auth.tenantId, auth.orgId, parsed.competition_id ?? null, parsed.competition_id ?? null, parsed.limit]
+    ) as Array<{
+      id: string
+      type: string
+      pull_request_id: string | null
+      actor_user_id: string | null
+      message: string
+      metadata: Record<string, unknown> | null
+      created_at: string | Date
+    }>
 
     return new Response(JSON.stringify({
-      items: activities.map(a => ({
+      items: rows.map((a) => ({
         id: a.id,
         type: a.type,
-        pull_request_id: a.pullRequestId,
-        actor_user_id: a.actorUserId,
+        pull_request_id: a.pull_request_id,
+        actor_user_id: a.actor_user_id,
         message: a.message,
         metadata: a.metadata,
-        created_at: a.createdAt,
+        created_at: a.created_at,
       })),
     }), {
       headers: { 'content-type': 'application/json' },

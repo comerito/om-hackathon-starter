@@ -39,6 +39,12 @@ type BountyPRRow = {
   _team?: { name: string | null }
 }
 
+type CompetitionOption = {
+  id: string
+  name: string
+  stage?: string | null
+}
+
 const statusPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   detected: { label: 'Detected', variant: 'secondary' },
   classified: { label: 'Classified', variant: 'outline' },
@@ -56,6 +62,7 @@ export default function BountyJudgingPanel() {
   const scopeVersion = useOrganizationScopeVersion()
   const [page, setPage] = React.useState(1)
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [competitionFilter, setCompetitionFilter] = React.useState<string>('all')
   const [selectedPRId, setSelectedPRId] = React.useState<string | null>(null)
 
   // Real-time updates
@@ -63,6 +70,35 @@ export default function BountyJudgingPanel() {
     queryClient.invalidateQueries({ queryKey: ['bounty-prs'] })
     queryClient.invalidateQueries({ queryKey: ['bounty-activity'] })
   }, [queryClient])
+
+  const { data: competitions, isLoading: competitionsLoading } = useQuery({
+    queryKey: ['bounty-competitions', scopeVersion],
+    queryFn: async () => {
+      const res = await fetchCrudList<CompetitionOption>('competitions/competitions', {
+        pageSize: '100',
+        sortField: 'created_at',
+        sortDir: 'desc',
+      })
+      return res?.items ?? []
+    },
+  })
+
+  React.useEffect(() => {
+    if (!competitions || competitions.length === 0) return
+    const stored = window.localStorage.getItem('bounties:selected-competition')
+    if (stored && competitions.some((competition) => competition.id === stored)) {
+      setCompetitionFilter(stored)
+      return
+    }
+    setCompetitionFilter((current) => {
+      if (current !== 'all' && competitions.some((competition) => competition.id === current)) {
+        return current
+      }
+      const next = competitions[0]?.id ?? 'all'
+      if (next !== 'all') window.localStorage.setItem('bounties:selected-competition', next)
+      return next
+    })
+  }, [competitions])
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -72,13 +108,20 @@ export default function BountyJudgingPanel() {
       sortDir: 'desc',
     }
     if (statusFilter !== 'all') params.status = statusFilter
+    if (competitionFilter !== 'all') params.competition_id = competitionFilter
     return params
-  }, [page, statusFilter])
+  }, [competitionFilter, page, statusFilter])
 
   const { data, isLoading } = useQuery({
     queryKey: ['bounty-prs', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<BountyPRRow>('bounties/prs', queryParams),
   })
+
+  React.useEffect(() => {
+    if (!data?.items?.some(pr => pr.id === selectedPRId)) {
+      setSelectedPRId(null)
+    }
+  }, [data, selectedPRId])
 
   const selectedPR = React.useMemo(
     () => data?.items?.find(pr => pr.id === selectedPRId) ?? null,
@@ -179,6 +222,24 @@ export default function BountyJudgingPanel() {
 
       {/* Status filter tabs */}
       <div className="flex items-center gap-2 flex-wrap">
+        <select
+          value={competitionFilter}
+          onChange={(e) => {
+            const next = e.target.value
+            setCompetitionFilter(next)
+            setPage(1)
+            window.localStorage.setItem('bounties:selected-competition', next)
+          }}
+          className="h-9 min-w-[220px] rounded-md border border-input bg-background px-3 text-sm"
+          disabled={competitionsLoading}
+        >
+          <option value="all">{t('bounties.filter.allCompetitions', 'All competitions')}</option>
+          {(competitions ?? []).map((competition) => (
+            <option key={competition.id} value={competition.id}>
+              {competition.name}
+            </option>
+          ))}
+        </select>
         {STATUS_TABS.map(tab => (
           <Button
             key={tab}
@@ -237,7 +298,7 @@ export default function BountyJudgingPanel() {
       </div>
 
       {/* Activity feed */}
-      <BountyActivityFeed />
+      <BountyActivityFeed competitionId={competitionFilter !== 'all' ? competitionFilter : null} />
     </div>
   )
 }
