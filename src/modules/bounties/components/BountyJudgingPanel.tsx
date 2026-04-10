@@ -28,6 +28,7 @@ type BountyPRRow = {
   classification_confidence: number | null
   classification_summary: string | null
   total_points: number
+  points_override: Array<{ category: string; points: number; reasoning: string }> | null
   is_duplicate: boolean
   duplicate_marked_by: string | null
   github_created_at: string

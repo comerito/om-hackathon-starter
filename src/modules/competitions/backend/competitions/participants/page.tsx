@@ -16,6 +16,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
 import Link from 'next/link'
 import { BulkInviteDialog } from '../../../components/BulkInviteDialog'
+import { ManualInviteDialog } from '../../../components/ManualInviteDialog'
 
 type ParticipationRow = {
   id: string
@@ -65,6 +66,7 @@ export default function ParticipantsListPage() {
   const [page, setPage] = React.useState(1)
   const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const [showBulkInvite, setShowBulkInvite] = React.useState(false)
+  const [showManualInvite, setShowManualInvite] = React.useState(false)
   const [tab, setTab] = React.useState<'participants' | 'invitations'>('participants')
   const [invFilterValues, setInvFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
@@ -236,6 +238,9 @@ export default function ParticipantsListPage() {
               <Link href="/backend/competitions/email-preview">
                 {t('competitions.participants.previewEmail', 'Preview Email')}
               </Link>
+            </Button>
+            <Button variant="outline" onClick={() => setShowManualInvite(true)}>
+              {t('competitions.participants.invite', 'Invite')}
             </Button>
             <Button variant="outline" onClick={() => setShowBulkInvite(true)}>
               {t('competitions.participants.bulkInvite', 'Bulk Invite')}
@@ -419,6 +424,7 @@ export default function ParticipantsListPage() {
 
         {ConfirmDialogElement}
         {showBulkInvite && <BulkInviteDialog onClose={() => { setShowBulkInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
+        {showManualInvite && <ManualInviteDialog onClose={() => { setShowManualInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
       </PageBody>
     </Page>
   )

@@ -132,10 +132,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `This PR belongs to @${pr.user.login}, but your registered GitHub username is @${githubUsername}` }, { status: 403 })
     }
 
-    // Check for duplicate submission
+    // Check for duplicate submission (by GitHub ID or PR number)
     const existing = await em.findOne(BountyPullRequest, {
-      githubPrId: String(pr.id),
-      tenantId: auth.tenantId,
+      $or: [
+        { githubPrId: String(pr.id), tenantId: auth.tenantId },
+        { githubPrNumber: pr.number, competitionId, tenantId: auth.tenantId, deletedAt: null },
+      ],
     } as FilterQuery<BountyPullRequest>)
 
     if (existing) {
