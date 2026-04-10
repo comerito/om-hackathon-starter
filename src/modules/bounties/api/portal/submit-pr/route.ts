@@ -39,6 +39,21 @@ export async function POST(req: Request) {
     const configService = container.resolve('moduleConfigService') as ModuleConfigService
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
 
+    const competition = await em.findOne(Competition, {
+      id: competitionId,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    } as FilterQuery<Competition>)
+    if (!competition) {
+      console.warn(LOG_PREFIX, `Rejected: competition=${competitionId} not found for tenant=${auth.tenantId}`)
+      return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+    }
+    if (auth.orgId && competition.organizationId !== auth.orgId) {
+      console.warn(LOG_PREFIX, `Rejected: org mismatch authOrg=${auth.orgId} competitionOrg=${competition.organizationId} competition=${competitionId}`)
+      return NextResponse.json({ error: 'Competition is not available in the current organization' }, { status: 403 })
+    }
+    const competitionOrganizationId = competition.organizationId
+
     // Verify this competition has a bounty track configured
     const mappings = await configService.getValue<Record<string, string>>('bounties', BOUNTY_TRACK_MAPPINGS_KEY, { defaultValue: {} })
     const bountyTrackId = mappings?.[competitionId]
@@ -53,6 +68,7 @@ export async function POST(req: Request) {
       customerUserId: auth.sub,
       competitionId,
       tenantId: auth.tenantId,
+      organizationId: competitionOrganizationId,
       deletedAt: null,
     } as FilterQuery<CompetitionParticipation>)
 
@@ -64,15 +80,27 @@ export async function POST(req: Request) {
 
     // Resolve team and verify participant is on the bounty track
     const teamMember = await em.getConnection().execute(
-      `SELECT tm.team_id FROM teams_team_member tm WHERE tm.customer_user_id = ? AND tm.competition_id = ? AND tm.tenant_id = ? AND tm.deleted_at IS NULL LIMIT 1`,
-      [participation.customerUserId, competitionId, auth.tenantId]
+      `SELECT tm.team_id
+       FROM teams_team_member tm
+       WHERE tm.customer_user_id = ?
+         AND tm.competition_id = ?
+         AND tm.tenant_id = ?
+         AND tm.organization_id = ?
+         AND tm.deleted_at IS NULL
+       LIMIT 1`,
+      [participation.customerUserId, competitionId, auth.tenantId, competitionOrganizationId]
     )
     const teamId = teamMember?.[0]?.team_id ?? null
 
     if (teamId) {
       const teamTracks = await em.getConnection().execute(
-        `SELECT track_id FROM teams_team_track WHERE team_id = ? AND competition_id = ? AND tenant_id = ?`,
-        [teamId, competitionId, auth.tenantId]
+        `SELECT track_id
+         FROM teams_team_track
+         WHERE team_id = ?
+           AND competition_id = ?
+           AND tenant_id = ?
+           AND organization_id = ?`,
+        [teamId, competitionId, auth.tenantId, competitionOrganizationId]
       )
       const trackIds = (teamTracks as Array<{ track_id: string }>).map(r => r.track_id)
       console.log(LOG_PREFIX, `Team=${teamId}, tracks=${JSON.stringify(trackIds)}, bountyTrack=${bountyTrackId}`)
@@ -103,22 +131,19 @@ export async function POST(req: Request) {
     console.log(LOG_PREFIX, `GitHub PR #${prNumber}: author=@${pr.user.login}, created_at=${pr.created_at}, title="${pr.title}"`)
 
     // Validate PR was created within the competition time window (date-only comparison to avoid timezone issues)
-    const competition = await em.findOne(Competition, { id: competitionId } as FilterQuery<Competition>)
-    if (competition) {
-      const prCreatedAt = new Date(pr.created_at)
-      const toDateOnly = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
-      const prDate = toDateOnly(prCreatedAt)
-      const startDate = toDateOnly(competition.startsAt)
-      const endDate = toDateOnly(competition.endsAt)
-      console.log(LOG_PREFIX, `Date check: prDate=${prDate.toISOString()}, startDate=${startDate.toISOString()}, endDate=${endDate.toISOString()} (raw: pr=${pr.created_at}, start=${competition.startsAt.toISOString()}, end=${competition.endsAt.toISOString()})`)
-      if (prDate < startDate) {
-        console.warn(LOG_PREFIX, `Rejected: PR created ${prDate.toISOString()} before competition start ${startDate.toISOString()}`)
-        return NextResponse.json({ error: `This PR was created before the competition started (${competition.startsAt.toLocaleDateString()})` }, { status: 400 })
-      }
-      if (prDate > endDate) {
-        console.warn(LOG_PREFIX, `Rejected: PR created ${prDate.toISOString()} after competition end ${endDate.toISOString()}`)
-        return NextResponse.json({ error: `This PR was created after the competition ended (${competition.endsAt.toLocaleDateString()})` }, { status: 400 })
-      }
+    const prCreatedAt = new Date(pr.created_at)
+    const toDateOnly = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    const prDate = toDateOnly(prCreatedAt)
+    const startDate = toDateOnly(competition.startsAt)
+    const endDate = toDateOnly(competition.endsAt)
+    console.log(LOG_PREFIX, `Date check: prDate=${prDate.toISOString()}, startDate=${startDate.toISOString()}, endDate=${endDate.toISOString()} (raw: pr=${pr.created_at}, start=${competition.startsAt.toISOString()}, end=${competition.endsAt.toISOString()})`)
+    if (prDate < startDate) {
+      console.warn(LOG_PREFIX, `Rejected: PR created ${prDate.toISOString()} before competition start ${startDate.toISOString()}`)
+      return NextResponse.json({ error: `This PR was created before the competition started (${competition.startsAt.toLocaleDateString()})` }, { status: 400 })
+    }
+    if (prDate > endDate) {
+      console.warn(LOG_PREFIX, `Rejected: PR created ${prDate.toISOString()} after competition end ${endDate.toISOString()}`)
+      return NextResponse.json({ error: `This PR was created after the competition ended (${competition.endsAt.toLocaleDateString()})` }, { status: 400 })
     }
 
     // Verify the PR belongs to the participant
@@ -161,7 +186,7 @@ export async function POST(req: Request) {
     // Create BountyPullRequest
     const bountyPR = em.create(BountyPullRequest, {
       tenantId: auth.tenantId,
-      organizationId: auth.orgId ?? '',
+      organizationId: competitionOrganizationId,
       competitionId,
       githubPrId: String(pr.id),
       githubPrNumber: pr.number,
@@ -183,7 +208,7 @@ export async function POST(req: Request) {
 
     const activity = em.create(BountyActivityLog, {
       tenantId: auth.tenantId,
-      organizationId: auth.orgId ?? '',
+      organizationId: competitionOrganizationId,
       type: BountyActivityType.PR_DETECTED,
       pullRequestId: bountyPR.id,
       message: `PR #${pr.number} submitted by participant @${pr.user.login}: "${pr.title}"`,
@@ -199,7 +224,7 @@ export async function POST(req: Request) {
     await eventBus.emit('bounties.pull_request.detected', {
       pullRequestId: bountyPR.id,
       tenantId: auth.tenantId,
-      organizationId: auth.orgId ?? '',
+      organizationId: competitionOrganizationId,
       competitionId,
     })
     console.log(LOG_PREFIX, `Event emitted: bounties.pull_request.detected for ${bountyPR.id}`)

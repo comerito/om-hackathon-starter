@@ -30,14 +30,16 @@ const typeIcons: Record<string, string> = {
   pr_split_ungrouped: '🔓',
 }
 
-export default function BountyActivityFeed() {
+export default function BountyActivityFeed({ competitionId = null }: { competitionId?: string | null }) {
   const t = useT()
   const scopeVersion = useOrganizationScopeVersion()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['bounty-activity', scopeVersion],
+    queryKey: ['bounty-activity', competitionId, scopeVersion],
     queryFn: async () => {
-      const res = await apiCall('/api/bounties/activity?limit=20')
+      const params = new URLSearchParams({ limit: '20' })
+      if (competitionId) params.set('competition_id', competitionId)
+      const res = await apiCall(`/api/bounties/activity?${params.toString()}`)
       return res as unknown as { items: ActivityItem[] }
     },
     refetchInterval: 5000,
