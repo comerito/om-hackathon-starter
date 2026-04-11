@@ -9,6 +9,7 @@ import type { BountyCategory, BountyClassification } from '../../../../../../dat
 import { bountyCategoryValues } from '../../../../../../data/validators'
 import { verifyBountyJudge } from '../../../../../../lib/portalJudgeAuth'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { invalidateBountyPrCache } from '../../../../../../lib/cache'
 
 const overrideSchema = z.object({
   classifications: z.array(z.object({
@@ -69,6 +70,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     em.persist([pr, activity])
     await em.flush()
+    await invalidateBountyPrCache(container, {
+      id: pr.id,
+      organizationId: pr.organizationId,
+      tenantId: pr.tenantId,
+    }, 'bounties.portal.pr.classify')
 
     await eventBus.emit('bounties.pull_request.points_adjusted', {
       pullRequestId: pr.id,

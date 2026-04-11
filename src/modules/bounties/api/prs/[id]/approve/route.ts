@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog, BOUNTY_POINTS } from '../../../../data/entities'
 import type { BountyClassification } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { invalidateBountyPrCache } from '../../../../lib/cache'
 
 export const metadata = {
   PATCH: { requireAuth: true, requireFeatures: ['bounties.judge'] },
@@ -57,6 +58,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     em.persist([pr, activity])
     await em.flush()
+    await invalidateBountyPrCache(container, {
+      id: pr.id,
+      organizationId: pr.organizationId,
+      tenantId: pr.tenantId,
+    }, 'bounties.pr.approve')
 
     await eventBus.emit('bounties.pull_request.approved', {
       pullRequestId: pr.id,

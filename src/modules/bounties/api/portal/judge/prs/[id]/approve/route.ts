@@ -7,6 +7,7 @@ import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLo
 import type { BountyClassification } from '../../../../../../data/entities'
 import { verifyBountyJudge } from '../../../../../../lib/portalJudgeAuth'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { invalidateBountyPrCache } from '../../../../../../lib/cache'
 
 export const metadata = {
   PATCH: { requireCustomerAuth: true },
@@ -53,6 +54,11 @@ export async function PATCH(_request: Request, { params }: { params: Promise<{ i
 
     em.persist([pr, activity])
     await em.flush()
+    await invalidateBountyPrCache(container, {
+      id: pr.id,
+      organizationId: pr.organizationId,
+      tenantId: pr.tenantId,
+    }, 'bounties.portal.pr.approve')
 
     await eventBus.emit('bounties.pull_request.approved', {
       pullRequestId: pr.id,
