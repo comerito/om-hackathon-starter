@@ -7,7 +7,7 @@ import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
-import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { apiCallOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
@@ -130,7 +130,7 @@ export default function BountyJudgingPanel() {
 
   const handleApprove = React.useCallback(async (id: string) => {
     try {
-      await apiCall(`/api/bounties/prs/${id}/approve`, { method: 'PATCH', body: '{}' })
+      await apiCallOrThrow(`/api/bounties/prs/${id}/approve`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.approved', 'PR approved'), 'success')
       queryClient.invalidateQueries({ queryKey: ['bounty-prs'] })
     } catch (err) {
@@ -140,7 +140,7 @@ export default function BountyJudgingPanel() {
 
   const handleReject = React.useCallback(async (id: string) => {
     try {
-      await apiCall(`/api/bounties/prs/${id}/reject`, { method: 'PATCH', body: '{}' })
+      await apiCallOrThrow(`/api/bounties/prs/${id}/reject`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.rejected', 'PR rejected'), 'success')
       queryClient.invalidateQueries({ queryKey: ['bounty-prs'] })
     } catch (err) {

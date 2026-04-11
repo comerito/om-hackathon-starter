@@ -1,5 +1,6 @@
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
+import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
+import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog, BOUNTY_POINTS } from '../../../../data/entities'
 import type { BountyClassification } from '../../../../data/entities'
@@ -9,10 +10,10 @@ export const metadata = {
   PATCH: { requireAuth: true, requireFeatures: ['bounties.judge'] },
 }
 
-export async function PATCH(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const container = await createRequestContainer()
-    const auth = await getAuthFromCookies()
+    const auth = await getAuthFromRequest(request)
     if (!auth?.tenantId) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'content-type': 'application/json' } })
     }
@@ -20,13 +21,19 @@ export async function PATCH(_request: Request, { params }: { params: Promise<{ i
     const { id } = await params
     const em = container.resolve('em') as EntityManager
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
+    const scope = await resolveOrganizationScopeForRequest({ container, auth, request })
+    const scopeOrganizationId = scope.selectedId ?? auth.orgId ?? null
 
-    const pr = await em.findOne(BountyPullRequest, {
+    const filters: FilterQuery<BountyPullRequest> = {
       id,
       tenantId: auth.tenantId,
-      organizationId: auth.orgId,
       deletedAt: null,
-    } as FilterQuery<BountyPullRequest>)
+    }
+    if (scopeOrganizationId) {
+      filters.organizationId = scopeOrganizationId
+    }
+
+    const pr = await em.findOne(BountyPullRequest, filters)
 
     if (!pr) {
       return new Response(JSON.stringify({ error: 'PR not found' }), { status: 404, headers: { 'content-type': 'application/json' } })
