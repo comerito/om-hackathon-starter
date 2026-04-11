@@ -10,6 +10,11 @@ type PortalAuth = {
   orgId: string
 }
 
+type BountyJudgeInfo = {
+  bountyTrackIds: string[]
+  panelIds: string[]
+}
+
 /**
  * Verify that a portal-authenticated user is a judge on a panel
  * assigned to the bounty track for at least one competition.
@@ -19,7 +24,8 @@ export async function verifyBountyJudge(
   em: EntityManager,
   auth: PortalAuth,
   configService: ModuleConfigService,
-): Promise<{ bountyTrackIds: string[]; panelIds: string[] } | null> {
+  competitionId?: string | null,
+): Promise<BountyJudgeInfo | null> {
   // 1. Get bounty track mappings (competition_id -> track_id)
   const mappings = await configService.getValue<Record<string, string>>(
     'bounties',
@@ -28,7 +34,10 @@ export async function verifyBountyJudge(
   )
   if (!mappings || Object.keys(mappings).length === 0) return null
 
-  const bountyTrackIds = Object.values(mappings)
+  const bountyTrackIds = competitionId
+    ? [mappings[competitionId]].filter((trackId): trackId is string => Boolean(trackId))
+    : Object.values(mappings)
+  if (bountyTrackIds.length === 0) return null
 
   // 2. Find judge panels this user is on
   const panelJudges = await em.find(JudgePanelJudge, {

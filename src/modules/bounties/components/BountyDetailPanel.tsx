@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
-import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { apiCallOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
@@ -56,7 +56,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
 
   const handleApprove = async () => {
     try {
-      await apiCall(`/api/bounties/prs/${pr.id}/approve`, { method: 'PATCH', body: '{}' })
+      await apiCallOrThrow(`/api/bounties/prs/${pr.id}/approve`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.approved', 'PR approved'), 'success')
       onAction()
     } catch (err) {
@@ -66,7 +66,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
 
   const handleReject = async () => {
     try {
-      await apiCall(`/api/bounties/prs/${pr.id}/reject`, { method: 'PATCH', body: '{}' })
+      await apiCallOrThrow(`/api/bounties/prs/${pr.id}/reject`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.rejected', 'PR rejected'), 'success')
       onAction()
     } catch (err) {
@@ -78,7 +78,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
     const pts = parseInt(adjustPoints, 10)
     if (isNaN(pts) || pts < 0 || !adjustReason.trim()) return
     try {
-      await apiCall(`/api/bounties/prs/${pr.id}/points`, {
+      await apiCallOrThrow(`/api/bounties/prs/${pr.id}/points`, {
         method: 'PATCH',
         body: JSON.stringify({ total_points: pts, reason: adjustReason }),
       })
@@ -181,7 +181,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
                 size="sm"
                 onClick={async () => {
                   try {
-                    await apiCall(`/api/bounties/splits/${pr.split_group_id}/ungroup`, { method: 'POST', body: '{}' })
+                    await apiCallOrThrow(`/api/bounties/splits/${pr.split_group_id}/ungroup`, { method: 'POST', body: '{}' })
                     flash(t('bounties.flash.ungrouped', 'Split group removed — individual scoring restored'), 'success')
                     onAction()
                   } catch {
