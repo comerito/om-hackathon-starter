@@ -4,6 +4,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { invalidateBountyPrCache } from '../../../../lib/cache'
 
 const markDuplicateSchema = z.object({
   duplicate_of_id: z.string().uuid(),
@@ -69,6 +70,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     em.persist([pr, activity])
     await em.flush()
+    await invalidateBountyPrCache(container, {
+      id: pr.id,
+      organizationId: pr.organizationId,
+      tenantId: pr.tenantId,
+    }, 'bounties.pr.duplicate')
 
     await eventBus.emit('bounties.pull_request.duplicate_detected', {
       pullRequestId: pr.id,

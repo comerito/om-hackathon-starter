@@ -90,14 +90,12 @@ export default function BountyJudgingPanel() {
       setCompetitionFilter(stored)
       return
     }
-    setCompetitionFilter((current) => {
-      if (current !== 'all' && competitions.some((competition) => competition.id === current)) {
-        return current
-      }
-      const next = competitions[0]?.id ?? 'all'
-      if (next !== 'all') window.localStorage.setItem('bounties:selected-competition', next)
-      return next
-    })
+    setCompetitionFilter((current) => (
+      current !== 'all' && competitions.some((competition) => competition.id === current)
+        ? current
+        : 'all'
+    ))
+    window.localStorage.removeItem('bounties:selected-competition')
   }, [competitions])
 
   const queryParams = React.useMemo(() => {

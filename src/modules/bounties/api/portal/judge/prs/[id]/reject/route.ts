@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { BountyPullRequest, BountyPRStatus, BountyActivityType, BountyActivityLog } from '../../../../../../data/entities'
 import { verifyBountyJudge } from '../../../../../../lib/portalJudgeAuth'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { invalidateBountyPrCache } from '../../../../../../lib/cache'
 
 const rejectSchema = z.object({
   reason: z.string().optional(),
@@ -58,6 +59,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     em.persist([pr, activity])
     await em.flush()
+    await invalidateBountyPrCache(container, {
+      id: pr.id,
+      organizationId: pr.organizationId,
+      tenantId: pr.tenantId,
+    }, 'bounties.portal.pr.reject')
 
     await eventBus.emit('bounties.pull_request.rejected', {
       pullRequestId: pr.id,
