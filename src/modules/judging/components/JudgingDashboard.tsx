@@ -16,7 +16,19 @@ import Link from 'next/link'
 
 type PanelRow = { id: string; name: string; competition_id: string; round: string; created_at: string; _judging?: { judgeCount: number; trackCount: number } }
 type CriterionRow = { id: string; name: string; track_id: string | null; weight: number; max_score: number; round: string; order: number }
-type DemoRow = { id: string; team_id: string; project_id: string; status: string; presentation_order: number; actual_start: string | null; round: string }
+type DemoRow = {
+  id: string
+  team_id: string
+  project_id: string
+  track_id: string
+  team_name: string | null
+  project_title: string | null
+  track_name: string | null
+  status: string
+  presentation_order: number
+  actual_start: string | null
+  round: string
+}
 type ScoreProgress = { project_id: string; judge_id: string; is_submitted: boolean; total_score: number | null; round: string }
 
 const roundPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -105,9 +117,12 @@ export default function JudgingDashboard() {
 
   // Demos
   const { data: demosData, isLoading: demosLoading } = useQuery({
-    queryKey: ['judging-demos', scopeVersion],
+    queryKey: ['judging-demos', scopeVersion, selectedCompetitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ items: DemoRow[] }>('/api/judging/demos')
+      const params = new URLSearchParams()
+      if (selectedCompetitionId) params.set('competition_id', selectedCompetitionId)
+      const url = params.size > 0 ? `/api/judging/demos?${params.toString()}` : '/api/judging/demos'
+      const { ok, result } = await apiCall<{ items: DemoRow[] }>(url)
       return ok ? result : { items: [] }
     },
     enabled: tab === 'demos',
@@ -149,9 +164,20 @@ export default function JudgingDashboard() {
   ], [t, trackNameMap])
 
   const demoColumns = React.useMemo<ColumnDef<DemoRow>[]>(() => [
-    { accessorKey: 'presentation_order', header: '#', meta: { priority: 1 } },
+    { accessorKey: 'presentation_order', header: '#', meta: { priority: 1 }, cell: ({ getValue }) => Number(getValue()) + 1 },
     { accessorKey: 'status', header: t('judging.table.status', 'Status'), meta: { priority: 1 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={demoStatusPreset} /> },
-    { accessorKey: 'project_id', header: t('judging.table.project', 'Project'), meta: { priority: 2 }, cell: ({ getValue }) => String(getValue()).substring(0, 8) + '...' },
+    {
+      accessorKey: 'project_title',
+      header: t('judging.table.project', 'Project'),
+      meta: { priority: 2 },
+      cell: ({ row }) => row.original.project_title ?? `${row.original.project_id.substring(0, 8)}...`,
+    },
+    {
+      accessorKey: 'track_name',
+      header: t('judging.table.track', 'Track'),
+      meta: { priority: 2 },
+      cell: ({ row }) => row.original.track_name ?? row.original.track_id.substring(0, 8),
+    },
     { accessorKey: 'actual_start', header: t('judging.table.started', 'Started'), meta: { priority: 3 }, cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '—' },
   ], [t])
 
