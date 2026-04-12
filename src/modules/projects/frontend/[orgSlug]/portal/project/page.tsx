@@ -120,6 +120,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [lastSaved, setLastSaved] = React.useState<string | null>(null)
   const [saveFailed, setSaveFailed] = React.useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = React.useState(false)
+  const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const lastSyncedPayloadRef = React.useRef<string | null>(null)
 
   const updateProjectCache = React.useCallback((projectId: string, updater: (project: ProjectData) => ProjectData) => {
     queryClient.setQueryData<MyProjectResponse | undefined>(['portal-my-project', competitionId], (current) => {
@@ -178,6 +180,44 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     ? allProjects.find(p => p.track_id === activeTrackId) ?? allProjects[0] ?? null
     : allProjects[0] ?? null
 
+  const buildProjectPayload = React.useCallback((projectToSave: ProjectData) => ({
+    project_id: projectToSave.id,
+    title: title.trim() || projectToSave.title,
+    tagline: tagline.trim() || null,
+    description: description.trim() || null,
+    problem_statement: problemStatement.trim() || null,
+    solution: solution.trim() || null,
+    tech_stack: techStack,
+    demo_url: demoUrl.trim() || null,
+    repo_url: repoUrl.trim() || null,
+    video_url: videoUrl.trim() || null,
+    presentation_url: presentationUrl.trim() || null,
+    uses_preexisting_code: usesPreexistingCode,
+    preexisting_code_description: preexistingCodeDescription.trim() || null,
+    built_during_hackathon_description: builtDuringDescription.trim() || null,
+    screenshot_ids: screenshotIds,
+    attachment_ids: attachmentIds,
+  }), [title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds])
+
+  const buildProjectPayloadFromServer = React.useCallback((projectToSerialize: ProjectData) => ({
+    project_id: projectToSerialize.id,
+    title: projectToSerialize.title,
+    tagline: projectToSerialize.tagline ?? null,
+    description: projectToSerialize.description ?? null,
+    problem_statement: projectToSerialize.problem_statement ?? null,
+    solution: projectToSerialize.solution ?? null,
+    tech_stack: projectToSerialize.tech_stack ?? [],
+    demo_url: projectToSerialize.demo_url ?? null,
+    repo_url: projectToSerialize.repo_url ?? null,
+    video_url: projectToSerialize.video_url ?? null,
+    presentation_url: projectToSerialize.presentation_url ?? null,
+    uses_preexisting_code: projectToSerialize.uses_preexisting_code ?? false,
+    preexisting_code_description: projectToSerialize.preexisting_code_description ?? null,
+    built_during_hackathon_description: projectToSerialize.built_during_hackathon_description ?? null,
+    screenshot_ids: projectToSerialize.screenshot_ids ?? [],
+    attachment_ids: projectToSerialize.attachment_ids ?? [],
+  }), [])
+
   // Populate form when data loads or active project changes
   React.useEffect(() => {
     const p = activeProject
@@ -200,6 +240,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setAttachmentIds(p.attachment_ids ?? [])
     const restoredReadme = (p.attachments ?? []).find((attachment) => attachment.file_name.trim().toLowerCase() === 'readme.md') ?? null
     setReadmeAttachment(restoredReadme)
+    lastSyncedPayloadRef.current = JSON.stringify(buildProjectPayloadFromServer(p))
   }, [activeProject?.id])
 
   const project = activeProject
@@ -238,57 +279,45 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
 
   const saveProject = React.useCallback(async () => {
     if (!project || isPublished) return
+    const payload = buildProjectPayload(project)
     setSaving(true)
     try {
       const { ok, result } = await apiCall<{ ok: boolean; updated_at?: string }>('/api/projects/portal/update-project', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          project_id: project.id,
-          title: title.trim() || project.title,
-          tagline: tagline.trim() || null,
-          description: description.trim() || null,
-          problem_statement: problemStatement.trim() || null,
-          solution: solution.trim() || null,
-          tech_stack: techStack,
-          demo_url: demoUrl.trim() || null,
-          repo_url: repoUrl.trim() || null,
-          video_url: videoUrl.trim() || null,
-          presentation_url: presentationUrl.trim() || null,
-          uses_preexisting_code: usesPreexistingCode,
-          preexisting_code_description: preexistingCodeDescription.trim() || null,
-          built_during_hackathon_description: builtDuringDescription.trim() || null,
-          screenshot_ids: screenshotIds,
-          attachment_ids: attachmentIds,
-        }),
+        body: JSON.stringify(payload),
       })
       if (ok && result?.updated_at) {
         const updatedAt = result.updated_at
         setLastSaved(updatedAt)
         setSaveFailed(false)
+        lastSyncedPayloadRef.current = JSON.stringify(payload)
         updateProjectCache(project.id, (cachedProject) => ({
           ...cachedProject,
-          title: title.trim() || project.title,
-          tagline: tagline.trim() || null,
-          description: description.trim() || null,
-          problem_statement: problemStatement.trim() || null,
-          solution: solution.trim() || null,
-          tech_stack: techStack,
-          demo_url: demoUrl.trim() || null,
-          repo_url: repoUrl.trim() || null,
-          video_url: videoUrl.trim() || null,
-          presentation_url: presentationUrl.trim() || null,
-          uses_preexisting_code: usesPreexistingCode,
-          preexisting_code_description: preexistingCodeDescription.trim() || null,
-          built_during_hackathon_description: builtDuringDescription.trim() || null,
-          screenshot_ids: screenshotIds,
-          attachment_ids: attachmentIds,
+          title: payload.title,
+          tagline: payload.tagline,
+          description: payload.description,
+          problem_statement: payload.problem_statement,
+          solution: payload.solution,
+          tech_stack: payload.tech_stack,
+          demo_url: payload.demo_url,
+          repo_url: payload.repo_url,
+          video_url: payload.video_url,
+          presentation_url: payload.presentation_url,
+          uses_preexisting_code: payload.uses_preexisting_code,
+          preexisting_code_description: payload.preexisting_code_description,
+          built_during_hackathon_description: payload.built_during_hackathon_description,
+          screenshot_ids: payload.screenshot_ids,
+          attachment_ids: payload.attachment_ids,
           attachments: attachmentIds.length > 0 && readmeAttachment
             ? [readmeAttachment]
             : [],
           updated_at: updatedAt,
         }))
+        return true
       }
+      setSaveFailed(true)
+      return false
     } catch (err) {
       console.error('[project-editor] Save failed:', err)
       setSaveFailed(true)
@@ -304,15 +333,33 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
       } catch (lsErr) {
         console.error('[project-editor] localStorage fallback failed:', lsErr)
       }
+      return false
     } finally {
       setSaving(false)
     }
-  }, [project, isPublished, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds, readmeAttachment, updateProjectCache])
+  }, [project, isPublished, buildProjectPayload, attachmentIds, readmeAttachment, updateProjectCache])
+
+  React.useEffect(() => {
+    if (!project || isPublished) return
+    const nextPayload = JSON.stringify(buildProjectPayload(project))
+    if (nextPayload === lastSyncedPayloadRef.current) return
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(() => {
+      void saveProject()
+    }, 1000)
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    }
+  }, [project, isPublished, buildProjectPayload, saveProject])
 
   // Save manually
   async function handleSave() {
-    await saveProject()
-    flash(t('projects.portal.saved', 'Project saved'), 'success')
+    const ok = await saveProject()
+    if (ok) {
+      flash(t('projects.portal.saved', 'Project saved'), 'success')
+    } else {
+      flash(t('projects.portal.saveFailed', 'Save failed -- backed up locally'), 'error')
+    }
   }
 
   // Submit project
