@@ -51,26 +51,46 @@ interface Props {
 
 export default function BountyDetailPanel({ pr, onAction }: Props) {
   const t = useT()
+  const [actionLoading, setActionLoading] = React.useState<string | null>(null)
   const [adjustPoints, setAdjustPoints] = React.useState('')
   const [adjustReason, setAdjustReason] = React.useState('')
 
   const handleApprove = async () => {
     try {
+      setActionLoading('approve')
       await apiCallOrThrow(`/api/bounties/prs/${pr.id}/approve`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.approved', 'PR approved'), 'success')
       onAction()
     } catch (err) {
       flash(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const handleReject = async () => {
     try {
+      setActionLoading('reject')
       await apiCallOrThrow(`/api/bounties/prs/${pr.id}/reject`, { method: 'PATCH', body: '{}' })
       flash(t('bounties.flash.rejected', 'PR rejected'), 'success')
       onAction()
     } catch (err) {
       flash(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleRerunAiCheck = async () => {
+    try {
+      setActionLoading('rerun-ai')
+      await apiCallOrThrow(`/api/bounties/prs/${pr.id}/rerun-ai`, { method: 'PATCH', body: '{}' })
+      flash(t('bounties.flash.aiCheckQueued', 'AI classification queued'), 'success')
+      onAction()
+    } catch (err) {
+      flash(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -78,6 +98,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
     const pts = parseInt(adjustPoints, 10)
     if (isNaN(pts) || pts < 0 || !adjustReason.trim()) return
     try {
+      setActionLoading('points')
       await apiCallOrThrow(`/api/bounties/prs/${pr.id}/points`, {
         method: 'PATCH',
         body: JSON.stringify({ total_points: pts, reason: adjustReason }),
@@ -88,6 +109,8 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
       onAction()
     } catch (err) {
       flash(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -196,20 +219,30 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
         </div>
       )}
 
+      {pr.status === 'detected' && (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRerunAiCheck} disabled={actionLoading !== null}>
+            {actionLoading === 'rerun-ai'
+              ? t('bounties.actions.runningAiCheck', 'Running AI Check...')
+              : t('bounties.actions.runAiCheck', 'Run AI Check')}
+          </Button>
+        </div>
+      )}
+
       {/* Actions */}
       {(pr.status === 'pending_review' || pr.status === 'classified') && (
         <div className="flex gap-2">
-          <Button variant="default" size="sm" onClick={handleApprove}>
+          <Button variant="default" size="sm" onClick={handleApprove} disabled={actionLoading !== null}>
             {t('bounties.actions.approve', 'Approve')}
           </Button>
-          <Button variant="destructive" size="sm" onClick={handleReject}>
+          <Button variant="destructive" size="sm" onClick={handleReject} disabled={actionLoading !== null}>
             {t('bounties.actions.reject', 'Reject')}
           </Button>
         </div>
       )}
 
       {pr.status === 'rejected' && (
-        <Button variant="default" size="sm" onClick={handleApprove}>
+        <Button variant="default" size="sm" onClick={handleApprove} disabled={actionLoading !== null}>
           {t('bounties.actions.approveInstead', 'Approve Instead')}
         </Button>
       )}
@@ -234,7 +267,7 @@ export default function BountyDetailPanel({ pr, onAction }: Props) {
               placeholder="Reason"
               className="flex-1 rounded border px-2 py-1 text-sm"
             />
-            <Button variant="outline" size="sm" onClick={handleAdjustPoints} disabled={!adjustPoints || !adjustReason.trim()}>
+            <Button variant="outline" size="sm" onClick={handleAdjustPoints} disabled={actionLoading !== null || !adjustPoints || !adjustReason.trim()}>
               {t('bounties.actions.adjust', 'Adjust')}
             </Button>
           </div>
