@@ -118,9 +118,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [saving, setSaving] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
   const [lastSaved, setLastSaved] = React.useState<string | null>(null)
-  const [autoSaveFailed, setAutoSaveFailed] = React.useState(false)
+  const [saveFailed, setSaveFailed] = React.useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = React.useState(false)
-  const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const updateProjectCache = React.useCallback((projectId: string, updater: (project: ProjectData) => ProjectData) => {
     queryClient.setQueryData<MyProjectResponse | undefined>(['portal-my-project', competitionId], (current) => {
@@ -201,7 +200,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setAttachmentIds(p.attachment_ids ?? [])
     const restoredReadme = (p.attachments ?? []).find((attachment) => attachment.file_name.trim().toLowerCase() === 'readme.md') ?? null
     setReadmeAttachment(restoredReadme)
-  }, [activeProject?.id, activeProject?.updated_at, activeProject?.attachment_ids, activeProject?.attachments])
+  }, [activeProject?.id])
 
   const project = activeProject
   const isPublished = project?.status === 'published'
@@ -237,8 +236,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return `${s}s`
   }
 
-  // Auto-save function
-  const doAutoSave = React.useCallback(async () => {
+  const saveProject = React.useCallback(async () => {
     if (!project || isPublished) return
     setSaving(true)
     try {
@@ -267,7 +265,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
       if (ok && result?.updated_at) {
         const updatedAt = result.updated_at
         setLastSaved(updatedAt)
-        setAutoSaveFailed(false)
+        setSaveFailed(false)
         updateProjectCache(project.id, (cachedProject) => ({
           ...cachedProject,
           title: title.trim() || project.title,
@@ -292,8 +290,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
         }))
       }
     } catch (err) {
-      console.error('[project-editor] Auto-save failed:', err)
-      setAutoSaveFailed(true)
+      console.error('[project-editor] Save failed:', err)
+      setSaveFailed(true)
       // Fallback: save to localStorage so work is not lost
       try {
         localStorage.setItem(`project-draft-${project.id}`, JSON.stringify({
@@ -311,17 +309,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     }
   }, [project, isPublished, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds, readmeAttachment, updateProjectCache])
 
-  // Auto-save every 30 seconds
-  React.useEffect(() => {
-    if (!project || isPublished) return
-    if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current)
-    autoSaveTimerRef.current = setInterval(doAutoSave, 30000)
-    return () => { if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current) }
-  }, [doAutoSave, project, isPublished])
-
   // Save manually
   async function handleSave() {
-    await doAutoSave()
+    await saveProject()
     flash(t('projects.portal.saved', 'Project saved'), 'success')
   }
 
@@ -331,7 +321,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setSubmitting(true)
     try {
       // Save first
-      await doAutoSave()
+      await saveProject()
 
       const { ok, result } = await apiCall<{ ok: boolean; error?: string; details?: string[] }>('/api/projects/portal/submit-project', {
         method: 'POST',
@@ -485,13 +475,13 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   // Autosave label
   const autosaveLabel = React.useMemo(() => {
     if (saving) return t('projects.portal.saving', 'Saving...')
-    if (autoSaveFailed) return t('projects.portal.saveFailed', 'Auto-save failed -- backed up locally')
+    if (saveFailed) return t('projects.portal.saveFailed', 'Save failed -- backed up locally')
     if (!lastSaved) return ''
     const diff = Math.round((now.getTime() - new Date(lastSaved).getTime()) / 1000)
-    if (diff < 60) return t('projects.portal.autosavedJustNow', 'Autosaved just now')
+    if (diff < 60) return t('projects.portal.autosavedJustNow', 'Saved just now')
     const mins = Math.floor(diff / 60)
-    return t('projects.portal.autosavedMinutesAgo', 'Autosaved {count}m ago', { count: mins })
-  }, [saving, autoSaveFailed, lastSaved, now, t])
+    return t('projects.portal.autosavedMinutesAgo', 'Saved {count}m ago', { count: mins })
+  }, [saving, saveFailed, lastSaved, now, t])
 
   /* -- No team state -- */
   if (!isLoading && !data?.hasTeam) {
@@ -576,7 +566,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             onClick={async () => {
               // Auto-save current before switching
               if (project && isDraft) {
-                await doAutoSave()
+                await saveProject()
               }
               setActiveTrackId(p.track_id)
             }}
@@ -935,7 +925,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               <h2 className="text-xl font-bold text-foreground">{t('projects.portal.contentSection', 'Project Details')}</h2>
               <span className={cn(
                 'text-xs',
-                autoSaveFailed ? 'text-red-500 dark:text-red-400' : 'text-portal-secondary',
+                saveFailed ? 'text-red-500 dark:text-red-400' : 'text-portal-secondary',
               )}>
                 {autosaveLabel}
               </span>
