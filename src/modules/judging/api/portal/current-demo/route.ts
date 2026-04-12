@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../../../data/entities'
 import { Team } from '../../../../teams/data/entities'
 import { Project } from '../../../../projects/data/entities'
+import { Track } from '../../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
@@ -37,9 +38,14 @@ export async function GET(req: Request) {
     // Get team/project names
     const teamIds = [...new Set(queue.map(d => d.teamId))]
     const projectIds = [...new Set(queue.map(d => d.projectId))]
-    const teams = teamIds.length ? await em.find(Team, { id: { $in: teamIds } } as FilterQuery<Team>) : []
-    const projects = projectIds.length ? await em.find(Project, { id: { $in: projectIds } } as FilterQuery<Project>) : []
+    const trackIds = [...new Set(queue.map(d => d.trackId))]
+    const [teams, projects, tracks] = await Promise.all([
+      teamIds.length ? em.find(Team, { id: { $in: teamIds } } as FilterQuery<Team>) : Promise.resolve([]),
+      projectIds.length ? em.find(Project, { id: { $in: projectIds } } as FilterQuery<Project>) : Promise.resolve([]),
+      trackIds.length ? em.find(Track, { id: { $in: trackIds } } as FilterQuery<Track>) : Promise.resolve([]),
+    ])
     const teamMap = new Map(teams.map(t => [t.id, t.name]))
+    const trackMap = new Map(tracks.map(t => [t.id, t.name]))
     const translatedProjects = await applyPortalTranslationOverlays(
       projects.map(p => ({ id: p.id, title: p.title })),
       {
@@ -60,6 +66,7 @@ export async function GET(req: Request) {
         id: d.id, team_id: d.teamId, project_id: d.projectId, track_id: d.trackId,
         team_name: teamMap.get(d.teamId) ?? null,
         project_title: projectMap.get(d.projectId) ?? null,
+        track_name: trackMap.get(d.trackId) ?? null,
         presentation_order: d.presentationOrder, status: d.status,
         actual_start: d.actualStart?.toISOString() ?? null,
         presentation_duration_minutes: d.presentationDurationMinutes,

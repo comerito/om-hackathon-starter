@@ -10,7 +10,7 @@ import { cn } from '@open-mercato/shared/lib/utils'
 import { AvatarStack } from '@/components/portal'
 
 type DemoItem = {
-  id: string; team_name: string | null; project_title: string | null
+  id: string; team_name: string | null; project_title: string | null; track_name?: string | null
   status: string; actual_start: string | null
   presentation_duration_minutes: number; qa_duration_minutes: number
 }
@@ -88,6 +88,7 @@ function KioskContent() {
             <div className="mt-8">
               <p className="text-portal-primary text-[2vh] uppercase tracking-[0.3em]">{t('judging.portal.kiosk.upNext', 'Up Next')}</p>
               <p className="text-white text-[6vh] font-extrabold uppercase mt-2">{onDeck.team_name ?? t('judging.portal.kiosk.teamFallback', 'Team')}</p>
+              <p className="text-white/40 text-[2.5vh] mt-2">{onDeck.project_title ?? t('judging.portal.kiosk.projectFallback', 'Untitled project')}</p>
             </div>
           )}
         </div>
@@ -137,7 +138,7 @@ function KioskContent() {
 
         {/* Project tagline */}
         <p className="text-white/40 text-[2.5vh] text-center mt-2 max-w-4xl">
-          {presenting.project_title}
+          {presenting.project_title ?? t('judging.portal.kiosk.projectFallback', 'Untitled project')}
         </p>
 
         {/* Timer */}
@@ -186,10 +187,13 @@ function KioskContent() {
             <span className="text-white font-extrabold uppercase text-[2.5vh] tracking-wide">
               {onDeck.team_name ?? t('judging.portal.kiosk.teamUpperFallback', 'TEAM')}
             </span>
+            <span className="text-white/50 text-[1.5vh] block mt-1">
+              {onDeck.project_title ?? t('judging.portal.kiosk.projectFallback', 'Untitled project')}
+            </span>
           </div>
           <div className="text-right">
             <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.track', 'Track')}</span>
-            <span className="text-white font-bold uppercase text-[1.8vh]">{t('judging.portal.kiosk.trackFallback', 'Infrastructure')}</span>
+            <span className="text-white font-bold uppercase text-[1.8vh]">{onDeck.track_name ?? t('judging.portal.kiosk.trackFallback', 'Track')}</span>
           </div>
           <AvatarStack
             avatars={[
