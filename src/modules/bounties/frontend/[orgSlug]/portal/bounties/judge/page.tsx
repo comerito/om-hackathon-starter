@@ -10,7 +10,7 @@ import { PortalCompetitionLayout } from '../../../../../../competitions/componen
 import { PortalPageTitle, SectionLabel, PortalBadge, CompetitionCountdown } from '@/components/portal'
 import {
   GitPullRequest, CheckCircle, XCircle, AlertTriangle, ExternalLink,
-  ChevronLeft, Clock, Shield, Copy, Pencil, Trophy, Loader2,
+  ChevronLeft, Clock, Shield, Copy, Pencil, Trophy, Loader2, RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -411,6 +411,7 @@ function PRDetailPanel({ pr, onAction, onBack }: { pr: BountyPR; onAction: () =>
 
   const handleApprove = () => doAction(`/api/bounties/portal/judge/prs/${pr.id}/approve`)
   const handleReject = () => doAction(`/api/bounties/portal/judge/prs/${pr.id}/reject`)
+  const handleRerunAiCheck = () => doAction(`/api/bounties/portal/judge/prs/${pr.id}/rerun-ai`)
 
   const handleAdjustPoints = () => {
     const pts = parseInt(adjustPoints, 10)
@@ -469,7 +470,7 @@ function PRDetailPanel({ pr, onAction, onBack }: { pr: BountyPR; onAction: () =>
           </div>
           <div className="shrink-0 flex flex-col items-center rounded-lg bg-portal-primary/5 px-3 py-2">
             <span className="text-2xl font-bold text-portal-primary">
-              {(pr.points_override ?? pr.classifications ?? []).reduce((sum, c) => sum + c.points, 0)}
+              {pr.total_points}
             </span>
             <span className="text-[9px] font-semibold uppercase tracking-wider text-portal-secondary">pts</span>
           </div>
@@ -547,6 +548,24 @@ function PRDetailPanel({ pr, onAction, onBack }: { pr: BountyPR; onAction: () =>
                 {t('bounties.portal.judge.splitChildNote', 'Points are awarded to the primary PR in this group only.')}
               </p>
             )}
+          </div>
+        )}
+
+        {pr.status === 'detected' && (
+          <div className="border-t border-gray-100 dark:border-white/10 pt-4">
+            <SectionLabel className="block mb-2">
+              {t('bounties.portal.judge.actions', 'ACTIONS')}
+            </SectionLabel>
+            <div className="flex gap-2">
+              <ActionButton
+                onClick={handleRerunAiCheck}
+                loading={actionLoading === `/api/bounties/portal/judge/prs/${pr.id}/rerun-ai`}
+                variant="neutral"
+              >
+                <RefreshCw className="size-3.5" />
+                {t('bounties.portal.judge.runAiCheck', 'Run AI Check')}
+              </ActionButton>
+            </div>
           </div>
         )}
 

@@ -50,10 +50,13 @@
   "bounties.actions.reject": "Reject",
   "bounties.actions.approveInstead": "Approve Instead",
   "bounties.actions.adjust": "Adjust",
+  "bounties.actions.runAiCheck": "Run AI Check",
+  "bounties.actions.runningAiCheck": "Running AI Check...",
   "bounties.actions.ungroup": "Ungroup",
 
   "bounties.flash.approved": "PR approved",
   "bounties.flash.rejected": "PR rejected",
+  "bounties.flash.aiCheckQueued": "AI classification queued",
   "bounties.flash.pointsAdjusted": "Points adjusted",
   "bounties.flash.ungrouped": "Split group removed — individual scoring restored",
 
