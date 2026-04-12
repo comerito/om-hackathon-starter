@@ -121,7 +121,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [saveFailed, setSaveFailed] = React.useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = React.useState(false)
   const autoSaveTimerRef = React.useRef<NodeJS.Timeout | null>(null)
-  const lastSyncedPayloadRef = React.useRef<string | null>(null)
+  const activeProjectIdRef = React.useRef<string | null>(null)
+  const lastSyncedPayloadsRef = React.useRef(new Map<string, string>())
+  const saveQueueRef = React.useRef(new Map<string, Promise<boolean>>())
 
   const updateProjectCache = React.useCallback((projectId: string, updater: (project: ProjectData) => ProjectData) => {
     queryClient.setQueryData<MyProjectResponse | undefined>(['portal-my-project', competitionId], (current) => {
@@ -222,6 +224,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   React.useEffect(() => {
     const p = activeProject
     if (!p) return
+    activeProjectIdRef.current = p.id
     setTitle(p.title ?? '')
     setTagline(p.tagline ?? '')
     setDescription(p.description ?? '')
@@ -240,32 +243,18 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setAttachmentIds(p.attachment_ids ?? [])
     const restoredReadme = (p.attachments ?? []).find((attachment) => attachment.file_name.trim().toLowerCase() === 'readme.md') ?? null
     setReadmeAttachment(restoredReadme)
-    lastSyncedPayloadRef.current = JSON.stringify(buildProjectPayloadFromServer(p))
+    lastSyncedPayloadsRef.current.set(p.id, JSON.stringify(buildProjectPayloadFromServer(p)))
   }, [activeProject?.id])
 
   const project = activeProject
   const isPublished = project?.status === 'published'
   const isDraft = project?.status === 'draft'
-
   // Deadline handling — uses live `now` that ticks every second
   const deadline = data?.submissionDeadline ? new Date(data.submissionDeadline) : null
   const deadlinePassed = deadline ? now > deadline : false
   const secondsUntilDeadline = deadline ? Math.max(0, Math.floor((deadline.getTime() - now.getTime()) / 1000)) : null
   const minutesUntilDeadline = secondsUntilDeadline !== null ? Math.floor(secondsUntilDeadline / 60) : null
   const isUrgent = minutesUntilDeadline !== null && minutesUntilDeadline <= 15
-
-  // Preserve unsaved work to localStorage when deadline passes
-  React.useEffect(() => {
-    if (deadlinePassed && project && isDraft) {
-      try {
-        localStorage.setItem(`project-draft-${project.id}`, JSON.stringify({
-          title, tagline, description, problemStatement, solution, techStack,
-          demoUrl, repoUrl, videoUrl, presentationUrl,
-          usesPreexistingCode, preexistingCodeDescription, builtDuringDescription,
-        }))
-      } catch { /* ignore */ }
-    }
-  }, [deadlinePassed, project, isDraft, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription])
 
   // Format countdown display
   function formatCountdown(totalSeconds: number): string {
@@ -277,75 +266,82 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return `${s}s`
   }
 
-  const saveProject = React.useCallback(async () => {
-    if (!project || isPublished) return
-    const payload = buildProjectPayload(project)
-    setSaving(true)
-    try {
-      const { ok, result } = await apiCall<{ ok: boolean; updated_at?: string }>('/api/projects/portal/update-project', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (ok && result?.updated_at) {
-        const updatedAt = result.updated_at
-        setLastSaved(updatedAt)
-        setSaveFailed(false)
-        lastSyncedPayloadRef.current = JSON.stringify(payload)
-        updateProjectCache(project.id, (cachedProject) => ({
-          ...cachedProject,
-          title: payload.title,
-          tagline: payload.tagline,
-          description: payload.description,
-          problem_statement: payload.problem_statement,
-          solution: payload.solution,
-          tech_stack: payload.tech_stack,
-          demo_url: payload.demo_url,
-          repo_url: payload.repo_url,
-          video_url: payload.video_url,
-          presentation_url: payload.presentation_url,
-          uses_preexisting_code: payload.uses_preexisting_code,
-          preexisting_code_description: payload.preexisting_code_description,
-          built_during_hackathon_description: payload.built_during_hackathon_description,
-          screenshot_ids: payload.screenshot_ids,
-          attachment_ids: payload.attachment_ids,
-          attachments: attachmentIds.length > 0 && readmeAttachment
-            ? [readmeAttachment]
-            : [],
-          updated_at: updatedAt,
-        }))
-        return true
+  const saveProject = React.useCallback(async (projectToSave?: ProjectData) => {
+    const targetProject = projectToSave ?? project
+    if (!targetProject || targetProject.status === 'published') return false
+    const projectId = targetProject.id
+    const payload = buildProjectPayload(targetProject)
+    const readmeAttachmentSnapshot = readmeAttachment
+    const runSave = async () => {
+      if (activeProjectIdRef.current === projectId) {
+        setSaving(true)
       }
-      setSaveFailed(true)
-      return false
-    } catch (err) {
-      console.error('[project-editor] Save failed:', err)
-      setSaveFailed(true)
-      // Fallback: save to localStorage so work is not lost
       try {
-        localStorage.setItem(`project-draft-${project.id}`, JSON.stringify({
-          title, tagline, description, problemStatement, solution, techStack,
-          demoUrl, repoUrl, videoUrl, presentationUrl,
-          usesPreexistingCode, preexistingCodeDescription, builtDuringDescription,
-          screenshotIds,
-          attachmentIds,
-        }))
-      } catch (lsErr) {
-        console.error('[project-editor] localStorage fallback failed:', lsErr)
+        const { ok, result } = await apiCall<{ ok: boolean; updated_at?: string }>('/api/projects/portal/update-project', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (ok && result?.updated_at) {
+          const updatedAt = result.updated_at
+          if (activeProjectIdRef.current === projectId) {
+            setLastSaved(updatedAt)
+            setSaveFailed(false)
+          }
+          lastSyncedPayloadsRef.current.set(projectId, JSON.stringify(payload))
+          updateProjectCache(projectId, (cachedProject) => ({
+            ...cachedProject,
+            title: payload.title,
+            tagline: payload.tagline,
+            description: payload.description,
+            problem_statement: payload.problem_statement,
+            solution: payload.solution,
+            tech_stack: payload.tech_stack,
+            demo_url: payload.demo_url,
+            repo_url: payload.repo_url,
+            video_url: payload.video_url,
+            presentation_url: payload.presentation_url,
+            uses_preexisting_code: payload.uses_preexisting_code,
+            preexisting_code_description: payload.preexisting_code_description,
+            built_during_hackathon_description: payload.built_during_hackathon_description,
+            screenshot_ids: payload.screenshot_ids,
+            attachment_ids: payload.attachment_ids,
+            attachments: payload.attachment_ids.length > 0 && readmeAttachmentSnapshot
+              ? [readmeAttachmentSnapshot]
+              : [],
+            updated_at: updatedAt,
+          }))
+          return true
+        }
+        if (activeProjectIdRef.current === projectId) {
+          setSaveFailed(true)
+        }
+        return false
+      } catch (err) {
+        console.error('[project-editor] Save failed:', err)
+        if (activeProjectIdRef.current === projectId) {
+          setSaveFailed(true)
+        }
+        return false
+      } finally {
+        if (activeProjectIdRef.current === projectId) {
+          setSaving(false)
+        }
       }
-      return false
-    } finally {
-      setSaving(false)
     }
-  }, [project, isPublished, buildProjectPayload, attachmentIds, readmeAttachment, updateProjectCache])
+    const previousSave = saveQueueRef.current.get(projectId) ?? Promise.resolve(true)
+    const queuedSave = previousSave.catch(() => false).then(runSave)
+    saveQueueRef.current.set(projectId, queuedSave)
+    return queuedSave
+  }, [project, buildProjectPayload, readmeAttachment, updateProjectCache])
 
   React.useEffect(() => {
     if (!project || isPublished) return
     const nextPayload = JSON.stringify(buildProjectPayload(project))
-    if (nextPayload === lastSyncedPayloadRef.current) return
+    if (nextPayload === lastSyncedPayloadsRef.current.get(project.id)) return
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {
-      void saveProject()
+      void saveProject(project)
     }, 1000)
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
