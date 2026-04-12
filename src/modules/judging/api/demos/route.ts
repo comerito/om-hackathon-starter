@@ -6,6 +6,8 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../../data/entities'
 import { Project, ProjectStatus } from '../../../projects/data/entities'
 import { Competition } from '../../../competitions/data/entities'
+import { Team } from '../../../teams/data/entities'
+import { Track } from '../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const generateSchema = z.object({
@@ -52,10 +54,31 @@ export async function GET(req: Request) {
       orderBy: { presentationOrder: 'ASC' },
     })
 
+    const teamIds = [...new Set(demos.map(d => d.teamId))]
+    const projectIds = [...new Set(demos.map(d => d.projectId))]
+    const trackIds = [...new Set(demos.map(d => d.trackId))]
+    const [teams, projects, tracks] = await Promise.all([
+      teamIds.length
+        ? em.find(Team, { id: { $in: teamIds }, tenantId: auth.tenantId } as FilterQuery<Team>)
+        : Promise.resolve([]),
+      projectIds.length
+        ? em.find(Project, { id: { $in: projectIds }, tenantId: auth.tenantId } as FilterQuery<Project>)
+        : Promise.resolve([]),
+      trackIds.length
+        ? em.find(Track, { id: { $in: trackIds }, tenantId: auth.tenantId } as FilterQuery<Track>)
+        : Promise.resolve([]),
+    ])
+    const teamMap = new Map(teams.map(team => [team.id, team.name]))
+    const projectMap = new Map(projects.map(project => [project.id, project.title]))
+    const trackMap = new Map(tracks.map(track => [track.id, track.name]))
+
     return NextResponse.json({
       items: demos.map(d => ({
         id: d.id, competition_id: d.competitionId, team_id: d.teamId,
         project_id: d.projectId, track_id: d.trackId,
+        team_name: teamMap.get(d.teamId) ?? null,
+        project_title: projectMap.get(d.projectId) ?? null,
+        track_name: trackMap.get(d.trackId) ?? null,
         presentation_order: d.presentationOrder, status: d.status,
         scheduled_start: d.scheduledStart?.toISOString() ?? null,
         actual_start: d.actualStart?.toISOString() ?? null,
