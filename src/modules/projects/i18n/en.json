@@ -85,5 +85,10 @@
   "projects.fields.checklist.readmeFeedback": "README.md feedback file",
   "projects.fields.checklist.originality": "Originality disclosure",
   "projects.portal.nav.myProject": "My Project",
-  "projects.portal.nav.groupHackathon": "Hackathon"
+  "projects.portal.nav.groupHackathon": "Hackathon",
+  "projects.filters.competition": "Competition",
+  "projects.export.action": "Download Competition Attachments",
+  "projects.export.exporting": "Preparing archive...",
+  "projects.export.started": "Project attachments download started",
+  "projects.export.error": "Failed to export project attachments"
 }

@@ -85,5 +85,10 @@
   "projects.fields.checklist.readmeFeedback": "Plik README.md z opinią",
   "projects.fields.checklist.originality": "Oświadczenie o oryginalności",
   "projects.portal.nav.myProject": "Mój projekt",
-  "projects.portal.nav.groupHackathon": "Hackathon"
+  "projects.portal.nav.groupHackathon": "Hackathon",
+  "projects.filters.competition": "Konkurs",
+  "projects.export.action": "Pobierz załączniki konkursu",
+  "projects.export.exporting": "Przygotowywanie archiwum...",
+  "projects.export.started": "Rozpoczęto pobieranie załączników projektów",
+  "projects.export.error": "Nie udało się wyeksportować załączników projektów"
 }

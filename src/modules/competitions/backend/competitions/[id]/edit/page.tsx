@@ -11,6 +11,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
+import { downloadCompetitionAttachments } from '../../../../../projects/lib/downloadCompetitionAttachments'
 
 const STAGE_ORDER = [
   'draft', 'open', 'team_formation', 'track_selection',
@@ -65,6 +66,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
   const [advancing, setAdvancing] = React.useState(false)
+  const [exportingAttachments, setExportingAttachments] = React.useState(false)
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
 
   const fields = React.useMemo<CrudField[]>(() => [
@@ -205,6 +207,24 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     }
   }
 
+  async function handleDownloadAttachments() {
+    if (!id) return
+    setExportingAttachments(true)
+    try {
+      await downloadCompetitionAttachments(id)
+      flash(t('competitions.edit.attachments.downloadStarted', 'Project attachments download started'), 'success')
+    } catch (downloadError) {
+      flash(
+        downloadError instanceof Error
+          ? downloadError.message
+          : t('competitions.edit.attachments.downloadFailed', 'Failed to export project attachments'),
+        'error',
+      )
+    } finally {
+      setExportingAttachments(false)
+    }
+  }
+
   if (!id) return null
 
   return (
@@ -260,6 +280,16 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
                       : `${t('competitions.edit.advanceTo', 'Advance to')} ${STAGE_LABELS[nextStage] ?? nextStage}`
                     }
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDownloadAttachments}
+                    disabled={exportingAttachments}
+                  >
+                    {exportingAttachments
+                      ? t('competitions.edit.attachments.downloading', 'Preparing archive...')
+                      : t('competitions.edit.attachments.download', 'Download Project Attachments')}
+                  </Button>
                   {STAGE_DESCRIPTIONS[nextStage] && (
                     <p className="text-xs text-muted-foreground max-w-md">
                       {STAGE_DESCRIPTIONS[nextStage]}
@@ -267,9 +297,21 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  {t('competitions.edit.finalStage', 'This competition has reached its final stage.')}
-                </p>
+                <div className="flex items-center gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDownloadAttachments}
+                    disabled={exportingAttachments}
+                  >
+                    {exportingAttachments
+                      ? t('competitions.edit.attachments.downloading', 'Preparing archive...')
+                      : t('competitions.edit.attachments.download', 'Download Project Attachments')}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    {t('competitions.edit.finalStage', 'This competition has reached its final stage.')}
+                  </p>
+                </div>
               )}
             </div>
           )}
