@@ -5,6 +5,7 @@ export const features = [
   { id: 'projects.delete', title: 'Delete projects', module: 'projects' },
   { id: 'projects.manage', title: 'Manage projects', module: 'projects' },
   { id: 'projects.flag', title: 'Flag projects for code reuse', module: 'projects' },
+  { id: 'projects.export_attachments', title: 'Export project attachments', module: 'projects' },
 ]
 
 export default features

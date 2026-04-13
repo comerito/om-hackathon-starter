@@ -12,8 +12,10 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { downloadCompetitionAttachments } from '../lib/downloadCompetitionAttachments'
 
 type ProjectRow = {
   id: string
@@ -53,9 +55,11 @@ export default function ProjectsTable() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'title', desc: false }])
   const [page, setPage] = React.useState(1)
   const [searchValue, setSearchValue] = React.useState('')
+  const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const [flagProjectId, setFlagProjectId] = React.useState<string | null>(null)
   const [flagReason, setFlagReason] = React.useState('')
   const [flagging, setFlagging] = React.useState(false)
+  const [exportingAttachments, setExportingAttachments] = React.useState(false)
   const scopeVersion = useOrganizationScopeVersion()
 
   const queryParams = React.useMemo(() => {
@@ -66,13 +70,30 @@ export default function ProjectsTable() {
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
     if (searchValue) params.title = searchValue
+    if (filterValues.competition_id && typeof filterValues.competition_id === 'string') {
+      params.competition_id = filterValues.competition_id
+    }
     return new URLSearchParams(params).toString()
-  }, [page, sorting, searchValue])
+  }, [filterValues.competition_id, page, searchValue, sorting])
 
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['projects', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<ProjectRow>('projects/projects', Object.fromEntries(new URLSearchParams(queryParams))),
   })
+
+  const { data: competitionsData } = useQuery({
+    queryKey: ['projects-competitions', scopeVersion],
+    queryFn: async () => {
+      const response = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', { pageSize: '100' })
+      return response?.items ?? []
+    },
+  })
+
+  const competitionOptions = React.useMemo(
+    () => (competitionsData ?? []).map((competition) => ({ value: competition.id, label: competition.name })),
+    [competitionsData],
+  )
+  const selectedCompetitionId = typeof filterValues.competition_id === 'string' ? filterValues.competition_id : null
 
   // Compute submission progress
   const totalProjects = data?.total ?? 0
@@ -117,6 +138,22 @@ export default function ProjectsTable() {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     } catch (err) {
       flash(err instanceof Error ? err.message : t('projects.table.error', 'Error'), 'error')
+    }
+  }
+
+  async function handleExportAttachments() {
+    if (!selectedCompetitionId) return
+    setExportingAttachments(true)
+    try {
+      await downloadCompetitionAttachments(selectedCompetitionId)
+      flash(t('projects.export.started', 'Project attachments download started'), 'success')
+    } catch (error) {
+      flash(
+        error instanceof Error ? error.message : t('projects.export.error', 'Failed to export project attachments'),
+        'error',
+      )
+    } finally {
+      setExportingAttachments(false)
     }
   }
 
@@ -226,6 +263,20 @@ export default function ProjectsTable() {
 
       <DataTable
         title={t('projects.table.title', 'Projects')}
+        actions={
+          selectedCompetitionId ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExportAttachments}
+              disabled={exportingAttachments}
+            >
+              {exportingAttachments
+                ? t('projects.export.exporting', 'Preparing archive...')
+                : t('projects.export.action', 'Download Competition Attachments')}
+            </Button>
+          ) : undefined
+        }
         columns={columns}
         data={data?.items ?? []}
         searchValue={searchValue}
@@ -234,6 +285,17 @@ export default function ProjectsTable() {
         sortable
         sorting={sorting}
         onSortingChange={(s) => { setSorting(s); setPage(1) }}
+        filters={[
+          {
+            id: 'competition_id',
+            label: t('projects.filters.competition', 'Competition'),
+            type: 'select',
+            options: competitionOptions,
+          },
+        ]}
+        filterValues={filterValues}
+        onFiltersApply={(values: FilterValues) => { setFilterValues(values); setPage(1) }}
+        onFiltersClear={() => { setFilterValues({}); setPage(1) }}
         rowActions={(row) => (
           <RowActions
             items={[
