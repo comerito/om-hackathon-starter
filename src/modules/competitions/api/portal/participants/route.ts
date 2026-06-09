@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -91,20 +92,12 @@ export async function GET(req: Request) {
     }
 
     // Load customer_users for display names
-    const knex = (em as any).getConnection().getKnex()
 
-    let usersQuery = knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', filteredUserIds)
-
-    if (search.length >= 2) {
-      const searchPattern = `%${search}%`
-      usersQuery = usersQuery.andWhere(function (this: any) {
-        this.whereILike('display_name', searchPattern)
-      })
-    }
-
-    const userRows = await usersQuery.limit(100)
+    const userRows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(
+      em,
+      `SELECT id, display_name, email FROM customer_users WHERE id IN (?)${search.length >= 2 ? ' AND display_name ILIKE ?' : ''} LIMIT 100`,
+      search.length >= 2 ? [filteredUserIds, `%${search}%`] : [filteredUserIds],
+    )
 
     const userMap = new Map<string, { display_name: string }>(
       userRows.map((row: any) => [row.id, {

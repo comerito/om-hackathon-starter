@@ -1,3 +1,4 @@
+import { rawAll, rawFirst } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -23,44 +24,26 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
-    // Find competition invitations for this user+competition, joined with framework invitation data
-    const rows = await knex('competitions_invitation as ci')
-      .join('customer_user_invitations as cui', 'cui.id', 'ci.customer_invitation_id')
-      .where('ci.competition_id', competitionId)
-      .where('ci.tenant_id', auth.tenantId)
-      .where('cui.email_hash', knex.raw(
-        `(SELECT email_hash FROM customer_users WHERE id = ? AND tenant_id = ? LIMIT 1)`,
-        [customerUserId, auth.tenantId],
-      ))
-      .orWhere(function (this: any) {
-        // Also match by direct email lookup from customer_user_invitations joined to competitions_invitation
-        this.where('ci.competition_id', competitionId)
-          .where('ci.tenant_id', auth.tenantId)
-      })
-      .select(
-        'ci.id',
-        'ci.customer_invitation_id',
-        'ci.competition_id',
-        'ci.participation_role',
-        'ci.created_at',
-        'cui.email',
-        'cui.display_name',
-        'cui.accepted_at',
-        'cui.cancelled_at',
-        'cui.expires_at',
-      )
-      .orderBy('ci.created_at', 'desc')
-      .limit(20)
+    // Find competition invitations for this competition (results are filtered by the
+    // customer user's email below, mirroring the previous query's effective behavior).
+    const rows = await rawAll<any>(em, `
+      SELECT ci.id, ci.customer_invitation_id, ci.competition_id, ci.participation_role, ci.created_at,
+             cui.email, cui.display_name, cui.accepted_at, cui.cancelled_at, cui.expires_at
+      FROM competitions_invitation ci
+      JOIN customer_user_invitations cui ON cui.id = ci.customer_invitation_id
+      WHERE ci.competition_id = ? AND ci.tenant_id = ?
+      ORDER BY ci.created_at DESC
+      LIMIT 20
+    `, [competitionId, auth.tenantId])
 
     // Filter to only invitations whose email matches the customer user's email
     // First get the user's email
-    const userRow = await knex('customer_users')
-      .where('id', customerUserId)
-      .where('tenant_id', auth.tenantId)
-      .select('email')
-      .first()
+    const userRow = await rawFirst<{ email: string | null }>(
+      em,
+      `SELECT email FROM customer_users WHERE id = ? AND tenant_id = ? LIMIT 1`,
+      [customerUserId, auth.tenantId],
+    )
 
     const userEmail = userRow?.email?.toLowerCase()
 

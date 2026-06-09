@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -20,43 +21,36 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Resolve organization scope from the request (cookie-selected org)
     const scope = await resolveOrganizationScopeForRequest({ container, auth, request: req })
     const organizationIds = scope.filterIds
 
-    let query = knex('competitions_invitation as ci')
-      .join('customer_user_invitations as cui', 'cui.id', 'ci.customer_invitation_id')
-      .where('ci.tenant_id', auth.tenantId)
-      .select(
-        'ci.id',
-        'ci.customer_invitation_id',
-        'ci.competition_id',
-        'ci.participation_role',
-        'ci.created_at',
-        'cui.email',
-        'cui.display_name',
-        'cui.accepted_at',
-        'cui.cancelled_at',
-        'cui.expires_at',
-      )
-      .orderBy('ci.created_at', 'desc')
-      .limit(200)
-
+    const conds: string[] = ['ci.tenant_id = ?']
+    const qParams: unknown[] = [auth.tenantId]
     if (competitionId) {
-      query = query.where('ci.competition_id', competitionId)
+      conds.push('ci.competition_id = ?')
+      qParams.push(competitionId)
     }
     if (organizationIds && organizationIds.length > 0) {
-      query = query.whereIn('ci.organization_id', organizationIds)
+      conds.push('ci.organization_id IN (?)')
+      qParams.push(organizationIds)
     }
 
-    const rows = await query
+    const rows = await rawAll<any>(em, `
+      SELECT ci.id, ci.customer_invitation_id, ci.competition_id, ci.participation_role, ci.created_at,
+             cui.email, cui.display_name, cui.accepted_at, cui.cancelled_at, cui.expires_at
+      FROM competitions_invitation ci
+      JOIN customer_user_invitations cui ON cui.id = ci.customer_invitation_id
+      WHERE ${conds.join(' AND ')}
+      ORDER BY ci.created_at DESC
+      LIMIT 200
+    `, qParams)
 
     // Also fetch competition names
     const compIds = [...new Set(rows.map((r: any) => r.competition_id))]
     const compRows = compIds.length > 0
-      ? await knex('competitions_competition').select('id', 'name').whereIn('id', compIds)
+      ? await rawAll<{ id: string; name: string }>(em, `SELECT id, name FROM competitions_competition WHERE id IN (?)`, [compIds])
       : []
     const compMap = new Map<string, string>(compRows.map((r: any) => [r.id, r.name]))
 

@@ -1,3 +1,4 @@
+import { rawFirst } from '../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -30,7 +31,6 @@ export async function POST(req: Request) {
     const body = await req.json()
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     let participation: CompetitionParticipation | null = null
 
@@ -42,11 +42,7 @@ export async function POST(req: Request) {
         id: byId.data.participation_id, tenantId: auth.tenantId, deletedAt: null,
       } as FilterQuery<CompetitionParticipation>)
     } else if (byEmail.success && byEmail.data.email) {
-      const userRow = await knex('customer_users')
-        .select('id')
-        .where('email', byEmail.data.email)
-        .where('tenant_id', auth.tenantId)
-        .first()
+      const userRow = await rawFirst<{ id: string }>(em, `SELECT id FROM customer_users WHERE email = ? AND tenant_id = ? LIMIT 1`, [byEmail.data.email, auth.tenantId])
       if (userRow) {
         participation = await em.findOne(CompetitionParticipation, {
           customerUserId: userRow.id,
@@ -61,7 +57,7 @@ export async function POST(req: Request) {
 
     if (!participation) return NextResponse.json({ error: 'Participation not found' }, { status: 404 })
     if (participation.checkedIn) {
-      const alreadyRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+      const alreadyRow = await rawFirst<{ display_name: string | null; email: string | null }>(em, `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`, [participation.customerUserId])
       return NextResponse.json({ ok: true, already: true, displayName: alreadyRow?.display_name ?? null, email: alreadyRow?.email ?? null })
     }
 
@@ -70,7 +66,7 @@ export async function POST(req: Request) {
     await em.persistAndFlush(participation)
 
     // Resolve display name for response
-    const displayRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+    const displayRow = await rawFirst<{ display_name: string | null; email: string | null }>(em, `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`, [participation.customerUserId])
 
     return NextResponse.json({
       ok: true,

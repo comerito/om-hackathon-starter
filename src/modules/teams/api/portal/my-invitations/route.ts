@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -80,9 +81,8 @@ export async function GET(req: Request) {
       ...received.map(i => i.inviterId),
       ...teamJoinRequests.map(i => i.inviterId),
     ].filter(Boolean))]
-    const knex = (em as any).getConnection().getKnex()
     const userRows = userIds.length > 0
-      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', userIds)
+      ? await rawAll<{ id: string; display_name: string | null; email: string | null }>(em, `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`, [userIds])
       : []
     const userMap = new Map<string, string>(
       userRows.map((r: any) => [r.id, r.display_name ?? r.email?.split('@')[0] ?? 'Unknown']),

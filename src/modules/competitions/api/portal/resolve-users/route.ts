@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -28,15 +29,11 @@ export async function GET(req: Request) {
     const em = container.resolve('em') as EntityManager
 
     // Query customer_users table for display names
-    const knex = (em as any).getConnection().getKnex()
-    let query = knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', limitedIds)
-    if (auth.tenantId) {
-      query = query.andWhere('tenant_id', auth.tenantId)
-    }
-
-    const rows = await query
+    const rows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(
+      em,
+      `SELECT id, display_name, email FROM customer_users WHERE id IN (?)${auth.tenantId ? ' AND tenant_id = ?' : ''}`,
+      auth.tenantId ? [limitedIds, auth.tenantId] : [limitedIds],
+    )
     const users: Record<string, { displayName: string; email: string }> = {}
     for (const row of rows) {
       users[row.id] = {

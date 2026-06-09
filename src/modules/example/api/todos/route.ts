@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { rawAll } from '../../../../lib/db'
 import { z } from 'zod'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
 import { Todo } from '../../data/entities'
@@ -185,25 +186,24 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
           .map((d: any) => d.key)
         // Fallback discovery: keys that have values even if no definition exists
         try {
-          const knex = (em as any).getConnection().getKnex()
-          const rows = await knex('custom_field_values')
-            .distinct('field_key')
-            .where({ entity_id: E.example.todo as any })
-            .modify((qb: any) => {
-              if (scopedOrgIds === null) {
-                // no organization restriction
-              } else if (scopedOrgIds.length > 0) {
-                qb.andWhere((b: any) => {
-                  b.whereIn('organization_id', scopedOrgIds as any)
-                  b.orWhereNull('organization_id')
-                })
-              } else {
-                qb.whereNull('organization_id')
-              }
-              if (ctx.auth!.tenantId != null) qb.andWhere((b: any) => b.where({ tenant_id: ctx.auth!.tenantId }).orWhereNull('tenant_id'))
-              else qb.whereNull('tenant_id')
-            })
-            .whereNull('deleted_at')
+          const cfConds: string[] = ['entity_id = ?']
+          const cfParams: unknown[] = [E.example.todo as any]
+          if (scopedOrgIds === null) {
+            // no organization restriction
+          } else if (scopedOrgIds.length > 0) {
+            cfConds.push('(organization_id IN (?) OR organization_id IS NULL)')
+            cfParams.push(scopedOrgIds as any)
+          } else {
+            cfConds.push('organization_id IS NULL')
+          }
+          if (ctx.auth!.tenantId != null) {
+            cfConds.push('(tenant_id = ? OR tenant_id IS NULL)')
+            cfParams.push(ctx.auth!.tenantId)
+          } else {
+            cfConds.push('tenant_id IS NULL')
+          }
+          cfConds.push('deleted_at IS NULL')
+          const rows = await rawAll<{ field_key: string }>(em, `SELECT DISTINCT field_key FROM custom_field_values WHERE ${cfConds.join(' AND ')}`, cfParams)
           const keysFromValues = (rows || []).map((r: any) => String(r.field_key))
           // Merge with code-declared keys and de-dupe
           dynamicCfKeys = Array.from(new Set([ ...cfSel.keys, ...keysFromDefs, ...keysFromValues ]))

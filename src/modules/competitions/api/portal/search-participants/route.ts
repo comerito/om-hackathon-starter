@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -30,7 +31,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Search customer_users by email or display_name, filtered to competition participants
     const participations = await em.find(CompetitionParticipation, {
@@ -44,14 +44,11 @@ export async function GET(req: Request) {
     }
 
     const searchPattern = `%${query}%`
-    const rows = await knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', participantUserIds)
-      .andWhere(function (this: any) {
-        this.whereILike('email', searchPattern)
-          .orWhereILike('display_name', searchPattern)
-      })
-      .limit(10)
+    const rows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(
+      em,
+      `SELECT id, display_name, email FROM customer_users WHERE id IN (?) AND (email ILIKE ? OR display_name ILIKE ?) LIMIT 10`,
+      [participantUserIds, searchPattern, searchPattern],
+    )
 
     const items = rows.map((row: any) => ({
       id: row.id,

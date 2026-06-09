@@ -1,3 +1,4 @@
+import { rawAll, rawFirst } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -32,56 +33,44 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
-    let query = knex('teams_team as t')
-      .where('t.competition_id', competitionId)
-      .where('t.tenant_id', auth.tenantId)
-      .where('t.deleted_at', null)
-      .select(
-        't.id',
-        't.competition_id',
-        't.track_id',
-        't.name',
-        't.description',
-        't.status',
-        't.is_finalist',
-        't.table_number',
-        't.table_location',
-        't.is_active',
-        't.created_at',
-      )
-
-    if (nameFilter) {
-      query = query.whereRaw('t.name ILIKE ?', [`%${nameFilter}%`])
-    }
+    // safeSortField is whitelisted above; sortDir is normalized to 'asc'|'desc'
+    const whereSql = `t.competition_id = ? AND t.tenant_id = ? AND t.deleted_at IS NULL${nameFilter ? ' AND t.name ILIKE ?' : ''}`
+    const whereParams: unknown[] = nameFilter
+      ? [competitionId, auth.tenantId, `%${nameFilter}%`]
+      : [competitionId, auth.tenantId]
 
     // Count total before pagination
-    const countResult = await query.clone().clearSelect().count('t.id as count').first()
+    const countResult = await rawFirst<{ count: number }>(em, `SELECT COUNT(t.id)::int as count FROM teams_team t WHERE ${whereSql}`, whereParams)
     const total = Number(countResult?.count ?? 0)
 
     // Apply sort and pagination
-    const items = await query
-      .orderBy(`t.${safeSortField}`, sortDir)
-      .limit(pageSize)
-      .offset((page - 1) * pageSize)
+    const items = await rawAll<any>(em, `
+      SELECT t.id, t.competition_id, t.track_id, t.name, t.description, t.status,
+             t.is_finalist, t.table_number, t.table_location, t.is_active, t.created_at
+      FROM teams_team t
+      WHERE ${whereSql}
+      ORDER BY t.${safeSortField} ${sortDir.toUpperCase()}
+      LIMIT ? OFFSET ?
+    `, [...whereParams, pageSize, (page - 1) * pageSize])
 
     // Fetch member counts and track assignments
     const teamIds = items.map((t: any) => t.id)
     let memberCounts = new Map<string, number>()
     let teamTrackMap = new Map<string, string[]>()
     if (teamIds.length > 0) {
-      const counts = await knex('teams_team_member')
-        .whereIn('team_id', teamIds)
-        .where('left_at', null)
-        .groupBy('team_id')
-        .select('team_id')
-        .count('id as count')
+      const counts = await rawAll<{ team_id: string; count: number }>(
+        em,
+        `SELECT team_id, COUNT(id)::int as count FROM teams_team_member WHERE team_id IN (?) AND left_at IS NULL GROUP BY team_id`,
+        [teamIds],
+      )
       memberCounts = new Map(counts.map((r: any) => [r.team_id, Number(r.count)]))
 
-      const trackRows = await knex('teams_team_track')
-        .whereIn('team_id', teamIds)
-        .select('team_id', 'track_id')
+      const trackRows = await rawAll<{ team_id: string; track_id: string }>(
+        em,
+        `SELECT team_id, track_id FROM teams_team_track WHERE team_id IN (?)`,
+        [teamIds],
+      )
       for (const row of trackRows) {
         const existing = teamTrackMap.get(row.team_id) ?? []
         existing.push(row.track_id)

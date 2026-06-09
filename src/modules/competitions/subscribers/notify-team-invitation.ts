@@ -1,6 +1,13 @@
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
 
+// Inline raw-SQL helper. Subscribers are bundled by a generator pass that does
+// not resolve app-local imports, so we cannot import from src/lib/db here.
+async function rawFirstSql<T = Record<string, unknown>>(em: EntityManager, sql: string, params: unknown[]): Promise<T | null> {
+  const rows = (await em.getConnection().execute(sql, params, 'all')) as unknown as T[]
+  return rows[0] ?? null
+}
+
 export const metadata = {
   event: 'teams.invitation.created',
   persistent: true,
@@ -23,10 +30,9 @@ export default async function handler(
 ) {
   const em = ctx.resolve('em') as EntityManager
   const notificationService = resolveNotificationService(ctx)
-  const knex = (em as any).getConnection().getKnex()
 
   // Get team name
-  const teamRow = await knex('teams_team').where('id', payload.teamId).select('name').first()
+  const teamRow = await rawFirstSql<{ name: string }>(em, `SELECT name FROM teams_team WHERE id = ? LIMIT 1`, [payload.teamId])
   const teamName = teamRow?.name ?? 'a team'
 
   if (payload.type === 'invite') {
@@ -50,16 +56,15 @@ export default async function handler(
   } else if (payload.type === 'join_request') {
     // Notify the team owner that someone wants to join
     // Find the team owner
-    const ownerRow = await knex('teams_team_member')
-      .where('team_id', payload.teamId)
-      .where('role', 'owner')
-      .whereNull('deleted_at')
-      .select('customer_user_id')
-      .first()
+    const ownerRow = await rawFirstSql<{ customer_user_id: string }>(
+      em,
+      `SELECT customer_user_id FROM teams_team_member WHERE team_id = ? AND role = 'owner' AND deleted_at IS NULL LIMIT 1`,
+      [payload.teamId],
+    )
 
     if (ownerRow) {
       // Get requester name
-      const requesterRow = await knex('customer_users').where('id', payload.inviterId).select('display_name').first()
+      const requesterRow = await rawFirstSql<{ display_name: string }>(em, `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`, [payload.inviterId])
       const requesterName = requesterRow?.display_name ?? 'Someone'
 
       await notificationService.create(

@@ -1,3 +1,4 @@
+import { rawFirst } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -17,50 +18,49 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Participant count
-    const [{ count: participantCount }] = await knex('competitions_participation')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const { count: participantCount } = (await rawFirst<{ count: number }>(em,
+      `SELECT COUNT(*)::int as count FROM competitions_participation WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId])) ?? { count: 0 }
 
     // Track count
-    const [{ count: trackCount }] = await knex('tracks_track')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const { count: trackCount } = (await rawFirst<{ count: number }>(em,
+      `SELECT COUNT(*)::int as count FROM tracks_track WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId])) ?? { count: 0 }
 
     // Team count
-    const [{ count: teamCount }] = await knex('teams_team')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const { count: teamCount } = (await rawFirst<{ count: number }>(em,
+      `SELECT COUNT(*)::int as count FROM teams_team WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId])) ?? { count: 0 }
 
     // Submission count
-    const [{ count: submissionCount }] = await knex('projects_project')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, status: 'published', deleted_at: null })
-      .count('* as count')
+    const { count: submissionCount } = (await rawFirst<{ count: number }>(em,
+      `SELECT COUNT(*)::int as count FROM projects_project WHERE competition_id = ? AND tenant_id = ? AND status = 'published' AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId])) ?? { count: 0 }
 
     // Avg score (from judging scores if exists — use try/catch)
     let avgScore = 0
     try {
-      const [row] = await knex('judging_project_score')
-        .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-        .avg('total_score as avg')
+      const row = await rawFirst<{ avg: string | null }>(em,
+        `SELECT AVG(total_score) as avg FROM judging_project_score WHERE competition_id = ? AND tenant_id = ?`,
+        [competitionId, auth.tenantId])
       avgScore = row?.avg ? parseFloat(row.avg) : 0
     } catch { /* table may not exist yet */ }
 
     // Peer vote count
     let totalPeerVotes = 0
     try {
-      const [row] = await knex('sponsors_peer_vote')
-        .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-        .count('* as count')
-      totalPeerVotes = parseInt(row?.count ?? '0', 10)
+      const row = await rawFirst<{ count: number }>(em,
+        `SELECT COUNT(*)::int as count FROM sponsors_peer_vote WHERE competition_id = ? AND tenant_id = ?`,
+        [competitionId, auth.tenantId])
+      totalPeerVotes = row?.count ?? 0
     } catch { /* table may not exist yet */ }
 
     // Milestone count
-    const [{ count: milestoneCount }] = await knex('competitions_milestone')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-      .count('* as count')
+    const { count: milestoneCount } = (await rawFirst<{ count: number }>(em,
+      `SELECT COUNT(*)::int as count FROM competitions_milestone WHERE competition_id = ? AND tenant_id = ?`,
+      [competitionId, auth.tenantId])) ?? { count: 0 }
 
     return NextResponse.json({
       participant_count: parseInt(String(participantCount), 10),

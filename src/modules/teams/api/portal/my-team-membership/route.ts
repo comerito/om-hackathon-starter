@@ -1,3 +1,4 @@
+import { rawFirst } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -23,17 +24,12 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
-    const rows = await knex('teams_team_member')
-      .where('customer_user_id', auth.sub)
-      .where('competition_id', competitionId)
-      .where('tenant_id', auth.tenantId)
-      .where('left_at', null)
-      .select('id', 'team_id', 'role', 'joined_at')
-      .limit(1)
-
-    const membership = rows[0] ?? null
+    const membership = await rawFirst<{ id: string; team_id: string; role: string; joined_at: Date }>(
+      em,
+      `SELECT id, team_id, role, joined_at FROM teams_team_member WHERE customer_user_id = ? AND competition_id = ? AND tenant_id = ? AND left_at IS NULL LIMIT 1`,
+      [auth.sub, competitionId, auth.tenantId],
+    )
 
     return NextResponse.json({
       items: membership ? [{ id: membership.id, team_id: membership.team_id, role: membership.role, joined_at: membership.joined_at }] : [],

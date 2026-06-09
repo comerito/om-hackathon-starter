@@ -1,3 +1,4 @@
+import { rawAll, rawFirst, rawRun } from '../../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -25,7 +26,6 @@ export async function GET(req: Request, { params }: { params: { threadId: string
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify participation
     const participation = await em.findOne(CompetitionParticipation, {
@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     if (!participation) return NextResponse.json({ error: 'Not a participant' }, { status: 403 })
 
     // Verify user belongs to this thread
-    const threadCheck = await knex.raw(`
+    const threadCheck = await rawAll<{ '?column?': number }>(em, `
       SELECT 1 FROM messages m
       LEFT JOIN message_recipients mr ON mr.message_id = m.id
       WHERE m.thread_id = ?
@@ -46,12 +46,12 @@ export async function GET(req: Request, { params }: { params: { threadId: string
       LIMIT 1
     `, [params.threadId, competitionId, auth.sub, auth.sub])
 
-    if (threadCheck.rows.length === 0) {
+    if (threadCheck.length === 0) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
     }
 
     // Find the other user in this thread
-    const otherUserRow = await knex.raw(`
+    const otherUserRow = await rawFirst<{ other_user_id: string }>(em, `
       SELECT DISTINCT
         CASE
           WHEN m.sender_user_id = ? THEN mr.recipient_user_id
@@ -63,11 +63,11 @@ export async function GET(req: Request, { params }: { params: { threadId: string
       LIMIT 1
     `, [auth.sub, params.threadId])
 
-    const otherUserId = otherUserRow.rows[0]?.other_user_id
+    const otherUserId = otherUserRow?.other_user_id
     let otherUser = { id: otherUserId, displayName: 'Unknown', avatarUrl: null as string | null }
     if (otherUserId) {
-      const userRow = await knex('customer_users').select('display_name', 'email').where('id', otherUserId).first()
-      const profileRow = await knex('competitions_participant_profile').select('avatar_url').where('customer_user_id', otherUserId).where('tenant_id', auth.tenantId).first()
+      const userRow = await rawFirst<{ display_name: string; email: string }>(em, `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`, [otherUserId])
+      const profileRow = await rawFirst<{ avatar_url: string }>(em, `SELECT avatar_url FROM competitions_participant_profile WHERE customer_user_id = ? AND tenant_id = ? LIMIT 1`, [otherUserId, auth.tenantId])
       otherUser = {
         id: otherUserId,
         displayName: userRow?.display_name || userRow?.email?.split('@')[0] || 'Unknown',
@@ -76,25 +76,21 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     }
 
     // Count total messages
-    const countResult = await knex.raw(`
+    const countResult = await rawFirst<{ total: number }>(em, `
       SELECT COUNT(*)::int as total FROM messages
       WHERE thread_id = ? AND type = 'chat' AND status = 'sent' AND deleted_at IS NULL
     `, [params.threadId])
-    const total = countResult.rows[0]?.total ?? 0
+    const total = countResult?.total ?? 0
 
     // Fetch messages, newest page first but return in chronological order
     const offset = Math.max(0, total - page * pageSize)
     const limit = page === 1 ? Math.min(pageSize, total) : pageSize
 
-    const messagesRaw = await knex('messages')
-      .select('id', 'body', 'body_format', 'sender_user_id', 'sent_at')
-      .where('thread_id', params.threadId)
-      .where('type', 'chat')
-      .where('status', 'sent')
-      .whereNull('deleted_at')
-      .orderBy('sent_at', 'asc')
-      .offset(offset < 0 ? 0 : offset)
-      .limit(limit)
+    const messagesRaw = await rawAll<any>(em, `
+      SELECT id, body, body_format, sender_user_id, sent_at FROM messages
+      WHERE thread_id = ? AND type = 'chat' AND status = 'sent' AND deleted_at IS NULL
+      ORDER BY sent_at ASC OFFSET ? LIMIT ?
+    `, [params.threadId, offset < 0 ? 0 : offset, limit])
 
     const messages = messagesRaw.map((m: any) => ({
       id: m.id,
@@ -132,10 +128,9 @@ export async function PUT(req: Request, { params }: { params: { threadId: string
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Mark all unread messages in thread as read for current user
-    await knex.raw(`
+    await rawRun(em, `
       UPDATE message_recipients mr
       SET status = 'read', read_at = NOW()
       FROM messages m

@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -24,25 +25,30 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify panel exists
     const panel = await em.findOne(JudgePanel, { id: panelId, tenantId: auth.tenantId, deletedAt: null } as FilterQuery<JudgePanel>)
     if (!panel) return NextResponse.json({ error: 'Panel not found' }, { status: 404 })
 
     // Get judges with display names
-    const judges = await knex('judging_panel_judge as pj')
-      .where('pj.panel_id', panelId)
-      .where('pj.tenant_id', auth.tenantId)
-      .leftJoin('customer_users as cu', 'cu.id', 'pj.judge_id')
-      .select('pj.id', 'pj.judge_id', 'cu.display_name', 'cu.email')
+    const judges = await rawAll<{ id: string; judge_id: string; display_name: string | null; email: string | null }>(
+      em,
+      `SELECT pj.id, pj.judge_id, cu.display_name, cu.email
+       FROM judging_panel_judge pj
+       LEFT JOIN customer_users cu ON cu.id = pj.judge_id
+       WHERE pj.panel_id = ? AND pj.tenant_id = ?`,
+      [panelId, auth.tenantId],
+    )
 
     // Get tracks with names
-    const tracks = await knex('judging_panel_track as pt')
-      .where('pt.panel_id', panelId)
-      .where('pt.tenant_id', auth.tenantId)
-      .leftJoin('tracks_track as t', 't.id', 'pt.track_id')
-      .select('pt.id', 'pt.track_id', 't.name as track_name', 't.color')
+    const tracks = await rawAll<{ id: string; track_id: string; track_name: string | null; color: string | null }>(
+      em,
+      `SELECT pt.id, pt.track_id, t.name as track_name, t.color
+       FROM judging_panel_track pt
+       LEFT JOIN tracks_track t ON t.id = pt.track_id
+       WHERE pt.panel_id = ? AND pt.tenant_id = ?`,
+      [panelId, auth.tenantId],
+    )
 
     return NextResponse.json({
       panel: { id: panel.id, name: panel.name, round: panel.round, competition_id: panel.competitionId },

@@ -1,3 +1,4 @@
+import { rawAll } from '../../../../../lib/db'
 import { NextResponse } from 'next/server'
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
@@ -18,38 +19,25 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
     const locale = await resolvePortalLocale(req, { auth, container })
 
     // Get leaderboard data with scores
-    const rows = await knex('projects_project as p')
-      .leftJoin('teams_team as t', function (this: any) {
-        this.on('p.team_id', '=', 't.id').andOn('t.tenant_id', '=', 'p.tenant_id')
-      })
-      .leftJoin(
-        knex('judging_project_score')
-          .select('project_id')
-          .avg('total_score as avg_score')
-          .where({ is_submitted: true })
-          .groupBy('project_id')
-          .as('s'),
-        's.project_id',
-        'p.id',
-      )
-      .select(
-        'p.id as id',
-        'p.title',
-        't.name as team_name',
-        'p.status',
-        'p.rank',
-        's.avg_score',
-        'p.peer_vote_count',
-        't.is_finalist',
-      )
-      .where({ 'p.competition_id': competitionId, 'p.tenant_id': auth.tenantId })
-      .whereNull('p.deleted_at')
-      .whereNot('p.status', 'draft')
-      .orderByRaw('COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC')
+    const rows = await rawAll<any>(em, `
+      SELECT p.id as id, p.title, t.name as team_name, p.status, p.rank,
+             s.avg_score, p.peer_vote_count, t.is_finalist
+      FROM projects_project p
+      LEFT JOIN teams_team t ON t.id = p.team_id AND t.tenant_id = p.tenant_id
+      LEFT JOIN (
+        SELECT project_id, AVG(total_score) as avg_score
+        FROM judging_project_score
+        WHERE is_submitted = true
+        GROUP BY project_id
+      ) s ON s.project_id = p.id
+      WHERE p.competition_id = ? AND p.tenant_id = ?
+        AND p.deleted_at IS NULL
+        AND p.status <> 'draft'
+      ORDER BY COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC
+    `, [competitionId, auth.tenantId])
 
     const translatedRows = await applyPortalTranslationOverlays(
       rows.map((row: any) => ({
