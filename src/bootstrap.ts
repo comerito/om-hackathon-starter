@@ -53,11 +53,17 @@ import { messageTypes } from '@/.mercato/generated/message-types.generated'
 import { messageObjectTypes } from '@/.mercato/generated/message-objects.generated'
 import { registerMessageTypes } from '@open-mercato/core/modules/messages/lib/message-types-registry'
 import { registerMessageObjectTypes } from '@open-mercato/core/modules/messages/lib/message-objects-registry'
+// Registers backend/frontend route manifests into the shared registry so that
+// runtime consumers (e.g. the admin sidebar nav API at /api/auth/admin/nav)
+// see a populated route list. Without this the sidebar renders empty.
+import { runBootstrapRegistrations } from '@/.mercato/generated/bootstrap-registrations.generated'
 
 // Register event configs globally (similar to search)
 registerEventModuleConfigs(eventModuleConfigs)
 registerMessageTypes(messageTypes, { replace: true })
 registerMessageObjectTypes(messageObjectTypes, { replace: true })
+// Register route manifests (required for sidebar navigation, breadcrumbs, page overrides)
+runBootstrapRegistrations()
 
 // Bootstrap factory from shared package
 import { createBootstrap, isBootstrapped } from '@open-mercato/shared/lib/bootstrap'
