@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Unique, Index } from '@mikro-orm/core'
+import { Entity, PrimaryKey, Property, Unique, Index } from '@mikro-orm/decorators/legacy'
 
 // ── Enums (as string unions + const objects) ────────────────────────
 
