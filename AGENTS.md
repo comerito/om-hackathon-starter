@@ -13,9 +13,29 @@
 
 2. **After editing `src/modules.ts`**: immediately run `yarn generate`
 
-3. **Never edit `.mercato/generated/*`**: edit the source and run `yarn generate` instead
+3. **MikroORM 7 rules** (the framework moved 6 → 7; these are not optional):
+   - Entity decorators import from `@mikro-orm/decorators/legacy`, NOT `@mikro-orm/core`
+   - `persistAndFlush` / `removeAndFlush` NO LONGER EXIST — use `em.persist(x)` then `await em.flush()`
+   - knex is gone (kysely replaced it). `getConnection().getKnex()` does not exist.
+     Use `em.getConnection().execute<T>(sql, params)` or `em.getKysely<any>()`.
+   - `execute()` **INLINES** parameters, it does not bind them. A JS array renders as a
+     comma-joined list of literals, so **`IN (?)` is correct and `= ANY(?)` is a SYNTAX ERROR**.
+     Always guard the empty-array case — `IN ()` does not parse.
+   - Never run raw `em.find` / `em.findOne` between a scalar mutation and `em.flush()` without
+     `withAtomicFlush`
+   - See `.ai/upgrade/KYSELY-PORTING-COOKBOOK.md` for verified before/after patterns
 
-4. **Before significant features**: check `.ai/specs/` for an existing spec.
+4. **Portal pages** MUST ship a sibling `page.meta.ts`. `requireCustomerAuth` /
+   `requireCustomerFeatures` are enforced SERVER-SIDE by the `(frontend)` catch-all.
+
+5. **Custom write routes** must wire the mutation-guard registry
+   (`getAllMutationGuardInstances()` + `runMutationGuards()` from
+   `@open-mercato/shared/lib/crud/mutation-guard-registry`), not the removed
+   `validateCrudMutationGuard`.
+
+6. **Never edit `.mercato/generated/*`**: edit the source and run `yarn generate` instead
+
+7. **Before significant features**: check `.ai/specs/` for an existing spec.
    If none exists, ask the user whether to create one first.
 
 ---
@@ -39,21 +59,29 @@ Match your task, then load the listed file(s) BEFORE writing code. A task may ma
 
 | Task | Load |
 |---|---|
-| Scaffold a new module from scratch | `.ai/skills/module-scaffold/SKILL.md` |
-| Design entities and relationships | `.ai/skills/data-model-design/SKILL.md` |
-| Build backend UI (forms, tables, pages) | `.ai/skills/backend-ui-design/SKILL.md` |
-| Build an integration provider | `.ai/skills/integration-builder/SKILL.md` |
+| Scaffold a new module from scratch | `.ai/skills/om-module-scaffold/SKILL.md` |
+| Design entities and relationships | `.ai/skills/om-data-model-design/SKILL.md` |
+| Build backend UI (forms, tables, pages) | `.ai/skills/om-backend-ui-design/SKILL.md` |
+| Build an integration provider | `.ai/skills/om-integration-builder/SKILL.md` |
 
 ### Extending Core Modules (UMES)
 
 | Task | Load |
 |---|---|
-| Extend a core module (add fields, columns, menus, interceptors, enrichers) | `.ai/skills/system-extension/SKILL.md` |
-| Eject and customize a core module | `.ai/skills/eject-and-customize/SKILL.md` |
+| Extend a core module (add fields, columns, menus, interceptors, enrichers) | `.ai/skills/om-system-extension/SKILL.md` |
+| Eject and customize a core module | `.ai/skills/om-eject-and-customize/SKILL.md` |
 | Add a response enricher to another module's API | `.ai/guides/core.md` → Response Enrichers |
 | Add an API interceptor (before/after hooks) | `.ai/guides/core.md` → API Interceptors |
 | Inject widgets into forms/tables/menus | `.ai/guides/core.md` → Widget Injection |
 | Replace or wrap a UI component | `.ai/guides/core.md` → Component Replacement |
+
+### Per-Module Reference (NEW at 0.6.x)
+
+| Task | Load |
+|---|---|
+| Anything specific to ONE core module | `.ai/guides/modules/<module>.md` (54 available) |
+| How the module system fits together | `.ai/guides/module-system.md` |
+| Machine-readable module index | `.ai/guides/module-facts.json` |
 
 ### Framework Feature Usage
 
@@ -78,9 +106,13 @@ Match your task, then load the listed file(s) BEFORE writing code. A task may ma
 
 | Task | Load |
 |---|---|
-| Debug / fix errors | `.ai/skills/troubleshooter/SKILL.md` |
-| Review code changes | `.ai/skills/code-review/SKILL.md` |
-| Write a spec | `.ai/skills/spec-writing/SKILL.md`, `.ai/specs/SPEC-000-template.md` |
+| Debug / fix errors | `.ai/skills/om-troubleshooter/SKILL.md` |
+| Review code changes | `/code-review` slash command (no longer a repo-local skill) |
+| Write a spec | `.ai/specs/SPEC-000-template.md` |
+| Implement an existing spec | `.ai/skills/om-implement-spec/SKILL.md` |
+| "What should I do next?" / orientation | `.ai/skills/om-help/SKILL.md` |
+| Prepare / run integration tests | `.ai/skills/om-prepare-test-env/SKILL.md` |
+| Disable modules this project does not use | `.ai/skills/om-trim-unused-modules/SKILL.md` |
 
 ## Module Anatomy
 

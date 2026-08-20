@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --config jest.config.cjs",
     "generate": "mercato generate",
+    "install-skills": "sh ./scripts/install-skills.sh",
     "db:generate": "mercato db generate",
     "db:migrate": "mercato db migrate",
     "db:greenfield": "mercato db greenfield",
