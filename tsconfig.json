@@ -51,7 +51,6 @@
     ".mercato/next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "src/modules/example"
+    "node_modules"
   ]
 }

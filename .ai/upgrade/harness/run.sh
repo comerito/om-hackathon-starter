@@ -30,7 +30,18 @@ trap cleanup EXIT
 echo "[run] mode=$MODE"
 
 # 1. reset database to the post-init snapshot
+#
+# The snapshot is always the 0.4.8 post-`initialize` state. It is deliberately
+# NOT re-snapshotted at each stage: migrating it forward on every run is what
+# exercises the real upgrade path (an existing 0.4.8 database being brought up
+# to the current pins), which is the thing that has to work in production.
 bash "$HARNESS/reset.sh" restore
+
+echo "[run] applying pending migrations"
+if ! COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack yarn db:migrate >"$LOGDIR/migrate.log" 2>&1; then
+  echo "[run] db:migrate FAILED:"; tr '\r' '\n' <"$LOGDIR/migrate.log" | tail -30; exit 1
+fi
+tr '\r' '\n' <"$LOGDIR/migrate.log" | grep -E "migration[s]? applied" | sed 's/^/[run]   /' || echo "[run]   (none pending)"
 
 # 2. boot the app
 lsof -ti:"$PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
