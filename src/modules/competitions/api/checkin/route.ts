@@ -17,6 +17,11 @@ const checkinByEmailSchema = z.object({
   participation_id: z.undefined().optional(),
 })
 
+type CustomerUserNameRow = {
+  display_name: string | null
+  email: string | null
+}
+
 export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.checkin.manage'] },
   GET: { requireAuth: true, requireFeatures: ['competitions.checkin.manage'] },
@@ -30,7 +35,6 @@ export async function POST(req: Request) {
     const body = await req.json()
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     let participation: CompetitionParticipation | null = null
 
@@ -42,11 +46,11 @@ export async function POST(req: Request) {
         id: byId.data.participation_id, tenantId: auth.tenantId, deletedAt: null,
       } as FilterQuery<CompetitionParticipation>)
     } else if (byEmail.success && byEmail.data.email) {
-      const userRow = await knex('customer_users')
-        .select('id')
-        .where('email', byEmail.data.email)
-        .where('tenant_id', auth.tenantId)
-        .first()
+      const userRows = await em.getConnection().execute<Array<{ id: string }>>(
+        `SELECT id FROM customer_users WHERE email = ? AND tenant_id = ? LIMIT 1`,
+        [byEmail.data.email, auth.tenantId],
+      )
+      const userRow = userRows[0]
       if (userRow) {
         participation = await em.findOne(CompetitionParticipation, {
           customerUserId: userRow.id,
@@ -61,7 +65,11 @@ export async function POST(req: Request) {
 
     if (!participation) return NextResponse.json({ error: 'Participation not found' }, { status: 404 })
     if (participation.checkedIn) {
-      const alreadyRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+      const alreadyRows = await em.getConnection().execute<CustomerUserNameRow[]>(
+        `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`,
+        [participation.customerUserId],
+      )
+      const alreadyRow = alreadyRows[0]
       return NextResponse.json({ ok: true, already: true, displayName: alreadyRow?.display_name ?? null, email: alreadyRow?.email ?? null })
     }
 
@@ -71,7 +79,11 @@ export async function POST(req: Request) {
     await em.flush()
 
     // Resolve display name for response
-    const displayRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()
+    const displayRows = await em.getConnection().execute<CustomerUserNameRow[]>(
+      `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`,
+      [participation.customerUserId],
+    )
+    const displayRow = displayRows[0]
 
     return NextResponse.json({
       ok: true,

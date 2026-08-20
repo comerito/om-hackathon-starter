@@ -20,24 +20,35 @@ export default async function handler(
 ) {
   const em = ctx.resolve('em') as EntityManager
   const notificationService = resolveNotificationService(ctx)
-  const knex = (em as any).getConnection().getKnex()
+  const conn = em.getConnection()
 
   // Get team name and new member name
-  const teamRow = await knex('teams_team').where('id', payload.teamId).select('name').first()
-  const memberRow = await knex('customer_users').where('id', payload.customerUserId).select('display_name').first()
+  const teamRows = await conn.execute<Array<{ name: string | null }>>(
+    `SELECT name FROM teams_team WHERE id = ? LIMIT 1`,
+    [payload.teamId],
+  )
+  const teamRow = teamRows[0]
+  const memberRows = await conn.execute<Array<{ display_name: string | null }>>(
+    `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`,
+    [payload.customerUserId],
+  )
+  const memberRow = memberRows[0]
   const teamName = teamRow?.name ?? 'your team'
   const memberName = memberRow?.display_name ?? 'A new member'
 
   // Notify all existing team members (except the one who just joined)
-  const members = await knex('teams_team_member')
-    .where('team_id', payload.teamId)
-    .whereNull('deleted_at')
-    .whereNot('customer_user_id', payload.customerUserId)
-    .select('customer_user_id')
+  const members = await conn.execute<Array<{ customer_user_id: string }>>(
+    `SELECT customer_user_id
+     FROM teams_team_member
+     WHERE team_id = ?
+       AND deleted_at IS NULL
+       AND customer_user_id != ?`,
+    [payload.teamId, payload.customerUserId],
+  )
 
   if (members.length === 0) return
 
-  const recipientUserIds = members.map((m: any) => m.customer_user_id)
+  const recipientUserIds = members.map((m) => m.customer_user_id)
 
   await notificationService.createBatch(
     {

@@ -20,7 +20,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify participation
     const participation = await em.findOne(CompetitionParticipation, {
@@ -28,7 +27,7 @@ export async function GET(req: Request) {
     } as FilterQuery<CompetitionParticipation>)
     if (!participation) return NextResponse.json({ unreadCount: 0 })
 
-    const result = await knex.raw(`
+    const result = await em.getConnection().execute<Array<{ unread_count: number }>>(`
       SELECT COUNT(*)::int as unread_count
       FROM message_recipients mr
       JOIN messages m ON m.id = mr.message_id
@@ -41,7 +40,7 @@ export async function GET(req: Request) {
         AND m.tenant_id = ?
     `, [auth.sub, competitionId, auth.tenantId])
 
-    return NextResponse.json({ unreadCount: result.rows[0]?.unread_count ?? 0 })
+    return NextResponse.json({ unreadCount: result[0]?.unread_count ?? 0 })
   } catch (error) {
     console.error('[portal/chat/unread-count] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

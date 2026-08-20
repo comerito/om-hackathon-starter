@@ -91,20 +91,21 @@ export async function GET(req: Request) {
     }
 
     // Load customer_users for display names
-    const knex = (em as any).getConnection().getKnex()
-
-    let usersQuery = knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', filteredUserIds)
+    // NOTE: `filteredUserIds` is guaranteed non-empty here (both early returns above cover the
+    // empty cases), so the `IN (?)` expansion can never render an empty `IN ()` list.
+    const conditions: string[] = ['id IN (?)']
+    const values: unknown[] = [filteredUserIds]
 
     if (search.length >= 2) {
       const searchPattern = `%${search}%`
-      usersQuery = usersQuery.andWhere(function (this: any) {
-        this.whereILike('display_name', searchPattern)
-      })
+      conditions.push('(display_name ILIKE ?)')
+      values.push(searchPattern)
     }
 
-    const userRows = await usersQuery.limit(100)
+    const userRows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+      `SELECT id, display_name, email FROM customer_users WHERE ${conditions.join(' AND ')} LIMIT 100`,
+      values,
+    )
 
     const userMap = new Map<string, { display_name: string }>(
       userRows.map((row: any) => [row.id, {

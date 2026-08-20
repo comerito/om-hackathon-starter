@@ -23,7 +23,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify both participate
     const count = await em.count(CompetitionParticipation, {
@@ -34,7 +33,7 @@ export async function GET(req: Request) {
     } as FilterQuery<CompetitionParticipation>)
     if (count < 2) return NextResponse.json({ threadId: null })
 
-    const result = await knex.raw(`
+    const result = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
       SELECT m.thread_id
       FROM messages m
       JOIN message_recipients mr ON mr.message_id = m.id
@@ -50,7 +49,7 @@ export async function GET(req: Request) {
       LIMIT 1
     `, [competitionId, auth.tenantId, auth.sub, userId, userId, auth.sub])
 
-    return NextResponse.json({ threadId: result.rows[0]?.thread_id ?? null })
+    return NextResponse.json({ threadId: result[0]?.thread_id ?? null })
   } catch (error) {
     console.error('[portal/chat/find-thread] GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

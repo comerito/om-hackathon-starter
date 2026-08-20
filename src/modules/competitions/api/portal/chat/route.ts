@@ -173,7 +173,7 @@ export async function POST(req: Request) {
     // Find or create thread
     let threadId = parsed.thread_id
     if (!threadId) {
-      const existingThread = await knex.raw(`
+      const existingThread = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
         SELECT m.thread_id
         FROM messages m
         JOIN message_recipients mr ON mr.message_id = m.id
@@ -189,7 +189,7 @@ export async function POST(req: Request) {
         LIMIT 1
       `, [parsed.competition_id, auth.tenantId, auth.sub, parsed.recipient_id, parsed.recipient_id, auth.sub])
 
-      threadId = existingThread.rows[0]?.thread_id ?? null
+      threadId = existingThread[0]?.thread_id ?? undefined
     }
 
     if (!threadId) {

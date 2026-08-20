@@ -55,9 +55,12 @@ export async function GET(req: Request) {
     const profileMap = new Map(profiles.map(p => [p.customerUserId, p]))
 
     // Resolve display names from customer_users table
-    const knex = (em as any).getConnection().getKnex()
-    const userRows = userIds.length > 0
-      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', userIds)
+    // NOTE: the `userIds.length > 0` guard keeps the `IN (?)` expansion from rendering `IN ()`.
+    const userRows: Array<{ id: string; display_name: string | null; email: string | null }> = userIds.length > 0
+      ? await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+          `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
+          [userIds],
+        )
       : []
     const userMap = new Map<string, { displayName: string | null; email: string | null }>(
       userRows.map((r: any) => [r.id, { displayName: r.display_name ?? null, email: r.email ?? null }]),
