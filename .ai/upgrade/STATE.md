@@ -1,9 +1,9 @@
 # Upgrade State — 0.4.8 → 0.6.7
 
 Branch: `chore/upgrade-om-0.6.7`
-Current stage: **S3 → 0.6.7 (in progress)**
-Current gate: S3 core-delta triage
-Iterations: 4
+Current stage: **COMPLETE — 0.6.7, all four stages green**
+Current gate: — (final verify CLEAN: 0/66 writes, 0/3701 reads, 0/160 pages)
+Iterations: 5
 
 Baseline surface after `example` removal: **502 files / 65,432 lines**
 (was 600 / 74,150 — the analysis doc's figures predate the deletion).
@@ -92,6 +92,26 @@ framework source with file:line).
   by `users_tenant_email_hash_uniq`. It does not affect this app — every app query against
   `customer_users` is by **id**, and the one email lookup (`checkin`) is already tenant-scoped.
   The backend `users` table is never queried by app code.
+
+### S4 — consolidate
+
+| # | Stage | Gate | Verdict | Evidence | Date |
+|---|-------|------|---------|----------|------|
+| 45 | S4 | core-delta triage | ✅ | 30 EXPECTED, **2 REGRESSION**, 0 UNCERTAIN | 2026-08-21 |
+| 46 | S4 | **bootstrap regressions FIXED** | ✅ | `commandLoaderEntries` + `codeWorkflows` wired into `src/bootstrap.ts`. Verified: commands **109 → 303**, workflow definitions **3 → 4** | 2026-08-21 |
+| 47 | S4 | `.ai/` refresh | ✅ | 54 per-module guides + `module-system.md` + `module-facts.json` (all new at 0.6.x); 9 skills renamed `om-*`, 18 shipped skills installed | 2026-08-21 |
+| 48 | S4 | AGENTS.md | ✅ | Routing table repointed; **3 pre-existing claims verified WRONG and corrected** (see below). All 25 `@open-mercato` import specifiers now resolve | 2026-08-21 |
+| 49 | S4 | Playwright specs | ✅ | `.ai/qa/tests/TC-UPG-001`, **4/4 pass** against seeded data | 2026-08-21 |
+| 50 | S4 | final regression | ✅ | **`VERIFY CLEAN — zero deltas`**: 0/66 writes, 0/3701 reads, 0/160 pages | 2026-08-21 |
+
+**AGENTS.md claims that were wrong and are now corrected** (two of them written by me during this
+upgrade, verified against the installed packages):
+1. `validateCrudMutationGuard` is **deprecated, not removed** — core still calls it. The preferred
+   entrypoint is `runRouteMutationGuards`.
+2. `getAllMutationGuardInstances` lives in `mutation-guard-**store**`, not `-registry` — the two
+   primitives come from different modules.
+3. `@open-mercato/ui/backend/crud` **does not resolve at all** (a directory with no index) — a
+   stale 0.4.8-era import that was in the doc before this upgrade.
 
 ## Accepted deltas
 

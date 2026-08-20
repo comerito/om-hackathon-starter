@@ -28,6 +28,7 @@ Branch `chore/upgrade-om-0.6.7`. All framework packages now at **0.6.7**.
 | app log: SQL errors | **none** |
 | app log: subscriber handler errors | **none** |
 | Playwright integration specs | **4/4 pass** |
+| self-consistency: two full cycles at 0.6.7 | **`VERIFY CLEAN — zero deltas`** (0/66 writes, 0/3701 reads, 0/160 pages) |
 
 ---
 
@@ -39,15 +40,16 @@ Branch `chore/upgrade-om-0.6.7`. All framework packages now at **0.6.7**.
 | `persistAndFlush`/`removeAndFlush` → `persist`+`flush` | 27 (41 sites) | `tsc` |
 | knex → raw SQL via `execute()` | 21 | **nothing — replay only** |
 | `= ANY(?)` → `IN (?)` | 5 (8 sites) | **nothing — platform test only** |
+| `bootstrap.ts`: register command loaders + code workflows | 1 | **nothing — delta triage only** |
 | Removed disabled `example` module | −103 files | — |
 
-`tsc` caught 49 of the 90 changed call sites. **The other 41 were invisible to it**, because every
+`tsc` caught 49 of the 91 changed call sites. **The other 41 were invisible to it**, because every
 knex call site was written as `(em as any).getConnection().getKnex()`. That is the single most
 important fact about this upgrade.
 
 ---
 
-## 3. The five things that would have shipped broken
+## 3. The seven things that would have shipped broken
 
 Each of these was invisible to the compiler and to a status-code smoke test.
 
@@ -59,7 +61,19 @@ Each of these was invisible to the compiler and to a status-code smoke test.
 4. **`teams.invitation.created` subscriber has never worked** — the route auto-emits the CRUD
    factory's generic payload, but the subscriber reads `payload.teamId`, which nothing sets.
    Only visible in the app log; the HTTP response is a clean 201.
-5. **`GET /api/teams/resources` 500s** — the route hardcodes entity id `teams:resource` while the
+5. **`commandLoaderEntries` never registered.** 0.6.7 made command registration **lazy**
+   (`commandRegistry.list()` is now `handlers ∪ loadersById`). `src/bootstrap.ts` was still written
+   against the 0.6.0 `BootstrapData` shape, so the loaders were never registered:
+   `/api/scheduler/targets` listed **109 of 287** commands — whatever other imports happened to
+   pull in, i.e. nondeterministic. The bigger hazard was runtime: `CommandBus.resolveHandler`
+   also falls back to the loader registry, so **any core command whose file was not already
+   imported in that process would throw `Command handler not registered for id …`**.
+   Fixed; commands 109 → **303**.
+6. **`codeWorkflows` never registered.** `Migration20260716120000` deliberately soft-deletes the
+   persisted `workflows.checkout-demo` seed row so the maintained **code** definition takes over.
+   With `codeWorkflows` unwired the code definition never loaded, so the workflow simply
+   **disappeared** (4 → 3 definitions). Fixed; back to 4 with `code:workflows.checkout-demo`.
+7. **`GET /api/teams/resources` 500s** — the route hardcodes entity id `teams:resource` while the
    `TeamResource` class generates `teams:team_resource`. Pre-existing; invisible at 0.4.8 only
    because that version's codegen silently dropped the route from the OpenAPI spec.
 

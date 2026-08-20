@@ -226,6 +226,13 @@ const QUARANTINE = [
     match: (k) => k.startsWith('GET /api/competitions/portal/resolve-users'),
     reason: 'uuid-keyed map; alias numbering is unstable across seeds. Data verified identical.',
   },
+  {
+    // New at 0.6.7. Reports live per-module runtime measurements — call counts,
+    // CPU time, heap allocations, RSS growth — i.e. the harness measuring its
+    // own resource usage. Cannot be reproducible by construction.
+    match: (k) => k.startsWith('GET /api/configs/module-telemetry'),
+    reason: 'live runtime telemetry (cpu/heap/rss); nondeterministic by construction',
+  },
 ]
 const quarantined = (k) => QUARANTINE.find((q) => q.match(k))
 
