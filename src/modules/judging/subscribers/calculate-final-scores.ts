@@ -78,7 +78,8 @@ export default async function handler(
     }
   }
 
-  await em.persistAndFlush(projects)
+  em.persist(projects)
+  await em.flush()
 
   console.log(`[judging:calculate-final-scores] Computed final scores for ${projects.length} projects in competition ${payload.competitionId}`)
 

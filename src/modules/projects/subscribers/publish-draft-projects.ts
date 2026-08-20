@@ -35,7 +35,8 @@ export default async function handler(
   }
 
   if (publishedIds.length > 0) {
-    await em.persistAndFlush(draftProjects)
+    em.persist(draftProjects)
+    await em.flush()
     console.log(`[projects:publish-draft-projects] Auto-published ${publishedIds.length} draft projects for competition ${payload.competitionId}`)
 
     // Emit batch event so judging module can generate demo queue

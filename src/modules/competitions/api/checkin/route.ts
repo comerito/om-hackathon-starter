@@ -67,7 +67,8 @@ export async function POST(req: Request) {
 
     participation.checkedIn = true
     participation.checkedInAt = new Date()
-    await em.persistAndFlush(participation)
+    em.persist(participation)
+    await em.flush()
 
     // Resolve display name for response
     const displayRow = await knex('customer_users').select('display_name', 'email').where('id', participation.customerUserId).first()

@@ -98,7 +98,8 @@ export async function POST(req: Request) {
       tenantId: auth.tenantId!,
       organizationId: team.organizationId,
     })
-    await em.persistAndFlush(invitation)
+    em.persist(invitation)
+    await em.flush()
 
     return NextResponse.json({ ok: true, invitation_id: invitation.id })
   } catch (error) {

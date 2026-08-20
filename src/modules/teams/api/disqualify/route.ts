@@ -46,7 +46,8 @@ export async function POST(request: Request) {
     team.disqualificationReason = parsed.reason
     team.disqualifiedAt = new Date()
     team.disqualifiedBy = auth.userId ?? auth.sub ?? null
-    await em.persistAndFlush(team)
+    em.persist(team)
+    await em.flush()
 
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
     await eventBus.emit('teams.team.disqualified', {
@@ -100,7 +101,8 @@ export async function PUT(request: Request) {
     team.disqualificationReason = null
     team.disqualifiedAt = null
     team.disqualifiedBy = null
-    await em.persistAndFlush(team)
+    em.persist(team)
+    await em.flush()
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } })
   } catch (error) {

@@ -38,7 +38,8 @@ export async function POST(req: Request) {
       team.isFinalist = true
     }
 
-    await em.persistAndFlush(allTeams)
+    em.persist(allTeams)
+    await em.flush()
 
     // Emit event
     try {

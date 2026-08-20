@@ -32,7 +32,8 @@ export async function POST(req: Request) {
       createdAt: now,
       updatedAt: now,
     })
-    await em.persistAndFlush(report)
+    em.persist(report)
+    await em.flush()
 
     // Emit event — for HIGH/CRITICAL, this triggers admin notification
     try {

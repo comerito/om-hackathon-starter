@@ -87,7 +87,8 @@ export async function PUT(req: Request) {
     if (parsed.built_during_hackathon_description !== undefined) project.builtDuringHackathonDescription = parsed.built_during_hackathon_description
 
     project.updatedAt = new Date()
-    await em.persistAndFlush(project)
+    em.persist(project)
+    await em.flush()
 
     return NextResponse.json({ ok: true, updated_at: project.updatedAt.toISOString() })
   } catch (error) {

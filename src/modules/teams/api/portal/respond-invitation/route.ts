@@ -95,7 +95,8 @@ export async function POST(req: Request) {
         tenantId: auth.tenantId!,
         organizationId: invitation.organizationId,
       })
-      await em.persistAndFlush(member)
+      em.persist(member)
+      await em.flush()
 
       // Clear "looking for team" flag on the joining user's participation
       const participation = await em.findOne(CompetitionParticipation, {
@@ -106,12 +107,14 @@ export async function POST(req: Request) {
       if (participation && participation.lookingForTeam) {
         participation.lookingForTeam = false
         participation.lookingForTeamDescription = null
-        await em.persistAndFlush(participation)
+        em.persist(participation)
+        await em.flush()
       }
 
       invitation.status = InvitationStatus.ACCEPTED
       invitation.respondedAt = new Date()
-      await em.persistAndFlush(invitation)
+      em.persist(invitation)
+      await em.flush()
 
       return NextResponse.json({ ok: true, status: 'accepted', member_id: member.id })
     }
@@ -119,7 +122,8 @@ export async function POST(req: Request) {
     // Decline
     invitation.status = InvitationStatus.DECLINED
     invitation.respondedAt = new Date()
-    await em.persistAndFlush(invitation)
+    em.persist(invitation)
+    await em.flush()
 
     return NextResponse.json({ ok: true, status: 'declined' })
   } catch (error) {

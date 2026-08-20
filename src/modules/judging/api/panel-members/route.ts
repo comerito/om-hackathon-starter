@@ -101,7 +101,8 @@ export async function POST(req: Request) {
         tenantId: auth.tenantId,
         organizationId,
       })
-      await em.persistAndFlush(entry)
+      em.persist(entry)
+      await em.flush()
       return NextResponse.json({ ok: true, id: entry.id }, { status: 201 })
     }
 
@@ -115,7 +116,8 @@ export async function POST(req: Request) {
         tenantId: auth.tenantId,
         organizationId,
       })
-      await em.persistAndFlush(entry)
+      em.persist(entry)
+      await em.flush()
       return NextResponse.json({ ok: true, id: entry.id }, { status: 201 })
     }
 
@@ -149,14 +151,16 @@ export async function DELETE(req: Request) {
     if (type === 'judge') {
       const entry = await em.findOne(JudgePanelJudge, { id, tenantId: auth.tenantId } as FilterQuery<JudgePanelJudge>)
       if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      await em.removeAndFlush(entry)
+      em.remove(entry)
+      await em.flush()
       return NextResponse.json({ ok: true })
     }
 
     if (type === 'track') {
       const entry = await em.findOne(JudgePanelTrack, { id, tenantId: auth.tenantId } as FilterQuery<JudgePanelTrack>)
       if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      await em.removeAndFlush(entry)
+      em.remove(entry)
+      await em.flush()
       return NextResponse.json({ ok: true })
     }
 

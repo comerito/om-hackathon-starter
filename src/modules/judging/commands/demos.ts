@@ -40,7 +40,8 @@ const advanceDemoCommand: CommandHandler<Record<string, unknown>, DemoSession> =
       demo.actualEnd = now
     }
 
-    await em.persistAndFlush(demo)
+    em.persist(demo)
+    await em.flush()
 
     // Emit SSE event for live timer sync
     try {
@@ -98,7 +99,8 @@ const reorderDemoCommand: CommandHandler<Record<string, unknown>, DemoSession> =
       others[i].presentationOrder = i
     }
 
-    await em.persistAndFlush(others)
+    em.persist(others)
+    await em.flush()
 
     try {
       const eventBus = ctx.container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

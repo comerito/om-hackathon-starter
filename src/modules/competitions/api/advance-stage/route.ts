@@ -51,7 +51,8 @@ export async function POST(request: Request) {
 
     const oldStage = competition.stage
     competition.stage = parsed.target_stage as CompetitionStage
-    await em.persistAndFlush(competition)
+    em.persist(competition)
+    await em.flush()
 
     // Emit stage_advanced event for subscribers (lockdown, auto-create projects, etc.)
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

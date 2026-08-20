@@ -233,7 +233,8 @@ const advanceStageCommand: CommandHandler<Record<string, unknown>, Competition> 
 
     const oldStage = competition.stage
     competition.stage = target_stage as typeof STAGE_ORDER[number]
-    await em.persistAndFlush(competition)
+    em.persist(competition)
+    await em.flush()
 
     // Emit stage_advanced event for subscribers
     const eventBus = ctx.container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

@@ -68,7 +68,8 @@ export async function POST(req: Request) {
       tenantId: auth.tenantId!,
       organizationId: auth.orgId!,
     })
-    await em.persistAndFlush(team)
+    em.persist(team)
+    await em.flush()
 
     // Auto-add creator as OWNER
     const member = em.create(TeamMember, {
@@ -80,12 +81,14 @@ export async function POST(req: Request) {
       tenantId: auth.tenantId!,
       organizationId: auth.orgId!,
     })
-    await em.persistAndFlush(member)
+    em.persist(member)
+    await em.flush()
 
     // Clear looking-for-team flag
     participation.lookingForTeam = false
     participation.lookingForTeamDescription = null
-    await em.persistAndFlush(participation)
+    em.persist(participation)
+    await em.flush()
 
     return NextResponse.json({ ok: true, team_id: team.id })
   } catch (error) {

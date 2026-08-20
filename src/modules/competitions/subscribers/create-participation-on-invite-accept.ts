@@ -67,7 +67,8 @@ export default async function handler(
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-    await em.persistAndFlush(participation)
+    em.persist(participation)
+    await em.flush()
     console.log(LOG, `Created participation: id=${participation.id} for userId=${payload.userId} in competition=${competitionInvitation.competitionId}`)
 
     // Index the participation so it appears in back office listings

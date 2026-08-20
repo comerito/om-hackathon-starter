@@ -33,7 +33,8 @@ export async function POST(req: Request) {
       prize.winningTeamId = parsed.winning_team_id
       prize.awardedAt = new Date()
       prize.awardedBy = auth.userId ?? auth.sub ?? null
-      await em.persistAndFlush(prize)
+      em.persist(prize)
+      await em.flush()
 
       try {
         const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
@@ -58,7 +59,8 @@ export async function POST(req: Request) {
       prize.winningTeamId = null
       prize.awardedAt = null
       prize.awardedBy = null
-      await em.persistAndFlush(prize)
+      em.persist(prize)
+      await em.flush()
 
       return NextResponse.json({ ok: true })
     }

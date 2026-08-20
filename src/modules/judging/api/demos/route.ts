@@ -144,7 +144,8 @@ export async function POST(req: Request) {
       demo.status = parsed.status as DemoStatus
       if (parsed.status === 'presenting') demo.actualStart = now
       else if (parsed.status === 'completed' || parsed.status === 'skipped') demo.actualEnd = now
-      await em.persistAndFlush(demo)
+      em.persist(demo)
+      await em.flush()
 
       try {
         const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
@@ -180,7 +181,8 @@ export async function PUT(req: Request) {
     const demo = await em.findOne(DemoSession, { id: parsedPut.id, tenantId: auth.tenantId } as FilterQuery<DemoSession>)
     if (!demo) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     demo.presentationOrder = parsedPut.new_order
-    await em.persistAndFlush(demo)
+    em.persist(demo)
+    await em.flush()
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('[judging/demos] PUT error:', error)
