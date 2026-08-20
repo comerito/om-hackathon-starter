@@ -83,7 +83,7 @@ export async function GET(req: Request) {
     type CustomerUserRow = { id: string; display_name: string | null; email: string | null }
     const userRows: CustomerUserRow[] = userIds.length > 0
       ? await em.getConnection().execute<CustomerUserRow[]>(
-          `SELECT id, display_name, email FROM customer_users WHERE id = ANY(?)`,
+          `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
           [userIds],
         )
       : []

@@ -90,14 +90,14 @@ export async function GET(req: Request) {
     if (teamIds.length > 0) {
       const counts = await conn.execute<Array<{ team_id: string; count: string | number }>>(
         `SELECT team_id, COUNT(id) AS "count" FROM teams_team_member
-           WHERE team_id = ANY(?) AND left_at IS NULL
+           WHERE team_id IN (?) AND left_at IS NULL
            GROUP BY team_id`,
         [teamIds],
       )
       memberCounts = new Map(counts.map((r) => [r.team_id, Number(r.count)]))
 
       const trackRows = await conn.execute<Array<{ team_id: string; track_id: string }>>(
-        `SELECT team_id, track_id FROM teams_team_track WHERE team_id = ANY(?)`,
+        `SELECT team_id, track_id FROM teams_team_track WHERE team_id IN (?)`,
         [teamIds],
       )
       for (const row of trackRows) {

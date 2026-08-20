@@ -77,7 +77,7 @@ export async function GET(req: Request) {
         `SELECT cp.id, cu.first_name, cu.last_name, cp.github_username
          FROM competitions_participation cp
          JOIN customer_accounts_user cu ON cu.id = cp.customer_user_id
-         WHERE cp.id = ANY(?)`,
+         WHERE cp.id IN (?)`,
         [participantIds],
       )
       for (const r of rows) {
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
     const teamMap = new Map<string, string>()
     if (teamIds.length > 0) {
       const rows = await em.getConnection().execute(
-        `SELECT id, name FROM teams_team WHERE id = ANY(?)`,
+        `SELECT id, name FROM teams_team WHERE id IN (?)`,
         [teamIds],
       )
       for (const r of rows) {
