@@ -61,3 +61,7 @@ tsconfig.tsbuildinfo
 # Upgrade baseline artifacts (large, regenerable via .ai/upgrade/harness/run.sh)
 .ai/upgrade/baseline/*.json
 .ai/upgrade/baseline/*.dump
+
+# MikroORM snapshots for the throwaway upgrade database (the canonical
+# .snapshot-open-mercato.json files stay tracked)
+src/modules/*/migrations/.snapshot-om_upgrade.json

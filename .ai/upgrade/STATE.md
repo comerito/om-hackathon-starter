@@ -57,7 +57,12 @@ _(out-of-scope items discovered during the upgrade)_
    Fixed here on the upgrade branch; worth cherry-picking to `main` independently.
 2. **98 hand-written write routes** bypass the mutation-guard contract
    (`runMutationGuards` registry). Out of scope per the plan; file as hardening work.
-3. **0 `withAtomicFlush` usages** against 42 `em.flush()` / 38 `persistAndFlush` /
+3. **MikroORM migration snapshots may need regenerating at S2.** The repo tracks
+   `src/modules/*/migrations/.snapshot-open-mercato.json` (5 files, named after the canonical
+   `open-mercato` DB). MikroORM 7 may change the snapshot format; if `yarn db:generate` rewrites
+   them, that diff is part of the upgrade and must be committed deliberately, not by accident.
+   The `.snapshot-om_upgrade.json` files this work produced are gitignored as local artifacts.
+4. **0 `withAtomicFlush` usages** against 42 `em.flush()` / 38 `persistAndFlush` /
    271 `em.find(One)` sites. Audit deferred to the S4 report.
 
 ## Findings (pre-existing at 0.4.8 — NOT upgrade regressions)
