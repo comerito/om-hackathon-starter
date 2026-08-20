@@ -12,6 +12,20 @@ export const metadata = {
   DELETE: { requireAuth: true, requireFeatures: ['judging.panels.manage'] },
 }
 
+type PanelJudgeRow = {
+  id: string
+  judge_id: string
+  display_name: string | null
+  email: string | null
+}
+
+type PanelTrackRow = {
+  id: string
+  track_id: string
+  track_name: string | null
+  color: string | null
+}
+
 // GET: list judges and tracks for a panel
 export async function GET(req: Request) {
   try {
@@ -24,35 +38,38 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify panel exists
     const panel = await em.findOne(JudgePanel, { id: panelId, tenantId: auth.tenantId, deletedAt: null } as FilterQuery<JudgePanel>)
     if (!panel) return NextResponse.json({ error: 'Panel not found' }, { status: 404 })
 
     // Get judges with display names
-    const judges = await knex('judging_panel_judge as pj')
-      .where('pj.panel_id', panelId)
-      .where('pj.tenant_id', auth.tenantId)
-      .leftJoin('customer_users as cu', 'cu.id', 'pj.judge_id')
-      .select('pj.id', 'pj.judge_id', 'cu.display_name', 'cu.email')
+    const judges = await em.getConnection().execute<PanelJudgeRow[]>(
+      `SELECT pj.id AS id, pj.judge_id AS judge_id, cu.display_name AS display_name, cu.email AS email
+       FROM judging_panel_judge pj
+       LEFT JOIN customer_users cu ON cu.id = pj.judge_id
+       WHERE pj.panel_id = ? AND pj.tenant_id = ?`,
+      [panelId, auth.tenantId],
+    )
 
     // Get tracks with names
-    const tracks = await knex('judging_panel_track as pt')
-      .where('pt.panel_id', panelId)
-      .where('pt.tenant_id', auth.tenantId)
-      .leftJoin('tracks_track as t', 't.id', 'pt.track_id')
-      .select('pt.id', 'pt.track_id', 't.name as track_name', 't.color')
+    const tracks = await em.getConnection().execute<PanelTrackRow[]>(
+      `SELECT pt.id AS id, pt.track_id AS track_id, t.name AS track_name, t.color AS color
+       FROM judging_panel_track pt
+       LEFT JOIN tracks_track t ON t.id = pt.track_id
+       WHERE pt.panel_id = ? AND pt.tenant_id = ?`,
+      [panelId, auth.tenantId],
+    )
 
     return NextResponse.json({
       panel: { id: panel.id, name: panel.name, round: panel.round, competition_id: panel.competitionId },
-      judges: judges.map((j: any) => ({
+      judges: judges.map((j) => ({
         id: j.id,
         judge_id: j.judge_id,
         display_name: j.display_name || j.email || j.judge_id.slice(0, 8),
         email: j.email ?? null,
       })),
-      tracks: tracks.map((t: any) => ({
+      tracks: tracks.map((t) => ({
         id: t.id,
         track_id: t.track_id,
         track_name: t.track_name ?? t.track_id.slice(0, 8),

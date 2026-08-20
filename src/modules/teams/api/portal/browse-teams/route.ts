@@ -32,56 +32,74 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
+    const conn = em.getConnection()
 
-    let query = knex('teams_team as t')
-      .where('t.competition_id', competitionId)
-      .where('t.tenant_id', auth.tenantId)
-      .where('t.deleted_at', null)
-      .select(
-        't.id',
-        't.competition_id',
-        't.track_id',
-        't.name',
-        't.description',
-        't.status',
-        't.is_finalist',
-        't.table_number',
-        't.table_location',
-        't.is_active',
-        't.created_at',
-      )
+    // Build the WHERE clause once and share it between the page query and the count query.
+    // Column names are hardcoded here; every value goes through a positional placeholder.
+    const conds: string[] = [
+      't.competition_id = ?',
+      't.tenant_id = ?',
+      't.deleted_at IS NULL',
+    ]
+    const values: unknown[] = [competitionId, auth.tenantId]
 
     if (nameFilter) {
-      query = query.whereRaw('t.name ILIKE ?', [`%${nameFilter}%`])
+      conds.push('t.name ILIKE ?')
+      values.push(`%${nameFilter}%`)
     }
 
-    // Count total before pagination
-    const countResult = await query.clone().clearSelect().count('t.id as count').first()
-    const total = Number(countResult?.count ?? 0)
+    const whereSql = conds.join(' AND ')
 
-    // Apply sort and pagination
-    const items = await query
-      .orderBy(`t.${safeSortField}`, sortDir)
-      .limit(pageSize)
-      .offset((page - 1) * pageSize)
+    // Count total before pagination
+    const countRows = await conn.execute<Array<{ count: string | number }>>(
+      `SELECT COUNT(t.id) AS count FROM teams_team t WHERE ${whereSql}`,
+      values,
+    )
+    const total = Number(countRows[0]?.count ?? 0)
+
+    // Apply sort and pagination.
+    // `safeSortField` is constrained to `allowedSortFields` above and `sortDir` to 'asc' | 'desc',
+    // so both are safe to interpolate as identifiers/keywords.
+    type TeamRow = {
+      id: string
+      competition_id: string
+      track_id: string | null
+      name: string
+      description: string | null
+      status: string
+      is_finalist: boolean
+      table_number: number | null
+      table_location: string | null
+      is_active: boolean
+      created_at: Date | string
+    }
+    const items = await conn.execute<TeamRow[]>(
+      `SELECT t.id, t.competition_id, t.track_id, t.name, t.description, t.status,
+              t.is_finalist, t.table_number, t.table_location, t.is_active, t.created_at
+         FROM teams_team t
+        WHERE ${whereSql}
+        ORDER BY t.${safeSortField} ${sortDir}
+        LIMIT ? OFFSET ?`,
+      [...values, pageSize, (page - 1) * pageSize],
+    )
 
     // Fetch member counts and track assignments
-    const teamIds = items.map((t: any) => t.id)
+    const teamIds = items.map((t) => t.id)
     let memberCounts = new Map<string, number>()
-    let teamTrackMap = new Map<string, string[]>()
+    const teamTrackMap = new Map<string, string[]>()
     if (teamIds.length > 0) {
-      const counts = await knex('teams_team_member')
-        .whereIn('team_id', teamIds)
-        .where('left_at', null)
-        .groupBy('team_id')
-        .select('team_id')
-        .count('id as count')
-      memberCounts = new Map(counts.map((r: any) => [r.team_id, Number(r.count)]))
+      const counts = await conn.execute<Array<{ team_id: string; count: string | number }>>(
+        `SELECT team_id, COUNT(id) AS count FROM teams_team_member
+           WHERE team_id = ANY(?) AND left_at IS NULL
+           GROUP BY team_id`,
+        [teamIds],
+      )
+      memberCounts = new Map(counts.map((r) => [r.team_id, Number(r.count)]))
 
-      const trackRows = await knex('teams_team_track')
-        .whereIn('team_id', teamIds)
-        .select('team_id', 'track_id')
+      const trackRows = await conn.execute<Array<{ team_id: string; track_id: string }>>(
+        `SELECT team_id, track_id FROM teams_team_track WHERE team_id = ANY(?)`,
+        [teamIds],
+      )
       for (const row of trackRows) {
         const existing = teamTrackMap.get(row.team_id) ?? []
         existing.push(row.track_id)
@@ -89,7 +107,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const result = items.map((t: any) => ({
+    const result = items.map((t) => ({
       id: t.id,
       competition_id: t.competition_id,
       track_id: t.track_id ?? null,

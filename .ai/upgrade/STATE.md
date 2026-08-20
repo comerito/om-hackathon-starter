@@ -1,9 +1,9 @@
 # Upgrade State — 0.4.8 → 0.6.7
 
 Branch: `chore/upgrade-om-0.6.7`
-Current stage: **S1 → 0.5.0 (in progress)**
-Current gate: S1 G6-G9 delta triage
-Iterations: 2
+Current stage: **S2 → 0.6.0 — THE WALL (in progress)**
+Current gate: S2 knex→SQL ports (21 files, 5 parallel rewriters)
+Iterations: 3
 
 Baseline surface after `example` removal: **502 files / 65,432 lines**
 (was 600 / 74,150 — the analysis doc's figures predate the deletion).
@@ -37,6 +37,29 @@ Baseline surface after `example` removal: **502 files / 65,432 lines**
 | 18 | S1 | G7 write replay | ✅ | **0 deltas / 66 writes** | 2026-08-20 |
 | 19 | S1 | G8/G9 read+page replay | ✅ | 529 deltas triaged: **96 EXPECTED, 3 REGRESSION (core module, unused by this app), 0 UNCERTAIN**. **Zero deltas on app-module routes.** No data loss anywhere | 2026-08-20 |
 | 20 | S1 | re-baseline @ 0.5.0 | ✅ | 0.4.8 baseline archived to `baseline/archive-0.4.8/`; new reference recorded: 66 writes, **3080 reads** (up from 2660 — new coverage), 160 pages, 0 error signals | 2026-08-20 |
+
+### S2 → 0.6.0 (MikroORM 6 → 7)
+
+| # | Stage | Gate | Verdict | Evidence | Date |
+|---|-------|------|---------|----------|------|
+| 21 | S2 | G1 install | ✅ | `@open-mercato/*` → 0.6.0, `@mikro-orm/*` → `^7.1.5` (7.1.13 resolved), added `@mikro-orm/decorators` + `reflect-metadata`. **`knex` is gone from node_modules; `kysely@0.29.5` is in.** exit 0, no project peer errors | 2026-08-20 |
+| 22 | S2 | entity decorators | ✅ | all 8 `src/modules/*/data/entities.ts` → `@mikro-orm/decorators/legacy`. `FilterQuery` *type* stays on `@mikro-orm/core` (matches framework practice) | 2026-08-20 |
+| 23 | S2 | persist/flush | ✅ | **`persistAndFlush`/`removeAndFlush` REMOVED in v7** — a breaking change the original analysis missed. 41 sites / 27 files converted to `persist(x)`+`flush()` / `remove(x)`+`flush()`. Framework did the same (0.4.8: 97 uses → 0.6.7: 0) | 2026-08-20 |
+| 24 | S2 | G2 generate | ✅ | exit 0. Framework auto-detected the v7 migration and purged its stale generated cache | 2026-08-20 |
+| 25 | S2 | G3 typecheck | ✅ | **exit 0.** First run: 41 errors, **all in `src/`, all TS2339**, all `persistAndFlush`/`removeAndFlush`. After conversion: 0 | 2026-08-20 |
+| 26 | S2 | knex → raw SQL | ⏳ | 21 files, 5 parallel rewriters on disjoint file sets | 2026-08-20 |
+
+**Porting policy for S2 (decided, and independently confirmed by the cookbook):** port everything
+to `em.getConnection().execute<T>(sql, params)` with hand-written SQL rather than the kysely
+builder. Rationale: it preserves exact SQL semantics, keeps snake_case result keys automatically,
+turns dynamic query building back into plain string+array assembly, and avoids kysely type
+gymnastics. The cookbook found **no framework precedent** for `UPDATE…FROM`, `DISTINCT ON`,
+subquery joins, or `avg()` — and recommends exactly this fallback for them. Binding is `?`
+positional with a params array; `execute()` returns a **plain array**, not `.rows`.
+`src/modules/bounties/api/leaderboard/route.ts:42` is in-repo precedent.
+
+**Reference:** `.ai/upgrade/KYSELY-PORTING-COOKBOOK.md` (1563 lines, every pattern cited to
+framework source with file:line).
 
 ## Accepted deltas
 

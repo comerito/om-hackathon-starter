@@ -444,7 +444,7 @@ if (tenantId != null) {
 }
 ```
 
-Composite `whereIn` over **tuples** — `modules/query_index/lib/search-tokens.ts:148,161-170`:
+Composite `whereIn` over **tuples** — `modules/query_index/lib/search-tokens.ts:148` / `:161-170`:
 ```ts
 // 0.4.8
 if (fieldPairs.length) deleteQuery.whereIn(['entity_id', 'field'], fieldPairs)
@@ -621,7 +621,7 @@ const applyEntityIndexesJoin = (q: AnyBuilder): AnyBuilder => {
 
 ### 5d. Dynamic join type (`leftJoin` vs `innerJoin` at runtime)
 
-**BEFORE** — `shared/lib/query/join-utils.ts:205-206` (0.4.8)
+**BEFORE** — `shared/lib/query/join-utils.ts:214-215` (0.4.8)
 ```ts
 if (cfg.type === 'inner') sub.join(joinArgs, joinFn)
 else sub.leftJoin(joinArgs, joinFn)
@@ -710,7 +710,7 @@ const countRow = await countClone
 const total = Number((countRow as any)?.count ?? 0)
 ```
 
-**AFTER** — `shared/lib/query/engine.ts:917-928` (0.6.7)
+**AFTER** — `shared/lib/query/engine.ts:920-928` (0.6.7)
 ```ts
 const countExpr = mayMultiplyBaseRows
   ? sql<string>`count(distinct ${sql.ref(`${table}.id`)})`
@@ -1368,7 +1368,7 @@ Kysely builders are immutable: **every method returns a new builder, mutations a
 framework's port is a mechanical rule: `q.where(...)` → `q = q.where(...)`, and every helper that
 mutated a builder now returns it.
 
-**BEFORE** — `shared/lib/query/join-utils.ts:296-302` (0.4.8): helper mutates in place, returns void
+**BEFORE** — `shared/lib/query/join-utils.ts:172-173` (0.4.8): helper mutates in place, returns void
 ```ts
 applyAliasScope: (builder: Knex.QueryBuilder, alias: string, table: string) => Promise<void> | void
 applyFilterOp: (builder: Knex.QueryBuilder, column: string, op: FilterOp, value?: unknown) => void
@@ -1455,7 +1455,7 @@ const total = Number((countRow as any)?.count ?? 0)
 const items = await q.limit(pageSize).offset((page - 1) * pageSize)
 ```
 
-**AFTER** — `shared/lib/query/engine.ts:912-928, 1025-1026` (0.6.7)
+**AFTER** — `shared/lib/query/engine.ts:920-928, 1025-1026` (0.6.7)
 ```ts
 const countExpr = mayMultiplyBaseRows
   ? sql<string>`count(distinct ${sql.ref(`${table}.id`)})`
