@@ -57,3 +57,7 @@ yarn-error.log*
 data/cache.db
 storage/
 tsconfig.tsbuildinfo
+
+# Upgrade baseline artifacts (large, regenerable via .ai/upgrade/harness/run.sh)
+.ai/upgrade/baseline/*.json
+.ai/upgrade/baseline/*.dump
