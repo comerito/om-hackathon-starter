@@ -1,9 +1,9 @@
 # Upgrade State — 0.4.8 → 0.6.7
 
 Branch: `chore/upgrade-om-0.6.7`
-Current stage: **S2 → 0.6.0 — THE WALL (in progress)**
-Current gate: S2 knex→SQL ports (21 files, 5 parallel rewriters)
-Iterations: 3
+Current stage: **S3 → 0.6.7 (in progress)**
+Current gate: S3 core-delta triage
+Iterations: 4
 
 Baseline surface after `example` removal: **502 files / 65,432 lines**
 (was 600 / 74,150 — the analysis doc's figures predate the deletion).
@@ -68,6 +68,30 @@ positional with a params array; `execute()` returns a **plain array**, not `.row
 
 **Reference:** `.ai/upgrade/KYSELY-PORTING-COOKBOOK.md` (1563 lines, every pattern cited to
 framework source with file:line).
+
+### S3 → 0.6.7
+
+| # | Stage | Gate | Verdict | Evidence | Date |
+|---|-------|------|---------|----------|------|
+| 35 | S3 | G1 install | ✅ | `@open-mercato/*` → 0.6.7, `ai` `^6.0.146` → `^7.0.71`, `@ai-sdk/{anthropic,openai}` → `^4`. Needed two extra fixes: **`react-is`** (new peer of `@open-mercato/ui@0.6.7`, via recharts 3) and a **`resolutions: { typescript: ^5.9.3 }`** — something pulled `typescript@7.0.2` and Yarn's builtin TS compat patch crashed on it (`ENOENT … _tsc.js`) | 2026-08-21 |
+| 36 | S3 | G2 generate | ✅ | exit 0. **411 route files → 411 API paths** (0.6.0 was 341) | 2026-08-21 |
+| 37 | S3 | G3 typecheck | ✅ | **exit 0, zero errors — first try.** The `ai` 6→7 major needed **no app changes**: the app only uses `generateObject` + `anthropic`, in 2 `bounties` files | 2026-08-21 |
+| 38 | S3 | G4 db:migrate | ✅ | exit 0. **41 migrations across 19 modules** (ai_assistant 7, customers 5, workflows 5, staff 4, auth 3, query_index 3, …) | 2026-08-21 |
+| 39 | S3 | G5 build | ✅ | exit 0 | 2026-08-21 |
+| 40 | S3 | G7 write replay | ✅ | **0 deltas / 66 writes** | 2026-08-21 |
+| 41 | S3 | G8 read replay | ✅ | 382 deltas, **3 on app modules — all the known-benign `resolve-users` map ordering** (data verified byte-identical). 275 `added` = new 0.6.7 routes | 2026-08-21 |
+| 42 | S3 | G9 page replay | ✅ | **0 deltas / 160** | 2026-08-21 |
+| 43 | S3 | log check | ✅ | **no SQL errors, no subscriber handler errors** in the whole S3 run | 2026-08-21 |
+| 44 | S3 | core-delta triage | ⏳ | 6 status + 98 body deltas on core routes, under triage | 2026-08-21 |
+
+**S3 items that turned out to be non-issues** (all verified, not assumed):
+- `DataTable.advancedFilter` — **not used anywhere in the app**, so the legacy-flat→tree migration
+  the analysis flagged is moot.
+- `recharts` 2→3 and `react-day-picker` 9→10 — **zero app files**, transitive only, as predicted.
+- **The auth email-uniqueness reshape DID land at 0.6.7**: `users_email_unique` is gone, replaced
+  by `users_tenant_email_hash_uniq`. It does not affect this app — every app query against
+  `customer_users` is by **id**, and the one email lookup (`checkin`) is already tenant-scoped.
+  The backend `users` table is never queried by app code.
 
 ## Accepted deltas
 
