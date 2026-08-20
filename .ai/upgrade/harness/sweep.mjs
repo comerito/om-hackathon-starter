@@ -50,6 +50,59 @@ const QUERY_VARIANTS = {
   sorted: '?page=1&pageSize=5&sortDir=asc',
 }
 
+/**
+ * REQUIRED query parameters, supplied from the seeded fixture.
+ *
+ * Without these, most app-module routes reject with 400 ("competition_id is
+ * required") BEFORE reaching any SQL — which silently made the S2 knex-port
+ * verification near-worthless: 17 of 22 rewritten routes were never executed
+ * at all. Each entry below produces an extra `fixture` variant so the rewritten
+ * SQL actually runs against real rows.
+ *
+ * Keep this map in sync with seed.mjs's fixture manifest.
+ */
+const F = () => fixtures.ids ?? {}
+const first = (a) => (Array.isArray(a) && a.length ? a[0] : null)
+const FIXTURE_PARAMS = {
+  '/api/competitions/portal/competition-stats': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/competition-data': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/my-participation': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/participants': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/looking-for-team': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/search-participants': () => `?competition_id=${F().competitionId}&q=up`,
+  '/api/competitions/portal/resolve-users': () => `?ids=${Object.values(F().userIds ?? {}).slice(0, 3).join(',')}`,
+  '/api/competitions/portal/chat': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/chat/unread-count': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/portal/chat/find-thread': () => `?competition_id=${F().competitionId}&user_id=${(F().userIds ?? {}).evan}`,
+  '/api/competitions/portal/chat/{threadId}': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/admin/invitations': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/admin/participant-invitations': () => `?competition_id=${F().competitionId}&customer_user_id=${(F().userIds ?? {}).dana}`,
+  '/api/competitions/participations': () => `?competition_id=${F().competitionId}`,
+  '/api/competitions/checkin': () => `?competition_id=${F().competitionId}`,
+
+  '/api/teams/portal/browse-teams': () => `?competition_id=${F().competitionId}`,
+  '/api/teams/portal/my-invitations': () => `?competition_id=${F().competitionId}`,
+  '/api/teams/portal/my-membership': () => `?competition_id=${F().competitionId}`,
+  '/api/teams/portal/my-team-membership': () => `?competition_id=${F().competitionId}`,
+  '/api/teams/portal/my-tracks': () => `?competition_id=${F().competitionId}`,
+
+  '/api/judging/portal/export-results': () => `?competition_id=${F().competitionId}`,
+  '/api/judging/portal/my-assignments': () => `?competition_id=${F().competitionId}`,
+  '/api/judging/portal/current-demo': () => `?competition_id=${F().competitionId}`,
+  '/api/judging/portal/score-project': () => `?competition_id=${F().competitionId}&project_id=${first(F().projectIds)}`,
+  '/api/judging/panel-members': () => `?panel_id=${F().panelId}`,
+  '/api/judging/leaderboard': () => `?competition_id=${F().competitionId}`,
+
+  '/api/tracks/portal/track-detail': () => `?track_id=${first(F().trackIds)}`,
+  '/api/projects/portal/my-project': () => `?competition_id=${F().competitionId}`,
+  '/api/sponsors/portal/sponsors-view': () => `?competition_id=${F().competitionId}`,
+  '/api/sponsors/portal/my-votes': () => `?competition_id=${F().competitionId}`,
+  '/api/bounties/leaderboard': () => `?competition_id=${F().competitionId}`,
+  '/api/bounties/activity': () => `?competition_id=${F().competitionId}`,
+  '/api/bounties/portal/judge/prs': () => `?competition_id=${F().competitionId}`,
+  '/api/incidents/portal/my-reports': () => `?competition_id=${F().competitionId}`,
+}
+
 const gets = []
 const skipped = []
 for (const [p, ops] of Object.entries(spec.paths)) {
@@ -76,6 +129,15 @@ for (const g of gets) {
       // only sweep query variants for collection-ish routes; detail routes get default only
       if (variant !== 'default' && g.parameterised) continue
       work.push({ g, principal, variant, qs })
+    }
+    // extra variant supplying this route's REQUIRED params from the fixture, so
+    // the handler actually reaches its SQL instead of short-circuiting on a 400
+    const fp = FIXTURE_PARAMS[g.template]
+    if (fp) {
+      const qs = fp()
+      if (qs && !qs.includes('undefined') && !qs.includes('null')) {
+        work.push({ g, principal, variant: 'fixture', qs })
+      }
     }
   }
 }
