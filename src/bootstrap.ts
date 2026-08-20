@@ -49,6 +49,15 @@ import { componentOverrideEntries } from '@/.mercato/generated/component-overrid
 import { guardEntries } from '@/.mercato/generated/guards.generated'
 import { commandInterceptorEntries } from '@/.mercato/generated/command-interceptors.generated'
 import { notificationHandlerEntries } from '@/.mercato/generated/notification-handlers.generated'
+// 0.6.7: command registration became LAZY. Without registering the loaders the
+// command registry only contains handlers that some other import happened to
+// pull in, so CommandBus.resolveHandler throws
+// "Command handler not registered for id ..." for anything not already loaded.
+import { commandLoaderEntries } from '@/.mercato/generated/command-loaders.generated'
+// 0.6.7: code-based workflow definitions must be registered explicitly, or
+// migrations that retire a persisted seed row in favour of a code definition
+// leave the workflow missing entirely.
+import { allCodeWorkflows } from '@/.mercato/generated/workflows.generated'
 import { messageTypes } from '@/.mercato/generated/message-types.generated'
 import { messageObjectTypes } from '@/.mercato/generated/message-objects.generated'
 import { registerMessageTypes } from '@open-mercato/core/modules/messages/lib/message-types-registry'
@@ -79,7 +88,9 @@ export const bootstrap = createBootstrap({
   componentOverrideEntries,
   guardEntries,
   commandInterceptorEntries,
+  commandLoaderEntries,
   notificationHandlerEntries,
+  codeWorkflows: allCodeWorkflows,
 })
 
 export { isBootstrapped }
