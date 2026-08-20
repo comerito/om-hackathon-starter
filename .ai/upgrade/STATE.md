@@ -48,7 +48,14 @@ Baseline surface after `example` removal: **502 files / 65,432 lines**
 | 24 | S2 | G2 generate | ✅ | exit 0. Framework auto-detected the v7 migration and purged its stale generated cache | 2026-08-20 |
 | 25 | S2 | G3 typecheck | ✅ | **exit 0.** First run: 41 errors, **all in `src/`, all TS2339**, all `persistAndFlush`/`removeAndFlush`. After conversion: 0 | 2026-08-20 |
 | 26 | S2 | G4 db:migrate | ✅ | exit 0 onto the 0.4.8 baseline. **29 migrations across 10 modules**: customers 13, auth 5, ai_assistant 3, audit_logs 2, + 1 each for business_rules / customer_accounts / dictionaries / integrations / messages / sales. No errors | 2026-08-20 |
-| 27 | S2 | knex → raw SQL | ⏳ | 21 files, 5 parallel rewriters on disjoint sets. `teams` (4) and `judging` (2) done; `competitions` (15) in progress | 2026-08-20 |
+| 27 | S2 | knex → raw SQL | ✅ | 21 files ported by 5 parallel agents on disjoint sets. Zero knex artifacts remain in `src/` | 2026-08-21 |
+| 28 | S2 | `ANY(?)` fix | ✅ | 8 sites (4 **pre-existing** in `bounties`) — see finding S2-F1 | 2026-08-21 |
+| 29 | S2 | G5 build | ✅ | exit 0 | 2026-08-21 |
+| 30 | S2 | **harness coverage fix** | ✅ | The first S2 verify was nearly worthless: **17 of 22 ported routes returned 400 before reaching any SQL**. Added a fixture-param variant (34 routes) → fixture 200s went ~3 → **76** | 2026-08-21 |
+| 31 | S2 | G7 write replay | ✅ | **0 deltas / 66 writes** — includes the ported `UPDATE…FROM` and `UPDATE customer_users` write paths | 2026-08-21 |
+| 32 | S2 | G8 read replay | ✅ | 235 deltas, **6 on app modules — both causes explained and benign** (see S2-A/S2-B). 180 `added` = new 0.6.0 routes | 2026-08-21 |
+| 33 | S2 | G9 page replay | ✅ | **0 deltas / 160** | 2026-08-21 |
+| 34 | S2 | subscriber log check | ✅ | No `syntax error`, no `getKnex is not a function`, no `ANY(...)` failures. Only the 3 pre-existing bugs already on record | 2026-08-21 |
 
 **Porting policy for S2 (decided, and independently confirmed by the cookbook):** port everything
 to `em.getConnection().execute<T>(sql, params)` with hand-written SQL rather than the kysely
@@ -115,6 +122,29 @@ raw feature arrays with exact string checks when wildcard grants apply."*
 **Verdict: ACCEPT — a fix, not a hole.** The grant is module-scoped, only that module's
 routes changed, and no principal without an explicit grant gained access (`anon`,
 `alice`, `bob`, `carol` are unchanged on these routes).
+
+### S2-A: `resolve-users` row order (accept)
+
+`GET /api/competitions/portal/resolve-users` returned the same 3 users with identical data but
+in a different order (Dana/Evan/Fiona → Fiona/Dana/Evan). Investigated rather than assumed:
+
+- The query has **no `ORDER BY`** — it never did, and the port preserved that faithfully.
+- Order is **stable within a run**: 3 consecutive live calls at 0.6.0 returned
+  `Dana | Evan | Fiona` every time, matching 0.5.0.
+- The difference is between *migration paths*, not ORM versions: the 0.5.0 baseline DB had
+  **9** migrations applied, the 0.6.0 run had **29** (customers alone contributes 13, rewriting
+  `customer_users`), which changes physical heap order for an unordered scan.
+- The response is a **map keyed by user id**, so ordering is semantically irrelevant to consumers.
+
+**Verdict: ACCEPT.** Not a port regression. Latent nondeterminism (unordered query) left as-is
+per the preserve-behaviour rule; filed as a follow-up.
+
+### S2-B: `current-demo` `server_time` (harness gap, fixed)
+
+`GET /api/judging/portal/current-demo` reported a body delta on every run solely because
+`server_time` is epoch **milliseconds as a NUMBER**. The normaliser's timestamp regex only
+matches strings, and numbers pass through untouched. Fixed by adding `server_time` (and
+`generated_at`, `last_modified`, `request_id`) to `VOLATILE_KEYS`. **Not a regression.**
 
 ### S1-E: routine additive core changes (accept, 88 deltas)
 
@@ -251,6 +281,41 @@ Dependency requirements introduced at 0.6.0:
 
 Since `^7.0.14` admits `7.1.5` (what 0.6.7 wants), S2 will install `^7.1.5` directly to
 avoid a second MikroORM bump in S3.
+
+## S2-F1: `= ANY(?)` is broken under MikroORM 7 (8 sites, 4 pre-existing)
+
+The single most important find of S2, and one the replay could never have caught on its own.
+
+MikroORM 7's `connection.execute()` does **not** bind parameters. `AbstractSqlConnection.prepareQuery`
+calls `platform.formatQuery()`, which textually inlines every `?`, then hands the finished string
+to kysely as `CompiledQuery.raw(...)`. `BasePostgreSqlPlatform.escape()` renders a JS **array** as
+a comma-joined list of quoted literals — *not* a Postgres array literal. Verified against the real
+platform:
+
+```
+formatQuery('... id IN (?)',   [['a','b']])  ->  ... id IN ('a', 'b')      OK
+formatQuery('... id = ANY(?)', [['a','b']])  ->  ... id = ANY('a', 'b')    SYNTAX ERROR
+```
+
+Three of the five porting agents discovered this independently and used `IN (?)`; one did not and
+used `= ANY(?)`. **Four further sites were pre-existing app code** — `bounties/api/portal/judge/prs`
+and `bounties/data/enrichers` — which already used `execute()` with `= ANY(?)` before this upgrade.
+
+All 8 converted to `IN (?)`; every site sits behind a `length > 0` guard so `IN ()` is unreachable,
+and escaping still goes through `escapeLiteral`, so there is no injection risk.
+
+**The replay cannot verify the 4 bounties sites** — the fixture has no bounties data (GitHub-backed,
+not seedable), so those code paths are unreachable in testing. They are correct by construction and
+by the platform test above, but they are the least-verified change in this upgrade.
+
+## S2-F2: `yarn generate` does not purge stale generated bundles
+
+When reverting the code from 0.6.0 to 0.5.0 to re-record a baseline, `yarn generate` succeeded but
+`.mercato/generated/di.generated.mjs` still contained `import … from "@mikro-orm/decorators/legacy"`
+inlined from the 0.6.0 entities, so the app died at boot with
+`Cannot find package '@mikro-orm/decorators'`. `rm -rf .mercato/generated` before regenerating fixes
+it. Going *forward* 0.5.0 → 0.6.0 the framework detects the v7 migration and purges automatically;
+going backward it does not. Relevant to anyone bisecting or rolling back.
 
 ## S2 schema findings
 

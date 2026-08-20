@@ -67,10 +67,17 @@ export function createNormalizer() {
 }
 
 // Fields that legitimately differ between runs and carry no correctness signal.
+//
+// NOTE `server_time` / `serverTime`: these are epoch MILLISECONDS as a NUMBER,
+// not a string, so the timestamp regex above cannot reach them — numbers are
+// returned untouched by the normaliser. They have to be masked by key.
+// Found the hard way: /api/judging/portal/current-demo reported a body delta on
+// every run purely because of `server_time`.
 const VOLATILE_KEYS = new Set([
   'took', 'duration', 'durationMs', 'elapsed', 'elapsedMs',
   'requestId', 'traceId', 'correlationId', 'etag', 'lastModified',
-  'generatedAt', 'timestamp', 'now', 'serverTime', 'cacheKey',
+  'generatedAt', 'timestamp', 'now', 'serverTime', 'server_time', 'cacheKey',
+  'generated_at', 'last_modified', 'request_id',
 ])
 
 /** Cookie jar that survives redirects, keyed per principal. */
