@@ -41,7 +41,60 @@ Baseline surface after `example` removal: **502 files / 65,432 lines**
 
 _(behavioural differences accepted, with justification)_
 
-- None yet.
+### S1-A: 23 portal pages now require authentication (SECURITY FIX — accept)
+
+All 46 page deltas are the same change: `200 → 307` redirecting to
+`/acme-corp/portal/login`. Broken down by principal:
+
+| principal | portal session? | unchanged | changed | of which → 307 |
+|---|---|---|---|---|
+| alice | yes | **40** | 0 | 0 |
+| bob | yes | **40** | 0 | 0 |
+| admin | no (backend only) | 17 | **23** | 23 |
+| anon | no | 17 | **23** | 23 |
+
+Real portal users are completely unaffected. Only principals **without** a portal
+session are redirected. At 0.4.8 those 23 portal pages — including `/portal/chat`,
+`/portal/agenda`, `/portal/announcements`, `/portal/bounties/judge` — **rendered for
+unauthenticated visitors**. 0.5.0 enforces the `requireCustomerAuth` declared in each
+page's `page.meta.ts` server-side, via the `(frontend)` catch-all.
+
+**Verdict: ACCEPT.** This is a security fix, not a regression, and it closes a real
+exposure in the app as it stands on `main`.
+
+### S1-B: 425 newly-covered routes (codegen fix — accept)
+
+0.4.8 reported "Found 332 API route files → Generated 310 API paths", silently dropping
+22 route files from the OpenAPI spec, including the app's own CRUD roots
+(`/api/tracks/tracks`, `/api/teams/teams`, `/api/projects/projects`, `/api/judging/panels`,
+`/api/sponsors/sponsors`). 0.5.0 reports 341 → 341. The `added` deltas are therefore new
+**coverage**, not new behaviour.
+
+Consequence: the 0.4.8 baseline never covered those routes, so they cannot be diffed
+against it. **S2 must use the S1 (0.5.0) recording as its reference baseline.**
+
+### S1-D: feature_toggles 403 → 200/404 for admin (RBAC wildcard fix — accept)
+
+8 status deltas, all on `/api/feature_toggles/*` for the `admin` principal.
+
+- The routes require `feature_toggles.view` (verified in the installed 0.5.0
+  `feature_toggles/api/{overrides,global}/route.ts`).
+- The admin role's `role_acls.features_json` contains **`feature_toggles.*`** — a scoped
+  wildcard. It does **not** contain a bare `*` (111 grants, checked).
+- So at 0.4.8 the wildcard `feature_toggles.*` was NOT being expanded to satisfy
+  `feature_toggles.view`, and the admin was wrongly denied. 0.5.0 resolves it correctly.
+
+This is the exact defect the framework's own 0.6.7 AGENTS.md warns about: *"Never compare
+raw feature arrays with exact string checks when wildcard grants apply."*
+
+**Verdict: ACCEPT — a fix, not a hole.** The grant is module-scoped, only that module's
+routes changed, and no principal without an explicit grant gained access (`anon`,
+`alice`, `bob`, `carol` are unchanged on these routes).
+
+### S1-C: 1 removed route (codegen fix — accept)
+
+`/api/attachments/image/{id}/{[...slug}]` — a malformed generated path (note the mangled
+brackets) present at 0.4.8 and gone at 0.5.0.
 
 ## Corrections to the analysis doc
 
@@ -129,6 +182,27 @@ Recorded now so they are never mistaken for upgrade damage later.
   cannot be blindly replayed without destroying reproducibility. So: `seed.mjs` is the
   write-path baseline (a scripted, ordered, recorded write sequence) and `sweep.mjs` covers
   all 205 reads deeply. Together this is full coverage; blind-firing POSTs would not be.
+
+## S2 preparation (verified against published 0.6.0 metadata)
+
+**No `auto-upgrade-0.5.0-to-0.6.0` skill exists.** `@open-mercato/cli@0.6.0` ships only
+`auto-upgrade-0.4.10-to-0.5.0`. S2 is entirely manual.
+
+Dependency requirements introduced at 0.6.0:
+
+| package | requirement | note |
+|---|---|---|
+| `@mikro-orm/core` | `^7.0.14` | **the wall** |
+| `@mikro-orm/postgresql` | `^7.0.14` | knex → kysely |
+| `@mikro-orm/migrations` | `^7.0.14` | |
+| `@mikro-orm/decorators` | `^7.0.14` | **new package** — entity decorators move here |
+| `reflect-metadata` | `^0.2.2` | **new** — must load before entities |
+| `semver` | `^7.7.4` | |
+| `sanitize-html` | `^2.17.2` | |
+| `ai` | `^6.0.168` | still v6 at 0.6.0; the 6→7 jump lands at **0.6.6**, i.e. in S3 |
+
+Since `^7.0.14` admits `7.1.5` (what 0.6.7 wants), S2 will install `^7.1.5` directly to
+avoid a second MikroORM bump in S3.
 
 ## Coverage gaps (explicit — the baseline does NOT cover these)
 
