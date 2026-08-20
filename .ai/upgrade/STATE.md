@@ -35,7 +35,8 @@ Baseline surface after `example` removal: **502 files / 65,432 lines**
 | 16 | S1 | G5 build | ✅ | `yarn build` exit 0, static generation 4/4 | 2026-08-20 |
 | 17 | S1 | G6 boot | ✅ | app ready on :3006, scheduler confirmed off | 2026-08-20 |
 | 18 | S1 | G7 write replay | ✅ | **0 deltas / 66 writes** | 2026-08-20 |
-| 19 | S1 | G8/G9 read+page replay | ⏳ | 483 sweep deltas (425 `added`, 5 `removed`, 8 `status`, 45 `body`) + 46 page deltas — under triage | 2026-08-20 |
+| 19 | S1 | G8/G9 read+page replay | ✅ | 529 deltas triaged: **96 EXPECTED, 3 REGRESSION (core module, unused by this app), 0 UNCERTAIN**. **Zero deltas on app-module routes.** No data loss anywhere | 2026-08-20 |
+| 20 | S1 | re-baseline @ 0.5.0 | ✅ | 0.4.8 baseline archived to `baseline/archive-0.4.8/`; new reference recorded: 66 writes, **3080 reads** (up from 2660 — new coverage), 160 pages, 0 error signals | 2026-08-20 |
 
 ## Accepted deltas
 
@@ -91,6 +92,23 @@ raw feature arrays with exact string checks when wildcard grants apply."*
 routes changed, and no principal without an explicit grant gained access (`anon`,
 `alice`, `bob`, `carol` are unchanged on these routes).
 
+### S1-E: routine additive core changes (accept, 88 deltas)
+
+Verified additive-only, item and total counts identical in every case:
+`/api/customers/people` `/companies`, `/api/catalog/variants`, `/api/auth/users`
+(new fields only); `/api/directory/organization-switcher` (+`canViewAllOrganizations`);
+`/api/scheduler/targets` (commands 263→275, **12 added / 0 removed**);
+`/api/customers/todos` (`totalPages 0→1` on an empty result); `/api/configs/upgrade-actions`
+(version string); `/api/customers/deals/{id}` (401 message text — 0.5.0 adds route metadata so
+the framework guard rejects before the handler); `/api/integrations` (now honours `pageSize`).
+
+Two that are benign here but are **breaking contract changes for other consumers**:
+- `/api/ai_assistant/tools`: 4→3 tools; `discover_schema`/`find_api`/`call_api` replaced by
+  `search`/`execute` ("Code Mode" redesign). Breaks anything hardcoding tool names.
+- `/api/configs/system-status`: `FORCE_QUERY_INDEX_ON_PARTIAL_INDEXES` *advertised default*
+  moved `true→false`. No effect here (explicitly set in `.env`), but any deployment relying on
+  the implicit default flips behaviour.
+
 ### S1-C: 1 removed route (codegen fix — accept)
 
 `/api/attachments/image/{id}/{[...slug}]` — a malformed generated path (note the mangled
@@ -119,6 +137,12 @@ brackets) present at 0.4.8 and gone at 0.5.0.
 
 _(out-of-scope items discovered during the upgrade)_
 
+0. **`GET /api/teams/resources` is broken (500)** — see R-2. One-line fix in
+   `src/modules/teams/api/resources/route.ts:6`. **Highest-value item in this list.**
+0b. **`feature_toggles.*` now also grants `feature_toggles.manage`.** At 0.4.8 the routes were
+   `requireRoles: ['superadmin']`; at 0.5.0 they are feature-gated, and `setup.ts` grants
+   `admin: ['feature_toggles.*']`. So tenant admins can now **write** feature toggles where
+   previously only superadmin could. Intended by the framework, but worth an explicit decision.
 1. **Yarn toolchain was broken on `main`.** A Berry-format lockfile with no
    `packageManager` field means a fresh clone with Yarn classic on PATH cannot install.
    Fixed here on the upgrade branch; worth cherry-picking to `main` independently.
@@ -203,6 +227,43 @@ Dependency requirements introduced at 0.6.0:
 
 Since `^7.0.14` admits `7.1.5` (what 0.6.7 wants), S2 will install `^7.1.5` directly to
 avoid a second MikroORM bump in S3.
+
+## REGRESSIONS found (not caused by this app, but must be tracked)
+
+### R-1 (framework, does NOT affect this app): `/api/customers/activities` loses custom fields
+
+0.5.0 rewrote the route as a `@deprecated` compatibility bridge (SPEC-046b). Row count is
+unchanged (11/11) but every item lost its custom-field data: `customFields[]` removed, the
+flattened `cf_*` keys removed, and `customValues` hardcoded to `null` at
+`core/src/modules/customers/api/activities/route.ts:238`. The 0.4.8 `decorateCustomFields`
+block is gone. The shipped 0.5.0 admin UI still reads those fields
+(`components/detail/ActivitiesSection.tsx:322`), so the custom-fields block renders empty.
+The canonical successor `/api/customers/interactions` returns `{"items":[]}` because
+`customers.interactions.unified` defaults to `false` — so nothing serves this data at present.
+
+**Impact on THIS app: none.** `grep -rl "customers/activities|customer_activity|CustomerActivity" src/`
+returns nothing — the app does not use customer activities. **Report upstream; do not block on it.**
+
+### R-2 (pre-existing APP bug, newly visible): `GET /api/teams/resources` returns 500
+
+```
+[QueryEngine] Could not resolve entity "teams:resource" via ORM metadata.
+Falling back to table name "resources".
+[crud] unexpected error: select * from "resources" - relation "resources" does not exist
+```
+
+Cause: the entity class is `TeamResource` (`src/modules/teams/data/entities.ts:202`,
+`tableName: 'teams_resource'`), so codegen emits the id **`teams:team_resource`**
+(`.mercato/generated/entities.ids.generated.ts:264`). But
+`src/modules/teams/api/resources/route.ts:6` hardcodes `ENTITY_ID = 'teams:resource'`.
+Resolution fails, the QueryEngine falls back to the bare table name `resources`, which does
+not exist.
+
+**Pre-existing — not caused by the upgrade.** It was invisible at 0.4.8 only because that
+version's OpenAPI codegen dropped this route from the spec, so the baseline never called it.
+Fix is one line (`'teams:resource'` → `'teams:team_resource'`), but it is an **app bugfix, not
+upgrade work**, so it is filed rather than fixed inline — mixing it in would make the upgrade
+diff harder to review. It is stable at 500, so it does not impede S2/S3 comparison.
 
 ## Coverage gaps (explicit — the baseline does NOT cover these)
 

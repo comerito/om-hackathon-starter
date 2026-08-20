@@ -1,0 +1,841 @@
+{
+ "meta": {
+  "paths": 40,
+  "principals": [
+   "admin",
+   "alice",
+   "bob",
+   "anon"
+  ],
+  "brokenCount": 0
+ },
+ "results": {
+  "/acme-corp/portal :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/accept-invite :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/accept-invite :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/accept-invite :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/accept-invite :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/agenda :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/agenda :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/agenda :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/agenda :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/announcements :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/announcements :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/announcements :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/announcements :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/judge :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/judge :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/judge :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/judge :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/kiosk :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/kiosk :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/kiosk :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/kiosk :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/leaderboard :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/leaderboard :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/leaderboard :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/leaderboard :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/my-prs :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/my-prs :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/my-prs :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/bounties/my-prs :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/chat :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/chat :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/chat :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/chat :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/competition :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/competition :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/competition :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/competition :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/dashboard :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/dashboard :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/dashboard :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/dashboard :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/incident :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/incident :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/incident :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/incident :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging/[projectId] :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging/[projectId] :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging/[projectId] :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/judging/[projectId] :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/kiosk :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/kiosk :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/kiosk :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/kiosk :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/legal/[document] :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/legal/[document] :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/legal/[document] :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/legal/[document] :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/login :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/login :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/login :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/login :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/mentor :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/mentor :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/mentor :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/mentor :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/participants :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/participants :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/participants :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/participants :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/presentations :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/presentations :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/presentations :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/presentations :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/profile :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/profile :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/profile :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/profile :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/project :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/project :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/project :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/project :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/qr :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/qr :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/qr :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/qr :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/results :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/results :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/results :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/results :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/signup :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/signup :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/signup :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/signup :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/sponsors :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/sponsors :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/sponsors :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/sponsors :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/team :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/team :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/team :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/team :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/teams :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/teams :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/teams :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/teams :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks/[trackId] :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks/[trackId] :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks/[trackId] :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/tracks/[trackId] :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/voting :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/voting :: alice": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/voting :: bob": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/acme-corp/portal/voting :: anon": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/competitions :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/competitions :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/competitions :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/competitions :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/tracks :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/tracks :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/tracks :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/tracks :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/teams :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/teams :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/teams :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/teams :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/projects :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/projects :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/projects :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/projects :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/judging :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/judging :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/judging :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/judging :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/sponsors :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/sponsors :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/sponsors :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/sponsors :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/bounties :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/bounties :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/bounties :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/bounties :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/incidents :: admin": {
+   "status": 200,
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/incidents :: alice": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/incidents :: bob": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  },
+  "/backend/incidents :: anon": {
+   "status": 307,
+   "location": "/api/auth/session/refresh?redirect=<path>",
+   "errorMarkers": [],
+   "sizeBucket": ">200k"
+  }
+ }
+}
