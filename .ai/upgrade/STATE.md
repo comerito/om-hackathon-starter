@@ -282,6 +282,16 @@ Dependency requirements introduced at 0.6.0:
 Since `^7.0.14` admits `7.1.5` (what 0.6.7 wants), S2 will install `^7.1.5` directly to
 avoid a second MikroORM bump in S3.
 
+## S2-F3: two NEW core routes 500 at 0.6.0
+
+`GET /api/customers/interactions/counts` and `/api/customers/interactions/conflicts` — both
+introduced at 0.6.0, both return `{"error":"Internal server error"}`. They are part of the
+`customers.interactions` feature which defaults to `unified: false` (see R-1), so they appear to
+500 rather than degrade gracefully when the flag is off.
+
+**Does not affect this app** — it does not use customer interactions. Framework issue; report
+upstream alongside R-1.
+
 ## S2-F1: `= ANY(?)` is broken under MikroORM 7 (8 sites, 4 pre-existing)
 
 The single most important find of S2, and one the replay could never have caught on its own.

@@ -1,0 +1,62 @@
+{
+ "pathParams": {
+  "trackId": "f5e49785-7659-46e5-83c7-dcc0b0f644cd",
+  "projectId": "d6dc7e9d-3dcf-42e5-8000-63a6ecc4dbe2",
+  "threadId": "f7574a17-ea43-4df0-ab52-4ff5e8376926",
+  "id": "47079ebc-d879-4bc5-8929-6f644d299b47"
+ },
+ "ids": {
+  "competitionId": "47079ebc-d879-4bc5-8929-6f644d299b47",
+  "trackIds": [
+   "f5e49785-7659-46e5-83c7-dcc0b0f644cd",
+   "11b6c02c-5f71-4214-bca2-91ee4623f665",
+   "1b5c956e-1548-4ecd-a212-84a1eb439a89"
+  ],
+  "userIds": {
+   "dana": "a790a048-db04-4d8f-bff4-cf559df91fc0",
+   "evan": "72679f8d-2397-4271-9d81-6c1d6f53a70c",
+   "fiona": "f20c9128-07b6-44da-bc7f-f8335c5f3c5b",
+   "gil": "19ecfc3c-096d-4b35-9ea7-7349f4ce01e8",
+   "judy": "fc54dff9-8d2c-469d-a5d1-fca8cdae702a",
+   "jorge": "8aba89f0-786e-4dc7-a284-fe895b84f3f8",
+   "mona": "870a564b-ad44-4de6-814f-6c720eabffea",
+   "alice": "f58fa642-b6d8-4293-b368-efed579ee2f1",
+   "bob": "048d1a8d-edf0-4c98-9d62-9f64561e73a0",
+   "carol": "eac8960f-0e8c-4d2a-ac39-c791adcffcac"
+  },
+  "participationIds": {
+   "dana": "a6a854e2-b01a-42cd-953b-aad8723b8be6",
+   "evan": "7534680b-356d-4a6f-a1a4-1108819e5c6e",
+   "fiona": "980c5052-354e-4112-844d-8007a0ac7710",
+   "gil": "e087a2b2-6f6c-41bd-885a-8e29a12e3c01",
+   "judy": "a9fd04b4-a2c3-41b2-b035-b50be15aacaa",
+   "jorge": "3be1d604-55dc-47a1-88cc-da977390ba1d",
+   "mona": "40bf1cee-8b48-4592-966c-99bdbe0a10a6",
+   "alice": "ec2b273a-e07e-478c-9c7b-b79cce635949",
+   "bob": "2b6857b0-0de9-412c-931f-c3d073882731",
+   "carol": "216b897c-e2a6-4882-9e38-c1a599e2d5cf"
+  },
+  "teamIds": [
+   "9c135be2-0ca1-48fd-9d64-3721480d8c05",
+   "578cc9dd-a3d4-439c-bf02-9c6e9cf45509",
+   "525ad4ca-8195-41ca-ac0b-3d0c6afb8798"
+  ],
+  "projectIds": [
+   "d6dc7e9d-3dcf-42e5-8000-63a6ecc4dbe2",
+   "218d0216-5d01-45b6-86dc-3ec3276d8571",
+   "2b16d564-e8d7-486f-b80c-a045cee970af"
+  ],
+  "criterionIds": [
+   "3b8eb5f1-d016-4533-85bb-c23d73b5eb4f",
+   "ec2db743-d486-4f14-905b-38fc8b36c7c6",
+   "e7fd005c-8b3e-4276-9f80-91b6bf4d8a9e",
+   "5872b9fb-9e29-44f3-b6d6-7fa2ff0bdc61"
+  ],
+  "panelId": "33c380eb-65ac-4602-b670-79c9b6ac5279",
+  "sponsorIds": [
+   "cd3e175a-e70e-4bae-a05b-b85852fe5e2b",
+   "3d07d1d6-cf78-4e18-a6f9-d7e650e5909c"
+  ],
+  "threadId": "f7574a17-ea43-4df0-ab52-4ff5e8376926"
+ }
+}
