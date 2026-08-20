@@ -65,3 +65,8 @@ tsconfig.tsbuildinfo
 # MikroORM snapshots for the throwaway upgrade database (the canonical
 # .snapshot-open-mercato.json files stay tracked)
 src/modules/*/migrations/.snapshot-om_upgrade.json
+
+# Playwright / integration test output
+.ai/qa/test-results/
+test-results/
+playwright-report/

@@ -1,0 +1,5358 @@
+{
+  "ai_assistant": {
+    "title": "AI Assistant",
+    "description": "MCP server for AI assistant integration with multi-tenant support.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "ai_assistant:ai_agent_prompt_override",
+        "class": "AiAgentPromptOverride",
+        "table": "ai_agent_prompt_overrides",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_pending_action",
+        "class": "AiPendingAction",
+        "table": "ai_pending_actions",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_agent_runtime_override",
+        "class": "AiAgentRuntimeOverride",
+        "table": "ai_agent_runtime_overrides",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_token_usage_event",
+        "class": "AiTokenUsageEvent",
+        "table": "ai_token_usage_events",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_token_usage_daily",
+        "class": "AiTokenUsageDaily",
+        "table": "ai_token_usage_daily",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_tenant_model_allowlist",
+        "class": "AiTenantModelAllowlist",
+        "table": "ai_tenant_model_allowlists",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_agent_mutation_policy_override",
+        "class": "AiAgentMutationPolicyOverride",
+        "table": "ai_agent_mutation_policy_overrides",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_chat_conversation",
+        "class": "AiChatConversation",
+        "table": "ai_chat_conversations",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_chat_conversation_participant",
+        "class": "AiChatConversationParticipant",
+        "table": "ai_chat_conversation_participants",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "ai_assistant:ai_chat_message",
+        "class": "AiChatMessage",
+        "table": "ai_chat_messages",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "ai.action.confirmed",
+        "category": null,
+        "entity": "ai_pending_action"
+      },
+      {
+        "id": "ai.action.cancelled",
+        "category": null,
+        "entity": "ai_pending_action"
+      },
+      {
+        "id": "ai.action.expired",
+        "category": null,
+        "entity": "ai_pending_action"
+      },
+      {
+        "id": "ai.token_usage.recorded",
+        "category": null,
+        "entity": "token_usage"
+      },
+      {
+        "id": "ai_assistant.conversation.shared",
+        "category": null,
+        "entity": "ai_chat_conversation"
+      },
+      {
+        "id": "ai_assistant.conversation.unshared",
+        "category": null,
+        "entity": "ai_chat_conversation"
+      }
+    ],
+    "aclFeatures": [
+      "ai_assistant.view",
+      "ai_assistant.settings.manage",
+      "ai_assistant.conversations.manage",
+      "ai_assistant.conversations.share",
+      "ai_assistant.mcp.serve",
+      "ai_assistant.tools.list",
+      "ai_assistant.mcp_servers.view",
+      "ai_assistant.mcp_servers.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "ai_assistant.conversation_shared"
+    ],
+    "cli": [
+      "mcp:serve",
+      "mcp:serve-http",
+      "mcp:dev",
+      "mcp:ensure-api-key",
+      "mcp:list-tools",
+      "entity-graph",
+      "run-pending-action-cleanup",
+      "run-token-usage-prune",
+      "test-tools"
+    ]
+  },
+  "api_docs": {
+    "title": "API Documentation",
+    "description": "Auto-generated documentation for all HTTP endpoints.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "api_keys": {
+    "title": "API Keys",
+    "description": "Manage access tokens for external API access.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "api_keys:api_key",
+        "class": "ApiKey",
+        "table": "api_keys",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "api_keys.view",
+      "api_keys.create",
+      "api_keys.delete"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "api_keys.list"
+      ]
+    },
+    "notifications": [],
+    "cli": [
+      "add"
+    ]
+  },
+  "attachments": {
+    "title": "Attachments",
+    "description": "File attachments and media management.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "attachments:attachment_partition",
+        "class": "AttachmentPartition",
+        "table": "attachment_partitions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "attachments:attachment",
+        "class": "Attachment",
+        "table": "attachments",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "attachments.attachment.created",
+        "category": "crud",
+        "entity": "attachment"
+      },
+      {
+        "id": "attachments.attachment.updated",
+        "category": "crud",
+        "entity": "attachment"
+      },
+      {
+        "id": "attachments.attachment.deleted",
+        "category": "crud",
+        "entity": "attachment"
+      }
+    ],
+    "aclFeatures": [
+      "attachments.view",
+      "attachments.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "storageDriverFactory"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "delete"
+    ]
+  },
+  "audit_logs": {
+    "title": "Audit & Action Logs",
+    "description": "Tracks user actions and data accesses with undo support scaffolding.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "audit_logs:action_log",
+        "class": "ActionLog",
+        "table": "action_logs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "audit_logs:access_log",
+        "class": "AccessLog",
+        "table": "access_logs",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "audit_logs.view_self",
+      "audit_logs.view_tenant",
+      "audit_logs.undo_self",
+      "audit_logs.undo_tenant",
+      "audit_logs.redo_self",
+      "audit_logs.redo_tenant"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "actionLogService",
+      "accessLogService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "projections:backfill"
+    ]
+  },
+  "auth": {
+    "title": "Authentication & Accounts",
+    "description": "User accounts, sessions, roles and password resets.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "auth:user",
+        "class": "User",
+        "table": "users",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:role",
+        "class": "Role",
+        "table": "roles",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:user_sidebar_preference",
+        "class": "UserSidebarPreference",
+        "table": "user_sidebar_preferences",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:role_sidebar_preference",
+        "class": "RoleSidebarPreference",
+        "table": "role_sidebar_preferences",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:sidebar_variant",
+        "class": "SidebarVariant",
+        "table": "sidebar_variants",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:user_role",
+        "class": "UserRole",
+        "table": "user_roles",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "auth:session",
+        "class": "Session",
+        "table": "sessions",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "auth:password_reset",
+        "class": "PasswordReset",
+        "table": "password_resets",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "auth:role_acl",
+        "class": "RoleAcl",
+        "table": "role_acls",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:user_acl",
+        "class": "UserAcl",
+        "table": "user_acls",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "auth:user_consent",
+        "class": "UserConsent",
+        "table": "user_consents",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "auth.user.created",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "auth.user.updated",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "auth.user.deleted",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "auth.role.created",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "auth.role.updated",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "auth.role.deleted",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "auth.login.success",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "auth.login.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "auth.logout",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "auth.password.changed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "auth.password.reset.requested",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "auth.password.reset.completed",
+        "category": "lifecycle",
+        "entity": null
+      }
+    ],
+    "aclFeatures": [
+      "auth.users.list",
+      "auth.users.create",
+      "auth.users.edit",
+      "auth.users.delete",
+      "auth.roles.list",
+      "auth.roles.manage",
+      "auth.acl.manage",
+      "auth.sidebar.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "authService",
+      "rbacService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "auth.roles.list",
+        "auth.users.list"
+      ]
+    },
+    "notifications": [
+      "auth.password_reset.requested",
+      "auth.password_reset.completed",
+      "auth.account.locked",
+      "auth.login.new_device",
+      "auth.role.assigned",
+      "auth.role.revoked"
+    ],
+    "cli": [
+      "add-user",
+      "seed-roles",
+      "sync-role-acls",
+      "rotate-encryption-key",
+      "add-org",
+      "setup",
+      "list-orgs",
+      "list-tenants",
+      "list-users",
+      "set-password"
+    ]
+  },
+  "business_rules": {
+    "title": "Business Rules",
+    "description": "Business Rules Engine for defining, managing, and executing business logic and automation rules.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "business_rules:business_rule",
+        "class": "BusinessRule",
+        "table": "business_rules",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "business_rules:rule_execution_log",
+        "class": "RuleExecutionLog",
+        "table": "rule_execution_logs",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "business_rules:rule_set",
+        "class": "RuleSet",
+        "table": "rule_sets",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "business_rules:rule_set_member",
+        "class": "RuleSetMember",
+        "table": "rule_set_members",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "business_rules.view",
+      "business_rules.manage",
+      "business_rules.execute",
+      "business_rules.view_logs",
+      "business_rules.manage_sets"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "ruleEvaluator",
+      "actionExecutor",
+      "ruleEngine"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "business-rules.rules.list"
+      ]
+    },
+    "notifications": [
+      "business_rules.rule.execution_failed"
+    ],
+    "cli": [
+      "seed-guard-rules"
+    ]
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "description": "Configurable catalog for products, variants, and pricing used by the sales module.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "catalog:catalog_option_schema_template",
+        "class": "CatalogOptionSchemaTemplate",
+        "table": "catalog_product_option_schemas",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product",
+        "class": "CatalogProduct",
+        "table": "catalog_products",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_unit_conversion",
+        "class": "CatalogProductUnitConversion",
+        "table": "catalog_product_unit_conversions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_category",
+        "class": "CatalogProductCategory",
+        "table": "catalog_product_categories",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_category_assignment",
+        "class": "CatalogProductCategoryAssignment",
+        "table": "catalog_product_category_assignments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_tag",
+        "class": "CatalogProductTag",
+        "table": "catalog_product_tags",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_tag_assignment",
+        "class": "CatalogProductTagAssignment",
+        "table": "catalog_product_tag_assignments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_offer",
+        "class": "CatalogOffer",
+        "table": "catalog_product_offers",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_variant",
+        "class": "CatalogProductVariant",
+        "table": "catalog_product_variants",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_variant_relation",
+        "class": "CatalogProductVariantRelation",
+        "table": "catalog_product_variant_relations",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_price_kind",
+        "class": "CatalogPriceKind",
+        "table": "catalog_price_kinds",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "catalog:catalog_product_price",
+        "class": "CatalogProductPrice",
+        "table": "catalog_product_variant_prices",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "catalog.product.created",
+        "category": "crud",
+        "entity": "product"
+      },
+      {
+        "id": "catalog.product.updated",
+        "category": "crud",
+        "entity": "product"
+      },
+      {
+        "id": "catalog.product.deleted",
+        "category": "crud",
+        "entity": "product"
+      },
+      {
+        "id": "catalog.product_unit_conversion.created",
+        "category": "crud",
+        "entity": "product_unit_conversion"
+      },
+      {
+        "id": "catalog.product_unit_conversion.updated",
+        "category": "crud",
+        "entity": "product_unit_conversion"
+      },
+      {
+        "id": "catalog.product_unit_conversion.deleted",
+        "category": "crud",
+        "entity": "product_unit_conversion"
+      },
+      {
+        "id": "catalog.category.created",
+        "category": "crud",
+        "entity": "category"
+      },
+      {
+        "id": "catalog.category.updated",
+        "category": "crud",
+        "entity": "category"
+      },
+      {
+        "id": "catalog.category.deleted",
+        "category": "crud",
+        "entity": "category"
+      },
+      {
+        "id": "catalog.variant.created",
+        "category": "crud",
+        "entity": "variant"
+      },
+      {
+        "id": "catalog.variant.updated",
+        "category": "crud",
+        "entity": "variant"
+      },
+      {
+        "id": "catalog.variant.deleted",
+        "category": "crud",
+        "entity": "variant"
+      },
+      {
+        "id": "catalog.price.created",
+        "category": "crud",
+        "entity": "price"
+      },
+      {
+        "id": "catalog.price.updated",
+        "category": "crud",
+        "entity": "price"
+      },
+      {
+        "id": "catalog.price.deleted",
+        "category": "crud",
+        "entity": "price"
+      },
+      {
+        "id": "catalog.pricing.resolve.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "catalog.pricing.resolve.after",
+        "category": "lifecycle",
+        "entity": null
+      }
+    ],
+    "aclFeatures": [
+      "catalog.products.view",
+      "catalog.products.manage",
+      "catalog.categories.view",
+      "catalog.categories.manage",
+      "catalog.variants.manage",
+      "catalog.pricing.manage",
+      "catalog.settings.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "catalogPricingService"
+    ],
+    "searchEntities": [
+      "catalog:catalog_product",
+      "catalog:catalog_product_variant",
+      "catalog:catalog_product_category",
+      "catalog:catalog_offer",
+      "catalog:catalog_product_tag",
+      "catalog:catalog_price_kind",
+      "catalog:catalog_product_unit_conversion",
+      "catalog:catalog_option_schema_template"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "catalog.product.low_stock"
+    ],
+    "cli": [
+      "seed-units",
+      "seed-price-kinds",
+      "seed-examples",
+      "seed-examples-bundle"
+    ]
+  },
+  "channel_gmail": {
+    "title": "Gmail Email Channel",
+    "description": "Connect per-user Gmail accounts via OAuth2. Outbound via gmail.users.messages.send; inbound via History API polling. Pairs with the Communications Hub.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [
+      "channel_gmail.view",
+      "channel_gmail.configure"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "channel_imap": {
+    "title": "IMAP + SMTP Email Channel",
+    "description": "Connect personal mailboxes via IMAP for inbound polling and SMTP for outbound delivery. Pairs with the Communications Hub (SPEC-045d).",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [
+      "channel_imap.view",
+      "channel_imap.configure"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "checkout": {
+    "title": "Checkout",
+    "description": "Pay links, checkout templates, public payment pages, and checkout transaction tracking.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "checkout:checkout_link_template",
+        "class": "CheckoutLinkTemplate",
+        "table": "checkout_link_templates",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "checkout:checkout_link",
+        "class": "CheckoutLink",
+        "table": "checkout_links",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "checkout:checkout_transaction",
+        "class": "CheckoutTransaction",
+        "table": "checkout_transactions",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "checkout.template.created",
+        "category": "crud",
+        "entity": "template"
+      },
+      {
+        "id": "checkout.template.updated",
+        "category": "crud",
+        "entity": "template"
+      },
+      {
+        "id": "checkout.template.deleted",
+        "category": "crud",
+        "entity": "template"
+      },
+      {
+        "id": "checkout.link.created",
+        "category": "crud",
+        "entity": "link"
+      },
+      {
+        "id": "checkout.link.updated",
+        "category": "crud",
+        "entity": "link"
+      },
+      {
+        "id": "checkout.link.deleted",
+        "category": "crud",
+        "entity": "link"
+      },
+      {
+        "id": "checkout.link.published",
+        "category": "lifecycle",
+        "entity": "link"
+      },
+      {
+        "id": "checkout.link.locked",
+        "category": "lifecycle",
+        "entity": "link"
+      },
+      {
+        "id": "checkout.transaction.created",
+        "category": "crud",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.customerDataCaptured",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.sessionStarted",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.completed",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.failed",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.cancelled",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.transaction.expired",
+        "category": "lifecycle",
+        "entity": "transaction"
+      },
+      {
+        "id": "checkout.link.usageLimitReached",
+        "category": "lifecycle",
+        "entity": "link"
+      }
+    ],
+    "aclFeatures": [
+      "checkout.view",
+      "checkout.create",
+      "checkout.edit",
+      "checkout.delete",
+      "checkout.viewPii",
+      "checkout.export"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "checkout-links",
+        "checkout-templates",
+        "checkout-transactions"
+      ]
+    },
+    "notifications": [
+      "checkout.transaction.completed",
+      "checkout.transaction.failed",
+      "checkout.link.usageLimitReached"
+    ],
+    "cli": []
+  },
+  "communication_channels": {
+    "title": "Communication Channels",
+    "description": "Unified hub bridging external chat/email channels (Slack, WhatsApp, Email) to the Messages module. Adapter contract, channel-native payload storage, reactions, and per-channel threading.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "communication_channels:communication_channel",
+        "class": "CommunicationChannel",
+        "table": "communication_channels",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:external_conversation",
+        "class": "ExternalConversation",
+        "table": "external_conversations",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:external_message",
+        "class": "ExternalMessage",
+        "table": "external_messages",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:message_channel_link",
+        "class": "MessageChannelLink",
+        "table": "message_channel_links",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:channel_thread_mapping",
+        "class": "ChannelThreadMapping",
+        "table": "channel_thread_mappings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:message_reaction",
+        "class": "MessageReaction",
+        "table": "message_reactions",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:channel_thread_token",
+        "class": "ChannelThreadToken",
+        "table": "channel_thread_tokens",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "communication_channels:channel_ingest_dead_letter",
+        "class": "ChannelIngestDeadLetter",
+        "table": "channel_ingest_dead_letters",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "communication_channels.message.received",
+        "category": "custom",
+        "entity": "external_message"
+      },
+      {
+        "id": "communication_channels.message.sent",
+        "category": "custom",
+        "entity": "external_message"
+      },
+      {
+        "id": "communication_channels.message.delivery_failed",
+        "category": "custom",
+        "entity": "external_message"
+      },
+      {
+        "id": "communication_channels.conversation.created",
+        "category": "custom",
+        "entity": "external_conversation"
+      },
+      {
+        "id": "communication_channels.conversation.reassigned",
+        "category": "custom",
+        "entity": "external_conversation"
+      },
+      {
+        "id": "communication_channels.contact.resolved",
+        "category": "custom",
+        "entity": "external_conversation"
+      },
+      {
+        "id": "communication_channels.channel.requires_reauth",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.channel.disconnected",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.channel.deleted",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.channel.primary_changed",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.reaction.added",
+        "category": "custom",
+        "entity": "message_reaction"
+      },
+      {
+        "id": "communication_channels.reaction.removed",
+        "category": "custom",
+        "entity": "message_reaction"
+      },
+      {
+        "id": "communication_channels.push.registered",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.push.failed",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.push.renewed",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      },
+      {
+        "id": "communication_channels.push.deactivated",
+        "category": "lifecycle",
+        "entity": "communication_channel"
+      }
+    ],
+    "aclFeatures": [
+      "communication_channels.view",
+      "communication_channels.manage",
+      "communication_channels.react",
+      "communication_channels.assign",
+      "communication_channels.connect_user_channel",
+      "communication_channels.admin",
+      "communication_channels.channel.import_history",
+      "communication_channels.channel.push.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "communication_channels.message.received",
+      "communication_channels.channel.requires_reauth"
+    ],
+    "cli": []
+  },
+  "configs": {
+    "title": "Configuration",
+    "description": "Shared configuration storage and helpers for module settings.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "configs:module_config",
+        "class": "ModuleConfig",
+        "table": "module_configs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "configs:upgrade_action_run",
+        "class": "UpgradeActionRun",
+        "table": "upgrade_action_runs",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "configs.system_status.view",
+      "configs.cache.view",
+      "configs.cache.manage",
+      "configs.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "restore-defaults",
+      "cache",
+      "help"
+    ]
+  },
+  "content": {
+    "title": "Content",
+    "description": "Static informational pages such as terms of service and privacy policy.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "currencies": {
+    "title": "Currencies",
+    "description": "Currencies and Exchange rate management",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "currencies:currency",
+        "class": "Currency",
+        "table": "currencies",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "currencies:exchange_rate",
+        "class": "ExchangeRate",
+        "table": "exchange_rates",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "currencies:currency_fetch_config",
+        "class": "CurrencyFetchConfig",
+        "table": "currency_fetch_configs",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "currencies.currency.created",
+        "category": "crud",
+        "entity": "currency"
+      },
+      {
+        "id": "currencies.currency.updated",
+        "category": "crud",
+        "entity": "currency"
+      },
+      {
+        "id": "currencies.currency.deleted",
+        "category": "crud",
+        "entity": "currency"
+      },
+      {
+        "id": "currencies.exchange_rate.created",
+        "category": "crud",
+        "entity": "exchange_rate"
+      },
+      {
+        "id": "currencies.exchange_rate.updated",
+        "category": "crud",
+        "entity": "exchange_rate"
+      },
+      {
+        "id": "currencies.exchange_rate.deleted",
+        "category": "crud",
+        "entity": "exchange_rate"
+      }
+    ],
+    "aclFeatures": [
+      "currencies.view",
+      "currencies.manage",
+      "currencies.rates.view",
+      "currencies.rates.manage",
+      "currencies.fetch.view",
+      "currencies.fetch.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "currencies.list",
+        "exchange-rates.list"
+      ]
+    },
+    "notifications": [],
+    "cli": [
+      "seed",
+      "fetch-rates",
+      "list-providers"
+    ]
+  },
+  "customer_accounts": {
+    "title": "Customer Identity & Portal Authentication",
+    "description": "Customer-facing authentication with two-tier identity model and full RBAC.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "customer_accounts:customer_user",
+        "class": "CustomerUser",
+        "table": "customer_users",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customer_accounts:customer_role",
+        "class": "CustomerRole",
+        "table": "customer_roles",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customer_accounts:customer_role_acl",
+        "class": "CustomerRoleAcl",
+        "table": "customer_role_acls",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_role",
+        "class": "CustomerUserRole",
+        "table": "customer_user_roles",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_acl",
+        "class": "CustomerUserAcl",
+        "table": "customer_user_acls",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_session",
+        "class": "CustomerUserSession",
+        "table": "customer_user_sessions",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_email_verification",
+        "class": "CustomerUserEmailVerification",
+        "table": "customer_user_email_verifications",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_password_reset",
+        "class": "CustomerUserPasswordReset",
+        "table": "customer_user_password_resets",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:customer_user_invitation",
+        "class": "CustomerUserInvitation",
+        "table": "customer_user_invitations",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customer_accounts:domain_mapping",
+        "class": "DomainMapping",
+        "table": "domain_mappings",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "customer_accounts.user.created",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.user.updated",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.user.deleted",
+        "category": "crud",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.user.locked",
+        "category": "lifecycle",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.user.unlocked",
+        "category": "lifecycle",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.login.success",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.login.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.magic_link.requested",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.email.verified",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.password.reset_requested",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.password.reset",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.password.changed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.role.created",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "customer_accounts.role.updated",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "customer_accounts.role.deleted",
+        "category": "crud",
+        "entity": "role"
+      },
+      {
+        "id": "customer_accounts.user.invited",
+        "category": "lifecycle",
+        "entity": "user"
+      },
+      {
+        "id": "customer_accounts.invitation.accepted",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.password_reset.requested",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "customer_accounts.domain_mapping.created",
+        "category": "crud",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.verified",
+        "category": "lifecycle",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.activated",
+        "category": "lifecycle",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.dns_failed",
+        "category": "lifecycle",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.tls_failed",
+        "category": "lifecycle",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.deleted",
+        "category": "crud",
+        "entity": "domain_mapping"
+      },
+      {
+        "id": "customer_accounts.domain_mapping.replaced",
+        "category": "lifecycle",
+        "entity": "domain_mapping"
+      }
+    ],
+    "aclFeatures": [
+      "customer_accounts.view",
+      "customer_accounts.manage",
+      "customer_accounts.roles.manage",
+      "customer_accounts.invite",
+      "customer_accounts.domain.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "customerUserService",
+      "customerSessionService",
+      "customerTokenService",
+      "customerRbacService",
+      "customerInvitationService",
+      "domainMappingService"
+    ],
+    "searchEntities": [
+      "customer_accounts:customer_user",
+      "customer_accounts:customer_role"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "customer_accounts.admin.roles",
+        "customer_accounts.admin.users"
+      ]
+    },
+    "notifications": [
+      "customer_accounts.user.signup",
+      "customer_accounts.user.locked",
+      "customer_accounts.domain_mapping.verified",
+      "customer_accounts.domain_mapping.activated",
+      "customer_accounts.domain_mapping.dns_failed",
+      "customer_accounts.domain_mapping.tls_failed"
+    ],
+    "cli": []
+  },
+  "customers": {
+    "title": "Customer Relationship Management",
+    "description": "Core CRM capabilities for people, companies, deals, and activities.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "customers:customer_entity",
+        "class": "CustomerEntity",
+        "table": "customer_entities",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_person_profile",
+        "class": "CustomerPersonProfile",
+        "table": "customer_people",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customers:customer_person_company_link",
+        "class": "CustomerPersonCompanyLink",
+        "table": "customer_person_company_links",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_company_profile",
+        "class": "CustomerCompanyProfile",
+        "table": "customer_companies",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customers:customer_deal",
+        "class": "CustomerDeal",
+        "table": "customer_deals",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customers:customer_deal_stage_transition",
+        "class": "CustomerDealStageTransition",
+        "table": "customer_deal_stage_transitions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_deal_person_link",
+        "class": "CustomerDealPersonLink",
+        "table": "customer_deal_people",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_deal_company_link",
+        "class": "CustomerDealCompanyLink",
+        "table": "customer_deal_companies",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_activity",
+        "class": "CustomerActivity",
+        "table": "customer_activities",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customers:customer_interaction",
+        "class": "CustomerInteraction",
+        "table": "customer_interactions",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "customers:customer_comment",
+        "class": "CustomerComment",
+        "table": "customer_comments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_address",
+        "class": "CustomerAddress",
+        "table": "customer_addresses",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_settings",
+        "class": "CustomerSettings",
+        "table": "customer_settings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_tag",
+        "class": "CustomerTag",
+        "table": "customer_tags",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_tag_assignment",
+        "class": "CustomerTagAssignment",
+        "table": "customer_tag_assignments",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_dictionary_entry",
+        "class": "CustomerDictionaryEntry",
+        "table": "customer_dictionary_entries",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_pipeline",
+        "class": "CustomerPipeline",
+        "table": "customer_pipelines",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_pipeline_stage",
+        "class": "CustomerPipelineStage",
+        "table": "customer_pipeline_stages",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_todo_link",
+        "class": "CustomerTodoLink",
+        "table": "customer_todo_links",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_entity_role",
+        "class": "CustomerEntityRole",
+        "table": "customer_entity_roles",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_dictionary_kind_setting",
+        "class": "CustomerDictionaryKindSetting",
+        "table": "customer_dictionary_kind_settings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_label",
+        "class": "CustomerLabel",
+        "table": "customer_labels",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_label_assignment",
+        "class": "CustomerLabelAssignment",
+        "table": "customer_label_assignments",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_company_billing",
+        "class": "CustomerCompanyBilling",
+        "table": "customer_company_billing",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "customers:customer_person_company_role",
+        "class": "CustomerPersonCompanyRole",
+        "table": "customer_person_company_roles",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "customers.person.created",
+        "category": "crud",
+        "entity": "person"
+      },
+      {
+        "id": "customers.person.updated",
+        "category": "crud",
+        "entity": "person"
+      },
+      {
+        "id": "customers.person.deleted",
+        "category": "crud",
+        "entity": "person"
+      },
+      {
+        "id": "customers.company.created",
+        "category": "crud",
+        "entity": "company"
+      },
+      {
+        "id": "customers.company.updated",
+        "category": "crud",
+        "entity": "company"
+      },
+      {
+        "id": "customers.company.deleted",
+        "category": "crud",
+        "entity": "company"
+      },
+      {
+        "id": "customers.deal.created",
+        "category": "crud",
+        "entity": "deal"
+      },
+      {
+        "id": "customers.deal.updated",
+        "category": "crud",
+        "entity": "deal"
+      },
+      {
+        "id": "customers.deal.deleted",
+        "category": "crud",
+        "entity": "deal"
+      },
+      {
+        "id": "customers.deal.won",
+        "category": "lifecycle",
+        "entity": "deal"
+      },
+      {
+        "id": "customers.deal.lost",
+        "category": "lifecycle",
+        "entity": "deal"
+      },
+      {
+        "id": "customers.comment.created",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "customers.comment.updated",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "customers.comment.deleted",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "customers.address.created",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "customers.address.updated",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "customers.address.deleted",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "customers.activity.created",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "customers.activity.updated",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "customers.activity.deleted",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "customers.tag.created",
+        "category": "crud",
+        "entity": "tag"
+      },
+      {
+        "id": "customers.tag.updated",
+        "category": "crud",
+        "entity": "tag"
+      },
+      {
+        "id": "customers.tag.deleted",
+        "category": "crud",
+        "entity": "tag"
+      },
+      {
+        "id": "customers.tag.assigned",
+        "category": "crud",
+        "entity": "tag"
+      },
+      {
+        "id": "customers.tag.removed",
+        "category": "crud",
+        "entity": "tag"
+      },
+      {
+        "id": "customers.todo.created",
+        "category": "crud",
+        "entity": "todo"
+      },
+      {
+        "id": "customers.todo.updated",
+        "category": "crud",
+        "entity": "todo"
+      },
+      {
+        "id": "customers.todo.deleted",
+        "category": "crud",
+        "entity": "todo"
+      },
+      {
+        "id": "customers.interaction.created",
+        "category": "crud",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.interaction.updated",
+        "category": "crud",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.interaction.completed",
+        "category": "lifecycle",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.interaction.canceled",
+        "category": "lifecycle",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.interaction.reverted",
+        "category": "lifecycle",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.interaction.deleted",
+        "category": "crud",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.next_interaction.updated",
+        "category": "lifecycle",
+        "entity": "interaction"
+      },
+      {
+        "id": "customers.entity_role.created",
+        "category": "crud",
+        "entity": "entity_role"
+      },
+      {
+        "id": "customers.entity_role.updated",
+        "category": "crud",
+        "entity": "entity_role"
+      },
+      {
+        "id": "customers.entity_role.deleted",
+        "category": "crud",
+        "entity": "entity_role"
+      },
+      {
+        "id": "customers.label.created",
+        "category": "crud",
+        "entity": "label"
+      },
+      {
+        "id": "customers.label.updated",
+        "category": "crud",
+        "entity": "label"
+      },
+      {
+        "id": "customers.label.deleted",
+        "category": "crud",
+        "entity": "label"
+      },
+      {
+        "id": "customers.label_assignment.created",
+        "category": "crud",
+        "entity": "label_assignment"
+      },
+      {
+        "id": "customers.label_assignment.updated",
+        "category": "crud",
+        "entity": "label_assignment"
+      },
+      {
+        "id": "customers.label_assignment.deleted",
+        "category": "crud",
+        "entity": "label_assignment"
+      },
+      {
+        "id": "customers.person_company_link.created",
+        "category": "crud",
+        "entity": "person_company_link"
+      },
+      {
+        "id": "customers.person_company_link.updated",
+        "category": "crud",
+        "entity": "person_company_link"
+      },
+      {
+        "id": "customers.person_company_link.deleted",
+        "category": "crud",
+        "entity": "person_company_link"
+      },
+      {
+        "id": "customers.email.linked",
+        "category": "lifecycle",
+        "entity": "email_link"
+      },
+      {
+        "id": "customers.email.visibility_changed",
+        "category": "lifecycle",
+        "entity": "email_link"
+      }
+    ],
+    "aclFeatures": [
+      "customers.people.view",
+      "customers.people.manage",
+      "customers.companies.view",
+      "customers.companies.manage",
+      "customers.deals.view",
+      "customers.deals.manage",
+      "customers.activities.view",
+      "customers.activities.manage",
+      "customers.settings.manage",
+      "customers.pipelines.view",
+      "customers.pipelines.manage",
+      "customers.widgets.todos",
+      "customers.widgets.next-interactions",
+      "customers.widgets.new-customers",
+      "customers.widgets.new-deals",
+      "customers.interactions.view",
+      "customers.interactions.manage",
+      "customers.roles.view",
+      "customers.roles.manage",
+      "customers.email.compose",
+      "customers.email.view_private"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [
+      "customers:customer_person_profile",
+      "customers:customer_company_profile",
+      "customers:customer_comment",
+      "customers:customer_deal",
+      "customers:customer_activity",
+      "customers:customer_todo_link"
+    ],
+    "hostTokens": {
+      "entityIds": [
+        "customers:customer_entity"
+      ],
+      "tableIds": [
+        "customers.companies.list",
+        "customers.deals.list",
+        "customers.people.list"
+      ]
+    },
+    "notifications": [
+      "customers.deal.won",
+      "customers.deal.lost"
+    ],
+    "cli": [
+      "seed-dictionaries",
+      "seed-examples",
+      "seed-stresstest",
+      "interactions:backfill"
+    ]
+  },
+  "dashboards": {
+    "title": "Admin Dashboards",
+    "description": "Configurable admin dashboard with module-provided widgets.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "dashboards:dashboard_layout",
+        "class": "DashboardLayout",
+        "table": "dashboard_layouts",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "dashboards:dashboard_role_widgets",
+        "class": "DashboardRoleWidgets",
+        "table": "dashboard_role_widgets",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "dashboards:dashboard_user_widgets",
+        "class": "DashboardUserWidgets",
+        "table": "dashboard_user_widgets",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "dashboards.view",
+      "dashboards.configure",
+      "dashboards.admin.assign-widgets",
+      "analytics.view"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "analyticsRegistry"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "seed-defaults",
+      "enable-analytics-widgets",
+      "seed-analytics",
+      "debug-analytics"
+    ]
+  },
+  "data_sync": {
+    "title": "Data Sync",
+    "description": "Streaming data sync hub for import/export integrations.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "data_sync:sync_run",
+        "class": "SyncRun",
+        "table": "sync_runs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "data_sync:sync_cursor",
+        "class": "SyncCursor",
+        "table": "sync_cursors",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "data_sync:sync_mapping",
+        "class": "SyncMapping",
+        "table": "sync_mappings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "data_sync:sync_schedule",
+        "class": "SyncSchedule",
+        "table": "sync_schedules",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "data_sync.run.started",
+        "category": "lifecycle",
+        "entity": "run"
+      },
+      {
+        "id": "data_sync.run.completed",
+        "category": "lifecycle",
+        "entity": "run"
+      },
+      {
+        "id": "data_sync.run.failed",
+        "category": "lifecycle",
+        "entity": "run"
+      },
+      {
+        "id": "data_sync.run.cancelled",
+        "category": "lifecycle",
+        "entity": "run"
+      }
+    ],
+    "aclFeatures": [
+      "data_sync.view",
+      "data_sync.run",
+      "data_sync.configure"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "externalIdMappingService",
+      "dataSyncRunService",
+      "dataSyncScheduleService",
+      "dataSyncEngine"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "data_sync.runs"
+      ]
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "dictionaries": {
+    "title": "Shared Dictionaries",
+    "description": "Organization-scoped dictionaries for reusable enumerations and appearance presets.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "dictionaries:dictionary",
+        "class": "Dictionary",
+        "table": "dictionaries",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "dictionaries:dictionary_entry",
+        "class": "DictionaryEntry",
+        "table": "dictionary_entries",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "dictionaries.entry.created",
+        "category": "crud",
+        "entity": "entry"
+      },
+      {
+        "id": "dictionaries.entry.updated",
+        "category": "crud",
+        "entity": "entry"
+      },
+      {
+        "id": "dictionaries.entry.deleted",
+        "category": "crud",
+        "entity": "entry"
+      }
+    ],
+    "aclFeatures": [
+      "dictionaries.view",
+      "dictionaries.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "directory": {
+    "title": "Directory (Tenants & Organizations)",
+    "description": "Multi-tenant directory with tenants and organizations.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "directory:tenant",
+        "class": "Tenant",
+        "table": "tenants",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "directory:organization",
+        "class": "Organization",
+        "table": "organizations",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "directory.tenant.created",
+        "category": "crud",
+        "entity": "tenant"
+      },
+      {
+        "id": "directory.tenant.updated",
+        "category": "crud",
+        "entity": "tenant"
+      },
+      {
+        "id": "directory.tenant.deleted",
+        "category": "crud",
+        "entity": "tenant"
+      },
+      {
+        "id": "directory.organization.created",
+        "category": "crud",
+        "entity": "organization"
+      },
+      {
+        "id": "directory.organization.updated",
+        "category": "crud",
+        "entity": "organization"
+      },
+      {
+        "id": "directory.organization.deleted",
+        "category": "crud",
+        "entity": "organization"
+      }
+    ],
+    "aclFeatures": [
+      "directory.tenants.view",
+      "directory.tenants.manage",
+      "directory.organizations.view",
+      "directory.organizations.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "directory.organizations.list",
+        "directory.tenants.list"
+      ]
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "entities": {
+    "title": "Custom Entities & Fields",
+    "description": "User-defined entities, custom fields, and dynamic records storage.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "entities:custom_field_def",
+        "class": "CustomFieldDef",
+        "table": "custom_field_defs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "entities:custom_field_entity_config",
+        "class": "CustomFieldEntityConfig",
+        "table": "custom_field_entity_configs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "entities:custom_entity",
+        "class": "CustomEntity",
+        "table": "custom_entities",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "entities:custom_entity_storage",
+        "class": "CustomEntityStorage",
+        "table": "custom_entities_storage",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "entities:custom_field_value",
+        "class": "CustomFieldValue",
+        "table": "custom_field_values",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "entities:encryption_map",
+        "class": "EncryptionMap",
+        "table": "encryption_maps",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "entities.definitions.view",
+      "entities.definitions.manage",
+      "entities.records.view",
+      "entities.records.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [
+        "entities:custom_entity"
+      ],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "install",
+      "reinstall",
+      "add-field",
+      "seed-encryption",
+      "rotate-encryption-key",
+      "decrypt-database"
+    ]
+  },
+  "events": {
+    "title": "Events",
+    "description": "Event bus and subscriber dispatch",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "feature_toggles": {
+    "title": "Feature Toggles",
+    "description": "Global feature flags with tenant-level overrides.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "feature_toggles:feature_toggle",
+        "class": "FeatureToggle",
+        "table": "feature_toggles",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "feature_toggles:feature_toggle_override",
+        "class": "FeatureToggleOverride",
+        "table": "feature_toggle_overrides",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "feature_toggles.view",
+      "feature_toggles.manage",
+      "feature_toggles.global.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "featureTogglesService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "toggle-create",
+      "toggle-update",
+      "toggle-delete",
+      "override-set-value",
+      "seed-defaults"
+    ]
+  },
+  "gateway_stripe": {
+    "title": "Stripe Payment Gateway",
+    "description": "Accept card payments, Apple Pay, Google Pay, and bank transfers via Stripe.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [
+      "gateway_stripe.view",
+      "gateway_stripe.configure"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "configure-from-env",
+      "help"
+    ]
+  },
+  "generators": {
+    "title": null,
+    "description": null,
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "inbox_ops": {
+    "title": "InboxOps — Email-to-ERP Agent",
+    "description": "Receives forwarded emails via webhook, extracts structured action proposals using LLM, and presents them for human-in-the-loop approval.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "inbox_ops:inbox_settings",
+        "class": "InboxSettings",
+        "table": "inbox_settings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "inbox_ops:inbox_email",
+        "class": "InboxEmail",
+        "table": "inbox_emails",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "inbox_ops:inbox_proposal",
+        "class": "InboxProposal",
+        "table": "inbox_proposals",
+        "editable": true,
+        "customFields": true
+      },
+      {
+        "id": "inbox_ops:inbox_proposal_action",
+        "class": "InboxProposalAction",
+        "table": "inbox_proposal_actions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "inbox_ops:inbox_discrepancy",
+        "class": "InboxDiscrepancy",
+        "table": "inbox_discrepancies",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "inbox_ops.email.received",
+        "category": "custom",
+        "entity": "email"
+      },
+      {
+        "id": "inbox_ops.email.processed",
+        "category": "lifecycle",
+        "entity": "email"
+      },
+      {
+        "id": "inbox_ops.email.failed",
+        "category": "lifecycle",
+        "entity": "email"
+      },
+      {
+        "id": "inbox_ops.email.reprocessed",
+        "category": "custom",
+        "entity": "email"
+      },
+      {
+        "id": "inbox_ops.email.deduplicated",
+        "category": "custom",
+        "entity": "email"
+      },
+      {
+        "id": "inbox_ops.proposal.created",
+        "category": "crud",
+        "entity": "proposal"
+      },
+      {
+        "id": "inbox_ops.proposal.accepted",
+        "category": "custom",
+        "entity": "proposal"
+      },
+      {
+        "id": "inbox_ops.proposal.rejected",
+        "category": "custom",
+        "entity": "proposal"
+      },
+      {
+        "id": "inbox_ops.action.rejected",
+        "category": "custom",
+        "entity": "action"
+      },
+      {
+        "id": "inbox_ops.action.edited",
+        "category": "custom",
+        "entity": "action"
+      },
+      {
+        "id": "inbox_ops.action.executed",
+        "category": "custom",
+        "entity": "action"
+      },
+      {
+        "id": "inbox_ops.action.failed",
+        "category": "custom",
+        "entity": "action"
+      },
+      {
+        "id": "inbox_ops.reply.sent",
+        "category": "custom",
+        "entity": "reply"
+      }
+    ],
+    "aclFeatures": [
+      "inbox_ops.proposals.view",
+      "inbox_ops.proposals.manage",
+      "inbox_ops.settings.manage",
+      "inbox_ops.log.view",
+      "inbox_ops.replies.send"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [
+      "inbox_ops:inbox_proposal"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "inbox_ops.proposal.created"
+    ],
+    "cli": []
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Core integration framework — external ID mapping, status badges, and integration registry.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "integrations:sync_external_id_mapping",
+        "class": "SyncExternalIdMapping",
+        "table": "sync_external_id_mappings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "integrations:integration_credentials",
+        "class": "IntegrationCredentials",
+        "table": "integration_credentials",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "integrations:integration_state",
+        "class": "IntegrationState",
+        "table": "integration_states",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "integrations:integration_log",
+        "class": "IntegrationLog",
+        "table": "integration_logs",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "integrations.credentials.updated",
+        "category": "custom",
+        "entity": "credentials"
+      },
+      {
+        "id": "integrations.state.updated",
+        "category": "custom",
+        "entity": "state"
+      },
+      {
+        "id": "integrations.version.changed",
+        "category": "custom",
+        "entity": "state"
+      },
+      {
+        "id": "integrations.log.created",
+        "category": "system",
+        "entity": "log"
+      }
+    ],
+    "aclFeatures": [
+      "integrations.view",
+      "integrations.manage",
+      "integrations.credentials.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "integrationCredentialsService",
+      "integrationStateService",
+      "integrationLogService",
+      "integrationHealthService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "messages": {
+    "title": "Messages",
+    "description": "Internal messaging system with attachments, actions, and email forwarding.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "messages:message",
+        "class": "Message",
+        "table": "messages",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "messages:message_recipient",
+        "class": "MessageRecipient",
+        "table": "message_recipients",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "messages:message_object",
+        "class": "MessageObject",
+        "table": "message_objects",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "messages:message_access_token",
+        "class": "MessageAccessToken",
+        "table": "message_access_tokens",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "messages:message_confirmation",
+        "class": "MessageConfirmation",
+        "table": "message_confirmations",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "messages.message.sent",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.read",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.marked_unread",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.archived",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.unarchived",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.deleted",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.action_taken",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.email_sent",
+        "category": "custom",
+        "entity": "message"
+      },
+      {
+        "id": "messages.message.email_failed",
+        "category": "custom",
+        "entity": "message"
+      }
+    ],
+    "aclFeatures": [
+      "messages.view",
+      "messages.compose",
+      "messages.attach",
+      "messages.attach_files",
+      "messages.email",
+      "messages.actions",
+      "messages.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [
+      "messages:message"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "messages.new"
+    ],
+    "cli": []
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "In-app notifications with module-extensible types and actions.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "notifications:notification",
+        "class": "Notification",
+        "table": "notifications",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "notifications.view",
+      "notifications.create",
+      "notifications.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "notificationService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "cleanup-expired"
+    ]
+  },
+  "onboarding": {
+    "title": "Onboarding",
+    "description": "Self-service tenant and organization onboarding flow.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "onboarding:onboarding_request",
+        "class": "OnboardingRequest",
+        "table": "onboarding_requests",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "onboarding.access",
+      "onboarding.submit",
+      "onboarding.verify"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "payment_gateways": {
+    "title": "Payment Gateways",
+    "description": "Payment gateway adapter contract, registry, transaction tracking, and webhook routing.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "payment_gateways:gateway_transaction",
+        "class": "GatewayTransaction",
+        "table": "gateway_transactions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "payment_gateways:gateway_payment_operation",
+        "class": "GatewayPaymentOperation",
+        "table": "gateway_payment_operations",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "payment_gateways:gateway_session_initialization",
+        "class": "GatewaySessionInitialization",
+        "table": "gateway_session_initializations",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "payment_gateways:webhook_processed_event",
+        "class": "WebhookProcessedEvent",
+        "table": "gateway_webhook_events",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "payment_gateways.session.created",
+        "category": "lifecycle",
+        "entity": "session"
+      },
+      {
+        "id": "payment_gateways.session.expired",
+        "category": "lifecycle",
+        "entity": "session"
+      },
+      {
+        "id": "payment_gateways.payment.authorized",
+        "category": "lifecycle",
+        "entity": "payment"
+      },
+      {
+        "id": "payment_gateways.payment.captured",
+        "category": "lifecycle",
+        "entity": "payment"
+      },
+      {
+        "id": "payment_gateways.payment.failed",
+        "category": "lifecycle",
+        "entity": "payment"
+      },
+      {
+        "id": "payment_gateways.payment.refunded",
+        "category": "lifecycle",
+        "entity": "payment"
+      },
+      {
+        "id": "payment_gateways.payment.cancelled",
+        "category": "lifecycle",
+        "entity": "payment"
+      },
+      {
+        "id": "payment_gateways.webhook.received",
+        "category": "system",
+        "entity": "webhook"
+      },
+      {
+        "id": "payment_gateways.webhook.failed",
+        "category": "system",
+        "entity": "webhook"
+      }
+    ],
+    "aclFeatures": [
+      "payment_gateways.view",
+      "payment_gateways.manage",
+      "payment_gateways.capture",
+      "payment_gateways.refund"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "paymentGatewayService",
+      "paymentGatewayDescriptorService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "payment_gateways.transactions.list"
+      ]
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "perspectives": {
+    "title": "Table perspectives",
+    "description": "Shared persistence for DataTable perspectives (columns, filters, saved views).",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "perspectives:perspective",
+        "class": "Perspective",
+        "table": "perspectives",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "perspectives:role_perspective",
+        "class": "RolePerspective",
+        "table": "role_perspectives",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "perspectives.use",
+      "perspectives.role_defaults"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "planner": {
+    "title": "Worktime / Availabilities",
+    "description": "Availability schedules, rulesets, and shared planning rules.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "planner:planner_availability_rule_set",
+        "class": "PlannerAvailabilityRuleSet",
+        "table": "planner_availability_rule_sets",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "planner:planner_availability_rule",
+        "class": "PlannerAvailabilityRule",
+        "table": "planner_availability_rules",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "planner.availability_rule.created",
+        "category": "crud",
+        "entity": "availability_rule"
+      },
+      {
+        "id": "planner.availability_rule.updated",
+        "category": "crud",
+        "entity": "availability_rule"
+      },
+      {
+        "id": "planner.availability_rule.deleted",
+        "category": "crud",
+        "entity": "availability_rule"
+      },
+      {
+        "id": "planner.availability_rule_set.created",
+        "category": "crud",
+        "entity": "availability_rule_set"
+      },
+      {
+        "id": "planner.availability_rule_set.updated",
+        "category": "crud",
+        "entity": "availability_rule_set"
+      },
+      {
+        "id": "planner.availability_rule_set.deleted",
+        "category": "crud",
+        "entity": "availability_rule_set"
+      }
+    ],
+    "aclFeatures": [
+      "planner.view",
+      "planner.manage_availability"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "plannerAvailabilityService"
+    ],
+    "searchEntities": [
+      "planner:planner_availability_rule_set"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "seed-availability-rulesets",
+      "seed-unavailability-reasons"
+    ]
+  },
+  "portal": {
+    "title": "Customer Portal",
+    "description": "Self-service customer portal framework with login, signup, dashboard, sidebar navigation, and extensible widget system.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "progress": {
+    "title": "Progress",
+    "description": "Generic server-side progress tracking for long-running operations",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "progress:progress_job",
+        "class": "ProgressJob",
+        "table": "progress_jobs",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "progress.job.created",
+        "category": "crud",
+        "entity": "job"
+      },
+      {
+        "id": "progress.job.started",
+        "category": "lifecycle",
+        "entity": "job"
+      },
+      {
+        "id": "progress.job.updated",
+        "category": "lifecycle",
+        "entity": "job"
+      },
+      {
+        "id": "progress.job.completed",
+        "category": "lifecycle",
+        "entity": "job"
+      },
+      {
+        "id": "progress.job.failed",
+        "category": "lifecycle",
+        "entity": "job"
+      },
+      {
+        "id": "progress.job.cancelled",
+        "category": "lifecycle",
+        "entity": "job"
+      }
+    ],
+    "aclFeatures": [
+      "progress.view",
+      "progress.create",
+      "progress.update",
+      "progress.cancel",
+      "progress.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "query_index": {
+    "title": "Query Indexes",
+    "description": "Hybrid query layer with full-text and vector search capabilities.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "query_index:entity_index_row",
+        "class": "EntityIndexRow",
+        "table": "entity_indexes",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "query_index:entity_index_job",
+        "class": "EntityIndexJob",
+        "table": "entity_index_jobs",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "query_index:entity_index_coverage",
+        "class": "EntityIndexCoverage",
+        "table": "entity_index_coverage",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "query_index:indexer_error_log",
+        "class": "IndexerErrorLog",
+        "table": "indexer_error_logs",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "query_index:indexer_status_log",
+        "class": "IndexerStatusLog",
+        "table": "indexer_status_logs",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "query_index:search_token",
+        "class": "SearchToken",
+        "table": "search_tokens",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "query_index.status.view",
+      "query_index.reindex",
+      "query_index.purge"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "rebuild",
+      "rebuild-all",
+      "reindex",
+      "purge"
+    ]
+  },
+  "record_locks": {
+    "title": "Record Locking",
+    "description": "Optimistic and pessimistic record locking with conflict resolution.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "record_locks:record_lock",
+        "class": "RecordLock",
+        "table": "record_locks",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "record_locks:record_lock_conflict",
+        "class": "RecordLockConflict",
+        "table": "record_lock_conflicts",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "record_locks.lock.acquired",
+        "category": "crud",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.participant.joined",
+        "category": "lifecycle",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.participant.left",
+        "category": "lifecycle",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.lock.contended",
+        "category": "lifecycle",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.lock.released",
+        "category": "crud",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.lock.force_released",
+        "category": "crud",
+        "entity": "lock"
+      },
+      {
+        "id": "record_locks.record.deleted",
+        "category": "crud",
+        "entity": "record"
+      },
+      {
+        "id": "record_locks.conflict.detected",
+        "category": "crud",
+        "entity": "conflict"
+      },
+      {
+        "id": "record_locks.conflict.resolved",
+        "category": "crud",
+        "entity": "conflict"
+      },
+      {
+        "id": "record_locks.incoming_changes.available",
+        "category": "lifecycle",
+        "entity": "change"
+      }
+    ],
+    "aclFeatures": [
+      "record_locks.view",
+      "record_locks.manage",
+      "record_locks.force_release",
+      "record_locks.override_incoming"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "recordLockService",
+      "crudMutationGuardService",
+      "commandOptimisticLockGuardService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "record_locks.participant.joined",
+      "record_locks.participant.left",
+      "record_locks.lock.contended",
+      "record_locks.lock.force_released",
+      "record_locks.record.deleted",
+      "record_locks.conflict.detected",
+      "record_locks.incoming_changes.available",
+      "record_locks.conflict.resolved"
+    ],
+    "cli": []
+  },
+  "resources": {
+    "title": "Resource planning",
+    "description": "Assets and resources with scheduling policies.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "resources:resources_resource_type",
+        "class": "ResourcesResourceType",
+        "table": "resources_resource_types",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "resources:resources_resource",
+        "class": "ResourcesResource",
+        "table": "resources_resources",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "resources:resources_resource_comment",
+        "class": "ResourcesResourceComment",
+        "table": "resources_resource_comments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "resources:resources_resource_activity",
+        "class": "ResourcesResourceActivity",
+        "table": "resources_resource_activities",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "resources:resources_resource_tag",
+        "class": "ResourcesResourceTag",
+        "table": "resources_resource_tags",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "resources:resources_resource_tag_assignment",
+        "class": "ResourcesResourceTagAssignment",
+        "table": "resources_resource_tag_assignments",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "resources.resource.created",
+        "category": "crud",
+        "entity": "resource"
+      },
+      {
+        "id": "resources.resource.updated",
+        "category": "crud",
+        "entity": "resource"
+      },
+      {
+        "id": "resources.resource.deleted",
+        "category": "crud",
+        "entity": "resource"
+      },
+      {
+        "id": "resources.resource_type.created",
+        "category": "crud",
+        "entity": "resource_type"
+      },
+      {
+        "id": "resources.resource_type.updated",
+        "category": "crud",
+        "entity": "resource_type"
+      },
+      {
+        "id": "resources.resource_type.deleted",
+        "category": "crud",
+        "entity": "resource_type"
+      },
+      {
+        "id": "resources.comment.created",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "resources.comment.updated",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "resources.comment.deleted",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "resources.activity.created",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "resources.activity.updated",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "resources.activity.deleted",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "resources.resource_tag_assignment.created",
+        "category": "crud",
+        "entity": "resource_tag_assignment"
+      },
+      {
+        "id": "resources.resource_tag_assignment.updated",
+        "category": "crud",
+        "entity": "resource_tag_assignment"
+      },
+      {
+        "id": "resources.resource_tag_assignment.deleted",
+        "category": "crud",
+        "entity": "resource_tag_assignment"
+      }
+    ],
+    "aclFeatures": [
+      "resources.view",
+      "resources.manage_resources"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [
+      "resources:resources_resource",
+      "resources:resources_resource_type"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "resources.resource-types.list",
+        "resources.resources.list"
+      ]
+    },
+    "notifications": [],
+    "cli": [
+      "seed-capacity-units",
+      "seed-activity-types",
+      "seed-address-types",
+      "seed-examples"
+    ]
+  },
+  "sales": {
+    "title": "Sales Management",
+    "description": "Quoting, ordering, fulfillment, and billing capabilities built on modular pricing and tax pipelines.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "sales:sales_channel",
+        "class": "SalesChannel",
+        "table": "sales_channels",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_shipping_method",
+        "class": "SalesShippingMethod",
+        "table": "sales_shipping_methods",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_delivery_window",
+        "class": "SalesDeliveryWindow",
+        "table": "sales_delivery_windows",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_payment_method",
+        "class": "SalesPaymentMethod",
+        "table": "sales_payment_methods",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_tax_rate",
+        "class": "SalesTaxRate",
+        "table": "sales_tax_rates",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_order",
+        "class": "SalesOrder",
+        "table": "sales_orders",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_order_line",
+        "class": "SalesOrderLine",
+        "table": "sales_order_lines",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_order_adjustment",
+        "class": "SalesOrderAdjustment",
+        "table": "sales_order_adjustments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_settings",
+        "class": "SalesSettings",
+        "table": "sales_settings",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_document_sequence",
+        "class": "SalesDocumentSequence",
+        "table": "sales_document_sequences",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_quote",
+        "class": "SalesQuote",
+        "table": "sales_quotes",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_quote_line",
+        "class": "SalesQuoteLine",
+        "table": "sales_quote_lines",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_quote_adjustment",
+        "class": "SalesQuoteAdjustment",
+        "table": "sales_quote_adjustments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_shipment",
+        "class": "SalesShipment",
+        "table": "sales_shipments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_shipment_item",
+        "class": "SalesShipmentItem",
+        "table": "sales_shipment_items",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_return",
+        "class": "SalesReturn",
+        "table": "sales_returns",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_return_line",
+        "class": "SalesReturnLine",
+        "table": "sales_return_lines",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_invoice",
+        "class": "SalesInvoice",
+        "table": "sales_invoices",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_invoice_line",
+        "class": "SalesInvoiceLine",
+        "table": "sales_invoice_lines",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_credit_memo",
+        "class": "SalesCreditMemo",
+        "table": "sales_credit_memos",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_credit_memo_line",
+        "class": "SalesCreditMemoLine",
+        "table": "sales_credit_memo_lines",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_payment",
+        "class": "SalesPayment",
+        "table": "sales_payments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_payment_allocation",
+        "class": "SalesPaymentAllocation",
+        "table": "sales_payment_allocations",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_note",
+        "class": "SalesNote",
+        "table": "sales_notes",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_document_address",
+        "class": "SalesDocumentAddress",
+        "table": "sales_document_addresses",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_document_tag",
+        "class": "SalesDocumentTag",
+        "table": "sales_document_tags",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sales:sales_document_tag_assignment",
+        "class": "SalesDocumentTagAssignment",
+        "table": "sales_document_tag_assignments",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "sales.order.created",
+        "category": "crud",
+        "entity": "order"
+      },
+      {
+        "id": "sales.order.updated",
+        "category": "crud",
+        "entity": "order"
+      },
+      {
+        "id": "sales.order.deleted",
+        "category": "crud",
+        "entity": "order"
+      },
+      {
+        "id": "sales.order.confirmed",
+        "category": "lifecycle",
+        "entity": "order"
+      },
+      {
+        "id": "sales.order.cancelled",
+        "category": "lifecycle",
+        "entity": "order"
+      },
+      {
+        "id": "sales.quote.created",
+        "category": "crud",
+        "entity": "quote"
+      },
+      {
+        "id": "sales.quote.updated",
+        "category": "crud",
+        "entity": "quote"
+      },
+      {
+        "id": "sales.quote.deleted",
+        "category": "crud",
+        "entity": "quote"
+      },
+      {
+        "id": "sales.invoice.created",
+        "category": "crud",
+        "entity": "invoice"
+      },
+      {
+        "id": "sales.invoice.updated",
+        "category": "crud",
+        "entity": "invoice"
+      },
+      {
+        "id": "sales.invoice.deleted",
+        "category": "crud",
+        "entity": "invoice"
+      },
+      {
+        "id": "sales.credit_memo.created",
+        "category": "crud",
+        "entity": "credit_memo"
+      },
+      {
+        "id": "sales.credit_memo.updated",
+        "category": "crud",
+        "entity": "credit_memo"
+      },
+      {
+        "id": "sales.credit_memo.deleted",
+        "category": "crud",
+        "entity": "credit_memo"
+      },
+      {
+        "id": "sales.line.created",
+        "category": "crud",
+        "entity": "line"
+      },
+      {
+        "id": "sales.line.updated",
+        "category": "crud",
+        "entity": "line"
+      },
+      {
+        "id": "sales.line.deleted",
+        "category": "crud",
+        "entity": "line"
+      },
+      {
+        "id": "sales.payment.created",
+        "category": "crud",
+        "entity": "payment"
+      },
+      {
+        "id": "sales.payment.updated",
+        "category": "crud",
+        "entity": "payment"
+      },
+      {
+        "id": "sales.payment.deleted",
+        "category": "crud",
+        "entity": "payment"
+      },
+      {
+        "id": "sales.shipment.created",
+        "category": "crud",
+        "entity": "shipment"
+      },
+      {
+        "id": "sales.shipment.updated",
+        "category": "crud",
+        "entity": "shipment"
+      },
+      {
+        "id": "sales.shipment.deleted",
+        "category": "crud",
+        "entity": "shipment"
+      },
+      {
+        "id": "sales.return.created",
+        "category": "crud",
+        "entity": "return"
+      },
+      {
+        "id": "sales.return.updated",
+        "category": "crud",
+        "entity": "return"
+      },
+      {
+        "id": "sales.return.deleted",
+        "category": "crud",
+        "entity": "return"
+      },
+      {
+        "id": "sales.note.created",
+        "category": "crud",
+        "entity": "note"
+      },
+      {
+        "id": "sales.note.updated",
+        "category": "crud",
+        "entity": "note"
+      },
+      {
+        "id": "sales.note.deleted",
+        "category": "crud",
+        "entity": "note"
+      },
+      {
+        "id": "sales.channel.created",
+        "category": "crud",
+        "entity": "channel"
+      },
+      {
+        "id": "sales.channel.updated",
+        "category": "crud",
+        "entity": "channel"
+      },
+      {
+        "id": "sales.channel.deleted",
+        "category": "crud",
+        "entity": "channel"
+      },
+      {
+        "id": "sales.document.totals.calculated",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.document.calculate.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.document.calculate.after",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.line.calculate.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.line.calculate.after",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.tax.calculate.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.tax.calculate.after",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.shipping.adjustments.apply.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.shipping.adjustments.apply.after",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.payment.adjustments.apply.before",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sales.payment.adjustments.apply.after",
+        "category": "lifecycle",
+        "entity": null
+      }
+    ],
+    "aclFeatures": [
+      "sales.orders.view",
+      "sales.orders.manage",
+      "sales.orders.approve",
+      "sales.widgets.new-orders",
+      "sales.widgets.new-quotes",
+      "sales.quotes.view",
+      "sales.quotes.manage",
+      "sales.documents.number.edit",
+      "sales.shipments.manage",
+      "sales.payments.manage",
+      "sales.returns.view",
+      "sales.returns.create",
+      "sales.returns.manage",
+      "sales.invoices.manage",
+      "sales.credit_memos.manage",
+      "sales.channels.view",
+      "sales.channels.manage",
+      "sales.settings.view",
+      "sales.settings.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "salesCalculationService",
+      "taxCalculationService",
+      "salesDocumentNumberGenerator",
+      "salesOrderService"
+    ],
+    "searchEntities": [
+      "sales:sales_channel",
+      "sales:sales_order",
+      "sales:sales_quote",
+      "sales:sales_order_line",
+      "sales:sales_quote_line",
+      "sales:sales_order_adjustment",
+      "sales:sales_quote_adjustment",
+      "sales:sales_shipment",
+      "sales:sales_shipment_item",
+      "sales:sales_invoice",
+      "sales:sales_invoice_line",
+      "sales:sales_credit_memo",
+      "sales:sales_credit_memo_line",
+      "sales:sales_payment",
+      "sales:sales_payment_allocation",
+      "sales:sales_note",
+      "sales:sales_document_address",
+      "sales:sales_shipping_method",
+      "sales:sales_delivery_window",
+      "sales:sales_payment_method",
+      "sales:sales_tax_rate",
+      "sales:sales_document_tag"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "sales.order.created",
+      "sales.quote.created",
+      "sales.payment.received",
+      "sales.quote.expiring"
+    ],
+    "cli": [
+      "seed-tax-rates",
+      "seed-statuses",
+      "seed-adjustment-kinds",
+      "backfill-deal-loss-reasons",
+      "seed-shipping-methods",
+      "seed-payment-methods",
+      "seed-examples"
+    ]
+  },
+  "scheduler": {
+    "title": "Scheduler",
+    "description": "Database-managed scheduled jobs with admin UI",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "scheduler:scheduled_job",
+        "class": "ScheduledJob",
+        "table": "scheduled_jobs",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "scheduler.job.started",
+        "category": "lifecycle",
+        "entity": "scheduled_job"
+      },
+      {
+        "id": "scheduler.job.completed",
+        "category": "lifecycle",
+        "entity": "scheduled_job"
+      },
+      {
+        "id": "scheduler.job.failed",
+        "category": "lifecycle",
+        "entity": "scheduled_job"
+      },
+      {
+        "id": "scheduler.job.skipped",
+        "category": "lifecycle",
+        "entity": "scheduled_job"
+      }
+    ],
+    "aclFeatures": [
+      "scheduler.jobs.view",
+      "scheduler.jobs.manage",
+      "scheduler.jobs.trigger"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "bullmqSchedulerService",
+      "localSchedulerService",
+      "schedulerService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "list",
+      "status",
+      "run",
+      "start"
+    ]
+  },
+  "search": {
+    "title": "Search",
+    "description": "Unified search module with pluggable strategies (Meilisearch, Vector, Tokens).",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [
+      "search.view",
+      "search.manage",
+      "search.reindex",
+      "search.embeddings.view",
+      "search.embeddings.manage",
+      "search.global"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "query",
+      "status",
+      "index",
+      "reindex",
+      "reindex-help",
+      "test-meilisearch",
+      "worker",
+      "help"
+    ]
+  },
+  "security": {
+    "title": "Security",
+    "description": null,
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "security:user_mfa_method",
+        "class": "UserMfaMethod",
+        "table": "user_mfa_methods",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "security:mfa_recovery_code",
+        "class": "MfaRecoveryCode",
+        "table": "mfa_recovery_codes",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "security:mfa_enforcement_policy",
+        "class": "MfaEnforcementPolicy",
+        "table": "mfa_enforcement_policies",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "security:sudo_challenge_config",
+        "class": "SudoChallengeConfig",
+        "table": "sudo_challenge_configs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "security:sudo_session",
+        "class": "SudoSession",
+        "table": "sudo_sessions",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "security:mfa_challenge",
+        "class": "MfaChallenge",
+        "table": "mfa_challenges",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "security.password.changed",
+        "category": "lifecycle",
+        "entity": "password"
+      },
+      {
+        "id": "security.password.notification_requested",
+        "category": "lifecycle",
+        "entity": "password"
+      },
+      {
+        "id": "security.mfa.method.added",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.method.removed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.enrolled",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.removed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.verified",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.otp.sent",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.mfa.reset",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.recovery.regenerated",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.recovery.used",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.enforcement.created",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.enforcement.updated",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.enforcement.deadline_reminder_requested",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.challenged",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.verified",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.config.created",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.config.updated",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "security.sudo.config.deleted",
+        "category": "lifecycle",
+        "entity": null
+      }
+    ],
+    "aclFeatures": [
+      "security.profile.view",
+      "security.profile.password",
+      "security.profile.manage",
+      "security.mfa.manage",
+      "security.admin.manage",
+      "security.sudo.view",
+      "security.sudo.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "passwordService",
+      "mfaService",
+      "mfaVerificationService",
+      "mfaEnforcementService",
+      "mfaAdminService",
+      "sudoChallengeService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "security.enforcement.list",
+        "security.sudo.list",
+        "security.users.list"
+      ]
+    },
+    "notifications": [
+      "security.password.changed",
+      "security.mfa.enrolled",
+      "security.mfa.reset",
+      "security.mfa.enforcement_deadline"
+    ],
+    "cli": []
+  },
+  "shipping_carriers": {
+    "title": "Shipping Carriers",
+    "description": "Shipping carrier adapter hub with rates, shipment creation, tracking, and webhooks.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "shipping_carriers:carrier_shipment",
+        "class": "CarrierShipment",
+        "table": "carrier_shipments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "shipping_carriers:carrier_webhook_processed_event",
+        "class": "CarrierWebhookProcessedEvent",
+        "table": "carrier_webhook_events",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "shipping_carriers:carrier_shipment_idempotency_key",
+        "class": "CarrierShipmentIdempotencyKey",
+        "table": "carrier_shipment_idempotency_keys",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "shipping_carriers.shipment.created",
+        "category": "lifecycle",
+        "entity": "shipment"
+      },
+      {
+        "id": "shipping_carriers.shipment.status_changed",
+        "category": "lifecycle",
+        "entity": "shipment"
+      },
+      {
+        "id": "shipping_carriers.shipment.delivered",
+        "category": "lifecycle",
+        "entity": "shipment"
+      },
+      {
+        "id": "shipping_carriers.shipment.returned",
+        "category": "lifecycle",
+        "entity": "shipment"
+      },
+      {
+        "id": "shipping_carriers.shipment.cancelled",
+        "category": "lifecycle",
+        "entity": "shipment"
+      },
+      {
+        "id": "shipping_carriers.webhook.received",
+        "category": "system",
+        "entity": null
+      },
+      {
+        "id": "shipping_carriers.webhook.failed",
+        "category": "system",
+        "entity": null
+      }
+    ],
+    "aclFeatures": [
+      "shipping_carriers.view",
+      "shipping_carriers.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "shippingCarrierService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "sso": {
+    "title": null,
+    "description": null,
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "sso:sso_config",
+        "class": "SsoConfig",
+        "table": "sso_configs",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sso:sso_identity",
+        "class": "SsoIdentity",
+        "table": "sso_identities",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sso:scim_token",
+        "class": "ScimToken",
+        "table": "scim_tokens",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "sso:sso_user_deactivation",
+        "class": "SsoUserDeactivation",
+        "table": "sso_user_deactivations",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sso:scim_provisioning_log",
+        "class": "ScimProvisioningLog",
+        "table": "scim_provisioning_log",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "sso:sso_role_grant",
+        "class": "SsoRoleGrant",
+        "table": "sso_role_grants",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "sso.login.initiated",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sso.login.completed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sso.login.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sso.identity.linked",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sso.identity.created",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "sso.config.created",
+        "category": "crud",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.config.updated",
+        "category": "crud",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.config.deleted",
+        "category": "crud",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.config.activated",
+        "category": "lifecycle",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.config.deactivated",
+        "category": "lifecycle",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.domain.added",
+        "category": "lifecycle",
+        "entity": "sso_config"
+      },
+      {
+        "id": "sso.domain.removed",
+        "category": "lifecycle",
+        "entity": "sso_config"
+      }
+    ],
+    "aclFeatures": [
+      "sso.config.view",
+      "sso.config.manage",
+      "sso.scim.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "ssoService",
+      "accountLinkingService",
+      "ssoConfigService",
+      "hrdService",
+      "scimTokenService",
+      "scimService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "staff": {
+    "title": "Employees",
+    "description": "Teams, roles, and employee rosters.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "staff:staff_team",
+        "class": "StaffTeam",
+        "table": "staff_teams",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_role",
+        "class": "StaffTeamRole",
+        "table": "staff_team_roles",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_member",
+        "class": "StaffTeamMember",
+        "table": "staff_team_members",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_leave_request",
+        "class": "StaffLeaveRequest",
+        "table": "staff_leave_requests",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_member_comment",
+        "class": "StaffTeamMemberComment",
+        "table": "staff_team_member_comments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_member_activity",
+        "class": "StaffTeamMemberActivity",
+        "table": "staff_team_member_activities",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_member_job_history",
+        "class": "StaffTeamMemberJobHistory",
+        "table": "staff_team_member_job_histories",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_team_member_address",
+        "class": "StaffTeamMemberAddress",
+        "table": "staff_team_member_addresses",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_time_entry",
+        "class": "StaffTimeEntry",
+        "table": "staff_time_entries",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_time_entry_segment",
+        "class": "StaffTimeEntrySegment",
+        "table": "staff_time_entry_segments",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_time_project",
+        "class": "StaffTimeProject",
+        "table": "staff_time_projects",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "staff:staff_time_project_member",
+        "class": "StaffTimeProjectMember",
+        "table": "staff_time_project_members",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "staff.team.created",
+        "category": "crud",
+        "entity": "team"
+      },
+      {
+        "id": "staff.team.updated",
+        "category": "crud",
+        "entity": "team"
+      },
+      {
+        "id": "staff.team.deleted",
+        "category": "crud",
+        "entity": "team"
+      },
+      {
+        "id": "staff.team_role.created",
+        "category": "crud",
+        "entity": "team_role"
+      },
+      {
+        "id": "staff.team_role.updated",
+        "category": "crud",
+        "entity": "team_role"
+      },
+      {
+        "id": "staff.team_role.deleted",
+        "category": "crud",
+        "entity": "team_role"
+      },
+      {
+        "id": "staff.team_member.created",
+        "category": "crud",
+        "entity": "team_member"
+      },
+      {
+        "id": "staff.team_member.updated",
+        "category": "crud",
+        "entity": "team_member"
+      },
+      {
+        "id": "staff.team_member.deleted",
+        "category": "crud",
+        "entity": "team_member"
+      },
+      {
+        "id": "staff.leave_request.created",
+        "category": "crud",
+        "entity": "leave_request"
+      },
+      {
+        "id": "staff.leave_request.updated",
+        "category": "crud",
+        "entity": "leave_request"
+      },
+      {
+        "id": "staff.leave_request.deleted",
+        "category": "crud",
+        "entity": "leave_request"
+      },
+      {
+        "id": "staff.address.created",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "staff.address.updated",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "staff.address.deleted",
+        "category": "crud",
+        "entity": "address"
+      },
+      {
+        "id": "staff.comment.created",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "staff.comment.updated",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "staff.comment.deleted",
+        "category": "crud",
+        "entity": "comment"
+      },
+      {
+        "id": "staff.activity.created",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "staff.activity.updated",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "staff.activity.deleted",
+        "category": "crud",
+        "entity": "activity"
+      },
+      {
+        "id": "staff.job_history.created",
+        "category": "crud",
+        "entity": "job_history"
+      },
+      {
+        "id": "staff.job_history.updated",
+        "category": "crud",
+        "entity": "job_history"
+      },
+      {
+        "id": "staff.job_history.deleted",
+        "category": "crud",
+        "entity": "job_history"
+      },
+      {
+        "id": "staff.timesheets.time_entry.created",
+        "category": "crud",
+        "entity": "time_entry"
+      },
+      {
+        "id": "staff.timesheets.time_entry.updated",
+        "category": "crud",
+        "entity": "time_entry"
+      },
+      {
+        "id": "staff.timesheets.time_entry.deleted",
+        "category": "crud",
+        "entity": "time_entry"
+      },
+      {
+        "id": "staff.timesheets.time_entry.timer_started",
+        "category": "lifecycle",
+        "entity": "time_entry"
+      },
+      {
+        "id": "staff.timesheets.time_entry.timer_stopped",
+        "category": "lifecycle",
+        "entity": "time_entry"
+      },
+      {
+        "id": "staff.timesheets.time_project.created",
+        "category": "crud",
+        "entity": "time_project"
+      },
+      {
+        "id": "staff.timesheets.time_project.updated",
+        "category": "crud",
+        "entity": "time_project"
+      },
+      {
+        "id": "staff.timesheets.time_project.deleted",
+        "category": "crud",
+        "entity": "time_project"
+      },
+      {
+        "id": "staff.timesheets.time_project_member.created",
+        "category": "crud",
+        "entity": "time_project_member"
+      },
+      {
+        "id": "staff.timesheets.time_project_member.updated",
+        "category": "crud",
+        "entity": "time_project_member"
+      },
+      {
+        "id": "staff.timesheets.time_project_member.deleted",
+        "category": "crud",
+        "entity": "time_project_member"
+      }
+    ],
+    "aclFeatures": [
+      "staff.view",
+      "staff.manage_team",
+      "staff.leave_requests.send",
+      "staff.leave_requests.manage",
+      "staff.my_availability.view",
+      "staff.my_availability.manage",
+      "staff.my_availability.unavailability",
+      "staff.my_leave_requests.view",
+      "staff.my_leave_requests.send",
+      "staff.timesheets.view",
+      "staff.timesheets.manage_own",
+      "staff.timesheets.manage_all",
+      "staff.timesheets.projects.view",
+      "staff.timesheets.projects.manage",
+      "staff.timesheets.approve",
+      "staff.timesheets.lock"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [
+      "staff:staff_team",
+      "staff:staff_team_member",
+      "staff:staff_team_role",
+      "staff:staff_time_project"
+    ],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "staff.leave_request.pending",
+      "staff.leave_request.approved",
+      "staff.leave_request.rejected"
+    ],
+    "cli": [
+      "seed-activity-types",
+      "seed-address-types",
+      "seed-examples",
+      "seed-timesheets-widgets"
+    ]
+  },
+  "storage_s3": {
+    "title": "S3-Compatible Storage",
+    "description": "Store attachments and files in AWS S3, DigitalOcean Spaces, MinIO, or any S3-compatible object storage.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [
+      "storage_providers.manage"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "storageService"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "configure-from-env",
+      "help"
+    ]
+  },
+  "sync_akeneo": {
+    "title": "Akeneo Product Sync",
+    "description": "Import Akeneo PIM categories, product attributes, and products into the Open Mercato catalog.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": [
+      "configure-from-env",
+      "help"
+    ]
+  },
+  "sync_excel": {
+    "title": "Excel / CSV Import",
+    "description": "File-upload-based CSV import foundation built on top of the data sync hub.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "sync_excel:sync_excel_upload",
+        "class": "SyncExcelUpload",
+        "table": "sync_excel_uploads",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [],
+    "aclFeatures": [
+      "sync_excel.view",
+      "sync_excel.run"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "system_status_overlays": {
+    "title": "System Status Overlays",
+    "description": "Enterprise overlays and injected widgets for system status pages.",
+    "coreVersion": "0.6.7",
+    "entities": [],
+    "events": [],
+    "aclFeatures": [],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "translations": {
+    "title": "Entity Translations",
+    "description": "System-wide entity translation storage and locale overlay for CRUD responses.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "translations:entity_translation",
+        "class": "EntityTranslation",
+        "table": "entity_translations",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "translations.translation.updated",
+        "category": "crud",
+        "entity": "translation"
+      },
+      {
+        "id": "translations.translation.deleted",
+        "category": "crud",
+        "entity": "translation"
+      }
+    ],
+    "aclFeatures": [
+      "translations.view",
+      "translations.manage",
+      "translations.manage_locales"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [],
+    "cli": []
+  },
+  "webhooks": {
+    "title": "Webhooks",
+    "description": "Standard Webhooks compliant outbound webhook delivery for platform events.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "webhooks:webhook_entity",
+        "class": "WebhookEntity",
+        "table": "webhooks",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "webhooks:webhook_delivery_entity",
+        "class": "WebhookDeliveryEntity",
+        "table": "webhook_deliveries",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "webhooks:webhook_inbound_receipt_entity",
+        "class": "WebhookInboundReceiptEntity",
+        "table": "webhook_inbound_receipts",
+        "editable": false,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "webhooks.webhook.created",
+        "category": null,
+        "entity": "webhook"
+      },
+      {
+        "id": "webhooks.webhook.updated",
+        "category": null,
+        "entity": "webhook"
+      },
+      {
+        "id": "webhooks.webhook.deleted",
+        "category": null,
+        "entity": "webhook"
+      },
+      {
+        "id": "webhooks.delivery.enqueued",
+        "category": null,
+        "entity": "delivery"
+      },
+      {
+        "id": "webhooks.delivery.succeeded",
+        "category": null,
+        "entity": "delivery"
+      },
+      {
+        "id": "webhooks.delivery.failed",
+        "category": null,
+        "entity": "delivery"
+      },
+      {
+        "id": "webhooks.delivery.exhausted",
+        "category": null,
+        "entity": "delivery"
+      },
+      {
+        "id": "webhooks.webhook.disabled",
+        "category": null,
+        "entity": "webhook"
+      },
+      {
+        "id": "webhooks.inbound.received",
+        "category": null,
+        "entity": "inbound"
+      },
+      {
+        "id": "webhooks.secret.rotated",
+        "category": null,
+        "entity": "webhook"
+      }
+    ],
+    "aclFeatures": [
+      "webhooks.view",
+      "webhooks.manage",
+      "webhooks.secrets",
+      "webhooks.test"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [
+        "webhooks:webhook_entity",
+        "webhooks:webhook_delivery_entity",
+        "webhooks:webhook_inbound_receipt_entity"
+      ],
+      "tableIds": [
+        "webhooks.deliveries",
+        "webhooks.list"
+      ]
+    },
+    "notifications": [
+      "webhooks.delivery.failed"
+    ],
+    "cli": []
+  },
+  "wms": {
+    "title": "Warehouse Management System",
+    "description": "Warehouse topology, inventory balances, reservations, and movement ledger.",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "wms:warehouse",
+        "class": "Warehouse",
+        "table": "wms_warehouses",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:warehouse_zone",
+        "class": "WarehouseZone",
+        "table": "wms_warehouse_zones",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:warehouse_location",
+        "class": "WarehouseLocation",
+        "table": "wms_warehouse_locations",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:product_inventory_profile",
+        "class": "ProductInventoryProfile",
+        "table": "wms_product_inventory_profiles",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:inventory_lot",
+        "class": "InventoryLot",
+        "table": "wms_inventory_lots",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:inventory_balance",
+        "class": "InventoryBalance",
+        "table": "wms_inventory_balances",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:inventory_reservation",
+        "class": "InventoryReservation",
+        "table": "wms_inventory_reservations",
+        "editable": false,
+        "customFields": true
+      },
+      {
+        "id": "wms:sales_order_warehouse_assignment",
+        "class": "SalesOrderWarehouseAssignment",
+        "table": "wms_sales_order_warehouse_assignments",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "wms:inventory_movement",
+        "class": "InventoryMovement",
+        "table": "wms_inventory_movements",
+        "editable": false,
+        "customFields": true
+      }
+    ],
+    "events": [
+      {
+        "id": "wms.warehouse.created",
+        "category": "crud",
+        "entity": "warehouse"
+      },
+      {
+        "id": "wms.warehouse.updated",
+        "category": "crud",
+        "entity": "warehouse"
+      },
+      {
+        "id": "wms.zone.created",
+        "category": "crud",
+        "entity": "zone"
+      },
+      {
+        "id": "wms.zone.updated",
+        "category": "crud",
+        "entity": "zone"
+      },
+      {
+        "id": "wms.location.created",
+        "category": "crud",
+        "entity": "location"
+      },
+      {
+        "id": "wms.location.updated",
+        "category": "crud",
+        "entity": "location"
+      },
+      {
+        "id": "wms.inventory_profile.created",
+        "category": "crud",
+        "entity": "inventory_profile"
+      },
+      {
+        "id": "wms.inventory_profile.updated",
+        "category": "crud",
+        "entity": "inventory_profile"
+      },
+      {
+        "id": "wms.inventory_balance.created",
+        "category": "crud",
+        "entity": "inventory_balance"
+      },
+      {
+        "id": "wms.inventory_balance.updated",
+        "category": "crud",
+        "entity": "inventory_balance"
+      },
+      {
+        "id": "wms.inventory_balance.deleted",
+        "category": "crud",
+        "entity": "inventory_balance"
+      },
+      {
+        "id": "wms.inventory_reservation.created",
+        "category": "crud",
+        "entity": "inventory_reservation"
+      },
+      {
+        "id": "wms.inventory_reservation.updated",
+        "category": "crud",
+        "entity": "inventory_reservation"
+      },
+      {
+        "id": "wms.inventory_reservation.deleted",
+        "category": "crud",
+        "entity": "inventory_reservation"
+      },
+      {
+        "id": "wms.inventory_movement.created",
+        "category": "crud",
+        "entity": "inventory_movement"
+      },
+      {
+        "id": "wms.inventory_movement.updated",
+        "category": "crud",
+        "entity": "inventory_movement"
+      },
+      {
+        "id": "wms.inventory_movement.deleted",
+        "category": "crud",
+        "entity": "inventory_movement"
+      },
+      {
+        "id": "wms.inventory.received",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.adjusted",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.reserved",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.released",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.allocated",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.moved",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.reconciled",
+        "category": "custom",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.low_stock",
+        "category": "lifecycle",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.balance_drift",
+        "category": "lifecycle",
+        "entity": "inventory"
+      },
+      {
+        "id": "wms.inventory.reservation_shortfall",
+        "category": "lifecycle",
+        "entity": "inventory"
+      }
+    ],
+    "aclFeatures": [
+      "wms.view",
+      "wms.manage_warehouses",
+      "wms.manage_zones",
+      "wms.manage_locations",
+      "wms.manage_inventory",
+      "wms.manage_reservations",
+      "wms.adjust_inventory",
+      "wms.receive_inventory",
+      "wms.cycle_count",
+      "wms.import"
+    ],
+    "apiRoutes": [],
+    "diTokens": [],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": []
+    },
+    "notifications": [
+      "wms.inventory.low_stock",
+      "wms.inventory.reservation_shortfall"
+    ],
+    "cli": [
+      "verify-balances"
+    ]
+  },
+  "workflows": {
+    "title": "Workflow Engine",
+    "description": "Orchestrate business processes with state machines, transitions, and activities",
+    "coreVersion": "0.6.7",
+    "entities": [
+      {
+        "id": "workflows:workflow_definition",
+        "class": "WorkflowDefinition",
+        "table": "workflow_definitions",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "workflows:workflow_instance",
+        "class": "WorkflowInstance",
+        "table": "workflow_instances",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "workflows:workflow_branch_instance",
+        "class": "WorkflowBranchInstance",
+        "table": "workflow_branch_instances",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "workflows:step_instance",
+        "class": "StepInstance",
+        "table": "step_instances",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "workflows:user_task",
+        "class": "UserTask",
+        "table": "user_tasks",
+        "editable": true,
+        "customFields": false
+      },
+      {
+        "id": "workflows:workflow_event",
+        "class": "WorkflowEvent",
+        "table": "workflow_events",
+        "editable": false,
+        "customFields": false
+      },
+      {
+        "id": "workflows:workflow_event_trigger",
+        "class": "WorkflowEventTrigger",
+        "table": "workflow_event_triggers",
+        "editable": true,
+        "customFields": false
+      }
+    ],
+    "events": [
+      {
+        "id": "workflows.definition.created",
+        "category": "crud",
+        "entity": "definition"
+      },
+      {
+        "id": "workflows.definition.updated",
+        "category": "crud",
+        "entity": "definition"
+      },
+      {
+        "id": "workflows.definition.deleted",
+        "category": "crud",
+        "entity": "definition"
+      },
+      {
+        "id": "workflows.definition.customized",
+        "category": "lifecycle",
+        "entity": "definition"
+      },
+      {
+        "id": "workflows.definition.reset_to_code",
+        "category": "lifecycle",
+        "entity": "definition"
+      },
+      {
+        "id": "workflows.instance.created",
+        "category": "crud",
+        "entity": "instance"
+      },
+      {
+        "id": "workflows.instance.updated",
+        "category": "crud",
+        "entity": "instance"
+      },
+      {
+        "id": "workflows.instance.deleted",
+        "category": "crud",
+        "entity": "instance"
+      },
+      {
+        "id": "workflows.instance.started",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.instance.completed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.instance.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.instance.cancelled",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.instance.paused",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.instance.resumed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.activity.started",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.activity.completed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.activity.failed",
+        "category": "lifecycle",
+        "entity": null
+      },
+      {
+        "id": "workflows.trigger.created",
+        "category": "crud",
+        "entity": "trigger"
+      },
+      {
+        "id": "workflows.trigger.updated",
+        "category": "crud",
+        "entity": "trigger"
+      },
+      {
+        "id": "workflows.trigger.deleted",
+        "category": "crud",
+        "entity": "trigger"
+      },
+      {
+        "id": "workflows.branch.opened",
+        "category": "lifecycle",
+        "entity": "branch"
+      },
+      {
+        "id": "workflows.branch.completed",
+        "category": "lifecycle",
+        "entity": "branch"
+      },
+      {
+        "id": "workflows.branch.cancelled",
+        "category": "lifecycle",
+        "entity": "branch"
+      },
+      {
+        "id": "workflows.branch.failed",
+        "category": "lifecycle",
+        "entity": "branch"
+      },
+      {
+        "id": "workflows.join.completed",
+        "category": "lifecycle",
+        "entity": "branch"
+      }
+    ],
+    "aclFeatures": [
+      "workflows.view",
+      "workflows.manage",
+      "workflows.view_logs",
+      "workflows.view_tasks",
+      "workflows.definitions.view",
+      "workflows.definitions.create",
+      "workflows.definitions.edit",
+      "workflows.definitions.delete",
+      "workflows.instances.view",
+      "workflows.instances.create",
+      "workflows.instances.cancel",
+      "workflows.instances.retry",
+      "workflows.instances.signal",
+      "workflows.tasks.view",
+      "workflows.tasks.claim",
+      "workflows.tasks.complete",
+      "workflows.signals.send",
+      "workflows.events.view"
+    ],
+    "apiRoutes": [],
+    "diTokens": [
+      "workflowExecutor",
+      "stepHandler",
+      "transitionHandler",
+      "activityExecutor",
+      "eventLogger",
+      "signalHandler",
+      "timerHandler"
+    ],
+    "searchEntities": [],
+    "hostTokens": {
+      "entityIds": [],
+      "tableIds": [
+        "workflows.definitions.list",
+        "workflows.instances.list",
+        "workflows.tasks.list"
+      ]
+    },
+    "notifications": [
+      "workflows.task.assigned"
+    ],
+    "cli": [
+      "start-worker",
+      "process-activities",
+      "seed-demo",
+      "seed-demo-with-rules",
+      "seed-sales-pipeline",
+      "seed-simple-approval",
+      "seed-order-approval",
+      "seed-all"
+    ]
+  }
+}
