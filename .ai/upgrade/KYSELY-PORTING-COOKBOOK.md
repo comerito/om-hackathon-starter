@@ -1561,3 +1561,41 @@ this.debug('query:sql:count', { entity, sql: compiled.sql, bindings: compiled.pa
 15. Delete `.clone()`; use `clearOrderBy`/`clearGroupBy`; prefer a `buildBaseQuery()` closure for
     count + page (§13).
 16. `.toSQL()` → `.compile()`; `bindings` → `parameters` (§14).
+
+---
+
+## 17. `= ANY(?)` IS A SYNTAX ERROR — use `IN (?)`
+
+**Added after this cookbook was first written. This is the single most important item in it.**
+
+`connection.execute()` does **not** bind parameters. `AbstractSqlConnection.prepareQuery` calls
+`platform.formatQuery(sql, params)`, which textually inlines every `?`, then hands the finished
+string to kysely as `CompiledQuery.raw(...)` with no parameter list.
+`BasePostgreSqlPlatform.escape()` renders a JS **array** as a comma-joined list of quoted
+literals — *not* a Postgres array literal.
+
+Verified directly against the installed platform:
+
+```js
+const p = new PostgreSqlPlatform()
+p.formatQuery('SELECT 1 WHERE id IN (?)',   [['a','b']])   // SELECT 1 WHERE id IN ('a', 'b')      OK
+p.formatQuery('SELECT 1 WHERE id = ANY(?)', [['a','b']])   // SELECT 1 WHERE id = ANY('a', 'b')    SYNTAX ERROR
+p.formatQuery('SELECT 1 WHERE id IN (?)',   [["b'c"]])     // SELECT 1 WHERE id IN ('b''c')        escaped
+```
+
+### Rules
+
+- **Use `IN (?)`** with the array bound as ONE param. Never `= ANY(?)`.
+- **Guard the empty case.** `IN ()` does not parse. Every call site needs a `length > 0` guard
+  (or an early return) before the query.
+- Escaping still goes through `escapeLiteral`, so this is **not** an injection risk — but it also
+  means you must never interpolate a value yourself. Values always go through `?`.
+- `undefined` inlines as the bare token `undefined` → `column "undefined" does not exist`.
+  `null` inlines as `null` → a comparison that is never true. Neither is a bound NULL.
+
+### Why this matters more than it looks
+
+In this repo, 8 call sites used `= ANY(?)`. **Four were pre-existing app code** (`bounties`)
+written against MikroORM 6, which the v7 upgrade silently broke. Nothing catches this:
+`tsc` sees a plain template string, and a route only fails when the guarded branch is actually
+reached with a non-empty array — which requires real data.
