@@ -52,7 +52,7 @@ export async function GET(req: Request) {
 
     // Count total before pagination
     const countRows = await conn.execute<Array<{ count: string | number }>>(
-      `SELECT COUNT(t.id) AS count FROM teams_team t WHERE ${whereSql}`,
+      `SELECT COUNT(t.id) AS "count" FROM teams_team t WHERE ${whereSql}`,
       values,
     )
     const total = Number(countRows[0]?.count ?? 0)
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
     const teamTrackMap = new Map<string, string[]>()
     if (teamIds.length > 0) {
       const counts = await conn.execute<Array<{ team_id: string; count: string | number }>>(
-        `SELECT team_id, COUNT(id) AS count FROM teams_team_member
+        `SELECT team_id, COUNT(id) AS "count" FROM teams_team_member
            WHERE team_id = ANY(?) AND left_at IS NULL
            GROUP BY team_id`,
         [teamIds],

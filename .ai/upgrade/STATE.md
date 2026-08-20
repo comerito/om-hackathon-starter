@@ -47,7 +47,8 @@ Baseline surface after `example` removal: **502 files / 65,432 lines**
 | 23 | S2 | persist/flush | ✅ | **`persistAndFlush`/`removeAndFlush` REMOVED in v7** — a breaking change the original analysis missed. 41 sites / 27 files converted to `persist(x)`+`flush()` / `remove(x)`+`flush()`. Framework did the same (0.4.8: 97 uses → 0.6.7: 0) | 2026-08-20 |
 | 24 | S2 | G2 generate | ✅ | exit 0. Framework auto-detected the v7 migration and purged its stale generated cache | 2026-08-20 |
 | 25 | S2 | G3 typecheck | ✅ | **exit 0.** First run: 41 errors, **all in `src/`, all TS2339**, all `persistAndFlush`/`removeAndFlush`. After conversion: 0 | 2026-08-20 |
-| 26 | S2 | knex → raw SQL | ⏳ | 21 files, 5 parallel rewriters on disjoint file sets | 2026-08-20 |
+| 26 | S2 | G4 db:migrate | ✅ | exit 0 onto the 0.4.8 baseline. **29 migrations across 10 modules**: customers 13, auth 5, ai_assistant 3, audit_logs 2, + 1 each for business_rules / customer_accounts / dictionaries / integrations / messages / sales. No errors | 2026-08-20 |
+| 27 | S2 | knex → raw SQL | ⏳ | 21 files, 5 parallel rewriters on disjoint sets. `teams` (4) and `judging` (2) done; `competitions` (15) in progress | 2026-08-20 |
 
 **Porting policy for S2 (decided, and independently confirmed by the cookbook):** port everything
 to `em.getConnection().execute<T>(sql, params)` with hand-written SQL rather than the kysely
@@ -250,6 +251,28 @@ Dependency requirements introduced at 0.6.0:
 
 Since `^7.0.14` admits `7.1.5` (what 0.6.7 wants), S2 will install `^7.1.5` directly to
 avoid a second MikroORM bump in S3.
+
+## S2 schema findings
+
+1. **The auth email-uniqueness reshape has NOT landed at 0.6.0.** After migrating, `users` still
+   carries the **global** `users_email_unique` btree index. The tenant-scoped partial index
+   (`users_tenant_email_hash_uniq` on `(tenant_id, email_hash)` over live rows) described in
+   0.6.7's entity comments arrives later in the 0.6.x line. **This is an S3 concern, not S2** —
+   re-check it after the 0.6.7 bump, and only then audit for code assuming globally-unique emails.
+
+2. **App module migrations contain FULL-SCHEMA dumps, including core tables.**
+   `src/modules/projects/migrations/Migration20260329045045.ts` and
+   `src/modules/competitions/migrations/Migration20260331002513.ts` each create/alter core tables
+   they have no business owning — `users`, `inbox_emails`, `onboarding_requests`,
+   `customer_users`, and many more (893+ lines in one case). This is the classic
+   `mikro-orm migration:create` footgun: the diff was taken against the whole metadata graph
+   rather than the module's own entities.
+
+   It is not blocking (these were already applied at `initialize`, and migrations are tracked
+   per module), but it is a real hazard: on a fresh install the ordering between an app module's
+   full-schema migration and the core module's own migrations is not guaranteed, and a future
+   core schema change can collide with a stale copy frozen inside an app migration.
+   **Filed as a follow-up — do not attempt to fix during the upgrade.**
 
 ## REGRESSIONS found (not caused by this app, but must be tracked)
 
