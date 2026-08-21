@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Message, MessageRecipient } from '@open-mercato/core/modules/messages/data/entities'
+import { newOrmEntity } from '@/lib/orm/entity-class'
 import { CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
 
     // Create message
     const messageId = crypto.randomUUID()
-    const message = new Message()
+    const message = newOrmEntity(em, Message)
     message.id = messageId
     message.type = 'chat'
     message.threadId = threadId
@@ -215,7 +216,7 @@ export async function POST(req: Request) {
     message.sourceEntityId = parsed.competition_id
     em.persist(message)
 
-    const recipient = new MessageRecipient()
+    const recipient = newOrmEntity(em, MessageRecipient)
     recipient.messageId = messageId
     recipient.recipientUserId = parsed.recipient_id
     recipient.recipientType = 'to'

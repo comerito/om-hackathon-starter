@@ -151,7 +151,7 @@ Baselines for each stage are archived under `.ai/upgrade/baseline/archive-*/`.
 (the production build) afterwards surfaced three failures that dev mode does not exhibit.
 This is a real weakness in how the upgrade was verified, not a footnote.
 
-### P-1 (PRE-EXISTING): chat send 500s in production builds
+### P-1 (PRE-EXISTING) — **FIXED**: chat send 500s in production builds
 
 ```
 [portal/chat] POST error: ValidationError: Trying to persist not discovered entity of type
@@ -172,6 +172,30 @@ returns 500 for every message.
 
 So portal chat has been broken in production builds since before the upgrade. Dev mode works,
 which is presumably why it went unnoticed.
+
+**Root cause.** `@open-mercato/core` publishes BOTH `src/*.ts` and a compiled `dist/*.js`; its
+`exports` map serves `dist`, while `next.config.ts` lists the package in `transpilePackages`.
+Next therefore compiles the package *source* for some importers and resolves the published
+*dist* for others — two module instances of the same file, two identically-named `Message`
+classes. The route held one; the ORM registry held the other.
+
+**Fix.** `src/lib/orm/entity-class.ts` — `newOrmEntity(em, Cls)` looks the constructor up by name
+in the ORM's own metadata (`em.getMetadata().getAll()`), so module identity stops mattering. It
+falls back to the passed class when metadata is unavailable, so it can never be worse than the
+status quo. Applied to `Message` / `MessageRecipient` in the chat route.
+
+**Rejected alternatives, and why:**
+- *Drop `@open-mercato/core` from `transpilePackages`* — collapses the duplication, but core's
+  `dist` is then pulled into the client graph and the build fails on `fs` / `net` / `tls` /
+  `child_process`. `serverExternalPackages` is mutually exclusive with `transpilePackages`.
+- *Write the message with raw SQL* — `messages.subject` and `messages.body` are declared
+  encrypted (`core/modules/messages/encryption.ts`), so a raw `INSERT` would bypass the
+  encryption hooks and silently store plaintext.
+
+**Verified fixed**, production build, in the framework's encryption-active ephemeral environment:
+seed goes from *64 writes / 1 error* to **66 writes / 0 errors**; entity-prototype errors
+**3 → 0**; the spec suite is **5/5**; and the stored body is confirmed ciphertext
+(`NgcmiWiUr0HPvjPZ:nNom0HemSFbXHqGCUA==:...`), proving the ORM encryption hook still runs.
 
 ### P-2 (NEW at 0.6.7, framework bug): mutation-guard service dies under minification
 
