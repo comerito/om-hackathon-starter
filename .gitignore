@@ -70,3 +70,6 @@ src/modules/*/migrations/.snapshot-om_upgrade.json
 .ai/qa/test-results/
 test-results/
 playwright-report/
+.ai/qa/ephemeral-*.json
+.ai/qa/ephemeral-*.sqlite*
+.ai/qa/test-results/

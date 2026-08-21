@@ -145,8 +145,92 @@ Baselines for each stage are archived under `.ai/upgrade/baseline/archive-*/`.
 
 ---
 
-## 8. Residual risk, stated plainly
+## 8. Production-mode findings (added after the fact — my verification was dev-only)
 
+**Everything in sections 1-7 was verified in `yarn dev`.** Running the app under `yarn start`
+(the production build) afterwards surfaced three failures that dev mode does not exhibit.
+This is a real weakness in how the upgrade was verified, not a footnote.
+
+### P-1 (PRE-EXISTING): chat send 500s in production builds
+
+```
+[portal/chat] POST error: ValidationError: Trying to persist not discovered entity of type
+Message. Entity with this name was discovered, but not the prototype you are passing to the ORM.
+```
+
+Turbopack's production chunking loads the `Message` entity module twice, so the class the route
+instantiates is not the prototype registered with the ORM. `POST /api/competitions/portal/chat`
+returns 500 for every message.
+
+**Not caused by this upgrade — verified by experiment.** I checked out the 0.5.0 tree
+(MikroORM 6, before any port), rebuilt, and reproduced the identical error. Comparison:
+
+| | chat 500 / entity-prototype | `Could not resolve 'em2'` |
+|---|---|---|
+| 0.5.0 production | **present** | absent |
+| 0.6.7 production | **present** | **present** |
+
+So portal chat has been broken in production builds since before the upgrade. Dev mode works,
+which is presumably why it went unnoticed.
+
+### P-2 (NEW at 0.6.7, framework bug): mutation-guard service dies under minification
+
+```
+CRUD mutation guard service could not be resolved; the legacy guard bridge is disabled
+AwilixResolutionError: Could not resolve 'em2'.  Resolution path: crudMutationGuardService -> em2
+```
+
+`node_modules/@open-mercato/shared/src/lib/di/container.ts:183` registers:
+
+```ts
+crudMutationGuardService: asFunction((em: EntityManager) => createOptimisticLockGuardService({...}))
+```
+
+That is Awilix **CLASSIC** injection — it resolves dependencies by *parameter name*. The production
+build minifies `em` to `em2`, Awilix looks for a registration called `em2`, and fails. The service
+is what provides **OSS optimistic locking**, so optimistic-lock guards are **silently disabled in
+any minified production build**. Absent at 0.5.0, present at 0.6.7.
+
+**Report upstream.** The fix is on the framework side: destructure the cradle
+(`asFunction(({ em }) => ...)`) or declare `.inject()` explicitly.
+
+### P-3: `yarn start` needs New Relic configuration
+
+`"start": "NODE_OPTIONS='-r newrelic' mercato server start"` fails to bootstrap with
+*"New Relic requires that you name this application!"*. It does not block startup, but every
+production boot logs the error. Set `NEW_RELIC_APP_NAME` (or `NEW_RELIC_ENABLED=false`).
+
+### What the framework's own runner showed
+
+`yarn test:integration:ephemeral` works end-to-end: it provisions a testcontainers Postgres,
+builds, boots a **production** server on :5001, installs Chromium, and runs the specs. Two things
+came out of using it:
+
+- My `test:integration` script was **recursive** — the CLI shells out to `yarn run test:integration`
+  (`integration.js:2444`), and I had pointed that script back at `mercato test:integration`. Fixed
+  to invoke Playwright directly.
+- Its database is a **fresh 0.6.7 install with encryption active**, whereas my entire baseline ran
+  against a 0.4.8 database migrated forward with encryption inactive. That difference is what
+  exposed P-1 and the encryption finding below.
+
+### Encryption: raw-SQL reads return ciphertext
+
+`customer_users.display_name` and `.email` are declared encrypted
+(`customer_accounts/encryption.ts:8`). **All 21 ported files read them via raw SQL, which bypasses
+the ORM's decryption layer.** In the ephemeral environment `resolve-users` returned
+`"DkLmYKrnsdcFd9Aw:9WOtobA2EtUab1x/wA==:..."` instead of a name.
+
+**Pre-existing** — knex bypassed decryption in exactly the same way, so the ports changed nothing.
+But it means: **wherever tenant encryption is actually active, these portal endpoints return
+ciphertext to users.** My local database stores these columns in plaintext, which is why neither
+the baseline nor the harness ever caught it.
+
+## 9. Residual risk, stated plainly
+
+- **All verification in sections 1-7 was dev-mode only.** Production mode was exercised only
+  afterwards, and immediately found P-1/P-2. Treat "zero deltas" as a statement about dev mode.
+- **The baseline database has encryption inactive**, so nothing in it tests encrypted-column
+  behaviour. See the encryption finding above.
 - **The 4 `bounties` `ANY(?)` fixes are the least-verified change in this upgrade.** The fixture
   has no bounties data — PR submission requires a real GitHub repo and token — so those code paths
   were never executed. They are correct by construction and by a direct platform test, but they
