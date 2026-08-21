@@ -70,6 +70,10 @@ registerMessageObjectTypes(messageObjectTypes, { replace: true })
 
 // Bootstrap factory from shared package
 import { createBootstrap, isBootstrapped } from '@open-mercato/shared/lib/bootstrap'
+// 0.6.7 wires the app's DI override hook through `BootstrapOptions.appDiRegistrar`.
+// Without this the app's `register()` never runs — the documented DI escape hatch is
+// dead, and with it the workaround for upstream #4201.
+import { register as appDiRegister } from './di'
 
 // Create bootstrap function with app's generated data
 export const bootstrap = createBootstrap({
@@ -91,6 +95,8 @@ export const bootstrap = createBootstrap({
   commandLoaderEntries,
   notificationHandlerEntries,
   codeWorkflows: allCodeWorkflows,
+}, {
+  appDiRegistrar: appDiRegister,
 })
 
 export { isBootstrapped }

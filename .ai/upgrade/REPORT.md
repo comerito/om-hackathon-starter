@@ -197,7 +197,7 @@ seed goes from *64 writes / 1 error* to **66 writes / 0 errors**; entity-prototy
 **3 → 0**; the spec suite is **5/5**; and the stored body is confirmed ciphertext
 (`NgcmiWiUr0HPvjPZ:nNom0HemSFbXHqGCUA==:...`), proving the ORM encryption hook still runs.
 
-### P-2 (NEW at 0.6.7, framework bug): mutation-guard service dies under minification
+### P-2 (NEW at 0.6.7, framework bug) — **WORKED AROUND + REPORTED UPSTREAM**
 
 ```
 CRUD mutation guard service could not be resolved; the legacy guard bridge is disabled
@@ -215,8 +215,41 @@ build minifies `em` to `em2`, Awilix looks for a registration called `em2`, and 
 is what provides **OSS optimistic locking**, so optimistic-lock guards are **silently disabled in
 any minified production build**. Absent at 0.5.0, present at 0.6.7.
 
-**Report upstream.** The fix is on the framework side: destructure the cradle
-(`asFunction(({ em }) => ...)`) or declare `.inject()` explicitly.
+**Precise trigger** (verified in the emitted bundle): the factory's parameter `em` **shadows the
+enclosing `const em`** declared 19 lines above at `container.ts:164`. The bundler renames the
+shadowing binding to `em2` to eliminate the shadow, and CLASSIC mode parses the renamed name.
+**This is not minification** — `next.config.ts` already sets `serverMinification: false` and
+`turbopackMinify: false`. Corroboration: `core/modules/auth/di.ts:27` uses `(cradle) => …` under
+the same container and is unaffected, because `cradle` shadows nothing.
+
+**Severity is LOWER than first reported here — corrected after A/B testing.** My initial claim
+that this "silently disables OSS optimistic locking" was **wrong for 0.6.7**. Measured on
+production builds, same DB, only the DI registration differing:
+
+| | `Could not resolve 'em2'` | PUT with a stale lock header |
+|---|---|---|
+| stock 0.6.7 | present | **`409 optimistic_lock_conflict`** |
+| with workaround | absent | `409 optimistic_lock_conflict` |
+
+The built-in optimistic lock is enforced by the modern `runMutationGuards` registry path
+regardless of this DI key. What actually breaks is only the **legacy bridge** — guards supplied
+*through* `crudMutationGuardService`, e.g. the enterprise `record_locks` override or a
+hand-registered custom guard. Those are silently skipped.
+
+**Workaround (applied):** `src/di.ts` re-registers the service with per-resolver
+`InjectionMode.PROXY`, so Awilix passes the cradle itself and nothing parses parameter names
+(`cradle.em` is a property access, which bundlers do not rename).
+
+**Second app-side gap found while fixing it:** the app's `src/di.ts` `register()` was **never
+running**. 0.6.7 replaced the old `import("@/di")` mechanism with
+`BootstrapOptions.appDiRegistrar`, and `src/bootstrap.ts` never wired it — the same class of
+bootstrap gap as `commandLoaderEntries` / `codeWorkflows`. Now wired.
+
+**Reported upstream:** existing issue
+[open-mercato#4201](https://github.com/open-mercato/open-mercato/issues/4201) already covers the
+0.6.5 form, so rather than filing a duplicate I commented with the new mechanism, the
+"not minification" correction, the narrower impact, the new root-cause-2 mechanism, and a
+suggested fix — [comment](https://github.com/open-mercato/open-mercato/issues/4201#issuecomment-5367949946).
 
 ### P-3: `yarn start` needs New Relic configuration
 
