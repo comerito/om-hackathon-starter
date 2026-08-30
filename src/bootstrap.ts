@@ -62,11 +62,21 @@ import { messageTypes } from '@/.mercato/generated/message-types.generated'
 import { messageObjectTypes } from '@/.mercato/generated/message-objects.generated'
 import { registerMessageTypes } from '@open-mercato/core/modules/messages/lib/message-types-registry'
 import { registerMessageObjectTypes } from '@open-mercato/core/modules/messages/lib/message-objects-registry'
+// 0.6.x: the generator emits `bootstrap-registrations.generated.ts`, whose
+// `runBootstrapRegistrations()` registers the backend and frontend ROUTE MANIFESTS.
+// Its docstring says it exists so modules "can inject bootstrap-time side effects
+// without bootstrap.ts knowing about them" — but the app still has to invoke it once.
+// Nothing did, so `getBackendRouteManifests()` returned an empty list and
+// `GET /api/auth/admin/nav` answered `{"groups":[]}` — the entire backend sidebar was
+// blank for every user, superadmin included.
+import { runBootstrapRegistrations } from '@/.mercato/generated/bootstrap-registrations.generated'
 
 // Register event configs globally (similar to search)
 registerEventModuleConfigs(eventModuleConfigs)
 registerMessageTypes(messageTypes, { replace: true })
 registerMessageObjectTypes(messageObjectTypes, { replace: true })
+// Must run before anything reads the route manifests (nav, route resolution).
+runBootstrapRegistrations()
 
 // Bootstrap factory from shared package
 import { createBootstrap, isBootstrapped } from '@open-mercato/shared/lib/bootstrap'

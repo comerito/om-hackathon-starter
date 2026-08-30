@@ -142,10 +142,25 @@ const PEOPLE = [
   { key: 'jorge', email: 'jorge.judge@example.com', displayName: 'Jorge Judge', role: 'judge' },
   { key: 'mona', email: 'mona.mentor@example.com', displayName: 'Mona Mentor', role: 'mentor' },
 ]
+// Customer PORTAL roles are what grant `portal.*` features. `POST
+// /api/customer_accounts/admin/users` only assigns roles when `roleIds` is passed
+// explicitly — it does NOT fall back to the role marked `is_default` (see
+// core/modules/customer_accounts/api/admin/users.ts:249). Without this, seeded users
+// get ZERO features and every portal page renders "access denied", even though their
+// CompetitionParticipation says `participant`. Those are two different notions of
+// "role" and only the customer role drives portal authorization.
+const roleRes = await call(admin, 'GET', '/api/customer_accounts/admin/roles?pageSize=100')
+const roleBySlug = new Map(
+  (roleRes.body?.items ?? roleRes.body?.data ?? []).map((r) => [r.slug, r.id]),
+)
+console.error(`  [---] customer roles: ${[...roleBySlug.keys()].join(', ') || 'NONE FOUND'}`)
+
 const USERS = {}
 for (const p of PEOPLE) {
+  const roleId = roleBySlug.get(p.role)
   const r = await W(`create user ${p.key}`, admin, 'POST', '/api/customer_accounts/admin/users', {
     email: p.email, password: PW, displayName: p.displayName,
+    ...(roleId ? { roleIds: [roleId] } : {}),
   })
   if (r.body?.user?.id) USERS[p.key] = { id: r.body.user.id, ...p }
 }
