@@ -18,6 +18,48 @@ TODO: Fix that latter to have reference by the package names
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   Semantic z-index scale.
+
+   @open-mercato/ui 0.6.x styles its overlays with SEMANTIC z utilities —
+   `z-modal`, `z-overlay`, `z-popover`, `z-dropdown`, `z-toast`, `z-tooltip`
+   (65 usages across 11+ files). Tailwind v4 generates those utilities from
+   `--z-index-*` theme tokens; without the tokens the classes emit NO CSS at all
+   and every such element silently falls back to `z-auto`.
+
+   Symptom before this block existed: the portal notifications drawer
+   (`PortalNotificationPanel`, `fixed right-0 top-0 z-modal`) rendered BEHIND the
+   portal header (`PortalTopBar`, `sticky top-0 z-30`), so the user's name and the
+   competition switcher drew on top of the panel title. Verified by grepping the
+   built stylesheets: `.z-modal`, `.z-popover` and `.z-overlay` matched 0 times.
+
+   Values are copied from the framework's own app so app and package agree.
+   Note `--z-index-overlay: 30` ties with PortalTopBar's `z-30`; the modal surface
+   itself sits at 40 and therefore still wins.
+--------------------------------------------------------------------------- */
+@theme {
+  --z-index-base: 0;
+  --z-index-sticky: 10;
+  --z-index-dropdown: 20;
+  --z-index-overlay: 30;
+  --z-index-modal: 40;
+  --z-index-popover: 45;
+  --z-index-toast: 50;
+  --z-index-modal-elevated: 55;
+  --z-index-tooltip: 60;
+  --z-index-banner: 70;
+  --z-index-top: 100;
+}
+
+/* Emitted explicitly because these two are referenced only from inside
+   node_modules; upstream does the same so the rule survives any scanner miss. */
+@utility z-popover {
+  z-index: var(--z-index-popover, 45);
+}
+@utility z-modal-elevated {
+  z-index: var(--z-index-modal-elevated, 55);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
