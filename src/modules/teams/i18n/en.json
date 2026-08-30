@@ -11,13 +11,13 @@
   "teams.portal.browse.inviteFailed": "Failed to send invitation",
   "teams.portal.browse.noPeople": "No one is looking for a team",
   "teams.portal.browse.noPeopleDesc": "No one is currently looking for a team. Check back later.",
-  "teams.portal.browse.inviteToTeam": "Invite to Team",
+  "teams.portal.browse.inviteToTeam": "Invite",
   "teams.portal.browse.requestSent": "Join request sent!",
   "teams.portal.browse.requestFailed": "Failed to send request",
   "teams.portal.browse.noCompetition": "Select a competition",
   "teams.portal.browse.noCompetitionDesc": "Choose a competition to browse teams.",
   "teams.portal.browse.tabTeams": "Teams",
-  "teams.portal.browse.tabPeople": "People Looking for Teams",
+  "teams.portal.browse.tabPeople": "Looking for a team",
   "teams.portal.browse.label": "Find a Team",
   "teams.portal.browse.title": "Browse Teams",
   "teams.portal.myTeam.created": "Team created!",
@@ -111,5 +111,9 @@
   "teams.portal.nav.myTeam": "My Team",
   "teams.portal.nav.browseTeams": "Browse Teams",
   "teams.portal.nav.groupHackathon": "Hackathon",
-  "teams.portal.nav.groupCommunity": "Community"
+  "teams.portal.nav.groupCommunity": "Community",
+  "teams.portal.browse.viewTeam": "View Team",
+  "teams.portal.browse.yourTeamShort": "Yours",
+  "teams.portal.browse.lookingForTeamShort": "LFT",
+  "teams.portal.browse.noTeam": "No Team"
 }
