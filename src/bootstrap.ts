@@ -70,11 +70,22 @@ import { registerMessageObjectTypes } from '@open-mercato/core/modules/messages/
 // `GET /api/auth/admin/nav` answered `{"groups":[]}` — the entire backend sidebar was
 // blank for every user, superadmin included.
 import { runBootstrapRegistrations } from '@/.mercato/generated/bootstrap-registrations.generated'
+// 0.6.x unified `modules.ts` overrides (`entry.overrides.routes.*`). The dispatcher has
+// to be handed the enabled-module list once; nothing did, so every override declared in
+// src/modules.ts was silently inert. `registerApiRouteManifests` consults the override
+// composer, so this MUST run before runBootstrapRegistrations() below.
+import { applyModuleOverridesFromEnabledModules } from '@open-mercato/shared/modules/overrides'
+import { enabledModules } from '@/modules'
 
 // Register event configs globally (similar to search)
 registerEventModuleConfigs(eventModuleConfigs)
 registerMessageTypes(messageTypes, { replace: true })
 registerMessageObjectTypes(messageObjectTypes, { replace: true })
+// Overrides first: registerApiRouteManifests/registerPageRouteManifests compose them in.
+// NOTE: the API catch-all (src/app/api/[...slug]/route.ts) resolves handlers straight
+// from modules.generated and never consults the manifest registry, so `overrides.routes.api`
+// does NOT affect API dispatch here — only page-route overrides take effect.
+applyModuleOverridesFromEnabledModules(enabledModules)
 // Must run before anything reads the route manifests (nav, route resolution).
 runBootstrapRegistrations()
 
