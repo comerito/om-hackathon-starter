@@ -48,10 +48,10 @@
     ".mercato/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".mercato/next/types/**/*.ts",
-    ".mercato/next/dev/types/**/*.ts"
+    ".mercato/next/dev/types/**/*.ts",
+    ".mercato/next/dev/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "src/modules/example"
+    "node_modules"
   ]
 }

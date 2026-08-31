@@ -39,7 +39,8 @@ export async function PUT(req: Request) {
       participation.privacyPolicyAcceptedAt = new Date()
     }
 
-    await em.persistAndFlush(participation)
+    em.persist(participation)
+    await em.flush()
     return NextResponse.json({ ok: true })
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: 'Validation failed' }, { status: 422 })

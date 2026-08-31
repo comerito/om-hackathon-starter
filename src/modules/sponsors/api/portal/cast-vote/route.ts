@@ -79,7 +79,8 @@ export async function POST(req: Request) {
       projectId: parsed.project_id, tenantId: auth.tenantId!, organizationId: auth.orgId!,
       createdAt: new Date(),
     })
-    await em.persistAndFlush(vote)
+    em.persist(vote)
+    await em.flush()
 
     // Emit event
     try {
@@ -123,7 +124,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Vote changes are not allowed' }, { status: 409 })
     }
 
-    await em.removeAndFlush(vote)
+    em.remove(vote)
+    await em.flush()
 
     try {
       const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

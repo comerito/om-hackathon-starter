@@ -50,7 +50,8 @@ const saveScoreCommand: CommandHandler<Record<string, unknown>, ProjectScore> = 
         createdAt: now,
         updatedAt: now,
       })
-      await em.persistAndFlush(projectScore)
+      em.persist(projectScore)
+      await em.flush()
     } else {
       projectScore.comment = parsed.comment ?? projectScore.comment
       projectScore.privateNotes = parsed.private_notes ?? projectScore.privateNotes
@@ -106,7 +107,8 @@ const saveScoreCommand: CommandHandler<Record<string, unknown>, ProjectScore> = 
       projectScore.totalScore = Math.round(totalScore * 100) / 100
     }
 
-    await em.persistAndFlush(projectScore)
+    em.persist(projectScore)
+    await em.flush()
 
     // Emit event
     if (parsed.is_submitted) {

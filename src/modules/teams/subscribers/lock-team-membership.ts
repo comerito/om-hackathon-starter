@@ -35,7 +35,8 @@ export default async function handler(
   }
 
   if (pendingInvitations.length > 0) {
-    await em.persistAndFlush(pendingInvitations)
+    em.persist(pendingInvitations)
+    await em.flush()
     console.log(`[teams:lock-team-membership] Expired ${pendingInvitations.length} pending invitations`)
   }
 }

@@ -28,15 +28,19 @@ export async function GET(req: Request) {
     const em = container.resolve('em') as EntityManager
 
     // Query customer_users table for display names
-    const knex = (em as any).getConnection().getKnex()
-    let query = knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', limitedIds)
+    // NOTE: `limitedIds` is guaranteed non-empty here (empty `ids` returns early above), so the
+    // `IN (?)` expansion can never render an empty `IN ()` list.
+    const conditions: string[] = ['id IN (?)']
+    const values: unknown[] = [limitedIds]
     if (auth.tenantId) {
-      query = query.andWhere('tenant_id', auth.tenantId)
+      conditions.push('tenant_id = ?')
+      values.push(auth.tenantId)
     }
 
-    const rows = await query
+    const rows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+      `SELECT id, display_name, email FROM customer_users WHERE ${conditions.join(' AND ')}`,
+      values,
+    )
     const users: Record<string, { displayName: string; email: string }> = {}
     for (const row of rows) {
       users[row.id] = {

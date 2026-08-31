@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Message, MessageRecipient } from '@open-mercato/core/modules/messages/data/entities'
+import { newOrmEntity } from '@/lib/orm/entity-class'
 import { CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -24,7 +25,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify participation
     const participation = await em.findOne(CompetitionParticipation, {
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     if (!participation) return NextResponse.json({ error: 'Not a participant' }, { status: 403 })
 
     // Find all threads where user is sender or recipient
-    const threads = await knex.raw(`
+    const threads = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
       SELECT DISTINCT m.thread_id
       FROM messages m
       LEFT JOIN message_recipients mr ON mr.message_id = m.id
@@ -46,11 +46,18 @@ export async function GET(req: Request) {
         AND (m.sender_user_id = ? OR mr.recipient_user_id = ?)
     `, [competitionId, auth.tenantId, auth.sub, auth.sub])
 
-    const threadIds = threads.rows.map((r: any) => r.thread_id).filter(Boolean) as string[]
+    const threadIds = threads.map((r: any) => r.thread_id).filter(Boolean) as string[]
     if (threadIds.length === 0) return NextResponse.json({ items: [] })
 
     // For each thread: latest message, other user, unread count
-    const conversationsRaw = await knex.raw(`
+    const conversationsRaw = await em.getConnection().execute<Array<{
+      thread_id: string
+      message_id: string
+      body: string | null
+      sender_user_id: string | null
+      sent_at: Date | string | null
+      other_user_id: string | null
+    }>>(`
       SELECT DISTINCT ON (m.thread_id)
         m.thread_id,
         m.id as message_id,
@@ -63,7 +70,7 @@ export async function GET(req: Request) {
         END as other_user_id
       FROM messages m
       LEFT JOIN message_recipients mr ON mr.message_id = m.id
-      WHERE m.thread_id = ANY(?)
+      WHERE m.thread_id IN (?)
         AND m.type = 'chat'
         AND m.status = 'sent'
         AND m.deleted_at IS NULL
@@ -71,33 +78,39 @@ export async function GET(req: Request) {
     `, [auth.sub, threadIds])
 
     // Get unread counts per thread
-    const unreadRaw = await knex.raw(`
+    const unreadRaw = await em.getConnection().execute<Array<{ thread_id: string; unread_count: number }>>(`
       SELECT m.thread_id, COUNT(*)::int as unread_count
       FROM message_recipients mr
       JOIN messages m ON m.id = mr.message_id
-      WHERE m.thread_id = ANY(?)
+      WHERE m.thread_id IN (?)
         AND m.type = 'chat'
         AND m.deleted_at IS NULL
         AND mr.recipient_user_id = ?
         AND mr.status = 'unread'
       GROUP BY m.thread_id
     `, [threadIds, auth.sub])
-    const unreadMap = new Map(unreadRaw.rows.map((r: any) => [r.thread_id, r.unread_count]))
+    const unreadMap = new Map<string, number>(unreadRaw.map((r: any) => [r.thread_id, r.unread_count] as [string, number]))
 
     // Resolve user names
-    const otherUserIds = [...new Set(conversationsRaw.rows.map((r: any) => r.other_user_id).filter(Boolean))]
+    const otherUserIds = [...new Set(conversationsRaw.map((r: any) => r.other_user_id).filter(Boolean))] as string[]
     const userRows = otherUserIds.length > 0
-      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', otherUserIds)
+      ? await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+          `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
+          [otherUserIds],
+        )
       : []
     const userMap = new Map<string, { displayName: string; email: string }>(userRows.map((u: any) => [u.id, { displayName: u.display_name || u.email?.split('@')[0] || 'Unknown', email: u.email }]))
 
     // Resolve avatar URLs from participant profiles
     const profileRows = otherUserIds.length > 0
-      ? await knex('competitions_participant_profile').select('customer_user_id', 'avatar_url').whereIn('customer_user_id', otherUserIds).where('tenant_id', auth.tenantId)
+      ? await em.getConnection().execute<Array<{ customer_user_id: string; avatar_url: string | null }>>(
+          `SELECT customer_user_id, avatar_url FROM competitions_participant_profile WHERE customer_user_id IN (?) AND tenant_id = ?`,
+          [otherUserIds, auth.tenantId],
+        )
       : []
-    const avatarMap = new Map(profileRows.map((p: any) => [p.customer_user_id, p.avatar_url]))
+    const avatarMap = new Map<string, string | null>(profileRows.map((p: any) => [p.customer_user_id, p.avatar_url] as [string, string | null]))
 
-    const items = conversationsRaw.rows.map((r: any) => ({
+    const items = conversationsRaw.map((r: any) => ({
       threadId: r.thread_id,
       lastMessage: {
         id: r.message_id,
@@ -145,7 +158,6 @@ export async function POST(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Verify both users participate in the competition
     const participations = await em.find(CompetitionParticipation, {
@@ -162,7 +174,7 @@ export async function POST(req: Request) {
     // Find or create thread
     let threadId = parsed.thread_id
     if (!threadId) {
-      const existingThread = await knex.raw(`
+      const existingThread = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
         SELECT m.thread_id
         FROM messages m
         JOIN message_recipients mr ON mr.message_id = m.id
@@ -178,7 +190,7 @@ export async function POST(req: Request) {
         LIMIT 1
       `, [parsed.competition_id, auth.tenantId, auth.sub, parsed.recipient_id, parsed.recipient_id, auth.sub])
 
-      threadId = existingThread.rows[0]?.thread_id ?? null
+      threadId = existingThread[0]?.thread_id ?? undefined
     }
 
     if (!threadId) {
@@ -187,7 +199,7 @@ export async function POST(req: Request) {
 
     // Create message
     const messageId = crypto.randomUUID()
-    const message = new Message()
+    const message = newOrmEntity(em, Message)
     message.id = messageId
     message.type = 'chat'
     message.threadId = threadId
@@ -204,7 +216,7 @@ export async function POST(req: Request) {
     message.sourceEntityId = parsed.competition_id
     em.persist(message)
 
-    const recipient = new MessageRecipient()
+    const recipient = newOrmEntity(em, MessageRecipient)
     recipient.messageId = messageId
     recipient.recipientUserId = parsed.recipient_id
     recipient.recipientType = 'to'

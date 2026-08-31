@@ -57,12 +57,15 @@ export async function GET(req: Request) {
 
     // Resolve member display names
     const memberIds = members.map(m => m.customerUserId)
-    const knex = (em as any).getConnection().getKnex()
-    const userRows = memberIds.length > 0
-      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', memberIds)
+    type CustomerUserRow = { id: string; display_name: string | null; email: string | null }
+    const userRows: CustomerUserRow[] = memberIds.length > 0
+      ? await em.getConnection().execute<CustomerUserRow[]>(
+          `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
+          [memberIds],
+        )
       : []
     const userMap = new Map<string, { displayName: string; email: string }>(
-      userRows.map((r: any) => [r.id, { displayName: r.display_name ?? r.email?.split('@')[0] ?? 'Unknown', email: r.email ?? '' }]),
+      userRows.map((r) => [r.id, { displayName: r.display_name ?? r.email?.split('@')[0] ?? 'Unknown', email: r.email ?? '' }]),
     )
 
     return NextResponse.json({

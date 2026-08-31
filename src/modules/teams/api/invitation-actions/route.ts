@@ -48,7 +48,8 @@ export async function POST(request: Request) {
 
     invitation.status = statusMap[parsed.action] as typeof invitation.status
     invitation.respondedAt = new Date()
-    await em.persistAndFlush(invitation)
+    em.persist(invitation)
+    await em.flush()
 
     // Emit event
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

@@ -7,6 +7,17 @@ import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/porta
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
+type ExportResultRow = {
+  id: string
+  title: string | null
+  team_name: string | null
+  status: string | null
+  rank: number | null
+  avg_score: number | string | null
+  peer_vote_count: number | null
+  is_finalist: boolean | null
+}
+
 export async function GET(req: Request) {
   try {
     const auth = await getCustomerAuthFromRequest(req)
@@ -18,41 +29,37 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
     const locale = await resolvePortalLocale(req, { auth, container })
 
     // Get leaderboard data with scores
-    const rows = await knex('projects_project as p')
-      .leftJoin('teams_team as t', function (this: any) {
-        this.on('p.team_id', '=', 't.id').andOn('t.tenant_id', '=', 'p.tenant_id')
-      })
-      .leftJoin(
-        knex('judging_project_score')
-          .select('project_id')
-          .avg('total_score as avg_score')
-          .where({ is_submitted: true })
-          .groupBy('project_id')
-          .as('s'),
-        's.project_id',
-        'p.id',
-      )
-      .select(
-        'p.id as id',
-        'p.title',
-        't.name as team_name',
-        'p.status',
-        'p.rank',
-        's.avg_score',
-        'p.peer_vote_count',
-        't.is_finalist',
-      )
-      .where({ 'p.competition_id': competitionId, 'p.tenant_id': auth.tenantId })
-      .whereNull('p.deleted_at')
-      .whereNot('p.status', 'draft')
-      .orderByRaw('COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC')
+    const rows = await em.getConnection().execute<ExportResultRow[]>(
+      `SELECT
+         p.id AS id,
+         p.title AS title,
+         t.name AS team_name,
+         p.status AS status,
+         p."rank" AS "rank",
+         s.avg_score AS avg_score,
+         p.peer_vote_count AS peer_vote_count,
+         t.is_finalist AS is_finalist
+       FROM projects_project p
+       LEFT JOIN teams_team t ON p.team_id = t.id AND t.tenant_id = p.tenant_id
+       LEFT JOIN (
+         SELECT project_id, avg(total_score) AS avg_score
+         FROM judging_project_score
+         WHERE is_submitted = true
+         GROUP BY project_id
+       ) s ON s.project_id = p.id
+       WHERE p.competition_id = ?
+         AND p.tenant_id = ?
+         AND p.deleted_at IS NULL
+         AND p.status <> 'draft'
+       ORDER BY COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC`,
+      [competitionId, auth.tenantId],
+    )
 
     const translatedRows = await applyPortalTranslationOverlays(
-      rows.map((row: any) => ({
+      rows.map((row) => ({
         ...row,
         id: String(row.id),
         title: row.title ?? '',
@@ -68,7 +75,7 @@ export async function GET(req: Request) {
 
     // Build CSV
     const header = 'Rank,Project,Team,Avg Score,Peer Votes,Status,Finalist\n'
-    const csvRows = translatedRows.map((row: any, i: number) => {
+    const csvRows = translatedRows.map((row, i) => {
       const rank = row.rank ?? i + 1
       const title = (row.title || '').replace(/"/g, '""')
       const teamName = (row.team_name || '').replace(/"/g, '""')

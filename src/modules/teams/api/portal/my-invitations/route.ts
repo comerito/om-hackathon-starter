@@ -80,12 +80,15 @@ export async function GET(req: Request) {
       ...received.map(i => i.inviterId),
       ...teamJoinRequests.map(i => i.inviterId),
     ].filter(Boolean))]
-    const knex = (em as any).getConnection().getKnex()
-    const userRows = userIds.length > 0
-      ? await knex('customer_users').select('id', 'display_name', 'email').whereIn('id', userIds)
+    type CustomerUserRow = { id: string; display_name: string | null; email: string | null }
+    const userRows: CustomerUserRow[] = userIds.length > 0
+      ? await em.getConnection().execute<CustomerUserRow[]>(
+          `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
+          [userIds],
+        )
       : []
     const userMap = new Map<string, string>(
-      userRows.map((r: any) => [r.id, r.display_name ?? r.email?.split('@')[0] ?? 'Unknown']),
+      userRows.map((r) => [r.id, r.display_name ?? r.email?.split('@')[0] ?? 'Unknown']),
     )
 
     const mapInvitation = (inv: TeamInvitation) => ({

@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Index } from '@mikro-orm/core'
+import { Entity, PrimaryKey, Property, Index } from '@mikro-orm/decorators/legacy'
 
 export const IncidentSeverity = {
   LOW: 'low',

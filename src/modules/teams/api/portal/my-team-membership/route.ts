@@ -23,15 +23,21 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
-    const rows = await knex('teams_team_member')
-      .where('customer_user_id', auth.sub)
-      .where('competition_id', competitionId)
-      .where('tenant_id', auth.tenantId)
-      .where('left_at', null)
-      .select('id', 'team_id', 'role', 'joined_at')
-      .limit(1)
+    const rows = await em.getConnection().execute<Array<{
+      id: string
+      team_id: string
+      role: string
+      joined_at: Date | string
+    }>>(
+      `SELECT id, team_id, role, joined_at FROM teams_team_member
+         WHERE customer_user_id = ?
+           AND competition_id = ?
+           AND tenant_id = ?
+           AND left_at IS NULL
+         LIMIT 1`,
+      [auth.sub, competitionId, auth.tenantId],
+    )
 
     const membership = rows[0] ?? null
 

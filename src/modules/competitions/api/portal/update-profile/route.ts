@@ -49,8 +49,10 @@ export async function GET(req: Request) {
     })
 
     // Fetch display_name from customer_users
-    const knex = (em as any).getConnection().getKnex()
-    const userRow = await knex('customer_users').select('display_name').where('id', auth.sub).first()
+    const [userRow] = await em.getConnection().execute<Array<{ display_name: string | null }>>(
+      `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`,
+      [auth.sub],
+    )
 
     return NextResponse.json({
       ok: true,
@@ -120,10 +122,11 @@ export async function PUT(req: Request) {
 
     // Update display_name on customer_users record
     if (typeof body.display_name === 'string' && body.display_name.trim()) {
-      const knex = (em as any).getConnection().getKnex()
-      await knex('customer_users')
-        .where('id', auth.sub)
-        .update({ display_name: body.display_name.trim() })
+      await em.getConnection().execute(
+        `UPDATE customer_users SET display_name = ? WHERE id = ? AND tenant_id = ?`,
+        [body.display_name.trim(), auth.sub, auth.tenantId],
+        'run',
+      )
     }
 
     // Update github_username on participation record

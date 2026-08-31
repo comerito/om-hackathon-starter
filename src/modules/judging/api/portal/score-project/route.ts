@@ -133,7 +133,8 @@ export async function POST(req: Request) {
           tenantId: auth.tenantId!, organizationId: auth.orgId!,
           createdAt: now, updatedAt: now,
         })
-        await txEm.persistAndFlush(projectScore)
+        txEm.persist(projectScore)
+        await txEm.flush()
       } else {
         projectScore.comment = parsed.comment ?? projectScore.comment
         projectScore.privateNotes = parsed.private_notes ?? projectScore.privateNotes

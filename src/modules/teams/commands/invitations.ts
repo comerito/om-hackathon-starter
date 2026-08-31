@@ -101,7 +101,8 @@ const updateInvitationCommand: CommandHandler<Record<string, unknown>, TeamInvit
 
     invitation.status = parsed.status as typeof invitation.status
     invitation.respondedAt = new Date()
-    await em.persistAndFlush(invitation)
+    em.persist(invitation)
+    await em.flush()
 
     // Emit specific event based on status change
     const eventBus = ctx.container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

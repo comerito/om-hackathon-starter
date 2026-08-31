@@ -17,50 +17,57 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
+    const conn = em.getConnection()
 
     // Participant count
-    const [{ count: participantCount }] = await knex('competitions_participation')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const [{ count: participantCount }] = await conn.execute<Array<{ count: string }>>(
+      `SELECT count(*) AS "count" FROM competitions_participation WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId],
+    )
 
     // Track count
-    const [{ count: trackCount }] = await knex('tracks_track')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const [{ count: trackCount }] = await conn.execute<Array<{ count: string }>>(
+      `SELECT count(*) AS "count" FROM tracks_track WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId],
+    )
 
     // Team count
-    const [{ count: teamCount }] = await knex('teams_team')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, deleted_at: null })
-      .count('* as count')
+    const [{ count: teamCount }] = await conn.execute<Array<{ count: string }>>(
+      `SELECT count(*) AS "count" FROM teams_team WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId],
+    )
 
     // Submission count
-    const [{ count: submissionCount }] = await knex('projects_project')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId, status: 'published', deleted_at: null })
-      .count('* as count')
+    const [{ count: submissionCount }] = await conn.execute<Array<{ count: string }>>(
+      `SELECT count(*) AS "count" FROM projects_project WHERE competition_id = ? AND tenant_id = ? AND status = ? AND deleted_at IS NULL`,
+      [competitionId, auth.tenantId, 'published'],
+    )
 
     // Avg score (from judging scores if exists — use try/catch)
     let avgScore = 0
     try {
-      const [row] = await knex('judging_project_score')
-        .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-        .avg('total_score as avg')
+      const [row] = await conn.execute<Array<{ avg: string | null }>>(
+        `SELECT avg(total_score) AS "avg" FROM judging_project_score WHERE competition_id = ? AND tenant_id = ?`,
+        [competitionId, auth.tenantId],
+      )
       avgScore = row?.avg ? parseFloat(row.avg) : 0
     } catch { /* table may not exist yet */ }
 
     // Peer vote count
     let totalPeerVotes = 0
     try {
-      const [row] = await knex('sponsors_peer_vote')
-        .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-        .count('* as count')
+      const [row] = await conn.execute<Array<{ count: string }>>(
+        `SELECT count(*) AS "count" FROM sponsors_peer_vote WHERE competition_id = ? AND tenant_id = ?`,
+        [competitionId, auth.tenantId],
+      )
       totalPeerVotes = parseInt(row?.count ?? '0', 10)
     } catch { /* table may not exist yet */ }
 
     // Milestone count
-    const [{ count: milestoneCount }] = await knex('competitions_milestone')
-      .where({ competition_id: competitionId, tenant_id: auth.tenantId })
-      .count('* as count')
+    const [{ count: milestoneCount }] = await conn.execute<Array<{ count: string }>>(
+      `SELECT count(*) AS "count" FROM competitions_milestone WHERE competition_id = ? AND tenant_id = ?`,
+      [competitionId, auth.tenantId],
+    )
 
     return NextResponse.json({
       participant_count: parseInt(String(participantCount), 10),

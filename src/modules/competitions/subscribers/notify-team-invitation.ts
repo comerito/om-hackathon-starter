@@ -23,10 +23,14 @@ export default async function handler(
 ) {
   const em = ctx.resolve('em') as EntityManager
   const notificationService = resolveNotificationService(ctx)
-  const knex = (em as any).getConnection().getKnex()
+  const conn = em.getConnection()
 
   // Get team name
-  const teamRow = await knex('teams_team').where('id', payload.teamId).select('name').first()
+  const teamRows = await conn.execute<Array<{ name: string | null }>>(
+    `SELECT name FROM teams_team WHERE id = ? LIMIT 1`,
+    [payload.teamId],
+  )
+  const teamRow = teamRows[0]
   const teamName = teamRow?.name ?? 'a team'
 
   if (payload.type === 'invite') {
@@ -50,16 +54,24 @@ export default async function handler(
   } else if (payload.type === 'join_request') {
     // Notify the team owner that someone wants to join
     // Find the team owner
-    const ownerRow = await knex('teams_team_member')
-      .where('team_id', payload.teamId)
-      .where('role', 'owner')
-      .whereNull('deleted_at')
-      .select('customer_user_id')
-      .first()
+    const ownerRows = await conn.execute<Array<{ customer_user_id: string }>>(
+      `SELECT customer_user_id
+       FROM teams_team_member
+       WHERE team_id = ?
+         AND role = ?
+         AND deleted_at IS NULL
+       LIMIT 1`,
+      [payload.teamId, 'owner'],
+    )
+    const ownerRow = ownerRows[0]
 
     if (ownerRow) {
       // Get requester name
-      const requesterRow = await knex('customer_users').where('id', payload.inviterId).select('display_name').first()
+      const requesterRows = await conn.execute<Array<{ display_name: string | null }>>(
+        `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`,
+        [payload.inviterId],
+      )
+      const requesterRow = requesterRows[0]
       const requesterName = requesterRow?.display_name ?? 'Someone'
 
       await notificationService.create(

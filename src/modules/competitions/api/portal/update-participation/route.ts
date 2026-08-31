@@ -45,7 +45,8 @@ export async function PUT(req: Request) {
       participation.lookingForTeamDescription = parsed.looking_for_team_description
     }
 
-    await em.persistAndFlush(participation)
+    em.persist(participation)
+    await em.flush()
 
     return NextResponse.json({ ok: true })
   } catch (error) {

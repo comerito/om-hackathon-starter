@@ -11,13 +11,13 @@
   "teams.portal.browse.inviteFailed": "Nie udało się wysłać zaproszenia",
   "teams.portal.browse.noPeople": "Nikt nie szuka zespołu",
   "teams.portal.browse.noPeopleDesc": "Nikt obecnie nie szuka zespołu. Sprawdź ponownie później.",
-  "teams.portal.browse.inviteToTeam": "Zaproś do zespołu",
+  "teams.portal.browse.inviteToTeam": "Zaproś",
   "teams.portal.browse.requestSent": "Prośba o dołączenie została wysłana!",
   "teams.portal.browse.requestFailed": "Nie udało się wysłać prośby",
   "teams.portal.browse.noCompetition": "Wybierz konkurs",
   "teams.portal.browse.noCompetitionDesc": "Wybierz konkurs, aby przeglądać zespoły.",
   "teams.portal.browse.tabTeams": "Zespoły",
-  "teams.portal.browse.tabPeople": "Osoby szukające zespołu",
+  "teams.portal.browse.tabPeople": "Szuka zespołu",
   "teams.portal.browse.label": "Znajdź zespół",
   "teams.portal.browse.title": "Przeglądaj zespoły",
   "teams.portal.myTeam.created": "Zespół został utworzony!",
@@ -111,5 +111,9 @@
   "teams.portal.nav.myTeam": "Mój zespół",
   "teams.portal.nav.browseTeams": "Przeglądaj zespoły",
   "teams.portal.nav.groupHackathon": "Hackathon",
-  "teams.portal.nav.groupCommunity": "Społeczność"
+  "teams.portal.nav.groupCommunity": "Społeczność",
+  "teams.portal.browse.viewTeam": "Zobacz zespół",
+  "teams.portal.browse.yourTeamShort": "Twój",
+  "teams.portal.browse.lookingForTeamShort": "SZUKA",
+  "teams.portal.browse.noTeam": "Bez zespołu"
 }

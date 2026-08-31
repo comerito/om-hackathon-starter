@@ -98,7 +98,8 @@ export async function POST(req: Request) {
     project.status = ProjectStatus.PUBLISHED
     project.submittedAt = new Date()
     project.updatedAt = new Date()
-    await em.persistAndFlush(project)
+    em.persist(project)
+    await em.flush()
 
     // Emit submitted event
     try {

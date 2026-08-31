@@ -30,7 +30,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const knex = (em as any).getConnection().getKnex()
 
     // Search customer_users by email or display_name, filtered to competition participants
     const participations = await em.find(CompetitionParticipation, {
@@ -43,15 +42,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: [] })
     }
 
+    // NOTE: `participantUserIds` is guaranteed non-empty here (empty list returns early above),
+    // so the `IN (?)` expansion can never render an empty `IN ()` list.
+    // The email/display_name OR group MUST stay parenthesised so it does not escape the AND.
     const searchPattern = `%${query}%`
-    const rows = await knex('customer_users')
-      .select('id', 'display_name', 'email')
-      .whereIn('id', participantUserIds)
-      .andWhere(function (this: any) {
-        this.whereILike('email', searchPattern)
-          .orWhereILike('display_name', searchPattern)
-      })
-      .limit(10)
+    const rows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+      `SELECT id, display_name, email FROM customer_users
+       WHERE id IN (?)
+         AND (email ILIKE ? OR display_name ILIKE ?)
+       LIMIT 10`,
+      [participantUserIds, searchPattern, searchPattern],
+    )
 
     const items = rows.map((row: any) => ({
       id: row.id,
