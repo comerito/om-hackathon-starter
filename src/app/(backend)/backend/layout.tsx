@@ -406,7 +406,9 @@ export default async function BackendLayout({ children, params }: { children: Re
               sidebarCollapsedDefault={initialCollapsed}
               rightHeaderSlot={rightHeaderContent}
               mobileSidebarSlot={mobileSidebarContent}
-              adminNavApi="/api/auth/admin/nav"
+              // Wraps /api/auth/admin/nav to pin HackOn to the top of the sidebar;
+              // AppShell renders the API payload in preference to the `groups` prop below.
+              adminNavApi="/api/hackon/chrome"
               version={APP_VERSION}
               settingsPathPrefixes={settingsPathPrefixes}
               settingsSections={filteredSettingsSections}
