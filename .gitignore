@@ -58,9 +58,10 @@ data/cache.db
 storage/
 tsconfig.tsbuildinfo
 
-# Upgrade baseline artifacts (large, regenerable via .ai/upgrade/harness/run.sh)
-.ai/upgrade/baseline/*.json
-.ai/upgrade/baseline/*.dump
+# Upgrade baseline artifacts (large, regenerable via .ai/upgrade/harness/run.sh).
+# Must be recursive: the per-stage archives live in baseline/archive-*/ subdirectories,
+# which a single-level *.json glob does not match.
+.ai/upgrade/baseline/
 
 # MikroORM snapshots for the throwaway upgrade database (the canonical
 # .snapshot-open-mercato.json files stay tracked)
@@ -73,3 +74,8 @@ playwright-report/
 .ai/qa/ephemeral-*.json
 .ai/qa/ephemeral-*.sqlite*
 .ai/qa/test-results/
+
+# Local sqlite cache (CACHE_STRATEGY=sqlite) — runtime artifact
+data/cache.db
+data/cache.db-shm
+data/cache.db-wal
