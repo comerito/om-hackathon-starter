@@ -3,7 +3,11 @@ import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
 import { TeamResource } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
-const ENTITY_ID = 'teams:resource'
+// Must match the generated entity id, which is derived from the CLASS name
+// (`TeamResource` -> `teams:team_resource`), not the table name. With the wrong id the
+// QueryEngine cannot resolve the entity, falls back to the bare table name "resources",
+// and GET /api/teams/resources 500s with 'relation "resources" does not exist'.
+const ENTITY_ID = 'teams:team_resource'
 
 const querySchema = z
   .object({
