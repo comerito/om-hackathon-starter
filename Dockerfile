@@ -1,6 +1,12 @@
 FROM node:24-alpine AS builder
 
-ENV NEXT_TELEMETRY_DISABLED=1
+# Node caps its default old-space at ~2.2GB regardless of how much memory the host
+# offers (verified: still 2240MB in a container given 8GB). The Next production build
+# of this app exceeds that and dies with
+#   FATAL ERROR: Ineffective mark-compacts near heap limit - JavaScript heap out of memory
+# so the limit has to be raised explicitly for the build stage.
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_OPTIONS=--max-old-space-size=4096
 
 WORKDIR /app
 
@@ -8,7 +14,7 @@ RUN apk add --no-cache python3 make g++ ca-certificates openssl
 RUN corepack enable
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install
+RUN yarn install --immutable
 
 COPY . .
 RUN yarn generate
@@ -26,7 +32,7 @@ RUN apk add --no-cache python3 make g++ ca-certificates openssl
 RUN corepack enable
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install
+RUN yarn install --immutable
 
 COPY . .
 
@@ -50,7 +56,11 @@ RUN apk add --no-cache ca-certificates openssl
 RUN corepack enable
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install --production=true
+# `yarn install --production=true` is Yarn 1 syntax. This project pins
+# `packageManager: yarn@4.12.0`, so corepack runs Yarn 4, which rejects the flag:
+#   Unknown Syntax Error: Invalid option name ("--production=true")
+# The Yarn 4 equivalent is `workspaces focus --production` (bundled plugin).
+RUN yarn workspaces focus --production
 
 COPY --from=builder /app/.mercato/next ./.mercato/next
 COPY --from=builder /app/public ./public
