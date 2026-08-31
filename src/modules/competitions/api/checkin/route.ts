@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { CompetitionParticipation } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 const checkinByIdSchema = z.object({
   participation_id: z.string().uuid(),
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
         id: byId.data.participation_id, tenantId: auth.tenantId, deletedAt: null,
       } as FilterQuery<CompetitionParticipation>)
     } else if (byEmail.success && byEmail.data.email) {
-      const userRows = await em.getConnection().execute<Array<{ id: string }>>(
+      const userRows = await rawAll<{ id: string }>(em,
         `SELECT id FROM customer_users WHERE email = ? AND tenant_id = ? LIMIT 1`,
         [byEmail.data.email, auth.tenantId],
       )
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
 
     if (!participation) return NextResponse.json({ error: 'Participation not found' }, { status: 404 })
     if (participation.checkedIn) {
-      const alreadyRows = await em.getConnection().execute<CustomerUserNameRow[]>(
+      const alreadyRows = await rawAll<CustomerUserNameRow>(em,
         `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`,
         [participation.customerUserId],
       )
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
     await em.flush()
 
     // Resolve display name for response
-    const displayRows = await em.getConnection().execute<CustomerUserNameRow[]>(
+    const displayRows = await rawAll<CustomerUserNameRow>(em,
       `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`,
       [participation.customerUserId],
     )

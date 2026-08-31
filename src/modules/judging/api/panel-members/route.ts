@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireAuth: true, requireFeatures: ['judging.panels.manage'] },
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
     if (!panel) return NextResponse.json({ error: 'Panel not found' }, { status: 404 })
 
     // Get judges with display names
-    const judges = await em.getConnection().execute<PanelJudgeRow[]>(
+    const judges = await rawAll<PanelJudgeRow>(em,
       `SELECT pj.id AS id, pj.judge_id AS judge_id, cu.display_name AS display_name, cu.email AS email
        FROM judging_panel_judge pj
        LEFT JOIN customer_users cu ON cu.id = pj.judge_id
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
     )
 
     // Get tracks with names
-    const tracks = await em.getConnection().execute<PanelTrackRow[]>(
+    const tracks = await rawAll<PanelTrackRow>(em,
       `SELECT pt.id AS id, pt.track_id AS track_id, t.name AS track_name, t.color AS color
        FROM judging_panel_track pt
        LEFT JOIN tracks_track t ON t.id = pt.track_id

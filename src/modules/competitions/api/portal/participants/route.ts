@@ -6,6 +6,7 @@ import { CompetitionParticipation, ParticipantProfile } from '../../../data/enti
 import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { buildAttachmentImageUrl } from '@open-mercato/core/modules/attachments/lib/imageUrls'
+import { rawAll } from '@/lib/db'
 
 const AVATAR_THUMBNAIL_SIZE = 128
 
@@ -102,7 +103,7 @@ export async function GET(req: Request) {
       values.push(searchPattern)
     }
 
-    const userRows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+    const userRows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(em,
       `SELECT id, display_name, email FROM customer_users WHERE ${conditions.join(' AND ')} LIMIT 100`,
       values,
     )

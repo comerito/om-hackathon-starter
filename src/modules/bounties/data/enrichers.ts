@@ -1,11 +1,19 @@
 import type { ResponseEnricher } from '@open-mercato/shared/lib/crud/response-enricher'
 import type { EntityManager } from '@mikro-orm/postgresql'
+import { rawAll } from '@/lib/db'
 
 type RecordWithParticipant = Record<string, unknown> & {
   id: string
   participant_id?: string | null
   team_id?: string | null
 }
+
+type ParticipantNameRow = {
+  first_name: string | null
+  last_name: string | null
+  github_username: string | null
+}
+type TeamNameRow = { name: string }
 
 export const enrichers: ResponseEnricher[] = [
   {
@@ -20,7 +28,8 @@ export const enrichers: ResponseEnricher[] = [
       let teamData = { name: null as string | null }
 
       if (record.participant_id) {
-        const rows = await em.getConnection().execute(
+        const rows = await rawAll<ParticipantNameRow>(
+          em,
           `SELECT cu.first_name, cu.last_name, cp.github_username
            FROM competitions_participation cp
            JOIN customer_accounts_user cu ON cu.id = cp.customer_user_id
@@ -36,7 +45,8 @@ export const enrichers: ResponseEnricher[] = [
       }
 
       if (record.team_id) {
-        const rows = await em.getConnection().execute(
+        const rows = await rawAll<TeamNameRow>(
+          em,
           `SELECT name FROM teams_team WHERE id = ?`,
           [record.team_id]
         )
@@ -55,7 +65,8 @@ export const enrichers: ResponseEnricher[] = [
 
       const participantMap = new Map<string, { name: string | null; github_username: string | null }>()
       if (participantIds.length > 0) {
-        const rows = await em.getConnection().execute(
+        const rows = await rawAll<ParticipantNameRow & { id: string }>(
+          em,
           `SELECT cp.id, cu.first_name, cu.last_name, cp.github_username
            FROM competitions_participation cp
            JOIN customer_accounts_user cu ON cu.id = cp.customer_user_id
@@ -72,7 +83,8 @@ export const enrichers: ResponseEnricher[] = [
 
       const teamMap = new Map<string, string>()
       if (teamIds.length > 0) {
-        const rows = await em.getConnection().execute(
+        const rows = await rawAll<TeamNameRow & { id: string }>(
+          em,
           `SELECT id, name FROM teams_team WHERE id IN (?)`,
           [teamIds]
         )

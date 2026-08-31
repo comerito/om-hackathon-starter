@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -32,7 +33,6 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const conn = em.getConnection()
 
     // Build the WHERE clause once and share it between the page query and the count query.
     // Column names are hardcoded here; every value goes through a positional placeholder.
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     const whereSql = conds.join(' AND ')
 
     // Count total before pagination
-    const countRows = await conn.execute<Array<{ count: string | number }>>(
+    const countRows = await rawAll<{ count: string | number }>(em,
       `SELECT COUNT(t.id) AS "count" FROM teams_team t WHERE ${whereSql}`,
       values,
     )
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
       is_active: boolean
       created_at: Date | string
     }
-    const items = await conn.execute<TeamRow[]>(
+    const items = await rawAll<TeamRow>(em,
       `SELECT t.id, t.competition_id, t.track_id, t.name, t.description, t.status,
               t.is_finalist, t.table_number, t.table_location, t.is_active, t.created_at
          FROM teams_team t
@@ -88,7 +88,7 @@ export async function GET(req: Request) {
     let memberCounts = new Map<string, number>()
     const teamTrackMap = new Map<string, string[]>()
     if (teamIds.length > 0) {
-      const counts = await conn.execute<Array<{ team_id: string; count: string | number }>>(
+      const counts = await rawAll<{ team_id: string; count: string | number }>(em,
         `SELECT team_id, COUNT(id) AS "count" FROM teams_team_member
            WHERE team_id IN (?) AND left_at IS NULL
            GROUP BY team_id`,
@@ -96,7 +96,7 @@ export async function GET(req: Request) {
       )
       memberCounts = new Map(counts.map((r) => [r.team_id, Number(r.count)]))
 
-      const trackRows = await conn.execute<Array<{ team_id: string; track_id: string }>>(
+      const trackRows = await rawAll<{ team_id: string; track_id: string }>(em,
         `SELECT team_id, track_id FROM teams_team_track WHERE team_id IN (?)`,
         [teamIds],
       )

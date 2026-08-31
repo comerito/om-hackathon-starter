@@ -6,6 +6,7 @@ import { Track } from '../../../data/entities'
 import { JudgingCriterion } from '../../../../judging/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -48,13 +49,13 @@ export async function GET(req: Request) {
     // Load attachments from the attachments module
     let attachments: Array<{ id: string; file_name: string; file_size: number; url: string; mime_type: string }> = []
     try {
-      const attachmentRepo = container.resolve('em') as EntityManager
-      const rawAttachments = await attachmentRepo.getConnection().execute(
+      const rawAttachments = await rawAll<(typeof attachments)[number]>(
+        em,
         `SELECT id, file_name, file_size, url, mime_type FROM attachments WHERE entity_id = 'tracks:track' AND record_id = ? ORDER BY created_at`,
         [trackId],
       )
       // Rewrite URLs to use the portal endpoint (core endpoint requires backend auth)
-      attachments = (rawAttachments as typeof attachments).map(att => ({
+      attachments = rawAttachments.map(att => ({
         ...att,
         url: `/api/tracks/portal/attachment-file/${att.id}`,
       }))

@@ -1,5 +1,8 @@
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
+// Relative, not `@/lib/db`: subscribers are bundled by esbuild, which does not read
+// the tsconfig `@/*` path alias, and the app fails to boot with an unresolved import.
+import { rawAll } from '../../../lib/db'
 
 export const metadata = {
   event: 'teams.invitation.created',
@@ -23,10 +26,9 @@ export default async function handler(
 ) {
   const em = ctx.resolve('em') as EntityManager
   const notificationService = resolveNotificationService(ctx)
-  const conn = em.getConnection()
 
   // Get team name
-  const teamRows = await conn.execute<Array<{ name: string | null }>>(
+  const teamRows = await rawAll<{ name: string | null }>(em,
     `SELECT name FROM teams_team WHERE id = ? LIMIT 1`,
     [payload.teamId],
   )
@@ -54,7 +56,7 @@ export default async function handler(
   } else if (payload.type === 'join_request') {
     // Notify the team owner that someone wants to join
     // Find the team owner
-    const ownerRows = await conn.execute<Array<{ customer_user_id: string }>>(
+    const ownerRows = await rawAll<{ customer_user_id: string }>(em,
       `SELECT customer_user_id
        FROM teams_team_member
        WHERE team_id = ?
@@ -67,7 +69,7 @@ export default async function handler(
 
     if (ownerRow) {
       // Get requester name
-      const requesterRows = await conn.execute<Array<{ display_name: string | null }>>(
+      const requesterRows = await rawAll<{ display_name: string | null }>(em,
         `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`,
         [payload.inviterId],
       )

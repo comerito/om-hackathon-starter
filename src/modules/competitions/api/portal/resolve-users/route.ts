@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
       values.push(auth.tenantId)
     }
 
-    const rows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+    const rows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(em,
       `SELECT id, display_name, email FROM customer_users WHERE ${conditions.join(' AND ')}`,
       values,
     )

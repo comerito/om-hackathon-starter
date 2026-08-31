@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { ParticipantProfile, CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawFirst, rawRun } from '@/lib/db'
 
 const ALLOWED_SKILLS = new Set([
   'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'Swift',
@@ -49,7 +50,7 @@ export async function GET(req: Request) {
     })
 
     // Fetch display_name from customer_users
-    const [userRow] = await em.getConnection().execute<Array<{ display_name: string | null }>>(
+    const userRow = await rawFirst<{ display_name: string | null }>(em,
       `SELECT display_name FROM customer_users WHERE id = ? LIMIT 1`,
       [auth.sub],
     )
@@ -122,10 +123,10 @@ export async function PUT(req: Request) {
 
     // Update display_name on customer_users record
     if (typeof body.display_name === 'string' && body.display_name.trim()) {
-      await em.getConnection().execute(
+      await rawRun(
+        em,
         `UPDATE customer_users SET display_name = ? WHERE id = ? AND tenant_id = ?`,
         [body.display_name.trim(), auth.sub, auth.tenantId],
-        'run',
       )
     }
 

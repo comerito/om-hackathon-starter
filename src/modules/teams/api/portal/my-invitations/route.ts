@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { TeamInvitation, InvitationStatus, Team, TeamMember, TeamRole } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -82,7 +83,7 @@ export async function GET(req: Request) {
     ].filter(Boolean))]
     type CustomerUserRow = { id: string; display_name: string | null; email: string | null }
     const userRows: CustomerUserRow[] = userIds.length > 0
-      ? await em.getConnection().execute<CustomerUserRow[]>(
+      ? await rawAll<CustomerUserRow>(em,
           `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
           [userIds],
         )

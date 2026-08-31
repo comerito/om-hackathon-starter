@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { BountyPullRequest } from '../../../../data/entities'
 import { verifyBountyJudge } from '../../../../lib/portalJudgeAuth'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -73,7 +74,8 @@ export async function GET(req: Request) {
 
     const participantMap = new Map<string, { name: string | null; github_username: string | null }>()
     if (participantIds.length > 0) {
-      const rows = await em.getConnection().execute(
+      const rows = await rawAll<{ id: string; first_name: string | null; last_name: string | null; github_username: string | null }>(
+        em,
         `SELECT cp.id, cu.first_name, cu.last_name, cp.github_username
          FROM competitions_participation cp
          JOIN customer_accounts_user cu ON cu.id = cp.customer_user_id
@@ -90,7 +92,8 @@ export async function GET(req: Request) {
 
     const teamMap = new Map<string, string>()
     if (teamIds.length > 0) {
-      const rows = await em.getConnection().execute(
+      const rows = await rawAll<{ id: string; name: string }>(
+        em,
         `SELECT id, name FROM teams_team WHERE id IN (?)`,
         [teamIds],
       )

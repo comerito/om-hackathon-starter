@@ -3,6 +3,7 @@ import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     // Find competition invitations for this user+competition, joined with framework invitation data
     // The second OR branch also matches by direct email lookup from customer_user_invitations
     // joined to competitions_invitation.
-    const rows = await em.getConnection().execute<ParticipantInvitationRow[]>(
+    const rows = await rawAll<ParticipantInvitationRow>(em,
       `SELECT
          ci.id,
          ci.customer_invitation_id,
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
 
     // Filter to only invitations whose email matches the customer user's email
     // First get the user's email
-    const userRows = await em.getConnection().execute<Array<{ email: string | null }>>(
+    const userRows = await rawAll<{ email: string | null }>(em,
       `SELECT email FROM customer_users WHERE id = ? AND tenant_id = ? LIMIT 1`,
       [customerUserId, auth.tenantId],
     )
