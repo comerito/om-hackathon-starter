@@ -15,6 +15,9 @@ const querySchema = z
     sortDir: z.enum(['asc', 'desc']).optional().default('asc'),
     competition_id: z.string().uuid().optional(),
     type: z.string().optional(),
+    title: z.string().optional(),
+    starts_at_from: z.string().optional(),
+    starts_at_to: z.string().optional(),
     organizationId: z.string().uuid().optional(),
   })
   .passthrough()
@@ -47,6 +50,17 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       if (q.id) filters.id = q.id
       if (q.competition_id) filters.competition_id = q.competition_id
       if (q.type) filters.type = q.type
+      if (q.title) filters.title = { $ilike: `%${q.title}%` }
+      if (q.starts_at_from || q.starts_at_to) {
+        const range: Record<string, Date> = {}
+        if (q.starts_at_from) range.$gte = new Date(q.starts_at_from)
+        if (q.starts_at_to) {
+          const end = new Date(q.starts_at_to)
+          end.setHours(23, 59, 59, 999)
+          range.$lte = end
+        }
+        filters.starts_at = range
+      }
       if (q.organizationId) filters.organization_id = q.organizationId
       return filters
     },
