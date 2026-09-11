@@ -9,6 +9,13 @@
  * the application before any package code executes.
  */
 
+// Fill in PLATFORM_DOMAINS from APP_URL when it was not configured. Without it the customer
+// portal answers every login on a non-localhost host with "This domain is not configured for
+// any active organization". See src/lib/platform-domains.ts for the full rationale.
+import { ensurePlatformDomains } from '@/lib/platform-domains'
+
+ensurePlatformDomains()
+
 // Register app dictionary loader before bootstrap (required for i18n in standalone packages)
 import { registerAppDictionaryLoader } from '@open-mercato/shared/lib/i18n/server'
 import type { Locale } from '@open-mercato/shared/lib/i18n/config'
