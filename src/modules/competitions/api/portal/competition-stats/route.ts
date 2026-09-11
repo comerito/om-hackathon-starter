@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll, rawFirst } from '@/lib/db'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -17,28 +18,27 @@ export async function GET(req: Request) {
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const conn = em.getConnection()
 
     // Participant count
-    const [{ count: participantCount }] = await conn.execute<Array<{ count: string }>>(
+    const [{ count: participantCount }] = await rawAll<{ count: string }>(em,
       `SELECT count(*) AS "count" FROM competitions_participation WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
       [competitionId, auth.tenantId],
     )
 
     // Track count
-    const [{ count: trackCount }] = await conn.execute<Array<{ count: string }>>(
+    const [{ count: trackCount }] = await rawAll<{ count: string }>(em,
       `SELECT count(*) AS "count" FROM tracks_track WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
       [competitionId, auth.tenantId],
     )
 
     // Team count
-    const [{ count: teamCount }] = await conn.execute<Array<{ count: string }>>(
+    const [{ count: teamCount }] = await rawAll<{ count: string }>(em,
       `SELECT count(*) AS "count" FROM teams_team WHERE competition_id = ? AND tenant_id = ? AND deleted_at IS NULL`,
       [competitionId, auth.tenantId],
     )
 
     // Submission count
-    const [{ count: submissionCount }] = await conn.execute<Array<{ count: string }>>(
+    const [{ count: submissionCount }] = await rawAll<{ count: string }>(em,
       `SELECT count(*) AS "count" FROM projects_project WHERE competition_id = ? AND tenant_id = ? AND status = ? AND deleted_at IS NULL`,
       [competitionId, auth.tenantId, 'published'],
     )
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     // Avg score (from judging scores if exists — use try/catch)
     let avgScore = 0
     try {
-      const [row] = await conn.execute<Array<{ avg: string | null }>>(
+      const row = await rawFirst<{ avg: string | null }>(em,
         `SELECT avg(total_score) AS "avg" FROM judging_project_score WHERE competition_id = ? AND tenant_id = ?`,
         [competitionId, auth.tenantId],
       )
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     // Peer vote count
     let totalPeerVotes = 0
     try {
-      const [row] = await conn.execute<Array<{ count: string }>>(
+      const row = await rawFirst<{ count: string }>(em,
         `SELECT count(*) AS "count" FROM sponsors_peer_vote WHERE competition_id = ? AND tenant_id = ?`,
         [competitionId, auth.tenantId],
       )
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     } catch { /* table may not exist yet */ }
 
     // Milestone count
-    const [{ count: milestoneCount }] = await conn.execute<Array<{ count: string }>>(
+    const [{ count: milestoneCount }] = await rawAll<{ count: string }>(em,
       `SELECT count(*) AS "count" FROM competitions_milestone WHERE competition_id = ? AND tenant_id = ?`,
       [competitionId, auth.tenantId],
     )

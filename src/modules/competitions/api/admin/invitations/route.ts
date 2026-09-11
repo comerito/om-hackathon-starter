@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
       values.push(...organizationIds)
     }
 
-    const rows = await em.getConnection().execute<InvitationRow[]>(
+    const rows = await rawAll<InvitationRow>(em,
       `SELECT
          ci.id,
          ci.customer_invitation_id,
@@ -73,7 +74,7 @@ export async function GET(req: Request) {
     // Also fetch competition names
     const compIds = [...new Set(rows.map((r) => r.competition_id))]
     const compRows = compIds.length > 0
-      ? await em.getConnection().execute<Array<{ id: string; name: string }>>(
+      ? await rawAll<{ id: string; name: string }>(em,
           `SELECT id, name FROM competitions_competition WHERE id IN (${compIds.map(() => '?').join(', ')})`,
           compIds,
         )

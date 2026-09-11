@@ -11,6 +11,7 @@ import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { bulkInviteSchema } from '../../../data/validators'
 import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawFirst } from '@/lib/db'
 
 export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
@@ -68,11 +69,12 @@ export async function POST(req: Request) {
     }
 
     // Resolve org slug from the database
-    const orgRow = await em.getConnection().execute(
+    const orgRow = await rawFirst<{ slug: string }>(
+      em,
       `SELECT slug FROM organizations WHERE id = ? LIMIT 1`,
       [organizationId],
     )
-    const orgSlug = (orgRow as Array<{ slug: string }>)[0]?.slug ?? parsed.org_slug
+    const orgSlug = orgRow?.slug ?? parsed.org_slug
     const origin = req.headers.get('origin') || `${req.headers.get('x-forwarded-proto') ?? 'http'}://${req.headers.get('host')}` || 'http://localhost:3000'
     const baseAcceptUrl = `${origin}/${orgSlug}/portal/accept-invite`
 

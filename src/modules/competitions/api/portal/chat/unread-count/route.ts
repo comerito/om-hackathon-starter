@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     } as FilterQuery<CompetitionParticipation>)
     if (!participation) return NextResponse.json({ unreadCount: 0 })
 
-    const result = await em.getConnection().execute<Array<{ unread_count: number }>>(`
+    const result = await rawAll<{ unread_count: number }>(em, `
       SELECT COUNT(*)::int as unread_count
       FROM message_recipients mr
       JOIN messages m ON m.id = mr.message_id

@@ -5,6 +5,7 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../../../data/entities'
 import type { FilterQuery } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
     // so the `IN (?)` expansion can never render an empty `IN ()` list.
     // The email/display_name OR group MUST stay parenthesised so it does not escape the AND.
     const searchPattern = `%${query}%`
-    const rows = await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+    const rows = await rawAll<{ id: string; display_name: string | null; email: string | null }>(em,
       `SELECT id, display_name, email FROM customer_users
        WHERE id IN (?)
          AND (email ILIKE ? OR display_name ILIKE ?)

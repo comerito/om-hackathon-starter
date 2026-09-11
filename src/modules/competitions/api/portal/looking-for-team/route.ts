@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, ParticipantProfile } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
     // Resolve display names from customer_users table
     // NOTE: the `userIds.length > 0` guard keeps the `IN (?)` expansion from rendering `IN ()`.
     const userRows: Array<{ id: string; display_name: string | null; email: string | null }> = userIds.length > 0
-      ? await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+      ? await rawAll<{ id: string; display_name: string | null; email: string | null }>(em,
           `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
           [userIds],
         )

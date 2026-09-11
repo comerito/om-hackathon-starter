@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
+import { rawAll } from '@/lib/db'
 
 export const metadata = { GET: { requireCustomerAuth: true } }
 
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
     const locale = await resolvePortalLocale(req, { auth, container })
 
     // Get leaderboard data with scores
-    const rows = await em.getConnection().execute<ExportResultRow[]>(
+    const rows = await rawAll<ExportResultRow>(em,
       `SELECT
          p.id AS id,
          p.title AS title,

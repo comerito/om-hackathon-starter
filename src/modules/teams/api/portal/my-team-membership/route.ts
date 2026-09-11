@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -24,12 +25,12 @@ export async function GET(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
-    const rows = await em.getConnection().execute<Array<{
+    const rows = await rawAll<{
       id: string
       team_id: string
       role: string
       joined_at: Date | string
-    }>>(
+    }>(em,
       `SELECT id, team_id, role, joined_at FROM teams_team_member
          WHERE customer_user_id = ?
            AND competition_id = ?

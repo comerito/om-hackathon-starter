@@ -8,6 +8,7 @@ import { CustomerUserInvitation } from '@open-mercato/core/modules/customer_acco
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawFirst } from '@/lib/db'
 
 const schema = z.object({
   competition_invitation_id: z.string().uuid(),
@@ -113,11 +114,12 @@ export async function POST(req: Request) {
     }
 
     // Build accept URL
-    const orgRow = await em.getConnection().execute(
+    const orgRow = await rawFirst<{ slug: string }>(
+      em,
       `SELECT slug FROM organizations WHERE id = ? LIMIT 1`,
       [auth.orgId],
     )
-    const orgSlug = (orgRow as Array<{ slug: string }>)[0]?.slug ?? 'default'
+    const orgSlug = orgRow?.slug ?? 'default'
     const origin = req.headers.get('origin') || `${req.headers.get('x-forwarded-proto') ?? 'http'}://${req.headers.get('host')}` || 'http://localhost:3000'
     const acceptUrl = `${origin}/${orgSlug}/portal/accept-invite?token=${encodeURIComponent(rawToken)}`
 

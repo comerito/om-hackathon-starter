@@ -5,6 +5,7 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { LeaderboardService } from '../../services/LeaderboardService'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 const querySchema = z.object({
   competition_id: z.union([z.string().uuid(), z.literal('current')]),
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
       if (organizationId === 'current') organizationId = orgId
       if (competitionId === 'current') {
         const em = container.resolve('em') as EntityManager
-        const row = await em.getConnection().execute(
+        const row = await rawAll<{ id: string }>(em,
           `SELECT id FROM competitions_competition
            WHERE organization_id = ? AND tenant_id = ? AND stage != 'archived' AND deleted_at IS NULL
            ORDER BY created_at DESC LIMIT 1`,

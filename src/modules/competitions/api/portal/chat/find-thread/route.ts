@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
     } as FilterQuery<CompetitionParticipation>)
     if (count < 2) return NextResponse.json({ threadId: null })
 
-    const result = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
+    const result = await rawAll<{ thread_id: string | null }>(em, `
       SELECT m.thread_id
       FROM messages m
       JOIN message_recipients mr ON mr.message_id = m.id

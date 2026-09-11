@@ -7,6 +7,7 @@ import { Message, MessageRecipient } from '@open-mercato/core/modules/messages/d
 import { newOrmEntity } from '@/lib/orm/entity-class'
 import { CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
     if (!participation) return NextResponse.json({ error: 'Not a participant' }, { status: 403 })
 
     // Find all threads where user is sender or recipient
-    const threads = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
+    const threads = await rawAll<{ thread_id: string | null }>(em, `
       SELECT DISTINCT m.thread_id
       FROM messages m
       LEFT JOIN message_recipients mr ON mr.message_id = m.id
@@ -50,14 +51,14 @@ export async function GET(req: Request) {
     if (threadIds.length === 0) return NextResponse.json({ items: [] })
 
     // For each thread: latest message, other user, unread count
-    const conversationsRaw = await em.getConnection().execute<Array<{
+    const conversationsRaw = await rawAll<{
       thread_id: string
       message_id: string
       body: string | null
       sender_user_id: string | null
       sent_at: Date | string | null
       other_user_id: string | null
-    }>>(`
+    }>(em, `
       SELECT DISTINCT ON (m.thread_id)
         m.thread_id,
         m.id as message_id,
@@ -78,7 +79,7 @@ export async function GET(req: Request) {
     `, [auth.sub, threadIds])
 
     // Get unread counts per thread
-    const unreadRaw = await em.getConnection().execute<Array<{ thread_id: string; unread_count: number }>>(`
+    const unreadRaw = await rawAll<{ thread_id: string; unread_count: number }>(em, `
       SELECT m.thread_id, COUNT(*)::int as unread_count
       FROM message_recipients mr
       JOIN messages m ON m.id = mr.message_id
@@ -94,7 +95,7 @@ export async function GET(req: Request) {
     // Resolve user names
     const otherUserIds = [...new Set(conversationsRaw.map((r: any) => r.other_user_id).filter(Boolean))] as string[]
     const userRows = otherUserIds.length > 0
-      ? await em.getConnection().execute<Array<{ id: string; display_name: string | null; email: string | null }>>(
+      ? await rawAll<{ id: string; display_name: string | null; email: string | null }>(em,
           `SELECT id, display_name, email FROM customer_users WHERE id IN (?)`,
           [otherUserIds],
         )
@@ -103,7 +104,7 @@ export async function GET(req: Request) {
 
     // Resolve avatar URLs from participant profiles
     const profileRows = otherUserIds.length > 0
-      ? await em.getConnection().execute<Array<{ customer_user_id: string; avatar_url: string | null }>>(
+      ? await rawAll<{ customer_user_id: string; avatar_url: string | null }>(em,
           `SELECT customer_user_id, avatar_url FROM competitions_participant_profile WHERE customer_user_id IN (?) AND tenant_id = ?`,
           [otherUserIds, auth.tenantId],
         )
@@ -174,7 +175,7 @@ export async function POST(req: Request) {
     // Find or create thread
     let threadId = parsed.thread_id
     if (!threadId) {
-      const existingThread = await em.getConnection().execute<Array<{ thread_id: string | null }>>(`
+      const existingThread = await rawAll<{ thread_id: string | null }>(em, `
         SELECT m.thread_id
         FROM messages m
         JOIN message_recipients mr ON mr.message_id = m.id

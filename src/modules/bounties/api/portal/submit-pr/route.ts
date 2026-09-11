@@ -8,6 +8,7 @@ import { CompetitionParticipation, Competition } from '../../../../competitions/
 import { GitHubService } from '../../../services/GitHubService'
 import { submitPRSchema } from '../../../data/validators'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 export const metadata = {
   POST: { requireCustomerAuth: true },
@@ -79,7 +80,8 @@ export async function POST(req: Request) {
     console.log(LOG_PREFIX, `Participant found: id=${participation.id}, githubUsername=${participation.githubUsername}`)
 
     // Resolve team and verify participant is on the bounty track
-    const teamMember = await em.getConnection().execute(
+    const teamMember = await rawAll<{ team_id: string }>(
+      em,
       `SELECT tm.team_id
        FROM teams_team_member tm
        WHERE tm.customer_user_id = ?
@@ -93,7 +95,8 @@ export async function POST(req: Request) {
     const teamId = teamMember?.[0]?.team_id ?? null
 
     if (teamId) {
-      const teamTracks = await em.getConnection().execute(
+      const teamTracks = await rawAll<{ track_id: string }>(
+        em,
         `SELECT track_id
          FROM teams_team_track
          WHERE team_id = ?
@@ -102,7 +105,7 @@ export async function POST(req: Request) {
            AND organization_id = ?`,
         [teamId, competitionId, auth.tenantId, competitionOrganizationId]
       )
-      const trackIds = (teamTracks as Array<{ track_id: string }>).map(r => r.track_id)
+      const trackIds = teamTracks.map(r => r.track_id)
       console.log(LOG_PREFIX, `Team=${teamId}, tracks=${JSON.stringify(trackIds)}, bountyTrack=${bountyTrackId}`)
       if (!trackIds.includes(bountyTrackId)) {
         console.warn(LOG_PREFIX, `Rejected: team=${teamId} not on bounty track=${bountyTrackId}`)

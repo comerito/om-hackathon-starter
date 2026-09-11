@@ -4,6 +4,7 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { BountyActivityLog } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll } from '@/lib/db'
 
 const querySchema = z.object({
   competition_id: z.string().uuid().optional(),
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
     })
 
     const em = container.resolve('em') as EntityManager
-    const rows = await em.getConnection().execute(
+    const rows = await rawAll(em,
       `SELECT a.id, a.type, a.pull_request_id, a.actor_user_id, a.message, a.metadata, a.created_at
        FROM bounties_activity_log a
        LEFT JOIN bounties_pull_request pr ON pr.id = a.pull_request_id

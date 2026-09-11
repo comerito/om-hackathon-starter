@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { rawAll, rawRun } from '@/lib/db'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -33,7 +34,7 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     if (!participation) return NextResponse.json({ error: 'Not a participant' }, { status: 403 })
 
     // Verify user belongs to this thread
-    const threadCheck = await em.getConnection().execute<Array<Record<string, unknown>>>(`
+    const threadCheck = await rawAll<Record<string, unknown>>(em, `
       SELECT 1 FROM messages m
       LEFT JOIN message_recipients mr ON mr.message_id = m.id
       WHERE m.thread_id = ?
@@ -50,7 +51,7 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     }
 
     // Find the other user in this thread
-    const otherUserRow = await em.getConnection().execute<Array<{ other_user_id: string | null }>>(`
+    const otherUserRow = await rawAll<{ other_user_id: string | null }>(em, `
       SELECT DISTINCT
         CASE
           WHEN m.sender_user_id = ? THEN mr.recipient_user_id
@@ -65,12 +66,12 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     const otherUserId = otherUserRow[0]?.other_user_id
     let otherUser = { id: otherUserId, displayName: 'Unknown', avatarUrl: null as string | null }
     if (otherUserId) {
-      const userRows = await em.getConnection().execute<Array<{ display_name: string | null; email: string | null }>>(
+      const userRows = await rawAll<{ display_name: string | null; email: string | null }>(em,
         `SELECT display_name, email FROM customer_users WHERE id = ? LIMIT 1`,
         [otherUserId],
       )
       const userRow = userRows[0]
-      const profileRows = await em.getConnection().execute<Array<{ avatar_url: string | null }>>(
+      const profileRows = await rawAll<{ avatar_url: string | null }>(em,
         `SELECT avatar_url FROM competitions_participant_profile WHERE customer_user_id = ? AND tenant_id = ? LIMIT 1`,
         [otherUserId, auth.tenantId],
       )
@@ -83,7 +84,7 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     }
 
     // Count total messages
-    const countResult = await em.getConnection().execute<Array<{ total: number }>>(`
+    const countResult = await rawAll<{ total: number }>(em, `
       SELECT COUNT(*)::int as total FROM messages
       WHERE thread_id = ? AND type = 'chat' AND status = 'sent' AND deleted_at IS NULL
     `, [params.threadId])
@@ -93,13 +94,13 @@ export async function GET(req: Request, { params }: { params: { threadId: string
     const offset = Math.max(0, total - page * pageSize)
     const limit = page === 1 ? Math.min(pageSize, total) : pageSize
 
-    const messagesRaw = await em.getConnection().execute<Array<{
+    const messagesRaw = await rawAll<{
       id: string
       body: string | null
       body_format: string | null
       sender_user_id: string | null
       sent_at: Date | string | null
-    }>>(`
+    }>(em, `
       SELECT id, body, body_format, sender_user_id, sent_at
       FROM messages
       WHERE thread_id = ?
@@ -149,7 +150,7 @@ export async function PUT(req: Request, { params }: { params: { threadId: string
     const em = container.resolve('em') as EntityManager
 
     // Mark all unread messages in thread as read for current user
-    await em.getConnection().execute(`
+    await rawRun(em, `
       UPDATE message_recipients mr
       SET status = 'read', read_at = NOW()
       FROM messages m
@@ -159,7 +160,7 @@ export async function PUT(req: Request, { params }: { params: { threadId: string
         AND m.deleted_at IS NULL
         AND mr.recipient_user_id = ?
         AND mr.status = 'unread'
-    `, [params.threadId, auth.sub], 'run')
+    `, [params.threadId, auth.sub])
 
     // Emit event
     try {
