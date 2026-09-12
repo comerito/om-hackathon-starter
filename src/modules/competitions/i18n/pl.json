@@ -433,5 +433,7 @@
   "competitions.backend.portalLocale.loadError": "Nie udało się załadować ustawień lokalizacji portalu",
   "competitions.backend.portalLocale.saveError": "Nie udało się zapisać ustawień lokalizacji portalu",
   "competitions.scope.home": "Wszystkie zawody",
-  "competitions.scope.ariaLabel": "Zakres zawodów"
+  "competitions.scope.ariaLabel": "Zakres zawodów",
+  "competitions.portal.acceptInvite.errors.invalidRequest": "Nie udało się przetworzyć przesłanych danych. Sprawdź formularz i spróbuj ponownie.",
+  "competitions.portal.acceptInvite.errors.serverError": "Serwer nie mógł przetworzyć tego żądania. Spróbuj ponownie później."
 }

@@ -433,5 +433,7 @@
   "competitions.backend.portalLocale.loadError": "Failed to load portal locale settings",
   "competitions.backend.portalLocale.saveError": "Failed to save portal locale settings",
   "competitions.scope.home": "All competitions",
-  "competitions.scope.ariaLabel": "Competition scope"
+  "competitions.scope.ariaLabel": "Competition scope",
+  "competitions.portal.acceptInvite.errors.invalidRequest": "The submitted data could not be processed. Please check the form and try again.",
+  "competitions.portal.acceptInvite.errors.serverError": "The server could not process this request. Please try again later."
 }
