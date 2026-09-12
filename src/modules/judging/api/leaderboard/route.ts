@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { ProjectScore } from '../../data/entities'
 import { Project } from '../../../projects/data/entities'
 import { Team } from '../../../teams/data/entities'
+import { leaderboardQuerySchema } from '../../data/validators'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
@@ -16,12 +17,28 @@ export async function GET(req: Request) {
     const auth = await getAuthFromCookies()
     if (!auth?.tenantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const url = new URL(req.url)
-    const competitionId = url.searchParams.get('competition_id')
-    const trackId = url.searchParams.get('track_id')
+    const rawCompetitionId = url.searchParams.get('competition_id')
+    const rawTrackId = url.searchParams.get('track_id')
 
-    if (!competitionId) {
+    if (!rawCompetitionId) {
       return NextResponse.json({ error: 'competition_id required' }, { status: 400 })
     }
+
+    // Both ids are used as uuid-typed filters below; reject anything else with a
+    // 400 rather than letting the driver blow up into an opaque 500.
+    const parsed = leaderboardQuerySchema.safeParse({
+      competition_id: rawCompetitionId,
+      // An absent or empty track_id means "all tracks", same as before.
+      track_id: rawTrackId || null,
+    })
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Invalid query parameters' },
+        { status: 400 },
+      )
+    }
+    const competitionId = parsed.data.competition_id
+    const trackId = parsed.data.track_id
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
