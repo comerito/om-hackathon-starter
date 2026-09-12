@@ -6,7 +6,8 @@
  *
  *  - a query shorter than {@link MIN_PARTICIPANT_SEARCH_LENGTH} matches nothing;
  *  - a query that looks like an address matches only an **exact** address;
- *  - any other query matches a **prefix** of a name token or of the address' local part.
+ *  - any other query matches a **prefix** of the whole display name, of a name token, or of the
+ *    address' local part.
  *
  * Substring matching is what made the roster enumerable: `%hackon%` matched every attendee
  * through their shared mail domain. A prefix never matches a domain fragment, and the exact-match
@@ -46,21 +47,34 @@ function localPart(email: string | null | undefined): string {
   return (at === -1 ? email : email.slice(0, at)).toLowerCase()
 }
 
+/** Lowercase and collapse internal whitespace runs so ` Alpha   Tester ` compares as `alpha tester`. */
+function normalizeName(value: string | null | undefined): string {
+  return (value ?? '').trim().toLowerCase().replace(/\s+/gu, ' ')
+}
+
 /**
- * Does this candidate match a name-mode query? True when any whitespace- or punctuation-separated
- * token of the display name starts with the prefix, or the address' local part does.
+ * Does this candidate match a name-mode query? True when the whole display name starts with the
+ * prefix, when any whitespace- or punctuation-separated token of it does, or when the address'
+ * local part does.
+ *
+ * The *whole name* arm is what makes a multi-word needle work: a user typing `Alpha Tester` into
+ * the invite autocomplete produces a needle no single token can ever start with, so token matching
+ * alone made the person they were typing disappear the moment they pressed space.
  *
  * Matching the local part keeps "type the beginning of their email" working; matching only
- * *prefixes* is what stops a shared mail domain from returning the whole roster.
+ * *prefixes* — never substrings — is what stops a shared mail domain from returning the whole
+ * roster (issue #120).
  */
 export function matchesParticipantNamePrefix(
   candidate: ParticipantSearchCandidate,
   prefix: string,
 ): boolean {
-  const needle = prefix.trim().toLowerCase()
+  const needle = normalizeName(prefix)
   if (needle.length < MIN_PARTICIPANT_SEARCH_LENGTH) return false
 
-  const name = (candidate.displayName ?? '').toLowerCase()
+  const name = normalizeName(candidate.displayName)
+  if (name.startsWith(needle)) return true
+
   const tokens = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
   if (tokens.some((token) => token.startsWith(needle))) return true
 

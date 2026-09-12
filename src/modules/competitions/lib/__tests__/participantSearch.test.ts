@@ -50,6 +50,28 @@ describe('matchesParticipantNamePrefix', () => {
     expect(matchesParticipantNamePrefix(roster[2], 'jud')).toBe(true)
   })
 
+  it('matches a multi-word needle against the whole display name', () => {
+    // What the invite autocomplete actually sends as the user keeps typing: every keystroke of
+    // "Alpha Tester" must keep matching, not just the first word.
+    for (const needle of ['Alp', 'Alpha', 'Alpha ', 'Alpha T', 'Alpha Tes', 'Alpha Tester']) {
+      expect(matchesParticipantNamePrefix(roster[0], needle)).toBe(true)
+    }
+    expect(matchesParticipantNamePrefix(roster[2], 'Judy Judge')).toBe(true)
+  })
+
+  it('keeps a multi-word needle prefix-anchored, not a substring search', () => {
+    // The whole-name arm must not become "contains": it is anchored at position 0 of the name.
+    expect(matchesParticipantNamePrefix(roster[0], 'lpha Tester')).toBe(false)
+    expect(matchesParticipantNamePrefix(roster[0], 'Tester Alpha')).toBe(false)
+    expect(matchesParticipantNamePrefix(roster[0], 'Alpha Testers')).toBe(false)
+    expect(matchesParticipantNamePrefix(roster[1], 'Alpha Tester')).toBe(false)
+  })
+
+  it('collapses whitespace runs inside both the name and the needle', () => {
+    expect(matchesParticipantNamePrefix({ displayName: 'Alpha   Tester' }, 'Alpha T')).toBe(true)
+    expect(matchesParticipantNamePrefix(roster[0], 'Alpha    Tester')).toBe(true)
+  })
+
   it('matches a prefix of the address local part but never of the domain', () => {
     expect(matchesParticipantNamePrefix({ displayName: null, email: 'charlie@hackon.test' }, 'cha')).toBe(true)
     expect(matchesParticipantNamePrefix({ displayName: null, email: 'charlie@hackon.test' }, 'hackon')).toBe(false)
