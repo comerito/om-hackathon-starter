@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole, TeamTrack } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
+import { unavailableTrackIds } from '../../../../tracks/lib/track-visibility'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -87,6 +88,15 @@ export async function POST(req: Request) {
       } as FilterQuery<Track>)
       if (tracks.length !== parsed.track_ids.length) {
         return NextResponse.json({ error: 'One or more tracks not found in this competition' }, { status: 404 })
+      }
+      // Removed or deactivated tracks are not valid choices, even for a client
+      // working from a stale list. Name them so the UI can say which.
+      const unavailable = unavailableTrackIds(parsed.track_ids, new Map(tracks.map(track => [track.id, track])))
+      if (unavailable.length > 0) {
+        return NextResponse.json({
+          error: `${unavailable.length} of the selected track(s) are no longer available`,
+          details: unavailable,
+        }, { status: 409 })
       }
     }
 

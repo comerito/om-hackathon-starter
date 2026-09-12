@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { AgendaItem, Announcement, CompetitionParticipation, Milestone } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
+import { SELECTABLE_TRACK_FILTER } from '../../../../tracks/lib/track-visibility'
 import { Project } from '../../../../projects/data/entities'
 import { Team, TeamTrack } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
@@ -48,6 +49,7 @@ export async function GET(req: Request) {
       const items = await em.find(AgendaItem, {
         competitionId,
         tenantId: auth.tenantId,
+        deletedAt: null,
       }, { orderBy: { startsAt: 'asc' } })
 
       const translatedItems = await applyPortalTranslationOverlays(
@@ -102,9 +104,12 @@ export async function GET(req: Request) {
     }
 
     if (dataType === 'tracks') {
+      // Soft-deleted and deactivated tracks are gone from the organiser's list and
+      // must not be offered as a choice in the portal picker.
       const items = await em.find(Track, {
         competitionId,
         tenantId: auth.tenantId,
+        ...SELECTABLE_TRACK_FILTER,
       }, { orderBy: { order: 'asc' } })
 
       const translatedItems = await applyPortalTranslationOverlays(
