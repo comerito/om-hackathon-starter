@@ -52,6 +52,32 @@ function PodiumCard({ entry, place }: { entry: LeaderboardEntry; place: 1 | 2 | 
   )
 }
 
+/* ---------- Header ---------- */
+
+/**
+ * The kicker above "Leaderboard".
+ *
+ * This used to be the literal "Hackathon Results 2024" (localised as "Wyniki hackathonu 2024"),
+ * which meant every competition's results page claimed to be from 2024 — the reported case was a
+ * competition called "HackOn E2E Run 2026" running in 2026 (#112). The competition's own name is
+ * the real answer, and it carries whatever year the organisers actually named it after.
+ *
+ * A component rather than an inline prop because the name lives in `useCompetitionContext()`,
+ * which is only readable inside `PortalCompetitionLayout`.
+ */
+function ResultsHeader() {
+  const t = useT()
+  const { selected } = useCompetitionContext()
+  return (
+    <PortalPageTitle
+      // Falls back to a year-free label while the competition is still loading, or when the
+      // viewer has none — never to an invented year.
+      label={selected?.name || t('judging.portal.results.label', 'Hackathon Results')}
+      title={t('judging.portal.results.title', 'Leaderboard')}
+    />
+  )
+}
+
 /* ---------- Results Content ---------- */
 
 type Track = { id: string; name: string }
@@ -310,7 +336,6 @@ function ResultsContent() {
 }
 
 export default function ResultsPage({ params }: { params: { orgSlug: string } }) {
-  const t = useT()
   const router = useRouter()
   const { auth } = usePortalContext()
 
@@ -322,10 +347,7 @@ export default function ResultsPage({ params }: { params: { orgSlug: string } })
 
   return (
       <PortalCompetitionLayout>
-      <PortalPageTitle
-        label={t('judging.portal.results.label', 'Hackathon Results 2024')}
-        title={t('judging.portal.results.title', 'Leaderboard')}
-      />
+      <ResultsHeader />
       <ResultsContent />
     </PortalCompetitionLayout>
   )
