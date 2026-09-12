@@ -431,5 +431,7 @@
   "competitions.backend.portalLocale.saving": "Saving...",
   "competitions.backend.portalLocale.saved": "Portal locale settings updated",
   "competitions.backend.portalLocale.loadError": "Failed to load portal locale settings",
-  "competitions.backend.portalLocale.saveError": "Failed to save portal locale settings"
+  "competitions.backend.portalLocale.saveError": "Failed to save portal locale settings",
+  "competitions.scope.home": "All competitions",
+  "competitions.scope.ariaLabel": "Competition scope"
 }

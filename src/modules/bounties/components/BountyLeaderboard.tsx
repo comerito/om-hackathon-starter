@@ -6,6 +6,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useAppEvent } from '@open-mercato/ui/backend/injection/useAppEvent'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 
 type LeaderboardTeam = {
   teamId: string
@@ -29,18 +30,21 @@ type LeaderboardData = {
 export default function BountyLeaderboard() {
   const t = useT()
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
   const [expandedTeam, setExpandedTeam] = React.useState<string | null>(null)
 
   const { data, isLoading, refetch } = useQuery<LeaderboardData>({
-    queryKey: ['bounty-leaderboard', scopeVersion],
+    queryKey: ['bounty-leaderboard', scopeVersion, scopedCompetitionId],
     queryFn: async () => {
       const params = new URLSearchParams({
-        competition_id: 'current',
+        // 'current' lets the API resolve the active competition when on Home.
+        competition_id: scopedCompetitionId ?? 'current',
         organization_id: 'current',
       })
       return await apiCall(`/api/bounties/leaderboard?${params}`) as unknown as LeaderboardData
     },
     refetchInterval: 10000,
+    enabled: scopeReady,
   })
 
   useAppEvent('bounties.pull_request.approved', () => refetch(), [refetch])

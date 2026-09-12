@@ -12,6 +12,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -40,24 +41,30 @@ export default function SponsorsDashboard() {
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialogElement } = useConfirmDialog()
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  // Narrowed by the global header competition scope; empty means all competitions.
+  const scopeParams = React.useMemo(
+    () => (scopedCompetitionId ? { competition_id: scopedCompetitionId } : {}),
+    [scopedCompetitionId],
+  )
   const [tab, setTab] = React.useState<'sponsors' | 'prizes' | 'votes'>('sponsors')
 
   const { data: sponsorsData, isLoading: sponsorsLoading } = useQuery({
-    queryKey: ['sponsors', scopeVersion],
-    queryFn: () => fetchCrudList<SponsorRow>('sponsors/sponsors', { pageSize: '50', sortField: 'order', sortDir: 'asc' }),
-    enabled: tab === 'sponsors',
+    queryKey: ['sponsors', scopeVersion, scopedCompetitionId],
+    queryFn: () => fetchCrudList<SponsorRow>('sponsors/sponsors', { pageSize: '50', sortField: 'order', sortDir: 'asc', ...scopeParams }),
+    enabled: tab === 'sponsors' && scopeReady,
   })
 
   const { data: prizesData, isLoading: prizesLoading } = useQuery({
-    queryKey: ['prizes', scopeVersion],
-    queryFn: () => fetchCrudList<PrizeRow>('sponsors/prizes', { pageSize: '50', sortField: 'order', sortDir: 'asc' }),
-    enabled: tab === 'prizes',
+    queryKey: ['prizes', scopeVersion, scopedCompetitionId],
+    queryFn: () => fetchCrudList<PrizeRow>('sponsors/prizes', { pageSize: '50', sortField: 'order', sortDir: 'asc', ...scopeParams }),
+    enabled: tab === 'prizes' && scopeReady,
   })
 
   const { data: tracksData } = useQuery({
-    queryKey: ['tracks-lookup', scopeVersion],
-    queryFn: () => fetchCrudList<{ id: string; name: string }>('tracks/tracks', { pageSize: '100' }),
-    enabled: tab === 'prizes',
+    queryKey: ['tracks-lookup', scopeVersion, scopedCompetitionId],
+    queryFn: () => fetchCrudList<{ id: string; name: string }>('tracks/tracks', { pageSize: '100', ...scopeParams }),
+    enabled: tab === 'prizes' && scopeReady,
   })
   const trackMap = React.useMemo(() => {
     const map = new Map<string, string>()
@@ -66,12 +73,13 @@ export default function SponsorsDashboard() {
   }, [tracksData])
 
   const { data: tallyData, isLoading: tallyLoading } = useQuery({
-    queryKey: ['vote-tally', scopeVersion],
+    queryKey: ['vote-tally', scopeVersion, scopedCompetitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ items: TallyEntry[]; total_votes: number }>('/api/sponsors/votes')
+      const query = scopedCompetitionId ? `?competition_id=${encodeURIComponent(scopedCompetitionId)}` : ''
+      const { ok, result } = await apiCall<{ items: TallyEntry[]; total_votes: number }>(`/api/sponsors/votes${query}`)
       return ok ? result : { items: [], total_votes: 0 }
     },
-    enabled: tab === 'votes',
+    enabled: tab === 'votes' && scopeReady,
   })
 
   const sponsorColumns = React.useMemo<ColumnDef<SponsorRow>[]>(() => [
@@ -109,7 +117,7 @@ export default function SponsorsDashboard() {
       {tab === 'sponsors' && (
         <DataTable title={t('sponsors.sponsors.title', 'Sponsors')}
           actions={<Button asChild><Link href="/backend/sponsors/create">{t('sponsors.sponsors.create', 'Add Sponsor')}</Link></Button>}
-          columns={sponsorColumns} data={sponsorsData?.items ?? []} isLoading={sponsorsLoading}
+          columns={sponsorColumns} data={sponsorsData?.items ?? []} isLoading={sponsorsLoading || !scopeReady}
           rowActions={(row) => (
             <RowActions items={[
               { id: 'edit', label: t('common.edit', 'Edit'), href: `/backend/sponsors/${row.id}/edit` },
@@ -128,7 +136,7 @@ export default function SponsorsDashboard() {
       {tab === 'prizes' && (
         <DataTable title={t('sponsors.prizes.title', 'Prizes')}
           actions={<Button asChild><Link href="/backend/sponsors/prizes/create">{t('sponsors.prizes.create', 'Add Prize')}</Link></Button>}
-          columns={prizeColumns} data={prizesData?.items ?? []} isLoading={prizesLoading}
+          columns={prizeColumns} data={prizesData?.items ?? []} isLoading={prizesLoading || !scopeReady}
           rowActions={(row) => (
             <RowActions items={[
               { id: 'edit', label: t('common.edit', 'Edit'), href: `/backend/prizes/${row.id}/edit` },

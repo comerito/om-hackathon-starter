@@ -11,6 +11,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -33,8 +34,11 @@ export default function CompetitionInfoCardsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'sort_order', desc: false }])
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
-  const competitionId = searchParams.get('competitionId') ?? ''
+  // Global header scope wins; the ?competitionId deep link stays as a fallback
+  // so existing links from the competition detail page keep working on Home.
+  const competitionId = scopedCompetitionId ?? searchParams.get('competitionId') ?? ''
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -50,6 +54,7 @@ export default function CompetitionInfoCardsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['competition-info-cards', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<CompetitionInfoCardRow>('competitions/info-cards', queryParams),
+    enabled: scopeReady,
   })
 
   const columns = React.useMemo<ColumnDef<CompetitionInfoCardRow>[]>(() => [
@@ -103,7 +108,7 @@ export default function CompetitionInfoCardsPage() {
             totalPages: data?.totalPages || 0,
             onPageChange: setPage,
           }}
-          isLoading={isLoading}
+          isLoading={isLoading || !scopeReady}
           onRowClick={(row) => router.push(`/backend/competitions/info-cards/${row.id}/edit`)}
         />
         {ConfirmDialogElement}

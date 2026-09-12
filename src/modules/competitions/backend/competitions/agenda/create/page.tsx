@@ -4,6 +4,8 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -14,9 +16,11 @@ async function loadCompetitions(query?: string) {
 
 export default function CreateAgendaItemPage() {
   const t = useT()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
 
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('competitions.agenda.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    { id: 'competition_id', label: t('competitions.agenda.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, seedOptions: competitionSeedOptions },
     { id: 'title', label: t('competitions.agenda.title', 'Title'), type: 'text', required: true },
     { id: 'description', label: t('competitions.agenda.description', 'Description'), type: 'textarea' },
     { id: 'type', label: t('competitions.agenda.type', 'Type'), type: 'select', options: [
@@ -32,7 +36,7 @@ export default function CreateAgendaItemPage() {
     { id: 'speaker_bio', label: t('competitions.agenda.speakerBio', 'Speaker Bio'), type: 'text', placeholder: 'Short bio or title' },
     { id: 'speaker_photo_url', label: t('competitions.agenda.speakerPhotoUrl', 'Speaker Photo URL'), type: 'text', placeholder: 'https://...' },
     { id: 'is_mandatory', label: t('competitions.agenda.isMandatory', 'Mandatory'), type: 'checkbox' },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('competitions.agenda.groups.details', 'Details'), column: 1, fields: ['competition_id', 'title', 'description', 'type'] },
@@ -45,6 +49,15 @@ export default function CreateAgendaItemPage() {
     <Page>
       <PageBody>
         <CrudForm
+          // The scope only resolves after hydration, and CrudForm will not push a
+          // late `initialValues` into a combobox it considers user-touched — so remount
+          // the form once the scope is known (and again if it changes).
+          key={scopeReady ? scopedCompetitionId ?? 'home' : 'pending'}
+          initialValues={scopedCompetitionId ? { competition_id: scopedCompetitionId } : undefined}
+          // The competition combobox is the first field, so it would auto-focus — and a
+          // focused combobox never renders the label for a value it did not receive from
+          // the user, then clears that value on blur. Skip initial focus when prefilled.
+          disableInitialFocus={Boolean(scopedCompetitionId)}
           title={t('competitions.agenda.createTitle', 'Add Agenda Item')}
           backHref="/backend/competitions/agenda"
           entityId="competitions:agenda_item"

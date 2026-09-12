@@ -12,6 +12,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -61,6 +62,7 @@ export default function ProjectsTable() {
   const [flagging, setFlagging] = React.useState(false)
   const [exportingAttachments, setExportingAttachments] = React.useState(false)
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -70,15 +72,19 @@ export default function ProjectsTable() {
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
     if (searchValue) params.title = searchValue
-    if (filterValues.competition_id && typeof filterValues.competition_id === 'string') {
+    // Global header scope wins over the per-page filter, which is hidden while scoped.
+    if (scopedCompetitionId) {
+      params.competition_id = scopedCompetitionId
+    } else if (filterValues.competition_id && typeof filterValues.competition_id === 'string') {
       params.competition_id = filterValues.competition_id
     }
     return new URLSearchParams(params).toString()
-  }, [filterValues.competition_id, page, searchValue, sorting])
+  }, [filterValues.competition_id, page, searchValue, sorting, scopedCompetitionId])
 
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['projects', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<ProjectRow>('projects/projects', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   const { data: competitionsData } = useQuery({
@@ -93,7 +99,7 @@ export default function ProjectsTable() {
     () => (competitionsData ?? []).map((competition) => ({ value: competition.id, label: competition.name })),
     [competitionsData],
   )
-  const selectedCompetitionId = typeof filterValues.competition_id === 'string' ? filterValues.competition_id : null
+  const selectedCompetitionId = scopedCompetitionId ?? (typeof filterValues.competition_id === 'string' ? filterValues.competition_id : null)
 
   // Compute submission progress
   const totalProjects = data?.total ?? 0
@@ -285,7 +291,7 @@ export default function ProjectsTable() {
         sortable
         sorting={sorting}
         onSortingChange={(s) => { setSorting(s); setPage(1) }}
-        filters={[
+        filters={scopedCompetitionId ? [] : [
           {
             id: 'competition_id',
             label: t('projects.filters.competition', 'Competition'),
@@ -351,7 +357,7 @@ export default function ProjectsTable() {
           totalPages: data?.totalPages || 0,
           onPageChange: setPage,
         }}
-        isLoading={isLoading}
+        isLoading={isLoading || !scopeReady}
         onRowClick={(row) => router.push(`/backend/projects/${row.id}/edit`)}
       />
       {ConfirmDialogElement}

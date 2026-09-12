@@ -12,6 +12,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import { useAppEvent } from '@open-mercato/ui/backend/injection/useAppEvent'
 import Link from 'next/link'
 import BountyDetailPanel from './BountyDetailPanel'
@@ -60,9 +61,12 @@ export default function BountyJudgingPanel() {
   const t = useT()
   const queryClient = useQueryClient()
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
   const [page, setPage] = React.useState(1)
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
-  const [competitionFilter, setCompetitionFilter] = React.useState<string>('all')
+  const [localCompetitionFilter, setLocalCompetitionFilter] = React.useState<string>('all')
+  // The header scope wins; this page's own picker only applies on Home.
+  const competitionFilter = scopedCompetitionId ?? localCompetitionFilter
   const [selectedPRId, setSelectedPRId] = React.useState<string | null>(null)
 
   // Real-time updates
@@ -87,10 +91,10 @@ export default function BountyJudgingPanel() {
     if (!competitions || competitions.length === 0) return
     const stored = window.localStorage.getItem('bounties:selected-competition')
     if (stored && competitions.some((competition) => competition.id === stored)) {
-      setCompetitionFilter(stored)
+      setLocalCompetitionFilter(stored)
       return
     }
-    setCompetitionFilter((current) => (
+    setLocalCompetitionFilter((current) => (
       current !== 'all' && competitions.some((competition) => competition.id === current)
         ? current
         : 'all'
@@ -113,6 +117,7 @@ export default function BountyJudgingPanel() {
   const { data, isLoading } = useQuery({
     queryKey: ['bounty-prs', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<BountyPRRow>('bounties/prs', queryParams),
+    enabled: scopeReady,
   })
 
   React.useEffect(() => {
@@ -220,24 +225,26 @@ export default function BountyJudgingPanel() {
 
       {/* Status filter tabs */}
       <div className="flex items-center gap-2 flex-wrap">
-        <select
-          value={competitionFilter}
-          onChange={(e) => {
-            const next = e.target.value
-            setCompetitionFilter(next)
-            setPage(1)
-            window.localStorage.setItem('bounties:selected-competition', next)
-          }}
-          className="h-9 min-w-[220px] rounded-md border border-input bg-background px-3 text-sm"
-          disabled={competitionsLoading}
-        >
-          <option value="all">{t('bounties.filter.allCompetitions', 'All competitions')}</option>
-          {(competitions ?? []).map((competition) => (
-            <option key={competition.id} value={competition.id}>
-              {competition.name}
-            </option>
-          ))}
-        </select>
+        {scopedCompetitionId ? null : (
+          <select
+            value={localCompetitionFilter}
+            onChange={(e) => {
+              const next = e.target.value
+              setLocalCompetitionFilter(next)
+              setPage(1)
+              window.localStorage.setItem('bounties:selected-competition', next)
+            }}
+            className="h-9 min-w-[220px] rounded-md border border-input bg-background px-3 text-sm"
+            disabled={competitionsLoading}
+          >
+            <option value="all">{t('bounties.filter.allCompetitions', 'All competitions')}</option>
+            {(competitions ?? []).map((competition) => (
+              <option key={competition.id} value={competition.id}>
+                {competition.name}
+              </option>
+            ))}
+          </select>
+        )}
         {STATUS_TABS.map(tab => (
           <Button
             key={tab}
@@ -257,7 +264,7 @@ export default function BountyJudgingPanel() {
             title={t('bounties.table.tableTitle', 'Bounty PRs')}
             columns={columns}
             data={data?.items ?? []}
-            isLoading={isLoading}
+            isLoading={isLoading || !scopeReady}
             rowActions={(row) => (
               <RowActions items={[
                 ...(row.status === 'pending_review' || row.status === 'classified'

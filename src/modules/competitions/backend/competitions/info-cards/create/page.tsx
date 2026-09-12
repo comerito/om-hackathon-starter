@@ -5,6 +5,8 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 import { InfoCardIconPicker } from '../../../../components/InfoCardIconPicker'
 
 async function loadCompetitions(query?: string) {
@@ -17,10 +19,13 @@ async function loadCompetitions(query?: string) {
 export default function CreateCompetitionInfoCardPage() {
   const t = useT()
   const searchParams = useSearchParams()
-  const competitionId = searchParams.get('competitionId') ?? ''
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
+  // Global header scope wins; the ?competitionId deep link stays as a fallback.
+  const competitionId = scopedCompetitionId ?? searchParams.get('competitionId') ?? ''
 
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('competitions.infoCards.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, defaultValue: competitionId },
+    { id: 'competition_id', label: t('competitions.infoCards.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, seedOptions: competitionSeedOptions, defaultValue: competitionId },
     { id: 'key', label: t('competitions.infoCards.key', 'Key'), type: 'text', required: true, placeholder: 'wifi' },
     {
       id: 'icon',
@@ -33,7 +38,7 @@ export default function CreateCompetitionInfoCardPage() {
     { id: 'label', label: t('competitions.infoCards.label', 'Label'), type: 'text', required: true },
     { id: 'value', label: t('competitions.infoCards.value', 'Value'), type: 'textarea', required: true },
     { id: 'sort_order', label: t('competitions.infoCards.sortOrder', 'Sort Order'), type: 'number', defaultValue: 0 },
-  ], [competitionId, t])
+  ], [competitionId, t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('competitions.infoCards.groups.details', 'Details'), column: 1, fields: ['competition_id', 'key', 'icon', 'sort_order'] },
@@ -48,6 +53,12 @@ export default function CreateCompetitionInfoCardPage() {
     <Page>
       <PageBody>
         <CrudForm
+          // The scope only resolves after hydration, so remount the form once it is
+          // known — the competition combobox seeds from `defaultValue` at mount.
+          key={scopeReady ? competitionId || 'home' : 'pending'}
+          // See the other create forms: a focused combobox hides its prefilled label
+          // and clears the value on blur.
+          disableInitialFocus={Boolean(competitionId)}
           title={t('competitions.infoCards.createTitle', 'Add Competition Info Card')}
           backHref={competitionId ? `/backend/competitions/info-cards?competitionId=${encodeURIComponent(competitionId)}` : '/backend/competitions/info-cards'}
           entityId="competitions:competition_info_card"
