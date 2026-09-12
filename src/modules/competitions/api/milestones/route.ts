@@ -22,10 +22,10 @@ const rawBodySchema = z.object({}).passthrough()
 
 export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   metadata: {
-    GET: { requireAuth: true },
-    POST: { requireAuth: true },
-    PUT: { requireAuth: true },
-    DELETE: { requireAuth: true },
+    GET: { requireAuth: true, requireFeatures: ['competitions.view'] },
+    POST: { requireAuth: true, requireFeatures: ['competitions.milestones.manage'] },
+    PUT: { requireAuth: true, requireFeatures: ['competitions.milestones.manage'] },
+    DELETE: { requireAuth: true, requireFeatures: ['competitions.milestones.manage'] },
   },
   orm: {
     entity: Milestone,
