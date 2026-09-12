@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
+import { CrudForm, type CrudField, type CrudFieldOption, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
@@ -65,6 +65,10 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   const [initial, setInitial] = React.useState<TrackFormValues | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
+  // Display label for the track's currently linked competition. The track API returns
+  // only `competition_id`, and `loadCompetitions` is paginated, so the picker cannot be
+  // relied on to know the label of a pre-selected id on its own.
+  const [competitionSeedOptions, setCompetitionSeedOptions] = React.useState<CrudFieldOption[]>([])
 
   const loadCompetitions = React.useCallback(async (query?: string) => {
     const params: Record<string, string> = { pageSize: '50' }
@@ -127,7 +131,16 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   }
 
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('tracks.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    {
+      id: 'competition_id',
+      label: t('tracks.fields.competition', 'Competition'),
+      type: 'combobox',
+      required: true,
+      loadOptions: loadCompetitions,
+      // Hydrate the option map with the linked competition so the picker renders its
+      // name instead of the raw uuid (or nothing) before the user interacts with it.
+      seedOptions: competitionSeedOptions,
+    },
     { id: 'name', label: t('tracks.fields.name', 'Name'), type: 'text', required: true },
     { id: 'short_description', label: t('tracks.fields.shortDescription', 'Short Description'), type: 'text', placeholder: 'A brief tagline for this track' },
     {
@@ -208,7 +221,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
     ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
-  ], [t, loadCompetitions])
+  ], [t, loadCompetitions, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'short_description', 'description', 'category', 'badge'] },
@@ -227,10 +240,24 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
         const data = await fetchCrudList<Record<string, unknown>>('tracks/tracks', { id, pageSize: '1' })
         const item = data?.items?.[0]
         if (!item) throw new Error('Track not found')
+        const competitionId = String(item.competition_id ?? '')
+        if (competitionId) {
+          // Best-effort: a missing label only degrades the picker to the raw id,
+          // it must never keep the form from loading.
+          try {
+            const competitions = await fetchCrudList<CompetitionOption>('competitions/competitions', { id: competitionId, pageSize: '1' })
+            const competition = competitions?.items?.[0]
+            if (!cancelled && competition?.id && competition?.name) {
+              setCompetitionSeedOptions([{ value: String(competition.id), label: String(competition.name) }])
+            }
+          } catch {
+            // ignore — combobox falls back to loadOptions
+          }
+        }
         if (!cancelled) {
           setInitial({
             id: String(item.id),
-            competition_id: String(item.competition_id ?? ''),
+            competition_id: competitionId,
             name: String(item.name ?? ''),
             short_description: String(item.short_description ?? ''),
             description: String(item.description ?? ''),
@@ -273,6 +300,13 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
             fields={fields}
             groups={groups}
             initialValues={initial ?? fallback}
+            // "Competition" is the first field, so CrudForm would autofocus it on mount.
+            // ComboboxInput only mirrors its `value` into the visible text while the input
+            // is NOT focused, so focusing it on its very first render leaves the control
+            // showing the empty "Type to search..." placeholder forever, even though
+            // competition_id is set (#90). Suppressing the mount-time autofocus lets the
+            // control render its selected competition.
+            disableInitialFocus
             submitLabel={t('tracks.edit.submit', 'Save')}
             cancelHref="/backend/tracks"
             successRedirect={`/backend/tracks?flash=${encodeURIComponent(t('tracks.flash.saved', 'Track saved'))}&type=success`}
