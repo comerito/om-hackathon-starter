@@ -10,6 +10,7 @@ import { PortalNotificationBell } from '@open-mercato/ui/portal/components/Porta
 import { PortalChatIcon } from './PortalChatIcon'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
+import { clearPortalStorage } from '@/lib/portal-storage'
 
 type PortalTopBarProps = {
   variant?: 'full' | 'minimal' | 'topnav'
@@ -63,6 +64,17 @@ export function PortalTopBar({
   }, [])
   const displayRole = userRole || participationRole || t('competitions.portal.topBar.defaultRole', 'Participant')
   const prefix = `/${orgSlug}/portal`
+
+  // Sign out must take the device-local portal state with it. `localStorage` is per device, but
+  // the competition/stage/role it holds are per user, so on a shared or kiosk machine leaving
+  // them behind hands the next person the previous person's role and navigation (#111).
+  // Cleared first: signing out ends in a full-document navigation to the login page, which tears
+  // this script down, so anything queued after it would never run.
+  const handleSignOut = React.useCallback(() => {
+    clearPortalStorage()
+    void auth.logout()
+  }, [auth])
+
   return (
     <header className="sticky top-0 z-30 flex h-12 sm:h-14 items-center gap-2 sm:gap-4 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-slate-900 px-3 sm:px-6" data-portal-handle="section:portal:header">
       {/* Hamburger toggle — visible below lg */}
@@ -148,7 +160,7 @@ export function PortalTopBar({
             <div className="mx-3 h-px bg-gray-100 dark:bg-white/10" />
             <button
               type="button"
-              onClick={() => auth.logout()}
+              onClick={handleSignOut}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="size-4" />

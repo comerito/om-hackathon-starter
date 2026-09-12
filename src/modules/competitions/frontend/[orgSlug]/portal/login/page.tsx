@@ -5,6 +5,7 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { Zap, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { clearPortalStorage } from '@/lib/portal-storage'
 
 type Props = { params: { orgSlug: string } }
 
@@ -38,6 +39,11 @@ export default function HackathonLoginPage({ params }: Props) {
         })
 
         if (result.ok && result.result?.ok) {
+          // Belt and braces for #111. Sign-out clears these too, but a session can also end
+          // without any client code running — the cookie expires, the user clears cookies, the
+          // tab is closed mid-session — and then sign-in is the only place left to notice that
+          // the stored competition/stage/role belong to somebody else.
+          clearPortalStorage()
           window.location.assign(`/${orgSlug}/portal/dashboard`)
           return
         }
