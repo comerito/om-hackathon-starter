@@ -6,6 +6,7 @@ import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
+import { agendaItemFormSchema } from '@/modules/competitions/data/validators'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -58,6 +59,7 @@ export default function CreateAgendaItemPage() {
           // focused combobox never renders the label for a value it did not receive from
           // the user, then clears that value on blur. Skip initial focus when prefilled.
           disableInitialFocus={Boolean(scopedCompetitionId)}
+          schema={agendaItemFormSchema}
           title={t('competitions.agenda.createTitle', 'Add Agenda Item')}
           backHref="/backend/competitions/agenda"
           entityId="competitions:agenda_item"

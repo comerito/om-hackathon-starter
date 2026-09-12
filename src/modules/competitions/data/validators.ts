@@ -3,6 +3,49 @@ import { locales } from '@open-mercato/shared/lib/i18n/config'
 
 export const portalLocaleEnum = z.enum(locales as [typeof locales[number], ...typeof locales[number][]])
 
+// ── Shared start/end ordering validation ────────────────────────────
+
+export const TIME_RANGE_MESSAGE = 'End time must be after the start time'
+
+/**
+ * True when `end` is strictly after `start`.
+ *
+ * Equality is rejected on purpose: a zero-length agenda slot (or competition) is never
+ * something an organiser means to create, and the participant timeline renders it as an
+ * empty block, so it is just as broken as an inverted range.
+ *
+ * Returns `true` — i.e. "nothing to report here" — whenever the pair cannot be judged
+ * (either side absent, not a string, or unparseable). Those cases belong to the per-field
+ * `datetime()` / `required` checks, and reporting them twice would attach a confusing
+ * ordering error to a field whose real problem is its format.
+ */
+export function isOrderedTimeRange(start: unknown, end: unknown): boolean {
+  if (typeof start !== 'string' || typeof end !== 'string') return true
+  if (!start || !end) return true
+  const startMs = Date.parse(start)
+  const endMs = Date.parse(end)
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return true
+  return endMs > startMs
+}
+
+/**
+ * Builds a `superRefine` check that enforces `end > start` and attaches the issue to the
+ * END field, so `CrudForm` renders it under the input the user has to change.
+ *
+ * On the `update*` schemas both keys are optional, so the check only fires when the caller
+ * sends both halves. A partial update that moves only one edge past the other is caught by
+ * the command handler, which can compare against the persisted row.
+ */
+function timeRangeCheck(startKey: string, endKey: string) {
+  return (value: unknown, ctx: z.RefinementCtx): void => {
+    const record = (value ?? {}) as Record<string, unknown>
+    if (isOrderedTimeRange(record[startKey], record[endKey])) return
+    ctx.addIssue({ code: 'custom', message: TIME_RANGE_MESSAGE, path: [endKey] })
+  }
+}
+
+const startsEndsOrdered = timeRangeCheck('starts_at', 'ends_at')
+
 export const portalLocaleSchema = z.object({
   locale: portalLocaleEnum,
 })
@@ -79,7 +122,7 @@ export const createCompetitionSchema = z.object({
   privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   privacy_policy_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
   cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
-})
+}).superRefine(startsEndsOrdered)
 
 export const updateCompetitionSchema = z.object({
   id: z.string().uuid(),
@@ -108,7 +151,7 @@ export const updateCompetitionSchema = z.object({
   privacy_policy_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
   privacy_policy_content: z.preprocess(v => (v === '' ? null : v), z.string().nullable().optional()),
   cover_image_url: z.preprocess(v => (v === '' ? null : v), z.string().url().max(1000).nullable().optional()),
-})
+}).superRefine(startsEndsOrdered)
 
 export type CreateCompetitionInput = z.infer<typeof createCompetitionSchema>
 export type UpdateCompetitionInput = z.infer<typeof updateCompetitionSchema>
@@ -189,7 +232,7 @@ export const createAgendaItemSchema = z.object({
   track_id: z.string().uuid().optional(),
   is_mandatory: z.boolean().default(false),
   order: z.number().int().default(0),
-})
+}).superRefine(startsEndsOrdered)
 
 export const updateAgendaItemSchema = z.object({
   id: z.string().uuid(),
@@ -205,10 +248,25 @@ export const updateAgendaItemSchema = z.object({
   track_id: z.string().uuid().nullable().optional(),
   is_mandatory: z.boolean().optional(),
   order: z.number().int().optional(),
-})
+}).superRefine(startsEndsOrdered)
 
 export type CreateAgendaItemInput = z.infer<typeof createAgendaItemSchema>
 export type UpdateAgendaItemInput = z.infer<typeof updateAgendaItemSchema>
+
+/**
+ * Client-side schema for the backoffice agenda forms (create + edit).
+ *
+ * Wiring this into `CrudForm` is what makes an inverted range show up as a field-level error
+ * on "End Time" instead of only failing on the server. It declares just the two fields the
+ * cross-field rule needs — `looseObject` keeps every other key (`id`, `competition_id`,
+ * custom fields, the edit page's initial values) so parsing the form never drops data from
+ * the submitted payload — and no `.default()` / `.transform()`, so its input and output
+ * types match, which `CrudForm` requires.
+ */
+export const agendaItemFormSchema = z.looseObject({
+  starts_at: z.string().min(1),
+  ends_at: z.string().min(1),
+}).superRefine(startsEndsOrdered)
 
 // ── Announcement ────────────────────────────────────────────────────
 
@@ -290,7 +348,7 @@ export const bulkAgendaItemRowSchema = z.object({
   speaker_bio: z.string().optional(),
   is_mandatory: z.preprocess(v => v === 'true' || v === '1' || v === true, z.boolean()).default(false),
   order: z.preprocess(v => (typeof v === 'string' && v !== '' ? parseInt(v, 10) : v), z.number().int()).default(0),
-})
+}).superRefine(startsEndsOrdered)
 
 export const bulkAgendaImportSchema = z.object({
   competition_id: z.string().uuid(),

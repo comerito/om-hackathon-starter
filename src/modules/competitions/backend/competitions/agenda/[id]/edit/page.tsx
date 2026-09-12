@@ -6,6 +6,7 @@ import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/b
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { agendaItemFormSchema } from '@/modules/competitions/data/validators'
 
 type AgendaFormValues = {
   id: string
@@ -107,7 +108,8 @@ export default function EditAgendaItemPage({ params }: { params?: { id?: string 
         {err ? (
           <div className="text-red-600">{err}</div>
         ) : (
-          <CrudForm<AgendaFormValues>
+          <CrudForm
+            schema={agendaItemFormSchema}
             title={t('competitions.agenda.edit.title', 'Edit Agenda Item')}
             backHref="/backend/competitions/agenda"
             entityId="competitions:agenda_item"
