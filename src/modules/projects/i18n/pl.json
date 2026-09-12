@@ -90,5 +90,7 @@
   "projects.export.action": "Pobierz załączniki konkursu",
   "projects.export.exporting": "Przygotowywanie archiwum...",
   "projects.export.started": "Rozpoczęto pobieranie załączników projektów",
-  "projects.export.error": "Nie udało się wyeksportować załączników projektów"
+  "projects.export.error": "Nie udało się wyeksportować załączników projektów",
+  "projects.notifications.autoPublishSkipped.title": "Twój projekt nie został zgłoszony",
+  "projects.notifications.autoPublishSkipped.body": "Konkurs przeszedł do fazy demo, a Twój projekt został pominięty, ponieważ jest niekompletny: {reasons}."
 }

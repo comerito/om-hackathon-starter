@@ -24,6 +24,17 @@ export const notificationTypes: NotificationTypeDefinition[] = [
     ],
   },
   {
+    type: 'projects.auto_publish_skipped',
+    module: 'projects',
+    titleKey: 'projects.notifications.autoPublishSkipped.title',
+    bodyKey: 'projects.notifications.autoPublishSkipped.body',
+    icon: 'alert-triangle',
+    severity: 'error',
+    actions: [
+      { id: 'dismiss', labelKey: 'notifications.actions.dismiss', variant: 'ghost' },
+    ],
+  },
+  {
     type: 'projects.flagged',
     module: 'projects',
     titleKey: 'projects.notifications.flagged.title',
