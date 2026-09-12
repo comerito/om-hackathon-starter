@@ -7,6 +7,7 @@ const events = [
   { id: 'projects.project.submitted', label: 'Project Submitted', entity: 'project', category: 'lifecycle', clientBroadcast: true, portalBroadcast: true },
   { id: 'projects.project.flagged', label: 'Project Flagged', entity: 'project', category: 'lifecycle', clientBroadcast: true },
   { id: 'projects.batch.auto_published', label: 'Projects Auto-Published', entity: 'project', category: 'lifecycle', clientBroadcast: true },
+  { id: 'projects.batch.auto_publish_skipped', label: 'Projects Skipped by Auto-Publish', entity: 'project', category: 'lifecycle', clientBroadcast: true },
 ] as const
 
 export const eventsConfig = createModuleEvents({
