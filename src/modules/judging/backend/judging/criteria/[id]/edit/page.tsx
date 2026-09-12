@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
+import { CrudForm, type CrudField, type CrudFieldOption, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -13,6 +13,21 @@ async function loadCompetitions(query?: string) {
   if (query) params.name = query
   const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', params)
   return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
+}
+
+// The criterion API returns only `competition_id` and `loadCompetitions` is paginated, so the
+// picker cannot resolve the label of a pre-selected id on its own. Best-effort: a missing label
+// only degrades the picker to the raw id, it must never keep the form from loading.
+async function loadCompetitionSeedOptions(competitionId: string): Promise<CrudFieldOption[]> {
+  if (!competitionId) return []
+  try {
+    const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', { id: competitionId, pageSize: '1' })
+    const competition = res?.items?.[0]
+    if (!competition?.id || !competition?.name) return []
+    return [{ value: String(competition.id), label: String(competition.name) }]
+  } catch {
+    return []
+  }
 }
 
 type CriterionFormValues = {
@@ -34,9 +49,21 @@ export default function EditCriterionPage({ params }: { params?: { id?: string }
   const [initial, setInitial] = React.useState<CriterionFormValues | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
+  // Display label for the criterion's currently linked competition, resolved during the
+  // initial load so the picker can show a name instead of nothing.
+  const [competitionSeedOptions, setCompetitionSeedOptions] = React.useState<CrudFieldOption[]>([])
 
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('judging.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    {
+      id: 'competition_id',
+      label: t('judging.fields.competition', 'Competition'),
+      type: 'combobox',
+      required: true,
+      loadOptions: loadCompetitions,
+      // Hydrate the option map with the linked competition so the picker renders its name
+      // instead of the raw uuid (or nothing) before the user interacts with it.
+      seedOptions: competitionSeedOptions,
+    },
     {
       id: 'track_id',
       label: t('judging.fields.track', 'Track (optional)'),
@@ -56,7 +83,7 @@ export default function EditCriterionPage({ params }: { params?: { id?: string }
     { id: 'round', label: t('judging.fields.round', 'Applicable Round'), type: 'select', defaultValue: 'both',
       options: [{ value: 'both', label: 'Both rounds' }, { value: 'preliminary', label: 'Preliminary only' }, { value: 'final', label: 'Final only' }] },
     { id: 'order', label: t('judging.fields.order', 'Display Order'), type: 'number', defaultValue: 0 },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('judging.groups.criterion', 'Criterion Details'), column: 1, fields: ['competition_id', 'track_id', 'name', 'description'] },
@@ -73,10 +100,13 @@ export default function EditCriterionPage({ params }: { params?: { id?: string }
         const data = await fetchCrudList<Record<string, unknown>>('judging/criteria', { id, pageSize: '1' })
         const item = data?.items?.[0]
         if (!item) throw new Error('Criterion not found')
+        const competitionId = String(item.competition_id ?? '')
+        const seedOptions = await loadCompetitionSeedOptions(competitionId)
+        if (!cancelled && seedOptions.length) setCompetitionSeedOptions(seedOptions)
         if (!cancelled) {
           setInitial({
             id: String(item.id),
-            competition_id: String(item.competition_id ?? ''),
+            competition_id: competitionId,
             track_id: String(item.track_id ?? ''),
             name: String(item.name ?? ''),
             description: String(item.description ?? ''),
@@ -116,6 +146,13 @@ export default function EditCriterionPage({ params }: { params?: { id?: string }
             fields={fields}
             groups={groups}
             initialValues={initial ?? fallback}
+            // "Competition" is the first field, so CrudForm would autofocus it on mount.
+            // ComboboxInput only mirrors its `value` into the visible text while the input is
+            // NOT focused, so focusing it on its very first render leaves the control showing
+            // the empty "Type to search..." placeholder forever, even though competition_id is
+            // set (#134, same as #90). Suppressing the mount-time autofocus lets the control
+            // render its selected competition.
+            disableInitialFocus
             submitLabel={t('judging.criteria.edit.submit', 'Save')}
             cancelHref="/backend/judging"
             successRedirect={`/backend/judging?flash=${encodeURIComponent(t('judging.flash.criterionSaved', 'Criterion saved'))}&type=success`}
