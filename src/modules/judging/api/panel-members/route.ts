@@ -4,6 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../data/entities'
+import { NOT_A_JUDGE_ERROR, isEligibleJudge } from '../../lib/judgeEligibility'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawAll } from '@/lib/db'
 
@@ -110,6 +111,13 @@ export async function POST(req: Request) {
 
     if (parsed.type === 'judge') {
       if (!parsed.judge_id) return NextResponse.json({ error: 'judge_id required' }, { status: 400 })
+      // Only judges of this panel's competition may be assigned — the UI scopes its dropdown to
+      // the same set, but the endpoint must not trust the client for a scoring-rights grant.
+      const eligible = await isEligibleJudge(em, parsed.judge_id, {
+        competitionId: panel.competitionId,
+        tenantId: auth.tenantId,
+      })
+      if (!eligible) return NextResponse.json({ error: NOT_A_JUDGE_ERROR }, { status: 422 })
       // Check duplicate
       const existing = await em.findOne(JudgePanelJudge, { panelId: parsed.panel_id, judgeId: parsed.judge_id } as FilterQuery<JudgePanelJudge>)
       if (existing) return NextResponse.json({ error: 'Judge already assigned to this panel' }, { status: 409 })

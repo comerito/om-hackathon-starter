@@ -18,7 +18,7 @@ type PanelData = {
   tracks: Array<{ id: string; track_id: string; track_name: string; color: string }>
 }
 
-type JudgeOption = { id: string; display_name: string; email: string }
+type JudgeOption = { id: string; display_name: string; email: string | null }
 type TrackOption = { id: string; name: string; color: string }
 
 export default function EditPanelPage({ params }: { params?: { id?: string } }) {
@@ -38,15 +38,18 @@ export default function EditPanelPage({ params }: { params?: { id?: string } }) 
     enabled: !!panelId,
   })
 
-  // Load available judges (customer users with judge role)
-  const { data: availableJudges } = useQuery({
-    queryKey: ['available-judges'],
+  // Load available judges — filtered to the judges of the panel's own competition, the same
+  // way the track dropdown below is. The endpoint resolves the competition from the panel.
+  const { data: availableJudges, isLoading: judgesLoading, isError: judgesError } = useQuery({
+    queryKey: ['available-judges', panelId],
     queryFn: async () => {
       const { ok, result } = await apiCall<{ items: JudgeOption[] }>(
-        '/api/customer_accounts/admin/users?pageSize=100',
+        `/api/judging/eligible-judges?panel_id=${panelId}`,
       )
-      return ok ? result?.items ?? [] : []
+      if (!ok) throw new Error('Failed to load judges')
+      return result?.items ?? []
     },
+    enabled: !!panelId,
   })
 
   // Load available tracks — filtered by the panel's competition
@@ -177,21 +180,39 @@ export default function EditPanelPage({ params }: { params?: { id?: string } }) 
               </div>
             )}
 
-            {/* Add judge */}
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <select
-                value={selectedJudgeId}
-                onChange={(e) => setSelectedJudgeId(e.target.value)}
-                className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">Select a judge...</option>
-                {unassignedJudges.map(j => (
-                  <option key={j.id} value={j.id}>{j.display_name || j.email}</option>
-                ))}
-              </select>
-              <Button size="sm" onClick={handleAddJudge} disabled={!selectedJudgeId || addingJudge}>
-                {addingJudge ? 'Adding...' : 'Add'}
-              </Button>
+            {/* Add judge — the dropdown only offers judges of this panel's competition */}
+            <div className="pt-2 border-t">
+              {judgesLoading ? (
+                <p className="text-sm text-muted-foreground">Loading judges...</p>
+              ) : judgesError ? (
+                <p className="text-sm text-portal-danger">Could not load the list of judges. Reload the page to try again.</p>
+              ) : (availableJudges ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No judges on this competition yet.{' '}
+                  <Link href="/backend/competitions/participants" className="underline hover:text-foreground">
+                    Invite a participant with the Judge role
+                  </Link>{' '}
+                  before assigning one to a panel.
+                </p>
+              ) : unassignedJudges.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Every judge of this competition is already on this panel.</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedJudgeId}
+                    onChange={(e) => setSelectedJudgeId(e.target.value)}
+                    className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">Select a judge...</option>
+                    {unassignedJudges.map(j => (
+                      <option key={j.id} value={j.id}>{j.display_name || j.email}</option>
+                    ))}
+                  </select>
+                  <Button size="sm" onClick={handleAddJudge} disabled={!selectedJudgeId || addingJudge}>
+                    {addingJudge ? 'Adding...' : 'Add'}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
