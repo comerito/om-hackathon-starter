@@ -8,6 +8,7 @@ import { TeamMember } from '../../../../teams/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
 import { collectProjectSubmissionErrors } from '../../../lib/submission-validation'
+import { meetsMinimumTeamSize } from '../../../../teams/lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const submitSchema = z.object({
@@ -81,6 +82,18 @@ export async function POST(req: Request) {
     const errors = collectProjectSubmissionErrors(project, {
       attachmentFileNames: attachments.map((attachment) => attachment.fileName),
     })
+
+    // The competition's minimum team size is a submission requirement too: an
+    // undersized team must not be able to enter. Checked here rather than inside
+    // the shared rule module because it is a property of the team, not the project.
+    if (competition) {
+      const memberCount = await em.count(TeamMember, {
+        teamId: project.teamId,
+        deletedAt: null,
+      } as FilterQuery<TeamMember>)
+      const teamSize = meetsMinimumTeamSize(competition, { memberCount })
+      if (!teamSize.allowed) errors.push(teamSize.reason)
+    }
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 422 })

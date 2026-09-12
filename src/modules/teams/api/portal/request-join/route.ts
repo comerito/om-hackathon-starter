@@ -4,7 +4,8 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamInvitation, InvitationType, InvitationStatus, TeamRole } from '../../../data/entities'
-import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { Competition, CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { canInviteToTeam } from '../../../lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const requestJoinSchema = z.object({
@@ -57,6 +58,36 @@ export async function POST(req: Request) {
     } as FilterQuery<TeamMember>)
     if (existingMember) {
       return NextResponse.json({ error: 'You are already on a team in this competition' }, { status: 409 })
+    }
+
+    // Don't let someone queue up for a team that has no room: the owner would only
+    // be able to refuse. Pending *invitations* count, other join requests do not —
+    // several people may compete for the same free seat.
+    const competition = await em.findOne(Competition, {
+      id: team.competitionId,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    } as FilterQuery<Competition>)
+    if (!competition) {
+      return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+    }
+
+    const [memberCount, pendingInvitationCount] = await Promise.all([
+      em.count(TeamMember, {
+        teamId: team.id,
+        deletedAt: null,
+      } as FilterQuery<TeamMember>),
+      em.count(TeamInvitation, {
+        teamId: team.id,
+        type: InvitationType.INVITE,
+        status: InvitationStatus.PENDING,
+        tenantId: auth.tenantId,
+      } as FilterQuery<TeamInvitation>),
+    ])
+
+    const capacity = canInviteToTeam(competition, { memberCount, pendingInvitationCount })
+    if (!capacity.allowed) {
+      return NextResponse.json({ error: capacity.reason }, { status: 409 })
     }
 
     // Check no pending request already exists

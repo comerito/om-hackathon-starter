@@ -4,7 +4,8 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamInvitation, InvitationType, InvitationStatus, TeamRole } from '../../../data/entities'
-import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { Competition, CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { canInviteToTeam } from '../../../lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const inviteSchema = z.object({
@@ -80,6 +81,35 @@ export async function POST(req: Request) {
     } as FilterQuery<TeamInvitation>)
     if (existingInvite) {
       return NextResponse.json({ error: 'Invitation already pending for this user' }, { status: 409 })
+    }
+
+    // Enforce the competition's configured team size cap. Pending invitations count
+    // towards it, so a full team cannot queue up accepts it has no room for.
+    const competition = await em.findOne(Competition, {
+      id: team.competitionId,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    } as FilterQuery<Competition>)
+    if (!competition) {
+      return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+    }
+
+    const [memberCount, pendingInvitationCount] = await Promise.all([
+      em.count(TeamMember, {
+        teamId: team.id,
+        deletedAt: null,
+      } as FilterQuery<TeamMember>),
+      em.count(TeamInvitation, {
+        teamId: team.id,
+        type: InvitationType.INVITE,
+        status: InvitationStatus.PENDING,
+        tenantId: auth.tenantId,
+      } as FilterQuery<TeamInvitation>),
+    ])
+
+    const capacity = canInviteToTeam(competition, { memberCount, pendingInvitationCount })
+    if (!capacity.allowed) {
+      return NextResponse.json({ error: capacity.reason }, { status: 409 })
     }
 
     // Create invitation
