@@ -6,6 +6,7 @@ import { DataTable } from '@open-mercato/ui/backend/DataTable'
 import { RowActions } from '@open-mercato/ui/backend/RowActions'
 import { EnumBadge } from '@open-mercato/ui/backend/ValueIcons'
 import { Button } from '@open-mercato/ui/primitives/button'
+import { ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { fetchCrudList, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
@@ -31,6 +32,7 @@ type DemoRow = {
   round: string
 }
 type ScoreProgress = { project_id: string; judge_id: string; is_submitted: boolean; total_score: number | null; round: string }
+type LeaderboardRow = { project_title: string; team_name: string | null; average_score: number | null; rank: number | null; track_id: string }
 
 const roundPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   preliminary: { label: 'Preliminary', variant: 'default' },
@@ -61,6 +63,10 @@ export default function JudgingDashboard() {
   const [tab, setTab] = React.useState<'panels' | 'criteria' | 'demos' | 'scores' | 'leaderboard'>('panels')
   const [localDemoCompetitionId, setLocalDemoCompetitionId] = React.useState('')
   const selectedCompetitionId = scopedCompetitionId ?? localDemoCompetitionId
+  // The leaderboard is per-competition (the API filters by a uuid competition_id),
+  // so it gets its own selector following the Demo Queue pattern above.
+  const [localLeaderboardCompetitionId, setLocalLeaderboardCompetitionId] = React.useState('')
+  const leaderboardCompetitionId = scopedCompetitionId ?? localLeaderboardCompetitionId
 
   // Competitions for the demo queue selector
   const { data: competitionsData } = useQuery({
@@ -148,14 +154,20 @@ export default function JudgingDashboard() {
     enabled: tab === 'scores' && scopeReady,
   })
 
-  // Leaderboard
-  const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery({
-    queryKey: ['judging-leaderboard', scopeVersion, scopedCompetitionId],
+  // Leaderboard — always scoped to one competition; a failed request must surface
+  // as an error, not as the "no scores yet" empty state.
+  const { data: leaderboardData, isLoading: leaderboardLoading, isError: leaderboardIsError, error: leaderboardError } = useQuery({
+    queryKey: ['judging-leaderboard', scopeVersion, leaderboardCompetitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ items: Array<{ project_title: string; team_name: string; average_score: number | null; rank: number | null; track_id: string }> }>(`/api/judging/leaderboard?competition_id=${encodeURIComponent(scopedCompetitionId ?? 'all')}`)
-      return ok ? result : { items: [] }
+      const { ok, result, status, response } = await apiCall<{ items: LeaderboardRow[]; error?: string }>(`/api/judging/leaderboard?competition_id=${encodeURIComponent(leaderboardCompetitionId)}`)
+      if (!ok) {
+        const serverMessage = typeof result?.error === 'string' ? result.error : response.statusText
+        throw new Error(serverMessage ? `${serverMessage} (${status})` : `Request failed (${status})`)
+      }
+      return result ?? { items: [] }
     },
-    enabled: tab === 'leaderboard' && scopeReady,
+    enabled: tab === 'leaderboard' && scopeReady && !!leaderboardCompetitionId,
+    retry: false,
   })
 
   const panelColumns = React.useMemo<ColumnDef<PanelRow>[]>(() => [
@@ -385,7 +397,29 @@ export default function JudgingDashboard() {
       {tab === 'leaderboard' && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">{t('judging.leaderboard.title', 'Leaderboard')}</h3>
-          {leaderboardLoading ? <div className="text-muted-foreground">{t('common.loading', 'Loading...')}</div> : (
+          {scopedCompetitionId ? null : (
+            <select
+              value={localLeaderboardCompetitionId}
+              onChange={(e) => setLocalLeaderboardCompetitionId(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">{t('judging.leaderboard.selectCompetition', 'Select competition...')}</option>
+              {(competitionsData?.items ?? []).map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.stage})</option>
+              ))}
+            </select>
+          )}
+          {!leaderboardCompetitionId ? (
+            <div className="rounded-lg border p-4 text-center text-muted-foreground">
+              {t('judging.leaderboard.pickCompetition', 'Select a competition to see its leaderboard.')}
+            </div>
+          ) : leaderboardIsError ? (
+            <ErrorMessage
+              label={t('judging.leaderboard.loadFailed', 'Could not load the leaderboard')}
+              description={leaderboardError instanceof Error ? leaderboardError.message : undefined}
+              action={<Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ['judging-leaderboard'] })}>{t('common.retry', 'Retry')}</Button>}
+            />
+          ) : leaderboardLoading ? <div className="text-muted-foreground">{t('common.loading', 'Loading...')}</div> : (
             <div className="rounded-lg border">
               <table className="w-full text-sm">
                 <thead>
