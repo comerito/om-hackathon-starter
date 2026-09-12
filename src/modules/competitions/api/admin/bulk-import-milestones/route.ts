@@ -9,7 +9,7 @@ import { bulkMilestoneImportSchema } from '../../../data/validators'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = {
-  POST: { requireAuth: true, requireFeatures: ['competitions.agenda.manage'] },
+  POST: { requireAuth: true, requireFeatures: ['competitions.milestones.manage'] },
 }
 
 type ImportResult = {
