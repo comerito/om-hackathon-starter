@@ -98,6 +98,7 @@
   "competitions.portal.dashboard.errors.agenda": "Failed to load agenda",
   "competitions.portal.dashboard.noCompetition": "Select a competition to view your dashboard.",
   "competitions.portal.dashboard.finalSubmission": "Final Submission",
+  "competitions.portal.dashboard.eventEnds": "Event ends",
   "competitions.portal.dashboard.section.status": "Hackathon Status",
   "competitions.portal.dashboard.remaining": "Remaining",
   "competitions.portal.dashboard.milestones": "Milestones",

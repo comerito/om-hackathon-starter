@@ -13,6 +13,8 @@ type CompetitionSummary = {
   ends_at: string
   location: string | null
   timezone: string
+  /** NULL when the organiser never configured a project submission deadline. */
+  project_submission_deadline?: string | null
   max_team_size?: number
   max_tracks_per_team?: number
   allow_track_change?: boolean

@@ -98,6 +98,7 @@
   "competitions.portal.dashboard.errors.agenda": "Nie udało się załadować harmonogramu",
   "competitions.portal.dashboard.noCompetition": "Wybierz konkurs, aby zobaczyć swój pulpit.",
   "competitions.portal.dashboard.finalSubmission": "Finalne Zgłoszenie",
+  "competitions.portal.dashboard.eventEnds": "Koniec hackathonu",
   "competitions.portal.dashboard.section.status": "Status Hackathonu",
   "competitions.portal.dashboard.remaining": "Pozostało",
   "competitions.portal.dashboard.milestones": "Kamienie Milowe",
