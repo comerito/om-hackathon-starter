@@ -897,7 +897,11 @@ function TeamView({
         'success',
       )
       queryClient.invalidateQueries({ queryKey: ['portal-invitations'] })
-      queryClient.invalidateQueries({ queryKey: ['portal-team-members'] })
+      // Accepting a request adds a member, so the roster has to be refetched. It lives in
+      // ['portal-my-membership'] (see MyTeamPage). This used to invalidate a team-members key
+      // that no query in the app declares, so the "Active Collaborators" list stayed at its old
+      // count until a full reload (#115).
+      queryClient.invalidateQueries({ queryKey: ['portal-my-membership'] })
     }
   }
 

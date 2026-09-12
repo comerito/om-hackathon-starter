@@ -1,7 +1,7 @@
 "use client"
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
@@ -651,6 +651,7 @@ function FilterPills({
 function ParticipantsContent() {
   const t = useT()
   const { auth } = usePortalContext()
+  const queryClient = useQueryClient()
   const { selectedId, isLoading: contextLoading } = useCompetitionContext()
   const [search, setSearch] = React.useState('')
   const [debouncedSearch, setDebouncedSearch] = React.useState('')
@@ -689,6 +690,9 @@ function ParticipantsContent() {
       })
       if (ok) {
         flash(t('competitions.portal.participants.flash.invitationSent', 'Invitation sent!'), 'success')
+        // Same as the My Team page's own invite handler: the new invitation has to show up in
+        // the team's pending list, which is cached under ['portal-invitations'].
+        queryClient.invalidateQueries({ queryKey: ['portal-invitations'] })
         setSelectedParticipant(null)
         setInviteTarget(null)
       } else {
