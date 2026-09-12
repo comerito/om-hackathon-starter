@@ -11,6 +11,7 @@ import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 import { PORTAL_SCORE_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
 import { SCORING_PANEL_DENIAL_MESSAGE, resolveScoringPanel } from '../../../lib/panelScope'
+import { SCORE_RESOURCE_KIND } from '../../../lib/resourceKinds'
 
 // NOTE: `requireCustomerAuth` / `requireCustomerFeatures` are NOT enforced for API routes —
 // the dispatcher in `src/app/api/[...slug]/route.ts` only reads `requireAuth`,
@@ -20,9 +21,6 @@ export const metadata = {
   GET: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_SCORE_FEATURE] },
   POST: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_SCORE_FEATURE] },
 }
-
-/** Entity id used by the mutation-guard registry for `judging_project_score` writes. */
-const SCORE_RESOURCE_KIND = 'judging:project_score'
 
 // GET: load existing score + criteria for a project
 export async function GET(req: Request) {
