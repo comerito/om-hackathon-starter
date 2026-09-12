@@ -135,7 +135,7 @@ export default function SponsorsDashboard() {
 
       {tab === 'prizes' && (
         <DataTable title={t('sponsors.prizes.title', 'Prizes')}
-          actions={<Button asChild><Link href="/backend/sponsors/prizes/create">{t('sponsors.prizes.create', 'Add Prize')}</Link></Button>}
+          actions={<Button asChild><Link href="/backend/prizes/create">{t('sponsors.prizes.create', 'Add Prize')}</Link></Button>}
           columns={prizeColumns} data={prizesData?.items ?? []} isLoading={prizesLoading || !scopeReady}
           rowActions={(row) => (
             <RowActions items={[
