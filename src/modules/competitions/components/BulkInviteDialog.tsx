@@ -6,7 +6,11 @@ import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
-import type { InviteResult } from '../lib/inviteOutcome'
+import {
+  INVITE_SKIP_REASONS,
+  INVITE_SKIP_REASON_KEYS,
+  type InviteResult,
+} from '../lib/inviteOutcome'
 
 type ParsedRow = { email: string; display_name: string; role: string }
 
@@ -66,7 +70,7 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
 
   // Results
   const [results, setResults] = React.useState<InviteResult[]>([])
-  const [summary, setSummary] = React.useState<{ total: number; sent: number; created: number; skipped: number; errors: number } | null>(null)
+  const [summary, setSummary] = React.useState<{ total: number; sent: number; created: number; skipped: number; errors: number; existingUsers: string[] } | null>(null)
 
   // Load competitions
   React.useEffect(() => {
@@ -121,6 +125,7 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
     const { ok, result } = await apiCall<{
       total: number; sent: number; created: number; skipped: number; failed: number
       invitationsCreated: number
+      existingUsers?: string[]
       errors: Array<{ email: string; reason: string }>
       emailFailures: Array<{ email: string; reason: string }>
       results: InviteResult[]
@@ -142,14 +147,22 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
         created: result.created ?? 0,
         skipped: result.skipped,
         errors: result.errors?.length ?? 0,
+        existingUsers: result.existingUsers ?? [],
       })
     } else {
-      setSummary({ total: parsedRows.length, sent: 0, created: 0, skipped: 0, errors: parsedRows.length })
+      setSummary({ total: parsedRows.length, sent: 0, created: 0, skipped: 0, errors: parsedRows.length, existingUsers: [] })
     }
     setStep('results')
   }
 
   const validRows = parsedRows.filter((_, i) => !validateRow(parsedRows[i], i))
+
+  // Prefer the translated text for a known skip cause over the server's English `reason`.
+  function reasonText(r: InviteResult): string {
+    if (r.emailError) return r.emailError
+    if (r.reasonCode) return t(INVITE_SKIP_REASON_KEYS[r.reasonCode], INVITE_SKIP_REASONS[r.reasonCode])
+    return r.reason ?? '—'
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -290,6 +303,27 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
               </p>
             )}
 
+            {summary.existingUsers.length > 0 && (
+              /* These addresses already sign in to the portal. An invitation would be a dead
+                 link, so nothing was created — they are attached with Add Participant. */
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1">
+                <p className="text-xs text-amber-700">
+                  {t(
+                    'competitions.bulkInvite.summary.existingUsersHint',
+                    '{count} address(es) already have a portal account, so no invitation was created for them. Use Add Participant to attach those accounts to this competition.',
+                    { count: summary.existingUsers.length },
+                  )}
+                </p>
+                <p className="text-xs text-amber-700/80 break-words">{summary.existingUsers.join(', ')}</p>
+                <a
+                  href="/backend/competitions/participants/create"
+                  className="inline-block text-xs font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
+                >
+                  {t('competitions.bulkInvite.summary.existingUsersAction', 'Go to Add Participant')}
+                </a>
+              </div>
+            )}
+
             {results.filter(r => r.status !== 'sent').length > 0 && (
               <div className="max-h-48 overflow-y-auto rounded-md border">
                 <table className="w-full text-sm">
@@ -317,7 +351,7 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
                               : r.status}
                           </span>
                         </td>
-                        <td className="p-2 text-xs text-muted-foreground">{r.emailError ?? r.reason ?? '—'}</td>
+                        <td className="p-2 text-xs text-muted-foreground">{reasonText(r)}</td>
                       </tr>
                     ))}
                   </tbody>

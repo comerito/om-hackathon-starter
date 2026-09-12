@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
-import { hashForLookup } from '@open-mercato/shared/lib/encryption/aes'
+import { lookupHashCandidates } from '@open-mercato/shared/lib/encryption/aes'
+import { findOneWithDecryption } from '@open-mercato/shared/lib/encryption/find'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { CustomerInvitationService } from '@open-mercato/core/modules/customer_accounts/services/customerInvitationService'
@@ -13,6 +14,7 @@ import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
 import {
   applyEmailOutcomes,
   summarizeInviteResults,
+  INVITE_SKIP_REASONS,
   type EmailOutcome,
   type InviteResult,
 } from '../../../lib/inviteOutcome'
@@ -85,27 +87,53 @@ export async function POST(req: Request) {
     for (const invitee of parsed.invitees) {
       const emailLower = invitee.email.toLowerCase().trim()
 
-      // Check if user already exists
-      const emailHash = hashForLookup(emailLower)
-      const existingUser = await em.findOne(CustomerUser, {
-        emailHash,
-        tenantId,
-        deletedAt: null,
-      } as FilterQuery<typeof CustomerUser.prototype>)
+      // Match BOTH lookup-hash formats. `hashForLookup` returns the keyed `v2:` digest once a
+      // pepper/encryption key is configured, but rows written before that carry the legacy
+      // unkeyed digest — a single-format `=` comparison silently misses them, which is exactly
+      // how an existing portal user slipped past this guard (issue #93). Core's own
+      // `CustomerUserService.findByEmail` uses the same `$in` candidate set.
+      const emailHashCandidates = lookupHashCandidates(emailLower)
+      // Belt and braces: `email` is an encrypted column with `email_hash` as its lookup hash,
+      // so plaintext only matches on tenants that have not been seeded with encryption yet.
+      // It never produces a false positive — an encrypted value simply will not compare equal.
+      const emailMatch = { $or: [{ emailHash: { $in: emailHashCandidates } }, { email: emailLower }] }
+
+      // Check if user already exists. An existing CustomerUser must NOT be invited: the
+      // accept-invite flow CREATES an account, so the invitation would be un-acceptable.
+      // The operator attaches the existing account via Add Participant instead.
+      const existingUser = await findOneWithDecryption(
+        em,
+        CustomerUser,
+        { ...emailMatch, tenantId, deletedAt: null } as FilterQuery<typeof CustomerUser.prototype>,
+        undefined,
+        { tenantId, organizationId },
+      )
       if (existingUser) {
-        results.push({ email: emailLower, status: 'skipped', invitationCreated: false, reason: 'User already exists' })
+        results.push({
+          email: emailLower,
+          status: 'skipped',
+          invitationCreated: false,
+          reasonCode: 'user_already_exists',
+          reason: INVITE_SKIP_REASONS.user_already_exists,
+        })
         continue
       }
 
       // Check for pending invitation
       const existingInvitation = await em.findOne(CustomerUserInvitation, {
-        emailHash,
+        ...emailMatch,
         tenantId,
         acceptedAt: null,
         cancelledAt: null,
       } as FilterQuery<typeof CustomerUserInvitation.prototype>)
       if (existingInvitation && existingInvitation.expiresAt.getTime() > Date.now()) {
-        results.push({ email: emailLower, status: 'skipped', invitationCreated: false, reason: 'Invitation already pending' })
+        results.push({
+          email: emailLower,
+          status: 'skipped',
+          invitationCreated: false,
+          reasonCode: 'invitation_already_pending',
+          reason: INVITE_SKIP_REASONS.invitation_already_pending,
+        })
         continue
       }
 
@@ -192,6 +220,7 @@ export async function POST(req: Request) {
       skipped: summary.skipped,
       failed: summary.failed,
       invitationsCreated: summary.invitationsCreated,
+      existingUsers: summary.existingUsers,
       errors: summary.errors,
       emailFailures: summary.emailFailures,
       results: finalResults,
@@ -211,7 +240,7 @@ export const openApi: OpenApiRouteDoc = {
   methods: {
     POST: {
       summary:
-        'Create invitations and send emails for multiple participants. Creation and email delivery are reported separately: per-row status is sent | created (invited, email failed) | skipped | error (nothing created).',
+        'Create invitations and send emails for multiple participants. Creation and email delivery are reported separately: per-row status is sent | created (invited, email failed) | skipped | error (nothing created). An address that already has a CustomerUser is skipped with reasonCode "user_already_exists" and listed in existingUsers — attach that account with Add Participant instead, an invitation would be un-acceptable.',
     },
   },
 }

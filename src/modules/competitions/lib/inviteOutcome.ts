@@ -17,11 +17,35 @@
 
 export type InviteStatus = 'sent' | 'created' | 'skipped' | 'error'
 
+/**
+ * Machine-readable cause of a `skipped` row. `reason` stays a human sentence; the UI
+ * branches on this so it can render actionable guidance instead of matching on prose.
+ *
+ * `user_already_exists` is not a failure: the address already has a portal account, so
+ * an invitation would be a dead link (accept-invite CREATES an account). The operator
+ * should attach the existing account with Add Participant instead.
+ */
+export type InviteSkipReason = 'user_already_exists' | 'invitation_already_pending'
+
+/** Default human text for each skip cause. Callers may override with a translated string. */
+export const INVITE_SKIP_REASONS: Record<InviteSkipReason, string> = {
+  user_already_exists: 'This email already has a portal account',
+  invitation_already_pending: 'Invitation already pending',
+}
+
+/** Translation key per skip cause, so the UI never renders the server's English `reason`. */
+export const INVITE_SKIP_REASON_KEYS: Record<InviteSkipReason, string> = {
+  user_already_exists: 'competitions.invite.skip.userAlreadyExists',
+  invitation_already_pending: 'competitions.invite.skip.invitationAlreadyPending',
+}
+
 export type InviteResult = {
   email: string
   status: InviteStatus
   /** True when the invitation row was created and committed, regardless of email delivery. */
   invitationCreated: boolean
+  /** Set for `skipped`: why nothing was created, in a form the UI can branch on. */
+  reasonCode?: InviteSkipReason
   /** Why the row was skipped, or why creating it failed. Never carries an email error. */
   reason?: string
   /** Set only for `created`: why the notification email could not be delivered. */
@@ -45,6 +69,11 @@ export type InviteSummary = {
   failed: number
   /** sent + created — how many people are actually invited now. */
   invitationsCreated: number
+  /**
+   * Skipped because the address already has a portal account. These people cannot be
+   * invited (the link would be un-acceptable) — they are added with Add Participant.
+   */
+  existingUsers: string[]
   /** Real failures only: no invitation exists for these. */
   errors: Array<{ email: string; reason: string }>
   /** Invited, but could not be notified. The operator must deliver the link another way. */
@@ -101,6 +130,7 @@ export function summarizeInviteResults(results: InviteResult[]): InviteSummary {
     skipped: skipped.length,
     failed: failed.length,
     invitationsCreated: sent.length + created.length,
+    existingUsers: skipped.filter((r) => r.reasonCode === 'user_already_exists').map((r) => r.email),
     errors: failed.map((r) => ({ email: r.email, reason: r.reason ?? 'Failed to create invitation' })),
     emailFailures: created.map((r) => ({ email: r.email, reason: r.emailError ?? UNKNOWN_EMAIL_ERROR })),
   }

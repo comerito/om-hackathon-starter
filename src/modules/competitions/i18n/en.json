@@ -455,5 +455,13 @@
   "competitions.bulkInvite.flash.sent": "{count} invitations sent",
   "competitions.participants.resend.sent": "Invitation resent to {email}",
   "competitions.participants.resend.emailFailed": "Invitation for {email} was renewed, but the email could not be sent: {reason}",
-  "competitions.participants.resend.failed": "Failed to resend"
+  "competitions.participants.resend.failed": "Failed to resend",
+  "competitions.invite.skip.userAlreadyExists": "This email already has a portal account",
+  "competitions.invite.skip.invitationAlreadyPending": "An invitation is already pending for this email",
+  "competitions.manualInvite.result.existingUserTitle": "{email} already has a portal account",
+  "competitions.manualInvite.result.existingUserHint": "No invitation was created — an invite link would not work for someone who can already sign in. Use Add Participant to attach the existing account to this competition.",
+  "competitions.manualInvite.result.existingUserAction": "Go to Add Participant",
+  "competitions.manualInvite.flash.existingUser": "{email} already has an account — add them with Add Participant instead",
+  "competitions.bulkInvite.summary.existingUsersHint": "{count} address(es) already have a portal account, so no invitation was created for them. Use Add Participant to attach those accounts to this competition.",
+  "competitions.bulkInvite.summary.existingUsersAction": "Go to Add Participant"
 }
