@@ -2,13 +2,20 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Competition, STAGE_ORDER } from '../../data/entities'
+import { Competition, CompetitionStage as CompetitionStageValues, STAGE_ORDER } from '../../data/entities'
 import type { CompetitionStage } from '../../data/entities'
+import { Team, TeamStatus, TeamTrack } from '../../../teams/data/entities'
+import { teamsMissingTrack } from '../../lib/stages'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const advanceStageSchema = z.object({
   competition_id: z.string().uuid(),
   target_stage: z.string(),
+  /**
+   * Proceed despite a preflight warning. The organiser has to have been shown the
+   * warning first — the back-office lists the affected teams before re-sending.
+   */
+  acknowledge_warnings: z.boolean().optional(),
 })
 
 export const metadata = {
@@ -49,6 +56,44 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ error: `Cannot move from ${competition.stage} to ${parsed.target_stage}. Target must be a later stage.` }), { status: 400, headers: { 'content-type': 'application/json' } })
     }
 
+    // Preflight: entering `hacking` creates one draft project per team per assigned
+    // track, so a team with no track gets nothing and — because track selection
+    // closes at the same moment — can never fix it itself. Report those teams
+    // instead of advancing silently.
+    const warnings: { teams_without_track: Array<{ id: string; name: string }> } = { teams_without_track: [] }
+    if (parsed.target_stage === CompetitionStageValues.HACKING) {
+      const activeTeams = await em.find(Team, {
+        competitionId: competition.id,
+        status: TeamStatus.ACTIVE,
+        tenantId: auth.tenantId,
+        organizationId: competition.organizationId,
+        deletedAt: null,
+      } as FilterQuery<Team>)
+
+      const teamTracks = await em.find(TeamTrack, {
+        competitionId: competition.id,
+        tenantId: auth.tenantId,
+      } as FilterQuery<TeamTrack>)
+
+      const trackIdsByTeam = new Map<string, string[]>()
+      for (const entry of teamTracks) {
+        const list = trackIdsByTeam.get(entry.teamId) ?? []
+        list.push(entry.trackId)
+        trackIdsByTeam.set(entry.teamId, list)
+      }
+
+      warnings.teams_without_track = teamsMissingTrack(activeTeams, trackIdsByTeam)
+        .map((team) => ({ id: team.id, name: team.name }))
+
+      if (warnings.teams_without_track.length > 0 && !parsed.acknowledge_warnings) {
+        return new Response(JSON.stringify({
+          error: `${warnings.teams_without_track.length} active team(s) have not selected a track and will get no project. Assign them a track, or confirm to advance without them.`,
+          code: 'teams_without_track',
+          warnings,
+        }), { status: 409, headers: { 'content-type': 'application/json' } })
+      }
+    }
+
     const oldStage = competition.stage
     competition.stage = parsed.target_stage as CompetitionStage
     em.persist(competition)
@@ -72,6 +117,9 @@ export async function POST(request: Request) {
         stage: competition.stage,
         previousStage: oldStage,
       },
+      // Non-empty only when the organiser acknowledged them: these teams advanced
+      // without a track and will not receive a draft project.
+      warnings,
     }), { headers: { 'content-type': 'application/json' } })
   } catch (error) {
     if (error instanceof z.ZodError) {
