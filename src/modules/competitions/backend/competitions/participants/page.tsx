@@ -66,8 +66,14 @@ export default function ParticipantsListPage() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'role', desc: false }])
   const [page, setPage] = React.useState(1)
   const [filterValues, setFilterValues] = React.useState<FilterValues>({})
-  const [showBulkInvite, setShowBulkInvite] = React.useState(false)
-  const [showManualInvite, setShowManualInvite] = React.useState(false)
+  // ONE slot for the invite modals. Two independent booleans let both dialogs mount at the
+  // same time and render stacked on top of each other; a single discriminated value makes
+  // that unrepresentable, and opening one dialog always dismisses the other.
+  const [inviteDialog, setInviteDialog] = React.useState<'manual' | 'bulk' | null>(null)
+  const closeInviteDialog = React.useCallback(() => {
+    setInviteDialog(null)
+    queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] })
+  }, [queryClient])
   const [tab, setTab] = React.useState<'participants' | 'invitations'>('participants')
   const [invFilterValues, setInvFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
@@ -245,10 +251,10 @@ export default function ParticipantsListPage() {
                 {t('competitions.participants.previewEmail', 'Preview Email')}
               </Link>
             </Button>
-            <Button variant="outline" onClick={() => setShowManualInvite(true)}>
+            <Button variant="outline" onClick={() => setInviteDialog('manual')}>
               {t('competitions.participants.invite', 'Invite')}
             </Button>
-            <Button variant="outline" onClick={() => setShowBulkInvite(true)}>
+            <Button variant="outline" onClick={() => setInviteDialog('bulk')}>
               {t('competitions.participants.bulkInvite', 'Bulk Invite')}
             </Button>
             <Button asChild>
@@ -446,8 +452,8 @@ export default function ParticipantsListPage() {
         )}
 
         {ConfirmDialogElement}
-        {showBulkInvite && <BulkInviteDialog onClose={() => { setShowBulkInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
-        {showManualInvite && <ManualInviteDialog onClose={() => { setShowManualInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
+        {inviteDialog === 'bulk' && <BulkInviteDialog onClose={closeInviteDialog} />}
+        {inviteDialog === 'manual' && <ManualInviteDialog onClose={closeInviteDialog} />}
       </PageBody>
     </Page>
   )

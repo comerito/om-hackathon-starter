@@ -117,42 +117,54 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
 
   async function handleSend() {
     if (!selectedCompetitionId || parsedRows.length === 0) return
+    // Single-flight: a second click while the request is out must not start another run.
+    if (step === 'sending') return
     setStep('sending')
 
     // Get orgSlug from URL
     const orgSlug = window.location.pathname.split('/')[1] || 'default'
 
-    const { ok, result } = await apiCall<{
-      total: number; sent: number; created: number; skipped: number; failed: number
-      invitationsCreated: number
-      existingUsers?: string[]
-      errors: Array<{ email: string; reason: string }>
-      emailFailures: Array<{ email: string; reason: string }>
-      results: InviteResult[]
-    }>('/api/competitions/admin/bulk-invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        competition_id: selectedCompetitionId,
-        org_slug: orgSlug,
-        invitees: parsedRows,
-      }),
-    })
-
-    if (ok && result) {
-      setResults(result.results ?? [])
-      setSummary({
-        total: result.total,
-        sent: result.sent,
-        created: result.created ?? 0,
-        skipped: result.skipped,
-        errors: result.errors?.length ?? 0,
-        existingUsers: result.existingUsers ?? [],
+    // `apiCall` REJECTS on 401/403 and on transport failures instead of resolving with
+    // `ok: false`. Uncaught, that left the dialog spinning on the `sending` step forever with
+    // no way back — the same wedge the single-invite dialog had. Always land on `results`.
+    try {
+      const { ok, result } = await apiCall<{
+        total: number; sent: number; created: number; skipped: number; failed: number
+        invitationsCreated: number
+        existingUsers?: string[]
+        errors: Array<{ email: string; reason: string }>
+        emailFailures: Array<{ email: string; reason: string }>
+        results: InviteResult[]
+      }>('/api/competitions/admin/bulk-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          competition_id: selectedCompetitionId,
+          org_slug: orgSlug,
+          invitees: parsedRows,
+        }),
       })
-    } else {
+
+      if (ok && result) {
+        setResults(result.results ?? [])
+        setSummary({
+          total: result.total,
+          sent: result.sent,
+          created: result.created ?? 0,
+          skipped: result.skipped,
+          errors: result.errors?.length ?? 0,
+          existingUsers: result.existingUsers ?? [],
+        })
+      } else {
+        setSummary({ total: parsedRows.length, sent: 0, created: 0, skipped: 0, errors: parsedRows.length, existingUsers: [] })
+      }
+    } catch {
+      // Nothing was created: the request never reached a successful response.
+      setResults([])
       setSummary({ total: parsedRows.length, sent: 0, created: 0, skipped: 0, errors: parsedRows.length, existingUsers: [] })
+    } finally {
+      setStep('results')
     }
-    setStep('results')
   }
 
   const validRows = parsedRows.filter((_, i) => !validateRow(parsedRows[i], i))
