@@ -8,17 +8,23 @@ import { PortalCompetitionLayout } from '../../../../../competitions/components/
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
 import { AvatarStack } from '@/components/portal'
+import { computeHardDeadline, formatQueuePosition, resolveTrackName } from '../../../../lib/demoQueue'
 
 type DemoItem = {
   id: string; team_name: string | null; project_title: string | null
   status: string; actual_start: string | null
   presentation_duration_minutes: number; qa_duration_minutes: number
+  // Both are returned by /api/judging/portal/current-demo and were simply not declared here, so
+  // the Up Next bar had nothing to render and fell back to literals (#114).
+  track_id: string | null; presentation_order: number
 }
 
 type QueueResponse = {
   presenting: DemoItem | null; on_deck: DemoItem | null
   queue: DemoItem[]; server_time: number
 }
+
+type Track = { id: string; name: string }
 
 function KioskContent() {
   const t = useT()
@@ -42,8 +48,24 @@ function KioskContent() {
     refetchInterval: 10000,
   })
 
+  // Track names are not on the demo feed — it carries only `track_id` — so they come from the
+  // competition's own track list, the same endpoint the results and tracks portal pages use.
+  const { data: tracksData } = useQuery<{ items: Track[] }>({
+    queryKey: ['portal-tracks', competitionId],
+    queryFn: async () => {
+      const { ok, result } = await apiCall<{ items: Track[] }>(
+        `/api/competitions/portal/competition-data?competition_id=${competitionId}&type=tracks`,
+      )
+      return ok && result ? result : { items: [] }
+    },
+    enabled: !!competitionId,
+  })
+
   const presenting = data?.presenting
   const onDeck = data?.on_deck
+  const onDeckQueuePosition = formatQueuePosition(onDeck?.presentation_order)
+  const onDeckTrackName = resolveTrackName(onDeck?.track_id, tracksData?.items ?? [])
+  const hardDeadline = computeHardDeadline(presenting)
 
   let timeRemaining: number | null = null
   let phase = ''
@@ -169,7 +191,15 @@ function KioskContent() {
             {/* Phase labels */}
             <div className="flex items-center justify-between mt-2 text-[1.3vh] uppercase tracking-widest">
               <span className="text-white/30">{phase || t('judging.portal.kiosk.phaseStarted', 'Phase Started')}</span>
-              <span className="text-portal-tertiary font-semibold">{t('judging.portal.kiosk.hardDeadline', 'Hard Deadline: 00:00:00')}</span>
+              {/* The real end of this slot — start + presentation + Q&A. The label used to carry
+                  a literal all-zero clock time, i.e. a deadline that had already passed. */}
+              {hardDeadline && (
+                <span className="text-portal-tertiary font-semibold">
+                  {t('judging.portal.kiosk.hardDeadline', 'Hard Deadline: {time}', {
+                    time: hardDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                  })}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -182,21 +212,27 @@ function KioskContent() {
             {t('judging.portal.kiosk.upNextBadge', 'Up Next')}
           </span>
           <div className="flex-1">
-            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.queuePosition', 'Queue Position {position}', { position: '02' })}</span>
+            {/* Omitted rather than guessed when the feed has no usable order: this is a
+                projector, and a wrong position misdirects the whole room. */}
+            {onDeckQueuePosition && (
+              <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">
+                {t('judging.portal.kiosk.queuePosition', 'Queue Position {position}', { position: onDeckQueuePosition })}
+              </span>
+            )}
             <span className="text-white font-extrabold uppercase text-[2.5vh] tracking-wide">
               {onDeck.team_name ?? t('judging.portal.kiosk.teamUpperFallback', 'TEAM')}
             </span>
           </div>
-          <div className="text-right">
-            <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.track', 'Track')}</span>
-            <span className="text-white font-bold uppercase text-[1.8vh]">{t('judging.portal.kiosk.trackFallback', 'Infrastructure')}</span>
-          </div>
+          {onDeckTrackName && (
+            <div className="text-right">
+              <span className="text-[1.2vh] uppercase tracking-widest text-white/40 block">{t('judging.portal.kiosk.track', 'Track')}</span>
+              <span className="text-white font-bold uppercase text-[1.8vh]">{onDeckTrackName}</span>
+            </div>
+          )}
+          {/* One avatar for the team that is actually on deck. This used to stack two invented
+              team-mates ("M", "A") next to it. */}
           <AvatarStack
-            avatars={[
-              { name: onDeck.team_name ?? t('judging.portal.kiosk.avatarFallback.team', 'T') },
-              { name: t('judging.portal.kiosk.avatarFallback.memberOne', 'M') },
-              { name: t('judging.portal.kiosk.avatarFallback.memberTwo', 'A') },
-            ]}
+            avatars={[{ name: onDeck.team_name ?? t('judging.portal.kiosk.teamUpperFallback', 'TEAM') }]}
             size="sm"
           />
         </div>
