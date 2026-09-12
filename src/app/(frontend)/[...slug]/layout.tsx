@@ -9,6 +9,7 @@ import { loadDictionary, resolveTranslations } from '@open-mercato/shared/lib/i1
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { HackathonPortalLayout, type PortalLayoutVariant } from '@/components/portal/HackathonPortalLayout'
 import { resolvePortalLocaleFromContext } from '@/lib/portal-translations'
+import { readLocaleFromNextUrl } from '@/lib/portal-locale-query'
 
 type LayoutProps = {
   children: React.ReactNode
@@ -98,6 +99,9 @@ export default async function FrontendLayout({ children, params }: LayoutProps) 
     const headerStore = await headers()
     portalLocale = await resolvePortalLocaleFromContext({
       auth: customerAuth,
+      // First step of the documented precedence. A layout never receives `searchParams`, so
+      // `?locale=` reaches us through the `x-next-url` header set by `src/proxy.ts` (#101).
+      explicitLocale: readLocaleFromNextUrl(headerStore.get('x-next-url')),
       cookieLocale: cookieStore.get('locale')?.value ?? null,
       acceptLanguage: headerStore.get('accept-language'),
       container,
