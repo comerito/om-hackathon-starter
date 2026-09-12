@@ -10,17 +10,17 @@ import { CustomerRole, CustomerUser, CustomerUserInvitation } from '@open-mercat
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { bulkInviteSchema } from '../../../data/validators'
 import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
+import {
+  applyEmailOutcomes,
+  summarizeInviteResults,
+  type EmailOutcome,
+  type InviteResult,
+} from '../../../lib/inviteOutcome'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawFirst } from '@/lib/db'
 
 export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
-}
-
-type InviteResult = {
-  email: string
-  status: 'sent' | 'skipped' | 'error'
-  reason?: string
 }
 
 export async function POST(req: Request) {
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         deletedAt: null,
       } as FilterQuery<typeof CustomerUser.prototype>)
       if (existingUser) {
-        results.push({ email: emailLower, status: 'skipped', reason: 'User already exists' })
+        results.push({ email: emailLower, status: 'skipped', invitationCreated: false, reason: 'User already exists' })
         continue
       }
 
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
         cancelledAt: null,
       } as FilterQuery<typeof CustomerUserInvitation.prototype>)
       if (existingInvitation && existingInvitation.expiresAt.getTime() > Date.now()) {
-        results.push({ email: emailLower, status: 'skipped', reason: 'Invitation already pending' })
+        results.push({ email: emailLower, status: 'skipped', invitationCreated: false, reason: 'Invitation already pending' })
         continue
       }
 
@@ -143,19 +143,27 @@ export async function POST(req: Request) {
           acceptUrl,
         })
 
-        results.push({ email: emailLower, status: 'sent' })
+        results.push({ email: emailLower, status: 'sent', invitationCreated: true })
       } catch (err) {
-        results.push({ email: emailLower, status: 'error', reason: err instanceof Error ? err.message : 'Failed to create invitation' })
+        results.push({
+          email: emailLower,
+          status: 'error',
+          invitationCreated: false,
+          reason: err instanceof Error ? err.message : 'Failed to create invitation',
+        })
       }
     }
 
-    // Flush all competition invitation records
+    // Flush (and therefore COMMIT) every invitation BEFORE any email is attempted.
+    // From here on, email delivery is a separate outcome: it can fail without
+    // invalidating the invitations that already exist in the database.
     await em.flush()
 
     // Send emails with concurrency limit (4 at a time, with 1s delay between batches)
     // Resend allows max 5 requests/second
     const CONCURRENCY = 4
     const BATCH_DELAY_MS = 1000
+    const emailOutcomes: EmailOutcome[] = []
     for (let i = 0; i < emailsToSend.length; i += CONCURRENCY) {
       if (i > 0) {
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS))
@@ -164,29 +172,29 @@ export async function POST(req: Request) {
       const emailResults = await Promise.allSettled(
         batch.map(e => sendInvitationEmail(e)),
       )
-      // Mark failures
       emailResults.forEach((result, idx) => {
-        if (result.status === 'rejected') {
-          const email = batch[idx].to
-          const existingResult = results.find(r => r.email === email)
-          if (existingResult) {
-            existingResult.status = 'error'
-            existingResult.reason = `Email send failed: ${result.reason}`
-          }
-        }
+        emailOutcomes.push(
+          result.status === 'rejected'
+            ? { email: batch[idx].to, ok: false, error: result.reason }
+            : { email: batch[idx].to, ok: true },
+        )
       })
     }
 
-    const sent = results.filter(r => r.status === 'sent').length
-    const skipped = results.filter(r => r.status === 'skipped').length
-    const errors = results.filter(r => r.status === 'error')
+    // A rejected email downgrades the row to `created` (invited, not notified) — never `error`.
+    const finalResults = applyEmailOutcomes(results, emailOutcomes)
+    const summary = summarizeInviteResults(finalResults)
 
     return NextResponse.json({
       total: parsed.invitees.length,
-      sent,
-      skipped,
-      errors: errors.map(e => ({ email: e.email, reason: e.reason })),
-      results,
+      sent: summary.sent,
+      created: summary.created,
+      skipped: summary.skipped,
+      failed: summary.failed,
+      invitationsCreated: summary.invitationsCreated,
+      errors: summary.errors,
+      emailFailures: summary.emailFailures,
+      results: finalResults,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -200,5 +208,10 @@ export async function POST(req: Request) {
 export const openApi: OpenApiRouteDoc = {
   tag: 'Competitions',
   summary: 'Bulk invite participants',
-  methods: { POST: { summary: 'Create invitations and send emails for multiple participants from CSV' } },
+  methods: {
+    POST: {
+      summary:
+        'Create invitations and send emails for multiple participants. Creation and email delivery are reported separately: per-row status is sent | created (invited, email failed) | skipped | error (nothing created).',
+    },
+  },
 }

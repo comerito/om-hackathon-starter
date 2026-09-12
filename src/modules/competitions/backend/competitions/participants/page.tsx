@@ -408,16 +408,33 @@ export default function ParticipantsListPage() {
                       id: 'resend',
                       label: isExpired ? 'Resend (New Token)' : 'Resend Email',
                       onSelect: async () => {
-                        const { ok } = await apiCall('/api/competitions/admin/resend-invitation', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ competition_invitation_id: row.id }),
-                        })
-                        if (ok) {
-                          flash(`Invitation resent to ${row.email}`, 'success')
+                        const { ok, result } = await apiCall<{ emailSent?: boolean; emailError?: string }>(
+                          '/api/competitions/admin/resend-invitation',
+                          {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ competition_invitation_id: row.id }),
+                          },
+                        )
+                        if (ok && result?.emailSent === false) {
+                          // The invitation was renewed and committed; only delivery failed.
+                          flash(
+                            t(
+                              'competitions.participants.resend.emailFailed',
+                              'Invitation for {email} was renewed, but the email could not be sent: {reason}',
+                              { email: row.email ?? '', reason: result.emailError ?? '' },
+                            ),
+                            'warning',
+                          )
+                          queryClient.invalidateQueries({ queryKey: ['competition-invitations-list'] })
+                        } else if (ok) {
+                          flash(
+                            t('competitions.participants.resend.sent', 'Invitation resent to {email}', { email: row.email ?? '' }),
+                            'success',
+                          )
                           queryClient.invalidateQueries({ queryKey: ['competition-invitations-list'] })
                         } else {
-                          flash('Failed to resend', 'error')
+                          flash(t('competitions.participants.resend.failed', 'Failed to resend'), 'error')
                         }
                       },
                     },
