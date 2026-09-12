@@ -7,6 +7,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { LoadingMessage, ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useQuery } from '@tanstack/react-query'
+import { toFormInstant } from '@/modules/competitions/lib/formInstant'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -27,10 +28,11 @@ export default function EditMilestonePage({ params }: { params?: { id?: string }
       )
       if (!ok || !result?.items?.[0]) throw new Error('Failed to load milestone')
       const item = result.items[0]
-      // Convert datetime to local format for the datetime input
-      if (item.due_date) {
-        try { item.due_date = new Date(String(item.due_date)).toISOString().slice(0, 16) } catch { /* keep as-is */ }
-      }
+      // Keep the stored instant intact for the `datetime` picker, which renders it in the
+      // browser's local timezone. Narrowing it to a zone-less `YYYY-MM-DDTHH:mm` string (as
+      // this loader used to) made the picker re-read a UTC instant as local wall-clock time,
+      // so every save shifted the due date by the UTC offset — issue #122, same defect as #81.
+      if (item.due_date) item.due_date = toFormInstant(item.due_date)
       return item
     },
     enabled: !!milestoneId,
@@ -70,8 +72,10 @@ export default function EditMilestonePage({ params }: { params?: { id?: string }
         cancelHref="/backend/competitions/milestones"
         successRedirect={`/backend/competitions/milestones?flash=${encodeURIComponent(t('competitions.milestones.flash.updated', 'Milestone updated'))}&type=success`}
         onSubmit={async (vals) => {
+          // `due_date` already holds an ISO-8601 UTC instant — either the value loaded from the
+          // API or the picker's own `date.toISOString()` output — so it is forwarded untouched.
+          // Re-parsing it here was the second half of issue #122.
           const cleaned = { ...vals, id: milestoneId } as Record<string, unknown>
-          if (cleaned.due_date) cleaned.due_date = new Date(String(cleaned.due_date)).toISOString()
           await updateCrud('competitions/milestones', cleaned)
         }}
       />
