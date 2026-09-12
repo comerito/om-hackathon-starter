@@ -9,7 +9,12 @@ import { CompetitionParticipation } from '../../../../competitions/data/entities
 import { TeamMember } from '../../../../teams/data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { castVoteSchema } from '../../../data/validators'
-import { evaluateVotingWindow, DEFAULT_VOTES_PER_PERSON, type PeerVotingConfig } from '../../../lib/voting-eligibility'
+import {
+  evaluateVoteEligibility,
+  evaluateVotingWindow,
+  resolveVotesPerPerson,
+  type PeerVotingConfig,
+} from '../../../lib/voting-eligibility'
 import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -71,36 +76,37 @@ export async function POST(req: Request) {
 
     const votingConfig = (competition as unknown as Record<string, unknown>).peerVotingConfig as PeerVotingConfig | undefined
 
-    // Is voting open at all? Stage first, then the (optional) explicit window —
-    // `votingEndsAt` alone never closes voting because it is null by default.
-    const votingWindow = evaluateVotingWindow({ stage: competition.stage, config: votingConfig })
-    if (!votingWindow.open) {
-      return NextResponse.json({ error: votingWindow.message, reason: votingWindow.reason }, { status: 409 })
-    }
+    // The target project must exist in *this* competition and tenant. It used to
+    // be loaded only to compare team ids, so a vote for a project from another
+    // competition — or for no project at all — was persisted happily.
+    const project = await em.findOne(Project, {
+      id: input.project_id, competitionId: input.competition_id,
+      tenantId: auth.tenantId, deletedAt: null,
+    } as FilterQuery<Project>)
+    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
-    // No self-voting: check if project belongs to voter's team
     const voterMembership = await em.findOne(TeamMember, {
-      customerUserId: auth.sub, competitionId: input.competition_id, deletedAt: null,
+      customerUserId: auth.sub, competitionId: input.competition_id,
+      tenantId: auth.tenantId, deletedAt: null,
     } as FilterQuery<TeamMember>)
-    if (voterMembership) {
-      const project = await em.findOne(Project, { id: input.project_id, deletedAt: null } as FilterQuery<Project>)
-      if (project && project.teamId === voterMembership.teamId) {
-        return NextResponse.json({ error: 'You cannot vote for your own team\'s project' }, { status: 409 })
-      }
-    }
 
-    // Check vote limit
     const existingVotes = await em.find(PeerVote, {
       voterId: auth.sub, competitionId: input.competition_id, tenantId: auth.tenantId,
     } as FilterQuery<PeerVote>)
-    const maxVotes = votingConfig?.votesPerPerson ?? DEFAULT_VOTES_PER_PERSON
-    if (existingVotes.length >= maxVotes) {
-      return NextResponse.json({ error: `You have already used all ${maxVotes} votes` }, { status: 409 })
-    }
 
-    // Check duplicate vote
-    const duplicate = existingVotes.find(v => v.projectId === input.project_id)
-    if (duplicate) return NextResponse.json({ error: 'You have already voted for this project' }, { status: 409 })
+    // One eligibility verdict: voting window, own team, duplicate, vote budget.
+    const eligibility = evaluateVoteEligibility({
+      stage: competition.stage,
+      config: votingConfig,
+      projectId: input.project_id,
+      voterTeamId: voterMembership?.teamId ?? null,
+      projectTeamId: project.teamId,
+      votedProjectIds: existingVotes.map((v) => v.projectId),
+    })
+    if (!eligibility.ok) {
+      return NextResponse.json({ error: eligibility.message, reason: eligibility.reason }, { status: 409 })
+    }
+    const maxVotes = resolveVotesPerPerson(votingConfig)
 
     // Cast vote
     const vote = em.create(PeerVote, {

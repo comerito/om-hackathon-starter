@@ -139,3 +139,73 @@ export function evaluateVotingWindow(input: {
 
   return { open: true }
 }
+
+/** How many votes this competition grants each participant. */
+export function resolveVotesPerPerson(config?: PeerVotingConfig | null): number {
+  const configured = config?.votesPerPerson
+  if (typeof configured !== 'number' || !Number.isFinite(configured) || configured < 0) {
+    return DEFAULT_VOTES_PER_PERSON
+  }
+  return Math.floor(configured)
+}
+
+export type VoteEligibilityReason =
+  | VotingWindowReason
+  | 'own_team_project'
+  | 'already_voted'
+  | 'no_votes_left'
+
+export type VoteEligibility =
+  | { ok: true }
+  | { ok: false; reason: VoteEligibilityReason; message: string }
+
+export type VoteEligibilityInput = {
+  stage: string | null | undefined
+  config?: PeerVotingConfig | null
+  now?: Date
+  /** The project the vote is aimed at. */
+  projectId: string
+  /** Team the voter belongs to in this competition, or null when they have none. */
+  voterTeamId?: string | null
+  /** Team that owns `projectId`, or null when the project is unknown. */
+  projectTeamId?: string | null
+  /** Projects this voter has already voted for in this competition. */
+  votedProjectIds?: readonly string[]
+}
+
+/**
+ * May this voter cast this vote right now?
+ *
+ * Composes {@link evaluateVotingWindow} with the voter-and-project rules so the
+ * write route and the portal answer the question the same way. Reasons are
+ * ordered most-specific-first: a voter who is out of votes but clicks a project
+ * they already voted for is told *that*, not "no votes left".
+ */
+export function evaluateVoteEligibility(input: VoteEligibilityInput): VoteEligibility {
+  const window = evaluateVotingWindow({ stage: input.stage, config: input.config, now: input.now })
+  if (!window.open) return { ok: false, reason: window.reason, message: window.message }
+
+  if (input.voterTeamId && input.projectTeamId && input.voterTeamId === input.projectTeamId) {
+    return {
+      ok: false,
+      reason: 'own_team_project',
+      message: "You cannot vote for your own team's project",
+    }
+  }
+
+  const voted = input.votedProjectIds ?? []
+  if (voted.includes(input.projectId)) {
+    return { ok: false, reason: 'already_voted', message: 'You have already voted for this project' }
+  }
+
+  const maxVotes = resolveVotesPerPerson(input.config)
+  if (voted.length >= maxVotes) {
+    return {
+      ok: false,
+      reason: 'no_votes_left',
+      message: `You have already used all ${maxVotes} votes`,
+    }
+  }
+
+  return { ok: true }
+}
