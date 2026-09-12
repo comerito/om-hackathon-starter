@@ -5,7 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamInvitation, InvitationType, InvitationStatus, TeamRole } from '../../../data/entities'
 import { Competition, CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
-import { canInviteToTeam } from '../../../lib/team-size'
+import { activeTeamMemberFilter, canInviteToTeam } from '../../../lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const inviteSchema = z.object({
@@ -95,10 +95,10 @@ export async function POST(req: Request) {
     }
 
     const [memberCount, pendingInvitationCount] = await Promise.all([
-      em.count(TeamMember, {
+      em.count(TeamMember, activeTeamMemberFilter({
         teamId: team.id,
-        deletedAt: null,
-      } as FilterQuery<TeamMember>),
+        tenantId: auth.tenantId,
+      }) as FilterQuery<TeamMember>),
       em.count(TeamInvitation, {
         teamId: team.id,
         type: InvitationType.INVITE,

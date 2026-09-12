@@ -1,4 +1,5 @@
 import {
+  activeTeamMemberFilter,
   canInviteToTeam,
   canJoinTeam,
   maxTeamSize,
@@ -101,5 +102,65 @@ describe('meetsMinimumTeamSize', () => {
   it('accepts any size when no minimum is configured', () => {
     expect(meetsMinimumTeamSize({ minTeamSize: 0 }, { memberCount: 1 })).toEqual({ allowed: true })
     expect(meetsMinimumTeamSize({}, { memberCount: 0 })).toEqual({ allowed: true })
+  })
+})
+
+describe('activeTeamMemberFilter', () => {
+  const TEAM = '11111111-1111-4111-8111-111111111111'
+  const OTHER_TEAM = '22222222-2222-4222-8222-222222222222'
+  const TENANT = '33333333-3333-4333-8333-333333333333'
+  const OTHER_TENANT = '44444444-4444-4444-8444-444444444444'
+
+  type Row = { teamId: string; tenantId: string; deletedAt: Date | null; leftAt: Date | null }
+
+  /** Stand-in for `em.count(TeamMember, filter)`: MikroORM ANDs the equality terms. */
+  const countMatching = (rows: Row[], filter: Record<string, unknown>): number =>
+    rows.filter((row) =>
+      Object.entries(filter).every(([key, value]) => (row as Record<string, unknown>)[key] === value),
+    ).length
+
+  const active = { teamId: TEAM, tenantId: TENANT, deletedAt: null, leftAt: null }
+
+  it('does not charge the team for a member who has left', () => {
+    // The reported scenario: max_team_size = 2, member B left (left_at set, deleted_at null).
+    const roster: Row[] = [active, { ...active, leftAt: new Date('2026-01-02T00:00:00Z') }]
+
+    const memberCount = countMatching(roster, activeTeamMemberFilter({ teamId: TEAM, tenantId: TENANT }))
+
+    expect(memberCount).toBe(1)
+    // Which is the whole point: the owner can invite a replacement.
+    expect(canInviteToTeam({ minTeamSize: 2, maxTeamSize: 2 }, { memberCount, pendingInvitationCount: 0 }))
+      .toEqual({ allowed: true })
+    expect(canJoinTeam({ maxTeamSize: 2 }, { memberCount })).toEqual({ allowed: true })
+  })
+
+  it('agrees with what browse-teams displays for the same roster', () => {
+    // `browse-teams` counts `WHERE team_id = ? AND left_at IS NULL`. A capacity count that
+    // disagrees produces "This team is full (2 of 2 members)" over a bar reading 1/2.
+    const roster: Row[] = [active, { ...active, leftAt: new Date('2026-01-02T00:00:00Z') }]
+    const browseTeamsCount = roster.filter((r) => r.teamId === TEAM && r.leftAt === null).length
+
+    expect(countMatching(roster, activeTeamMemberFilter({ teamId: TEAM, tenantId: TENANT })))
+      .toBe(browseTeamsCount)
+  })
+
+  it('still excludes soft-deleted rows, other teams and other tenants', () => {
+    const roster: Row[] = [
+      active,
+      { ...active, deletedAt: new Date('2026-01-02T00:00:00Z') },
+      { ...active, teamId: OTHER_TEAM },
+      { ...active, tenantId: OTHER_TENANT },
+    ]
+
+    expect(countMatching(roster, activeTeamMemberFilter({ teamId: TEAM, tenantId: TENANT }))).toBe(1)
+  })
+
+  it('spells out both null conditions, so no call site can forget one', () => {
+    expect(activeTeamMemberFilter({ teamId: TEAM, tenantId: TENANT })).toEqual({
+      teamId: TEAM,
+      tenantId: TENANT,
+      deletedAt: null,
+      leftAt: null,
+    })
   })
 })

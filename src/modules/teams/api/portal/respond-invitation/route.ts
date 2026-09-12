@@ -5,7 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { TeamInvitation, InvitationStatus, TeamMember, TeamRole, InvitationType } from '../../../data/entities'
 import { Competition, CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
-import { canJoinTeam } from '../../../lib/team-size'
+import { activeTeamMemberFilter, canJoinTeam } from '../../../lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const respondSchema = z.object({
@@ -98,10 +98,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
       }
 
-      const memberCount = await em.count(TeamMember, {
+      const memberCount = await em.count(TeamMember, activeTeamMemberFilter({
         teamId: invitation.teamId,
-        deletedAt: null,
-      } as FilterQuery<TeamMember>)
+        tenantId: auth.tenantId,
+      }) as FilterQuery<TeamMember>)
 
       const capacity = canJoinTeam(competition, { memberCount })
       if (!capacity.allowed) {

@@ -10,6 +10,31 @@ export type TeamSizeLimits = {
   maxTeamSize?: number | null
 }
 
+/**
+ * The one definition of "a member who occupies a seat", for every capacity count.
+ *
+ * `left_at IS NULL` is the repo's existing definition of an active member — it is what
+ * `portal/browse-teams` counts for the roster the UI displays and what
+ * `portal/my-team-membership` uses to decide whether you are on a team. A capacity count that
+ * omits it charges the team for someone who has left: at `max_team_size = 2` with one member
+ * gone, `browse-teams` shows 1/2 while the invite is refused with "This team is full (2 of 2
+ * members)", and the seat can never be reclaimed.
+ *
+ * `tenantId` is part of the filter because every other query on these routes is tenant-scoped and
+ * a count that is not would be the one place a foreign row could move the answer.
+ *
+ * Returned as a plain object so the routes can hand it straight to `em.count(TeamMember, …)` and
+ * so the rule itself stays unit-testable without a database.
+ */
+export function activeTeamMemberFilter(scope: { teamId: string; tenantId: string }): {
+  teamId: string
+  tenantId: string
+  deletedAt: null
+  leftAt: null
+} {
+  return { teamId: scope.teamId, tenantId: scope.tenantId, deletedAt: null, leftAt: null }
+}
+
 export type TeamSizeDecision =
   | { allowed: true }
   | { allowed: false; reason: string }
