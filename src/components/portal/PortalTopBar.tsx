@@ -10,6 +10,7 @@ import { PortalNotificationBell } from '@open-mercato/ui/portal/components/Porta
 import { PortalChatIcon } from './PortalChatIcon'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { cn } from '@open-mercato/shared/lib/utils'
+import { usePortalSelection } from './usePortalSelection'
 
 type PortalTopBarProps = {
   variant?: 'full' | 'minimal' | 'topnav'
@@ -43,24 +44,8 @@ export function PortalTopBar({
   const t = useT()
   const displayName = userName || auth.user?.displayName || auth.user?.email || ''
 
-  // Read participation role from CompetitionContext's localStorage (set by CompetitionProvider)
-  const [participationRole, setParticipationRole] = React.useState<string | null>(null)
-  React.useEffect(() => {
-    setParticipationRole(localStorage.getItem('hackon:selected-competition-role'))
-    function onStorage(e: StorageEvent) {
-      if (e.key === 'hackon:selected-competition-role') setParticipationRole(e.newValue)
-    }
-    function onRoleChanged(e: Event) {
-      const detail = (e as CustomEvent).detail as { role?: string } | undefined
-      if (detail?.role) setParticipationRole(detail.role)
-    }
-    window.addEventListener('storage', onStorage)
-    window.addEventListener('competition-role-changed', onRoleChanged)
-    return () => {
-      window.removeEventListener('storage', onStorage)
-      window.removeEventListener('competition-role-changed', onRoleChanged)
-    }
-  }, [])
+  // Participation role from CompetitionContext's localStorage (set by CompetitionProvider)
+  const { role: participationRole } = usePortalSelection()
   const displayRole = userRole || participationRole || t('competitions.portal.topBar.defaultRole', 'Participant')
   const prefix = `/${orgSlug}/portal`
   return (
