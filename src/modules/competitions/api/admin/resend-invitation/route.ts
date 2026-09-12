@@ -7,6 +7,7 @@ import { CustomerInvitationService } from '@open-mercato/core/modules/customer_a
 import { CustomerUserInvitation } from '@open-mercato/core/modules/customer_accounts/data/entities'
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
+import { formatEmailError } from '../../../lib/inviteOutcome'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawFirst } from '@/lib/db'
 
@@ -123,16 +124,28 @@ export async function POST(req: Request) {
     const origin = req.headers.get('origin') || `${req.headers.get('x-forwarded-proto') ?? 'http'}://${req.headers.get('host')}` || 'http://localhost:3000'
     const acceptUrl = `${origin}/${orgSlug}/portal/accept-invite?token=${encodeURIComponent(rawToken)}`
 
-    // Send email
-    await sendInvitationEmail({
-      to: invitation.email,
-      competitionName: competition?.name ?? 'Hackathon',
-      displayName: invitation.displayName ?? invitation.email.split('@')[0],
-      role: compInvite.participationRole,
-      acceptUrl,
-    })
+    // The new invitation is already flushed (and the old one cancelled) above, so email
+    // delivery is a SEPARATE outcome. A failed email must not be reported as a failed
+    // resend — the token has been regenerated either way. Report the two independently.
+    try {
+      await sendInvitationEmail({
+        to: invitation.email,
+        competitionName: competition?.name ?? 'Hackathon',
+        displayName: invitation.displayName ?? invitation.email.split('@')[0],
+        role: compInvite.participationRole,
+        acceptUrl,
+      })
+    } catch (emailError) {
+      console.error('[admin/resend-invitation] email delivery failed:', emailError)
+      return NextResponse.json({
+        ok: true,
+        invitationRenewed: true,
+        emailSent: false,
+        emailError: formatEmailError(emailError),
+      })
+    }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, invitationRenewed: true, emailSent: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
@@ -145,5 +158,10 @@ export async function POST(req: Request) {
 export const openApi: OpenApiRouteDoc = {
   tag: 'Competitions',
   summary: 'Resend invitation',
-  methods: { POST: { summary: 'Resend or regenerate an invitation email' } },
+  methods: {
+    POST: {
+      summary:
+        'Resend or regenerate an invitation. Returns ok:true with emailSent:false and emailError when the invitation was renewed but the email could not be delivered.',
+    },
+  },
 }
