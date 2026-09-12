@@ -43,5 +43,19 @@ export function requirePortalFeatures(
 /** Granted to the `judge` customer role in `judging/setup.ts`. */
 export const PORTAL_SCORE_FEATURE = 'portal.judging.score'
 
-/** Granted to `participant`, `mentor` and `judge` in `judging/setup.ts`. */
+/**
+ * Reading the published ranking in the portal. Granted to `participant`, `mentor` and `judge` in
+ * `judging/setup.ts` — everyone who attends may see where they placed.
+ */
 export const PORTAL_RESULTS_FEATURE = 'portal.judging.results.view'
+
+/**
+ * Downloading the whole ranking as a CSV. A **separate** feature from
+ * {@link PORTAL_RESULTS_FEATURE} on purpose: gating the export on the view feature is not a gate
+ * at all, because every attendee holds the view feature, so the export was reachable by exactly
+ * the ordinary competitor issue #118 named. Granted to `judge` only in `judging/setup.ts`;
+ * organisers reach it through the portal-admin `['*']` grant.
+ *
+ * Existing tenants need `yarn mercato auth sync-role-acls` to pick this feature up.
+ */
+export const PORTAL_RESULTS_EXPORT_FEATURE = 'portal.judging.results.export'

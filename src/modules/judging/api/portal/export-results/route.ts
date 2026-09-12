@@ -6,7 +6,7 @@ import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 import { rawAll } from '@/lib/db'
 import { Competition } from '../../../../competitions/data/entities'
-import { PORTAL_RESULTS_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
+import { PORTAL_RESULTS_EXPORT_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
 import { RESULTS_NOT_PUBLISHED_MESSAGE, areResultsPublished } from '../../../lib/resultsScope'
 
 // NOTE: `requireCustomerAuth` / `requireCustomerFeatures` are NOT enforced for API routes —
@@ -14,7 +14,7 @@ import { RESULTS_NOT_PUBLISHED_MESSAGE, areResultsPublished } from '../../../lib
 // `requireRoles`, `requireFeatures` and `rateLimit`. They are kept here as the declaration of
 // intent; the enforcement lives in the handler below (`requirePortalFeatures`).
 export const metadata = {
-  GET: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_RESULTS_FEATURE] },
+  GET: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_RESULTS_EXPORT_FEATURE] },
 }
 
 type ExportResultRow = {
@@ -32,7 +32,11 @@ export async function GET(req: Request) {
   try {
     const auth = await getCustomerAuthFromRequest(req)
     if (!auth?.sub) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    const forbidden = requirePortalFeatures(auth, [PORTAL_RESULTS_FEATURE])
+    // Feature gate. This is deliberately NOT `portal.judging.results.view`: every attendee holds
+    // that one, so gating the export on it let any competitor download the full ranking CSV the
+    // moment the stage gate below opened (issue #118). The export has its own feature, held by
+    // judges and portal admins.
+    const forbidden = requirePortalFeatures(auth, [PORTAL_RESULTS_EXPORT_FEATURE])
     if (forbidden) return forbidden
 
     const url = new URL(req.url)
