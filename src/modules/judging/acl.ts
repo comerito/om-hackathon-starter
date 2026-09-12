@@ -9,6 +9,10 @@ export const features = [
   { id: 'judging.finalists.manage', title: 'Select finalists', module: 'judging' },
   { id: 'judging.results.view', title: 'View results', module: 'judging' },
   { id: 'judging.results.manage', title: 'Manage results', module: 'judging' },
+  // Portal (customer-role) feature. Deliberately separate from `portal.judging.results.view`:
+  // viewing the published ranking in the portal is not the same permission as downloading the
+  // whole ranking as a CSV. Granted in `setup.ts` to `judge` only — see issue #118.
+  { id: 'portal.judging.results.export', title: 'Export results from portal', module: 'judging' },
 ]
 
 export default features
