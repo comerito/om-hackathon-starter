@@ -5,6 +5,8 @@ import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/b
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { readApiResultOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 
 type CompetitionOption = { id: string; name: string }
 type CustomerUserOption = { id: string; displayName: string; email: string }
@@ -31,6 +33,8 @@ async function loadCustomerUsers(query?: string) {
 
 export default function AddParticipantPage() {
   const t = useT()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
 
   const fields = React.useMemo<CrudField[]>(() => [
     {
@@ -39,6 +43,7 @@ export default function AddParticipantPage() {
       type: 'combobox',
       required: true,
       loadOptions: loadCompetitions,
+      seedOptions: competitionSeedOptions,
     },
     {
       id: 'customer_user_id',
@@ -58,7 +63,7 @@ export default function AddParticipantPage() {
         { value: 'judge', label: 'Judge' },
       ],
     },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     {
@@ -78,6 +83,15 @@ export default function AddParticipantPage() {
     <Page>
       <PageBody>
         <CrudForm
+          // The scope only resolves after hydration, and CrudForm will not push a
+          // late `initialValues` into a combobox it considers user-touched — so remount
+          // the form once the scope is known (and again if it changes).
+          key={scopeReady ? scopedCompetitionId ?? 'home' : 'pending'}
+          initialValues={scopedCompetitionId ? { competition_id: scopedCompetitionId } : undefined}
+          // The competition combobox is the first field, so it would auto-focus — and a
+          // focused combobox never renders the label for a value it did not receive from
+          // the user, then clears that value on blur. Skip initial focus when prefilled.
+          disableInitialFocus={Boolean(scopedCompetitionId)}
           title={t('competitions.participants.form.title', 'Add Participant')}
           backHref="/backend/competitions/participants"
           entityId="competitions:competition_participation"

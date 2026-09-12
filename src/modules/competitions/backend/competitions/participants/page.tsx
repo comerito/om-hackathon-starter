@@ -15,6 +15,7 @@ import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/u
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
 import Link from 'next/link'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import { BulkInviteDialog } from '../../../components/BulkInviteDialog'
 import { ManualInviteDialog } from '../../../components/ManualInviteDialog'
 
@@ -70,6 +71,7 @@ export default function ParticipantsListPage() {
   const [tab, setTab] = React.useState<'participants' | 'invitations'>('participants')
   const [invFilterValues, setInvFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -79,16 +81,19 @@ export default function ParticipantsListPage() {
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
     if (filterValues.role && typeof filterValues.role === 'string') params.role = filterValues.role
-    if (filterValues.competition_id && typeof filterValues.competition_id === 'string') params.competition_id = filterValues.competition_id
+    // Global header scope wins over the per-page filter, which is hidden while scoped.
+    if (scopedCompetitionId) params.competition_id = scopedCompetitionId
+    else if (filterValues.competition_id && typeof filterValues.competition_id === 'string') params.competition_id = filterValues.competition_id
     if (filterValues.checked_in === true || filterValues.checked_in === false) params.checked_in = String(filterValues.checked_in)
     if (filterValues.coc_accepted === true || filterValues.coc_accepted === false) params.coc_accepted = String(filterValues.coc_accepted)
     if (filterValues.has_discord && typeof filterValues.has_discord === 'string') params.has_discord = filterValues.has_discord
     return new URLSearchParams(params).toString()
-  }, [page, sorting, filterValues])
+  }, [page, sorting, filterValues, scopedCompetitionId])
 
   const { data, isLoading } = useQuery({
     queryKey: ['participations', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<ParticipationRow>('competitions/participations', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   // Resolve customer user display names
@@ -145,6 +150,7 @@ export default function ParticipantsListPage() {
 
   const filteredInvitations = React.useMemo(() => {
     let items = invitationsData ?? []
+    if (scopedCompetitionId) items = items.filter(i => i.competition_id === scopedCompetitionId)
     if (invFilterValues.status && typeof invFilterValues.status === 'string') {
       items = items.filter(i => i.status === invFilterValues.status)
     }
@@ -155,7 +161,7 @@ export default function ParticipantsListPage() {
       items = items.filter(i => i.participation_role === invFilterValues.participation_role)
     }
     return items
-  }, [invitationsData, invFilterValues])
+  }, [invitationsData, invFilterValues, scopedCompetitionId])
 
   const invitationColumns = React.useMemo<ColumnDef<InvitationRow>[]>(() => [
     { accessorKey: 'email', header: 'Email', meta: { priority: 1 } },
@@ -283,12 +289,12 @@ export default function ParticipantsListPage() {
             sorting={sorting}
             onSortingChange={(s) => { setSorting(s); setPage(1) }}
             filters={[
-              {
+              ...(scopedCompetitionId ? [] : [{
                 id: 'competition_id',
                 label: t('competitions.participants.filterCompetition', 'Competition'),
-                type: 'select',
+                type: 'select' as const,
                 options: competitionOptions,
-              },
+              }]),
               {
                 id: 'role',
                 label: t('competitions.participants.filterRole', 'Role'),
@@ -348,7 +354,7 @@ export default function ParticipantsListPage() {
               totalPages: data?.totalPages || 0,
               onPageChange: setPage,
             }}
-            isLoading={isLoading}
+            isLoading={isLoading || !scopeReady}
           />
         )}
 
@@ -371,12 +377,12 @@ export default function ParticipantsListPage() {
                   { value: 'cancelled', label: 'Cancelled' },
                 ],
               },
-              {
+              ...(scopedCompetitionId ? [] : [{
                 id: 'competition_id',
                 label: t('competitions.participants.filterInvCompetition', 'Competition'),
-                type: 'select',
+                type: 'select' as const,
                 options: competitionOptions,
-              },
+              }]),
               {
                 id: 'participation_role',
                 label: t('competitions.participants.filterInvRole', 'Role'),

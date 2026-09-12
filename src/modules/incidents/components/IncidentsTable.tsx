@@ -9,6 +9,7 @@ import { fetchCrudList, updateCrud } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import { useRouter } from 'next/navigation'
 
 type IncidentRow = {
@@ -37,12 +38,16 @@ export default function IncidentsTable() {
   const queryClient = useQueryClient()
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['incidents', page, scopeVersion],
+    queryKey: ['incidents', page, scopeVersion, scopedCompetitionId],
     queryFn: () => fetchCrudList<IncidentRow>('incidents/incidents', {
       page: String(page), pageSize: '50', sortField: 'created_at', sortDir: 'desc',
+      // Narrowed by the global header competition scope.
+      ...(scopedCompetitionId ? { competition_id: scopedCompetitionId } : {}),
     }),
+    enabled: scopeReady,
   })
 
   const columns = React.useMemo<ColumnDef<IncidentRow>[]>(() => [
@@ -98,7 +103,7 @@ export default function IncidentsTable() {
       title={t('incidents.table.title', 'Incidents')}
       columns={columns}
       data={data?.items ?? []}
-      isLoading={isLoading}
+      isLoading={isLoading || !scopeReady}
       rowActions={(row) => (
         <RowActions items={[
           { id: 'edit', label: t('incidents.table.manage', 'Manage'), href: `/backend/incidents/${row.id}/edit` },

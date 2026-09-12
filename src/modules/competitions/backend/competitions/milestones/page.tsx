@@ -12,6 +12,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
 import { BulkImportMilestonesDialog } from '../../../components/BulkImportMilestonesDialog'
 
@@ -31,15 +32,19 @@ export default function MilestonesListPage() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'sort_order', desc: false }])
   const [page, setPage] = React.useState(1)
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const queryParams = React.useMemo(() => new URLSearchParams({
     page: page.toString(), pageSize: '50',
     sortField: sorting[0]?.id || 'sort_order', sortDir: sorting[0]?.desc ? 'desc' : 'asc',
-  }).toString(), [page, sorting])
+    // Narrowed by the global header competition scope; empty means all competitions.
+    ...(scopedCompetitionId ? { competition_id: scopedCompetitionId } : {}),
+  }).toString(), [page, sorting, scopedCompetitionId])
 
   const { data, isLoading } = useQuery({
     queryKey: ['milestones', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<MilestoneRow>('competitions/milestones', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   const columns = React.useMemo<ColumnDef<MilestoneRow>[]>(() => [
@@ -79,7 +84,7 @@ export default function MilestonesListPage() {
             ]} />
           )}
           pagination={{ page, pageSize: 50, total: data?.total || 0, totalPages: data?.totalPages || 0, onPageChange: setPage }}
-          isLoading={isLoading}
+          isLoading={isLoading || !scopeReady}
         />
         {ConfirmDialogElement}
         {showImport && <BulkImportMilestonesDialog onClose={() => { setShowImport(false); queryClient.invalidateQueries({ queryKey: ['milestones'] }) }} />}

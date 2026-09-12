@@ -15,6 +15,7 @@ import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/u
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import { BulkImportAgendaDialog } from '../../../components/BulkImportAgendaDialog'
 
 type AgendaRow = {
@@ -61,6 +62,7 @@ export default function AgendaListPage() {
   const [searchValue, setSearchValue] = React.useState('')
   const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const sortField = SORT_FIELD_ALIASES[sorting[0]?.id ?? ''] ?? sorting[0]?.id ?? 'starts_at'
   const sortDir = sorting[0]?.desc ? 'desc' : 'asc'
@@ -69,12 +71,14 @@ export default function AgendaListPage() {
   const filterParams = React.useMemo(() => {
     const params: Record<string, string> = { sortField, sortDir }
     if (searchValue.trim()) params.title = searchValue.trim()
-    if (typeof filterValues.competition_id === 'string' && filterValues.competition_id) params.competition_id = filterValues.competition_id
+    // Global header scope wins over the per-page filter, which is hidden while scoped.
+    if (scopedCompetitionId) params.competition_id = scopedCompetitionId
+    else if (typeof filterValues.competition_id === 'string' && filterValues.competition_id) params.competition_id = filterValues.competition_id
     if (typeof filterValues.type === 'string' && filterValues.type) params.type = filterValues.type
     if (dateRange?.from) params.starts_at_from = dateRange.from
     if (dateRange?.to) params.starts_at_to = dateRange.to
     return params
-  }, [sortField, sortDir, searchValue, filterValues.competition_id, filterValues.type, dateRange])
+  }, [sortField, sortDir, searchValue, filterValues.competition_id, filterValues.type, dateRange, scopedCompetitionId])
 
   const queryParams = React.useMemo(() => new URLSearchParams({
     ...filterParams, page: page.toString(), pageSize: '100',
@@ -83,6 +87,7 @@ export default function AgendaListPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['agenda', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<AgendaRow>('competitions/agenda', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   // Loaded once (not paginated) to power the competition filter/column and, when the
@@ -104,7 +109,7 @@ export default function AgendaListPage() {
     for (const c of competitionsData ?? []) map.set(c.id, c.name)
     return map
   }, [competitionsData])
-  const showCompetitionColumn = (competitionsData?.length ?? 0) > 1
+  const showCompetitionColumn = !scopedCompetitionId && (competitionsData?.length ?? 0) > 1
 
   const items = React.useMemo(() => data?.items ?? [], [data])
 
@@ -206,11 +211,11 @@ export default function AgendaListPage() {
       },
       { id: 'starts_at', label: t('competitions.agenda.startsAt', 'When'), type: 'dateRange' },
     ]
-    if (competitionOptions.length > 1) {
+    if (!scopedCompetitionId && competitionOptions.length > 1) {
       defs.unshift({ id: 'competition_id', label: t('competitions.agenda.competition', 'Competition'), type: 'select', options: competitionOptions })
     }
     return defs
-  }, [t, competitionOptions])
+  }, [t, competitionOptions, scopedCompetitionId])
 
   return (
     <Page>
@@ -245,7 +250,7 @@ export default function AgendaListPage() {
             ]} />
           )}
           pagination={{ page, pageSize: 100, total: data?.total || 0, totalPages: data?.totalPages || 0, onPageChange: setPage }}
-          isLoading={isLoading}
+          isLoading={isLoading || !scopeReady}
           onRowClick={(row) => router.push(`/backend/competitions/agenda/${row.id}/edit`)}
         />
         {ConfirmDialogElement}

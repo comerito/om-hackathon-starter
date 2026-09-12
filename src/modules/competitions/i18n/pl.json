@@ -431,5 +431,7 @@
   "competitions.backend.portalLocale.saving": "Zapisywanie...",
   "competitions.backend.portalLocale.saved": "Ustawienia lokalizacji portalu zostały zaktualizowane",
   "competitions.backend.portalLocale.loadError": "Nie udało się załadować ustawień lokalizacji portalu",
-  "competitions.backend.portalLocale.saveError": "Nie udało się zapisać ustawień lokalizacji portalu"
+  "competitions.backend.portalLocale.saveError": "Nie udało się zapisać ustawień lokalizacji portalu",
+  "competitions.scope.home": "Wszystkie zawody",
+  "competitions.scope.ariaLabel": "Zakres zawodów"
 }
