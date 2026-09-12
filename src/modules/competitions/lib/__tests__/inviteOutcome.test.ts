@@ -2,10 +2,20 @@ import {
   applyEmailOutcomes,
   formatEmailError,
   summarizeInviteResults,
+  INVITE_SKIP_REASONS,
+  INVITE_SKIP_REASON_KEYS,
   type InviteResult,
 } from '../inviteOutcome'
 
 const sent = (email: string): InviteResult => ({ email, status: 'sent', invitationCreated: true })
+
+const existingUser = (email: string): InviteResult => ({
+  email,
+  status: 'skipped',
+  invitationCreated: false,
+  reasonCode: 'user_already_exists',
+  reason: INVITE_SKIP_REASONS.user_already_exists,
+})
 
 describe('formatEmailError', () => {
   it('unwraps an Error message', () => {
@@ -101,6 +111,7 @@ describe('summarizeInviteResults', () => {
       skipped: 1,
       failed: 1,
       invitationsCreated: 2,
+      existingUsers: [],
       errors: [{ email: 'd@example.com', reason: 'Role missing' }],
       emailFailures: [{ email: 'b@example.com', reason: 'RESEND_API_KEY is not set' }],
     })
@@ -115,5 +126,55 @@ describe('summarizeInviteResults', () => {
     expect(summary.failed).toBe(0)
     expect(summary.errors).toHaveLength(0)
     expect(summary.invitationsCreated).toBe(1)
+  })
+})
+
+describe('issue #93: an email that already has a CustomerUser', () => {
+  it('is a skip, never a created invitation', () => {
+    const row = existingUser('alice.johnson@example.com')
+    expect(row.status).toBe('skipped')
+    expect(row.invitationCreated).toBe(false)
+    expect(row.reasonCode).toBe('user_already_exists')
+  })
+
+  it('is bucketed by reasonCode, so the UI never matches on English prose', () => {
+    const summary = summarizeInviteResults([
+      sent('new@example.com'),
+      existingUser('alice.johnson@example.com'),
+      {
+        email: 'pending@example.com',
+        status: 'skipped',
+        invitationCreated: false,
+        reasonCode: 'invitation_already_pending',
+        reason: INVITE_SKIP_REASONS.invitation_already_pending,
+      },
+    ])
+
+    expect(summary.existingUsers).toEqual(['alice.johnson@example.com'])
+    // A pending invitation is a different skip: that person IS invited already.
+    expect(summary.skipped).toBe(2)
+    expect(summary.invitationsCreated).toBe(1)
+    expect(summary.errors).toHaveLength(0)
+  })
+
+  it('reports no existing users when nothing was skipped for that cause', () => {
+    expect(summarizeInviteResults([sent('a@example.com')]).existingUsers).toEqual([])
+  })
+
+  it('survives applyEmailOutcomes unchanged — no row exists to email', () => {
+    const [row] = applyEmailOutcomes(
+      [existingUser('alice.johnson@example.com')],
+      [{ email: 'alice.johnson@example.com', ok: false, error: new Error('RESEND_API_KEY is not set') }],
+    )
+    expect(row.status).toBe('skipped')
+    expect(row.reasonCode).toBe('user_already_exists')
+    expect(row.emailError).toBeUndefined()
+  })
+
+  it('has a translation key and an English default for every skip cause', () => {
+    for (const code of Object.keys(INVITE_SKIP_REASONS) as Array<keyof typeof INVITE_SKIP_REASONS>) {
+      expect(INVITE_SKIP_REASON_KEYS[code]).toMatch(/^competitions\.invite\.skip\./)
+      expect(INVITE_SKIP_REASONS[code].length).toBeGreaterThan(0)
+    }
   })
 })

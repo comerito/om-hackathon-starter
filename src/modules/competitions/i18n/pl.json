@@ -455,5 +455,13 @@
   "competitions.bulkInvite.flash.sent": "Wysłano {count} zaproszeń",
   "competitions.participants.resend.sent": "Zaproszenie wysłane ponownie do {email}",
   "competitions.participants.resend.emailFailed": "Zaproszenie dla {email} zostało odnowione, ale nie udało się wysłać e-maila: {reason}",
-  "competitions.participants.resend.failed": "Nie udało się wysłać ponownie"
+  "competitions.participants.resend.failed": "Nie udało się wysłać ponownie",
+  "competitions.invite.skip.userAlreadyExists": "Ten adres e-mail ma już konto w portalu",
+  "competitions.invite.skip.invitationAlreadyPending": "Dla tego adresu e-mail istnieje już oczekujące zaproszenie",
+  "competitions.manualInvite.result.existingUserTitle": "{email} ma już konto w portalu",
+  "competitions.manualInvite.result.existingUserHint": "Nie utworzono zaproszenia — link z zaproszeniem nie zadziała dla osoby, która może się już zalogować. Użyj opcji Dodaj uczestnika, aby przypisać istniejące konto do tych zawodów.",
+  "competitions.manualInvite.result.existingUserAction": "Przejdź do Dodaj uczestnika",
+  "competitions.manualInvite.flash.existingUser": "{email} ma już konto — dodaj tę osobę przez Dodaj uczestnika",
+  "competitions.bulkInvite.summary.existingUsersHint": "{count} adres(ów) ma już konto w portalu, więc nie utworzono dla nich zaproszeń. Użyj opcji Dodaj uczestnika, aby przypisać te konta do tych zawodów.",
+  "competitions.bulkInvite.summary.existingUsersAction": "Przejdź do Dodaj uczestnika"
 }

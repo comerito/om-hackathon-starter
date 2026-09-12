@@ -6,7 +6,11 @@ import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
-import type { InviteResult } from '../lib/inviteOutcome'
+import {
+  INVITE_SKIP_REASONS,
+  INVITE_SKIP_REASON_KEYS,
+  type InviteResult,
+} from '../lib/inviteOutcome'
 
 const VALID_ROLES = ['participant', 'mentor', 'judge'] as const
 
@@ -200,10 +204,35 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
                   </p>
                 )}
               </div>
+            ) : result.status === 'skipped' && result.reasonCode === 'user_already_exists' ? (
+              /* Not a failure: the address already has a portal account, so an invitation
+                 would be a dead link (accept-invite creates an account). Point the operator
+                 at Add Participant, which attaches the existing account to a competition. */
+              <div className="rounded-lg bg-amber-50 p-4 space-y-2">
+                <p className="text-sm font-medium text-amber-700">
+                  {t('competitions.manualInvite.result.existingUserTitle', '{email} already has a portal account', { email: result.email })}
+                </p>
+                <p className="text-xs text-amber-700/90">
+                  {t(
+                    'competitions.manualInvite.result.existingUserHint',
+                    'No invitation was created — an invite link would not work for someone who can already sign in. Use Add Participant to attach the existing account to this competition.',
+                  )}
+                </p>
+                <a
+                  href="/backend/competitions/participants/create"
+                  className="inline-block text-xs font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
+                >
+                  {t('competitions.manualInvite.result.existingUserAction', 'Go to Add Participant')}
+                </a>
+              </div>
             ) : result.status === 'skipped' ? (
               <div className="rounded-lg bg-amber-50 p-4 text-center">
                 <p className="text-sm font-medium text-amber-600">
-                  {t('competitions.manualInvite.result.skipped', 'Skipped: {reason}', { reason: result.reason ?? '' })}
+                  {t('competitions.manualInvite.result.skipped', 'Skipped: {reason}', {
+                    reason: result.reasonCode
+                      ? t(INVITE_SKIP_REASON_KEYS[result.reasonCode], INVITE_SKIP_REASONS[result.reasonCode])
+                      : result.reason ?? '',
+                  })}
                 </p>
               </div>
             ) : (
@@ -225,6 +254,15 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
                 } else if (result.status === 'created') {
                   flash(
                     t('competitions.manualInvite.flash.created', 'Invitation created for {email}, but the email could not be sent', { email: result.email }),
+                    'warning',
+                  )
+                } else if (result.status === 'skipped' && result.reasonCode === 'user_already_exists') {
+                  flash(
+                    t(
+                      'competitions.manualInvite.flash.existingUser',
+                      '{email} already has an account — add them with Add Participant instead',
+                      { email: result.email },
+                    ),
                     'warning',
                   )
                 }
