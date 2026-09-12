@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { Button } from '@open-mercato/ui/primitives/button'
+import { Input } from '@open-mercato/ui/primitives/input'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
+import { useQuery } from '@tanstack/react-query'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { cn } from '@open-mercato/shared/lib/utils'
@@ -19,29 +21,160 @@ const SEVERITY_OPTIONS = [
   { value: 'critical', color: 'bg-red-500' },
 ]
 
+type ParticipantResult = { id: string; displayName: string }
+type ReportedPerson = { id: string; displayName: string }
+
+/**
+ * "Reported Person" writes to `incidents_report.reported_user_id`, a uuid FK — a typed-in name
+ * can never be stored there. The field used to be a free-text box inviting exactly that, and the
+ * resulting 422 was invisible, so the report vanished (#103). It is now a participant picker that
+ * resolves a name to an id, built on the same portal search endpoint the team-invite form uses.
+ */
+function ReportedPersonPicker({
+  competitionId,
+  selected,
+  onSelect,
+  error,
+}: {
+  competitionId: string | null
+  selected: ReportedPerson | null
+  onSelect: (person: ReportedPerson | null) => void
+  error: string | null
+}) {
+  const t = useT()
+  const [query, setQuery] = React.useState('')
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  const [showDropdown, setShowDropdown] = React.useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const { data: results } = useQuery<ParticipantResult[]>({
+    queryKey: ['incident-search-participants', competitionId, debouncedQuery],
+    queryFn: async () => {
+      // Only `displayName` is consumed: the reported person's email has no business being
+      // rendered on a Code of Conduct form.
+      const { ok, result } = await apiCall<{ items: { id: string; displayName?: string; email?: string }[] }>(
+        `/api/competitions/portal/search-participants?competition_id=${competitionId}&q=${encodeURIComponent(debouncedQuery)}`,
+      )
+      if (!ok || !result?.items) return []
+      return result.items.map((item) => ({ id: item.id, displayName: item.displayName || t('incidents.portal.unknownParticipant', 'Unknown participant') }))
+    },
+    enabled: !!competitionId && debouncedQuery.trim().length >= 2,
+  })
+
+  const items = results ?? []
+
+  if (selected) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2">
+          <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-[10px] font-semibold">
+            {selected.displayName.slice(0, 2).toUpperCase()}
+          </div>
+          <span className="text-sm flex-1 truncate">{selected.displayName}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => { onSelect(null); setQuery('') }}
+          >
+            {t('common.clear', 'Clear')}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="relative" ref={dropdownRef}>
+        <Input
+          type="search"
+          name="reported-person-search"
+          autoComplete="off"
+          value={query}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setShowDropdown(true) }}
+          onFocus={() => setShowDropdown(true)}
+          placeholder={t('incidents.portal.reportedPersonPlaceholder', 'Search participants by name')}
+          className="text-sm rounded-xl"
+          aria-invalid={error ? true : undefined}
+        />
+        {showDropdown && debouncedQuery.trim().length >= 2 && (
+          <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 shadow-lg max-h-48 overflow-y-auto">
+            {items.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-portal-secondary">
+                {t('incidents.portal.reportedPersonNoResults', 'No participant found. Leave this field empty and describe the person in your report instead — it will still reach the organizers.')}
+              </div>
+            ) : (
+              items.map((person) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() => { onSelect(person); setQuery(''); setShowDropdown(false) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-xs font-semibold">
+                    {person.displayName.slice(0, 1).toUpperCase()}
+                  </div>
+                  <p className="text-sm font-medium truncate">{person.displayName}</p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+      {error ? (
+        <p className="mt-1.5 text-xs font-medium text-portal-danger">{error}</p>
+      ) : (
+        <p className="mt-1.5 text-[11px] text-portal-secondary">
+          {t('incidents.portal.reportedPersonHint', 'Optional. Pick a participant, or leave empty and describe the person in your report.')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function IncidentReportContent() {
   const t = useT()
   const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
   const [description, setDescription] = React.useState('')
   const [severity, setSeverity] = React.useState('low')
-  const [reportedUserId, setReportedUserId] = React.useState('')
+  const [reportedPerson, setReportedPerson] = React.useState<ReportedPerson | null>(null)
   const [anonymous, setAnonymous] = React.useState(false)
   const [submitting, setSubmitting] = React.useState(false)
   const [submitted, setSubmitted] = React.useState(false)
   const [showConfirm, setShowConfirm] = React.useState(false)
+  // The portal mounts no <FlashMessages /> host, so flash() alone is invisible here — that is the
+  // second half of #103. Errors are rendered inline, next to the field where possible.
+  const [formError, setFormError] = React.useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
   async function handleSubmit() {
     if (!competitionId || !description.trim()) return
     setSubmitting(true)
+    setFormError(null)
+    setFieldErrors({})
     try {
-      const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/incidents/portal/report-incident', {
+      const { ok, result } = await apiCall<{ ok: boolean; error?: string; fieldErrors?: Record<string, string> }>('/api/incidents/portal/report-incident', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           competition_id: competitionId,
           description: description.trim(),
           severity,
-          reported_user_id: reportedUserId.trim() || null,
+          reported_user_id: reportedPerson?.id ?? null,
           anonymous,
         }),
       })
@@ -49,11 +182,29 @@ function IncidentReportContent() {
         flash(t('incidents.portal.submitted', 'Incident reported. Thank you.'), 'success')
         setSubmitted(true)
       } else {
-        flash(result?.error ?? t('incidents.portal.submitFailed', 'Failed to submit'), 'error')
+        // The API's messages are English; swap the one field the reporter can actually act on
+        // for its translated copy so a Polish reporter is not handed an English instruction.
+        const serverFieldErrors = { ...(result?.fieldErrors ?? {}) }
+        if (serverFieldErrors.reported_user_id) {
+          serverFieldErrors.reported_user_id = t(
+            'incidents.portal.reportedPersonInvalid',
+            'Select the reported person from the participant list, or leave this field empty and describe them in your report.',
+          )
+        }
+        const message = serverFieldErrors.reported_user_id ?? result?.error ?? t('incidents.portal.submitFailed', 'Failed to submit')
+        setFieldErrors(serverFieldErrors)
+        setFormError(message)
+        // Send the reporter back to the form so the error is next to the field they can fix,
+        // rather than leaving them on a confirmation screen that looks like it succeeded.
+        setShowConfirm(false)
+        flash(message, 'error')
       }
+    } catch (error) {
+      // A network failure must be as loud as a validation failure — this is a safety channel.
+      setFormError(error instanceof Error ? error.message : t('incidents.portal.submitFailed', 'Failed to submit'))
+      setShowConfirm(false)
     } finally {
       setSubmitting(false)
-      setShowConfirm(false)
     }
   }
 
@@ -82,7 +233,7 @@ function IncidentReportContent() {
         </p>
         <Button
           variant="outline"
-          onClick={() => { setSubmitted(false); setDescription(''); setSeverity('low'); setReportedUserId(''); setAnonymous(false) }}
+          onClick={() => { setSubmitted(false); setDescription(''); setSeverity('low'); setReportedPerson(null); setAnonymous(false); setFormError(null); setFieldErrors({}) }}
         >
           {t('incidents.portal.submitAnother', 'Submit Another Report')}
         </Button>
@@ -164,12 +315,11 @@ function IncidentReportContent() {
             <label className="block text-xs font-bold uppercase tracking-widest text-foreground mb-2">
               {t('incidents.portal.reportedPersonLabel', 'Reported Person (Optional)')}
             </label>
-            <input
-              type="text"
-              value={reportedUserId}
-              onChange={(e) => setReportedUserId(e.target.value)}
-              placeholder={t('incidents.portal.reportedPersonPlaceholder', 'Full name or User ID')}
-              className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-portal-primary focus:outline-none focus:ring-1 focus:ring-portal-primary/30"
+            <ReportedPersonPicker
+              competitionId={competitionId ?? null}
+              selected={reportedPerson}
+              onSelect={(person) => { setReportedPerson(person); setFieldErrors(({ reported_user_id: _drop, ...rest }) => rest) }}
+              error={fieldErrors.reported_user_id ?? null}
             />
           </div>
           <div>
@@ -186,6 +336,17 @@ function IncidentReportContent() {
           </div>
         </div>
       </div>
+
+      {/* A rejected report must say so on the page. flash() is a no-op in the portal (no
+          <FlashMessages /> host), which is how a 422 became invisible in #103. */}
+      {formError && (
+        <div role="alert" className="rounded-xl border border-portal-danger/30 bg-portal-danger/5 p-4">
+          <p className="text-sm font-semibold text-portal-danger">
+            {t('incidents.portal.notSubmittedTitle', 'Your report was NOT submitted')}
+          </p>
+          <p className="mt-1 text-sm text-foreground">{formError}</p>
+        </div>
+      )}
 
       {/* Submit */}
       {!showConfirm ? (
