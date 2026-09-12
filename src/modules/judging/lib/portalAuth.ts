@@ -41,4 +41,7 @@ export function requirePortalFeatures(
 }
 
 /** Granted to the `judge` customer role in `judging/setup.ts`. */
+export const PORTAL_VIEW_ASSIGNED_FEATURE = 'portal.judging.view_assigned'
+
+/** Granted to the `judge` customer role in `judging/setup.ts`. */
 export const PORTAL_SCORE_FEATURE = 'portal.judging.score'

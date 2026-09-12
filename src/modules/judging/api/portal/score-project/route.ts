@@ -3,7 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { ProjectScore, CriterionScore, JudgingCriterion, JudgePanel, JudgePanelJudge } from '../../../data/entities'
+import { ProjectScore, CriterionScore, JudgingCriterion, JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../../data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { saveScoreSchema } from '../../../data/validators'
 import { z } from 'zod'
@@ -161,23 +161,33 @@ export async function POST(req: Request) {
       : requested
 
     // Resolve the panel the score is filed under. The caller must sit on a judge panel of the
-    // competition that owns the project; `'auto'` picks one of those panels and an explicit id
-    // must be one of them. There is no fallback — the previous all-zeros sentinel meant an
-    // unauthorised caller's score was persisted as if a panel had approved it.
+    // competition that owns the project, and that panel's tracks must cover the project;
+    // `'auto'` picks one of those panels and an explicit id must be one of them. There is no
+    // fallback — the previous all-zeros sentinel meant an unauthorised caller's score was
+    // persisted as if a panel had approved it.
     const memberships = await em.find(JudgePanelJudge, {
       judgeId: auth.sub, tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<JudgePanelJudge>)
-    const panels = memberships.length
-      ? await em.find(JudgePanel, {
-        id: { $in: memberships.map(m => m.panelId) },
-        tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
-      } as FilterQuery<JudgePanel>)
-      : []
+    const panelIds = memberships.map(m => m.panelId)
+    const [panels, panelTracks] = panelIds.length
+      ? await Promise.all([
+        em.find(JudgePanel, {
+          id: { $in: panelIds },
+          tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
+        } as FilterQuery<JudgePanel>),
+        em.find(JudgePanelTrack, {
+          panelId: { $in: panelIds },
+          tenantId: auth.tenantId, organizationId: auth.orgId,
+        } as FilterQuery<JudgePanelTrack>),
+      ])
+      : [[], []]
 
     const resolution = resolveScoringPanel({
-      memberships: panels.map(p => ({ panelId: p.id, competitionId: p.competitionId })),
+      memberships: panels.map(p => ({ panelId: p.id, competitionId: p.competitionId, round: p.round })),
+      panelTracks: panelTracks.map(pt => ({ panelId: pt.panelId, trackId: pt.trackId })),
       project: { id: project.id, competitionId: project.competitionId, trackId: project.trackId },
       requestedPanelId: parsed.judge_panel_id,
+      round: parsed.round,
     })
     if (!resolution.ok) {
       return NextResponse.json({ error: SCORING_PANEL_DENIAL_MESSAGE[resolution.reason] }, { status: 403 })
