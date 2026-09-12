@@ -44,6 +44,7 @@ type CompetitionFormValues = {
   location: string
   starts_at: string
   ends_at: string
+  project_submission_deadline: string
   timezone: string
   min_team_size: number
   max_team_size: number
@@ -76,6 +77,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     { id: 'location', label: t('competitions.fields.location', 'Location'), type: 'text' },
     { id: 'starts_at', label: t('competitions.fields.startsAt', 'Starts At'), type: 'datetime', required: true },
     { id: 'ends_at', label: t('competitions.fields.endsAt', 'Ends At'), type: 'datetime', required: true },
+    { id: 'project_submission_deadline', label: t('competitions.fields.projectSubmissionDeadline', 'Project Submission Deadline'), type: 'datetime', description: t('competitions.fields.projectSubmissionDeadlineHint', 'Optional. When set, participants see it as the final submission deadline and submissions are blocked after it.') },
     { id: 'timezone', label: t('competitions.fields.timezone', 'Timezone'), type: 'text' },
     { id: 'min_team_size', label: t('competitions.fields.minTeamSize', 'Min Team Size'), type: 'number' },
     { id: 'max_team_size', label: t('competitions.fields.maxTeamSize', 'Max Team Size'), type: 'number' },
@@ -91,7 +93,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('competitions.groups.general', 'General'), column: 1, fields: ['name', 'slug', 'description', 'location'] },
-    { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'timezone'] },
+    { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'project_submission_deadline', 'timezone'] },
     { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size', 'max_tracks_per_team'] },
     {
       id: 'legal',
@@ -134,6 +136,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             location: String(item.location ?? ''),
             starts_at: toLocal(item.starts_at),
             ends_at: toLocal(item.ends_at),
+            project_submission_deadline: toLocal(item.project_submission_deadline),
             timezone: String(item.timezone ?? 'Europe/Warsaw'),
             min_team_size: Number(item.min_team_size ?? 2),
             max_team_size: Number(item.max_team_size ?? 5),
@@ -160,7 +163,7 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
 
   const fallback = React.useMemo<CompetitionFormValues>(() => ({
     id: id ?? '', name: '', slug: '', description: '', location: '',
-    starts_at: '', ends_at: '', timezone: 'Europe/Warsaw',
+    starts_at: '', ends_at: '', project_submission_deadline: '', timezone: 'Europe/Warsaw',
     min_team_size: 2, max_team_size: 5, max_tracks_per_team: 1,
     code_of_conduct_url: '', code_of_conduct_content: '', rules_url: '', rules_content: '',
     privacy_policy_url: '', privacy_policy_content: '', cover_image_url: '', stage: 'draft',
@@ -352,6 +355,10 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
                 ...vals,
                 starts_at: vals.starts_at ? new Date(vals.starts_at).toISOString() : undefined,
                 ends_at: vals.ends_at ? new Date(vals.ends_at).toISOString() : undefined,
+                // Clearing the picker must actually unset the deadline, not leave the old one.
+                project_submission_deadline: vals.project_submission_deadline
+                  ? new Date(vals.project_submission_deadline).toISOString()
+                  : null,
                 code_of_conduct_url: vals.code_of_conduct_url,
                 code_of_conduct_content: vals.code_of_conduct_content || null,
                 rules_url: vals.rules_url || null,

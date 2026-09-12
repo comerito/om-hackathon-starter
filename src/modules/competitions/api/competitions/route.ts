@@ -31,6 +31,7 @@ type BaseFields = {
   stage: string
   starts_at: Date
   ends_at: Date
+  project_submission_deadline: Date | null
   location: string | null
   timezone: string
   min_team_size: number
@@ -76,6 +77,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       'stage',
       'starts_at',
       'ends_at',
+      'project_submission_deadline',
       'location',
       'timezone',
       'min_team_size',
@@ -110,6 +112,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       stage: String(item.stage),
       starts_at: item.starts_at,
       ends_at: item.ends_at,
+      project_submission_deadline: item.project_submission_deadline ?? null,
       location: item.location,
       timezone: String(item.timezone),
       min_team_size: Number(item.min_team_size),

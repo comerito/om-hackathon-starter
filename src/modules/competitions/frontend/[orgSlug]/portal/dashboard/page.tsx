@@ -36,6 +36,7 @@ import {
   DASHBOARD_ANNOUNCEMENT_PAGE_SIZE,
   paginateAnnouncementFeed,
 } from '../../../../lib/announcement-feed'
+import { selectNextDeadline } from '../../../../lib/next-deadline'
 
 /* ---------- types ---------- */
 
@@ -305,25 +306,27 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
   const milestones = milestonesData?.items ?? []
   const completedMilestones = milestones.filter(m => m.status === 'completed').length
 
-  // Find next deadline — from milestones, agenda deadlines, or competition submission deadline
+  // Find next deadline — from milestones, agenda deadlines, or a competition-level date.
+  // The competition-level date is the real project submission deadline when one is
+  // configured; otherwise it is `ends_at`, shown under an "event ends" label. `ends_at`
+  // is never presented as a submission deadline (see lib/next-deadline.ts).
   const now = new Date()
   const agendaDeadline = (agendaData?.items ?? []).find(
     item => item.type === 'deadline' && new Date(item.starts_at) > now,
   )
   // Show first non-completed milestone (upcoming ones first, then active ones even if past due)
   const nextMilestone = milestones.find(m => m.status !== 'completed')
-  const nextDeadline = (() => {
-    const candidates: Array<{ title: string; date: string }> = []
-    if (agendaDeadline) candidates.push({ title: agendaDeadline.title, date: agendaDeadline.starts_at })
-    if (nextMilestone) candidates.push({ title: nextMilestone.name, date: nextMilestone.due_date })
-    // Also consider the competition's project submission deadline
-    if (selected.ends_at) candidates.push({ title: t('competitions.portal.dashboard.finalSubmission', 'Final Submission'), date: selected.ends_at })
-    // Pick the soonest future one, or the soonest overall if all are past
-    const future = candidates.filter(c => new Date(c.date) > now)
-    if (future.length > 0) return future.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
-    if (candidates.length > 0) return candidates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-    return null
-  })()
+  const nextDeadline = selectNextDeadline({
+    agendaDeadline: agendaDeadline ? { title: agendaDeadline.title, date: agendaDeadline.starts_at } : null,
+    milestone: nextMilestone ? { title: nextMilestone.name, date: nextMilestone.due_date } : null,
+    submissionDeadline: selected.project_submission_deadline ?? null,
+    endsAt: selected.ends_at,
+    labels: {
+      submission: t('competitions.portal.dashboard.finalSubmission', 'Final Submission'),
+      eventEnd: t('competitions.portal.dashboard.eventEnds', 'Event ends'),
+    },
+    now,
+  })
 
   // Team info
   const team = teamData?.team

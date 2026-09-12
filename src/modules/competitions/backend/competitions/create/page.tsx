@@ -15,6 +15,7 @@ export default function CreateCompetitionPage() {
     { id: 'location', label: t('competitions.fields.location', 'Location'), type: 'text' },
     { id: 'starts_at', label: t('competitions.fields.startsAt', 'Starts At'), type: 'datetime', required: true },
     { id: 'ends_at', label: t('competitions.fields.endsAt', 'Ends At'), type: 'datetime', required: true },
+    { id: 'project_submission_deadline', label: t('competitions.fields.projectSubmissionDeadline', 'Project Submission Deadline'), type: 'datetime', description: t('competitions.fields.projectSubmissionDeadlineHint', 'Optional. When set, participants see it as the final submission deadline and submissions are blocked after it.') },
     { id: 'timezone', label: t('competitions.fields.timezone', 'Timezone'), type: 'text', defaultValue: 'Europe/Warsaw' },
     { id: 'min_team_size', label: t('competitions.fields.minTeamSize', 'Min Team Size'), type: 'number', defaultValue: 2 },
     { id: 'max_team_size', label: t('competitions.fields.maxTeamSize', 'Max Team Size'), type: 'number', defaultValue: 5 },
@@ -29,7 +30,7 @@ export default function CreateCompetitionPage() {
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('competitions.groups.general', 'General'), column: 1, fields: ['name', 'slug', 'description', 'location'] },
-    { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'timezone'] },
+    { id: 'schedule', title: t('competitions.groups.schedule', 'Schedule'), column: 2, fields: ['starts_at', 'ends_at', 'project_submission_deadline', 'timezone'] },
     { id: 'teams', title: t('competitions.groups.teams', 'Team Settings'), column: 1, fields: ['min_team_size', 'max_team_size'] },
     {
       id: 'legal',
@@ -64,7 +65,15 @@ export default function CreateCompetitionPage() {
           submitLabel={t('competitions.create.submit', 'Create')}
           cancelHref="/backend/competitions"
           successRedirect={successRedirect}
-          onSubmit={async (vals) => { await createCrud('competitions/competitions', vals) }}
+          onSubmit={async (vals) => {
+            // The submission deadline is optional; an untouched picker yields '' and the
+            // create schema only accepts an ISO string or nothing at all.
+            const deadline = vals.project_submission_deadline
+            await createCrud('competitions/competitions', {
+              ...vals,
+              project_submission_deadline: deadline ? deadline : undefined,
+            })
+          }}
         />
       </PageBody>
     </Page>
