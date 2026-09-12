@@ -463,5 +463,7 @@
   "competitions.manualInvite.result.existingUserAction": "Go to Add Participant",
   "competitions.manualInvite.flash.existingUser": "{email} already has an account — add them with Add Participant instead",
   "competitions.bulkInvite.summary.existingUsersHint": "{count} address(es) already have a portal account, so no invitation was created for them. Use Add Participant to attach those accounts to this competition.",
-  "competitions.bulkInvite.summary.existingUsersAction": "Go to Add Participant"
+  "competitions.bulkInvite.summary.existingUsersAction": "Go to Add Participant",
+  "competitions.manualInvite.inviteAnother": "Invite another",
+  "competitions.manualInvite.requestFailed": "Request failed"
 }

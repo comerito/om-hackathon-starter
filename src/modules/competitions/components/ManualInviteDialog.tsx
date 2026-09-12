@@ -11,6 +11,11 @@ import {
   INVITE_SKIP_REASON_KEYS,
   type InviteResult,
 } from '../lib/inviteOutcome'
+import {
+  canSubmitManualInvite,
+  createManualInviteState,
+  manualInviteReducer,
+} from '../lib/manualInviteState'
 
 const VALID_ROLES = ['participant', 'mentor', 'judge'] as const
 
@@ -19,19 +24,18 @@ type Competition = { id: string; name: string }
 export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
   const t = useT()
 
-  // Competition selector
+  // Competition selector. Deliberately outside the invite state machine: it is a property of
+  // the dialog session, not of one invite, and it survives "Invite another".
   const [competitions, setCompetitions] = React.useState<Competition[]>([])
   const [selectedCompetitionId, setSelectedCompetitionId] = React.useState('')
 
-  // Form fields
-  const [email, setEmail] = React.useState('')
-  const [displayName, setDisplayName] = React.useState('')
-  const [role, setRole] = React.useState<string>('participant')
-
-  // State
-  const [sending, setSending] = React.useState(false)
-  const [result, setResult] = React.useState<InviteResult | null>(null)
-  const [error, setError] = React.useState<string | null>(null)
+  // Form fields + lifecycle live in one reducer so `sending` can never outlive a request and
+  // a stale outcome can never block the next invite. See ../lib/manualInviteState.ts.
+  const [state, dispatch] = React.useReducer(manualInviteReducer, undefined, () =>
+    createManualInviteState(),
+  )
+  const { phase, email, displayName, role, error, result } = state
+  const canSubmit = canSubmitManualInvite(state)
 
   // Load competitions
   React.useEffect(() => {
@@ -48,52 +52,93 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
   }
 
   async function handleSend() {
+    if (!canSubmit) return
+
     const validationError = validate()
     if (validationError) {
-      setError(validationError)
+      dispatch({ type: 'validationFailed', message: validationError })
       return
     }
 
-    setError(null)
-    setSending(true)
+    dispatch({ type: 'submitStarted' })
 
+    const trimmedEmail = email.trim()
     const orgSlug = window.location.pathname.split('/')[1] || 'default'
 
-    const { ok, result: apiResult } = await apiCall<{
-      total: number; sent: number; created: number; skipped: number; failed: number
-      invitationsCreated: number
-      errors: Array<{ email: string; reason: string }>
-      emailFailures: Array<{ email: string; reason: string }>
-      results: InviteResult[]
-    }>('/api/competitions/admin/bulk-invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        competition_id: selectedCompetitionId,
-        org_slug: orgSlug,
-        invitees: [{
-          email: email.trim().toLowerCase(),
-          display_name: displayName.trim(),
-          role,
-        }],
-      }),
-    })
+    // `apiCall` rejects on 401/403 and on transport failures — it does NOT resolve with
+    // `ok: false` for those. Without this catch the dialog stayed in `sending` forever and
+    // every later invite silently did nothing until the page was reloaded.
+    let settled: InviteResult
+    try {
+      const { ok, result: apiResult } = await apiCall<{
+        total: number; sent: number; created: number; skipped: number; failed: number
+        invitationsCreated: number
+        errors: Array<{ email: string; reason: string }>
+        emailFailures: Array<{ email: string; reason: string }>
+        results: InviteResult[]
+      }>('/api/competitions/admin/bulk-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          competition_id: selectedCompetitionId,
+          org_slug: orgSlug,
+          invitees: [{
+            email: trimmedEmail.toLowerCase(),
+            display_name: displayName.trim(),
+            role,
+          }],
+        }),
+      })
 
-    setSending(false)
-
-    if (ok && apiResult?.results?.[0]) {
-      setResult(apiResult.results[0])
-    } else {
-      setResult({ email: email.trim(), status: 'error', invitationCreated: false, reason: 'Request failed' })
+      settled = ok && apiResult?.results?.[0]
+        ? apiResult.results[0]
+        : {
+            email: trimmedEmail,
+            status: 'error',
+            invitationCreated: false,
+            reason: t('competitions.manualInvite.requestFailed', 'Request failed'),
+          }
+    } catch (err) {
+      settled = {
+        email: trimmedEmail,
+        status: 'error',
+        invitationCreated: false,
+        reason: err instanceof Error && err.message
+          ? err.message
+          : t('competitions.manualInvite.requestFailed', 'Request failed'),
+      }
     }
+
+    dispatch({ type: 'submitSettled', result: settled })
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !sending && !result) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSubmit) {
       handleSend()
     }
     if (e.key === 'Escape') {
       onClose()
+    }
+  }
+
+  /** Report the outcome once, on the way out of the result view. */
+  function flashOutcome(outcome: InviteResult) {
+    if (outcome.status === 'sent') {
+      flash(t('competitions.manualInvite.flash.sent', 'Invitation sent to {email}', { email: outcome.email }), 'success')
+    } else if (outcome.status === 'created') {
+      flash(
+        t('competitions.manualInvite.flash.created', 'Invitation created for {email}, but the email could not be sent', { email: outcome.email }),
+        'warning',
+      )
+    } else if (outcome.status === 'skipped' && outcome.reasonCode === 'user_already_exists') {
+      flash(
+        t(
+          'competitions.manualInvite.flash.existingUser',
+          '{email} already has an account — add them with Add Participant instead',
+          { email: outcome.email },
+        ),
+        'warning',
+      )
     }
   }
 
@@ -111,7 +156,7 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {!result ? (
+        {result === null ? (
           <div className="space-y-4">
             {/* Competition */}
             <div>
@@ -132,7 +177,7 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => dispatch({ type: 'setField', field: 'email', value: e.target.value })}
                 placeholder="participant@example.com"
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 autoFocus
@@ -145,7 +190,7 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
               <input
                 type="text"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => dispatch({ type: 'setField', field: 'displayName', value: e.target.value })}
                 placeholder="John Doe"
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
@@ -156,7 +201,7 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
               <label className="mb-1 block text-sm font-medium">Role</label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => dispatch({ type: 'setField', field: 'role', value: e.target.value })}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 {VALID_ROLES.map(r => (
@@ -173,8 +218,8 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSend} disabled={sending}>
-                {sending ? 'Sending...' : 'Send Invitation'}
+              <Button onClick={handleSend} disabled={!canSubmit}>
+                {phase === 'sending' ? 'Sending...' : 'Send Invitation'}
               </Button>
             </div>
           </div>
@@ -246,26 +291,20 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
               </div>
             )}
 
-            <div className="flex justify-end">
+            {/* "Invite another" is what makes the flow repeatable: it drops this outcome and
+                brings back a blank form without unmounting the dialog or reloading the page.
+                No flash here — the toast sits at the same z-index as this overlay, and the
+                operator has just read the outcome in place. Flashing stays on the exit path. */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => dispatch({ type: 'resetForNextInvite' })}
+              >
+                {t('competitions.manualInvite.inviteAnother', 'Invite another')}
+              </Button>
               <Button onClick={() => {
                 onClose()
-                if (result.status === 'sent') {
-                  flash(t('competitions.manualInvite.flash.sent', 'Invitation sent to {email}', { email: result.email }), 'success')
-                } else if (result.status === 'created') {
-                  flash(
-                    t('competitions.manualInvite.flash.created', 'Invitation created for {email}, but the email could not be sent', { email: result.email }),
-                    'warning',
-                  )
-                } else if (result.status === 'skipped' && result.reasonCode === 'user_already_exists') {
-                  flash(
-                    t(
-                      'competitions.manualInvite.flash.existingUser',
-                      '{email} already has an account — add them with Add Participant instead',
-                      { email: result.email },
-                    ),
-                    'warning',
-                  )
-                }
+                flashOutcome(result)
               }}>
                 {t('competitions.manualInvite.done', 'Done')}
               </Button>

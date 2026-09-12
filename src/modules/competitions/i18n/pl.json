@@ -463,5 +463,7 @@
   "competitions.manualInvite.result.existingUserAction": "Przejdź do Dodaj uczestnika",
   "competitions.manualInvite.flash.existingUser": "{email} ma już konto — dodaj tę osobę przez Dodaj uczestnika",
   "competitions.bulkInvite.summary.existingUsersHint": "{count} adres(ów) ma już konto w portalu, więc nie utworzono dla nich zaproszeń. Użyj opcji Dodaj uczestnika, aby przypisać te konta do tych zawodów.",
-  "competitions.bulkInvite.summary.existingUsersAction": "Przejdź do Dodaj uczestnika"
+  "competitions.bulkInvite.summary.existingUsersAction": "Przejdź do Dodaj uczestnika",
+  "competitions.manualInvite.inviteAnother": "Zaproś kolejną osobę",
+  "competitions.manualInvite.requestFailed": "Żądanie nie powiodło się"
 }
