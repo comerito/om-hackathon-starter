@@ -5,18 +5,15 @@ import type { CustomerAuthContext } from '@open-mercato/core/modules/customer_ac
 import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_accounts/lib/customerAuth'
 import { applyTranslationOverlays } from '@open-mercato/core/modules/translations/lib/apply'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { locales, type Locale } from '@open-mercato/shared/lib/i18n/config'
+import { type Locale } from '@open-mercato/shared/lib/i18n/config'
 import { PortalLocalePreference } from '@/modules/competitions/data/entities'
+import { normalizeLocale, readLocaleFromNextUrl, resolveRequestLocale } from './portal-locale-query'
 
 const PORTAL_FALLBACK_LOCALE: Locale = 'pl'
 export const PORTAL_LOCALE_COOKIE_NAME = 'locale'
 export const PORTAL_DEFAULT_LOCALE_CONFIG_KEY = 'portal_default_locale'
 
-export function normalizeLocale(value: string | null | undefined): Locale | null {
-  if (!value) return null
-  const normalized = value.trim().toLowerCase().split('-')[0]
-  return locales.includes(normalized as Locale) ? (normalized as Locale) : null
-}
+export { normalizeLocale, readLocaleFromNextUrl, resolveRequestLocale }
 
 function readCookie(cookieHeader: string | null | undefined, name: string): string | undefined {
   if (!cookieHeader) return undefined
@@ -85,11 +82,9 @@ export async function resolvePortalLocaleFromContext(options: {
   acceptLanguage?: string | null
   container?: AwilixContainer
 }): Promise<Locale> {
-  const explicitLocale = normalizeLocale(options.explicitLocale)
-  if (explicitLocale) return explicitLocale
-
-  const cookieLocale = normalizeLocale(options.cookieLocale)
-  if (cookieLocale) return cookieLocale
+  // `?locale=` then cookie — the request-scoped head of the precedence, resolved without I/O.
+  const requestLocale = resolveRequestLocale(options.explicitLocale, options.cookieLocale)
+  if (requestLocale) return requestLocale
 
   const preferenceLocale = await getPortalUserLocalePreference({
     auth: options.auth,
