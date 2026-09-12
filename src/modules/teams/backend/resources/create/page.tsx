@@ -37,7 +37,7 @@ export default function CreateResourcePage() {
   ], [t])
 
   const successRedirect = React.useMemo(
-    () => `/backend/teams/resources?flash=${encodeURIComponent(t('teams.resources.flash.created', 'Resource created'))}&type=success`,
+    () => `/backend/resources?flash=${encodeURIComponent(t('teams.resources.flash.created', 'Resource created'))}&type=success`,
     [t],
   )
 
@@ -46,12 +46,12 @@ export default function CreateResourcePage() {
       <PageBody>
         <CrudForm
           title={t('teams.resources.create.title', 'Create Resource')}
-          backHref="/backend/teams/resources"
+          backHref="/backend/resources"
           entityId="teams:resource"
           fields={fields}
           groups={groups}
           submitLabel={t('teams.resources.create.submit', 'Create')}
-          cancelHref="/backend/teams/resources"
+          cancelHref="/backend/resources"
           successRedirect={successRedirect}
           onSubmit={async (vals) => { await createCrud('teams/resources', vals) }}
         />

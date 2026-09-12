@@ -14,7 +14,10 @@ export const config: SearchModuleConfig = {
       icon: 'lucide:folder-code',
       badge: 'Project',
     }),
-    resolveUrl: async (ctx) => `/backend/projects/${ctx.record.id}`,
+    // The module has no project detail page — `/backend/projects` (list) and
+    // `/backend/projects/[id]/edit` are the only registered routes — so a search hit opens
+    // the edit page, as the sponsors search config already does for a sponsor.
+    resolveUrl: async (ctx) => `/backend/projects/${ctx.record.id}/edit`,
   }],
 }
 

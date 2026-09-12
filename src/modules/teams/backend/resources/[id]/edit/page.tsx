@@ -93,14 +93,14 @@ export default function EditResourcePage({ params }: { params?: { id?: string } 
         ) : (
           <CrudForm<ResourceFormValues>
             title={t('teams.resources.edit.title', 'Edit Resource')}
-            backHref="/backend/teams/resources"
+            backHref="/backend/resources"
             entityId="teams:resource"
             fields={fields}
             groups={groups}
             initialValues={initial ?? fallback}
             submitLabel={t('teams.resources.edit.submit', 'Save')}
-            cancelHref="/backend/teams/resources"
-            successRedirect={`/backend/teams/resources?flash=${encodeURIComponent(t('teams.resources.flash.saved', 'Resource saved'))}&type=success`}
+            cancelHref="/backend/resources"
+            successRedirect={`/backend/resources?flash=${encodeURIComponent(t('teams.resources.flash.saved', 'Resource saved'))}&type=success`}
             isLoading={loading}
             loadingMessage={t('teams.resources.edit.loading', 'Loading resource...')}
             onSubmit={async (vals) => { await updateCrud('teams/resources', vals) }}
@@ -108,7 +108,7 @@ export default function EditResourcePage({ params }: { params?: { id?: string } 
               if (!id) return
               try {
                 await deleteCrud('teams/resources', String(id))
-                pushWithFlash(router, '/backend/teams/resources', t('teams.resources.flash.deleted', 'Resource deleted'), 'success')
+                pushWithFlash(router, '/backend/resources', t('teams.resources.flash.deleted', 'Resource deleted'), 'success')
               } catch (error) {
                 setErr(error instanceof Error ? error.message : 'Delete failed')
               }
