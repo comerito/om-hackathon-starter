@@ -132,7 +132,7 @@ export default function ResourcesListPage() {
           title={t('teams.resources.table.title', 'Resources')}
           actions={
             <Button asChild>
-              <Link href="/backend/teams/resources/create">{t('teams.resources.table.create', 'New Resource')}</Link>
+              <Link href="/backend/resources/create">{t('teams.resources.table.create', 'New Resource')}</Link>
             </Button>
           }
           columns={columns}
@@ -146,7 +146,7 @@ export default function ResourcesListPage() {
           rowActions={(row) => (
             <RowActions
               items={[
-                { label: t('teams.resources.table.edit', 'Edit'), href: `/backend/teams/resources/${row.id}/edit` },
+                { label: t('teams.resources.table.edit', 'Edit'), href: `/backend/resources/${row.id}/edit` },
               ]}
             />
           )}
@@ -158,7 +158,7 @@ export default function ResourcesListPage() {
             onPageChange: setPage,
           }}
           isLoading={isLoading || !scopeReady}
-          onRowClick={(row) => router.push(`/backend/teams/resources/${row.id}/edit`)}
+          onRowClick={(row) => router.push(`/backend/resources/${row.id}/edit`)}
         />
       </PageBody>
     </Page>
