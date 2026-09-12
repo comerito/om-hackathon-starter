@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { Zap, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { clearPortalStorage } from '@/lib/portal-storage'
 
 type Props = { params: { orgSlug: string } }
 
@@ -70,8 +71,12 @@ export default function AcceptInvitePage({ params }: Props) {
       return
     }
     async function load() {
-      // Logout any existing session so the invite starts fresh
+      // Logout any existing session so the invite starts fresh. This bypasses the portal's own
+      // sign-out button, so it has to drop the device-local portal state itself — otherwise the
+      // invitee lands on the dashboard wearing the previous occupant's competition and role
+      // (#111). "Fresh" has to mean the browser too, not just the cookie.
       await apiCall('/api/customer_accounts/portal/logout', { method: 'POST' }).catch(() => {})
+      clearPortalStorage()
 
       const { ok, result } = await apiCall<InviteInfo>(
         `/api/competitions/portal/invite-info?token=${encodeURIComponent(token!)}`,
