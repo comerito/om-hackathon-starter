@@ -31,7 +31,15 @@ type DemoRow = {
   actual_start: string | null
   round: string
 }
-type ScoreProgress = { project_id: string; judge_id: string; is_submitted: boolean; total_score: number | null; round: string }
+type ScoreProgress = {
+  project_id: string
+  judge_id: string
+  project_title: string | null
+  judge_name: string | null
+  is_submitted: boolean
+  total_score: number | null
+  round: string
+}
 type LeaderboardRow = { project_title: string; team_name: string | null; average_score: number | null; rank: number | null; track_id: string }
 
 const roundPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -67,6 +75,10 @@ export default function JudgingDashboard() {
   // so it gets its own selector following the Demo Queue pattern above.
   const [localLeaderboardCompetitionId, setLocalLeaderboardCompetitionId] = React.useState('')
   const leaderboardCompetitionId = scopedCompetitionId ?? localLeaderboardCompetitionId
+  // Scoring progress is per-competition for the same reason — scores of two events say nothing
+  // side by side — and follows the same selector pattern.
+  const [localScoresCompetitionId, setLocalScoresCompetitionId] = React.useState('')
+  const scoresCompetitionId = scopedCompetitionId ?? localScoresCompetitionId
 
   // Competitions for the demo queue selector
   const { data: competitionsData } = useQuery({
@@ -143,15 +155,20 @@ export default function JudgingDashboard() {
     enabled: tab === 'demos' && scopeReady,
   })
 
-  // Scores progress
-  const { data: scoresData, isLoading: scoresLoading } = useQuery({
-    queryKey: ['judging-scores', scopeVersion, scopedCompetitionId],
+  // Scores progress — always scoped to one competition; like the leaderboard, a failed request
+  // must surface as an error rather than as the "no scores yet" empty state.
+  const { data: scoresData, isLoading: scoresLoading, isError: scoresIsError, error: scoresError } = useQuery({
+    queryKey: ['judging-scores', scopeVersion, scoresCompetitionId],
     queryFn: async () => {
-      const query = scopedCompetitionId ? `?competition_id=${encodeURIComponent(scopedCompetitionId)}` : ''
-      const { ok, result } = await apiCall<{ items: ScoreProgress[] }>(`/api/judging/scores${query}`)
-      return ok ? result : { items: [] }
+      const { ok, result, status, response } = await apiCall<{ items: ScoreProgress[]; error?: string }>(`/api/judging/scores?competition_id=${encodeURIComponent(scoresCompetitionId)}`)
+      if (!ok) {
+        const serverMessage = typeof result?.error === 'string' ? result.error : response.statusText
+        throw new Error(serverMessage ? `${serverMessage} (${status})` : `Request failed (${status})`)
+      }
+      return result ?? { items: [] }
     },
-    enabled: tab === 'scores' && scopeReady,
+    enabled: tab === 'scores' && scopeReady && !!scoresCompetitionId,
+    retry: false,
   })
 
   // Leaderboard — always scoped to one competition; a failed request must surface
@@ -360,7 +377,29 @@ export default function JudgingDashboard() {
       {tab === 'scores' && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">{t('judging.scores.title', 'Scoring Progress')}</h3>
-          {scoresLoading ? <div className="text-muted-foreground">{t('common.loading', 'Loading...')}</div> : (
+          {scopedCompetitionId ? null : (
+            <select
+              value={localScoresCompetitionId}
+              onChange={(e) => setLocalScoresCompetitionId(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">{t('judging.scores.selectCompetition', 'Select competition...')}</option>
+              {(competitionsData?.items ?? []).map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.stage})</option>
+              ))}
+            </select>
+          )}
+          {!scoresCompetitionId ? (
+            <div className="rounded-lg border p-4 text-center text-muted-foreground">
+              {t('judging.scores.pickCompetition', 'Select a competition to see its scoring progress.')}
+            </div>
+          ) : scoresIsError ? (
+            <ErrorMessage
+              label={t('judging.scores.loadFailed', 'Could not load scoring progress')}
+              description={scoresError instanceof Error ? scoresError.message : undefined}
+              action={<Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ['judging-scores'] })}>{t('common.retry', 'Retry')}</Button>}
+            />
+          ) : scoresLoading ? <div className="text-muted-foreground">{t('common.loading', 'Loading...')}</div> : (
             <div className="rounded-lg border">
               <table className="w-full text-sm">
                 <thead>
@@ -374,8 +413,8 @@ export default function JudgingDashboard() {
                 <tbody>
                   {(scoresData?.items ?? []).map((s, i) => (
                     <tr key={i} className="border-b last:border-0">
-                      <td className="p-2">{s.project_id.substring(0, 8)}...</td>
-                      <td className="p-2">{s.judge_id.substring(0, 8)}...</td>
+                      <td className="p-2">{s.project_title ?? `${s.project_id.substring(0, 8)}...`}</td>
+                      <td className="p-2">{s.judge_name ?? `${s.judge_id.substring(0, 8)}...`}</td>
                       <td className="p-2 text-center">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${s.is_submitted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {s.is_submitted ? 'Submitted' : 'Draft'}
