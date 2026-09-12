@@ -32,6 +32,10 @@ import {
   ProfileCompletionCard,
   AnnouncementRichText,
 } from '@/components/portal'
+import {
+  DASHBOARD_ANNOUNCEMENT_PAGE_SIZE,
+  paginateAnnouncementFeed,
+} from '../../../../lib/announcement-feed'
 
 /* ---------- types ---------- */
 
@@ -207,6 +211,13 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
     enabled: !!selectedId,
   })
 
+  // How many announcements the feed currently reveals. Reset whenever the
+  // selected competition changes so the new feed starts from the top.
+  const [visibleAnnouncements, setVisibleAnnouncements] = React.useState(DASHBOARD_ANNOUNCEMENT_PAGE_SIZE)
+  React.useEffect(() => {
+    setVisibleAnnouncements(DASHBOARD_ANNOUNCEMENT_PAGE_SIZE)
+  }, [selectedId])
+
   // Fetch team membership + team details
   const { data: teamData } = useQuery({
     queryKey: ['portal-dashboard-team', selectedId],
@@ -285,7 +296,10 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
   const stage = selected.stage
   const isPreStart = ['draft', 'open'].includes(stage)
   const timeLeft = getTimeRemaining(isPreStart ? selected.starts_at : selected.ends_at)
-  const latestAnnouncements = (announcementsData?.items ?? []).slice(0, 5)
+  // The endpoint returns the full ordered feed (pinned > priority > newest), so
+  // "load older" reveals more of that one sorted array — no page can slip out of order.
+  const announcementFeed = paginateAnnouncementFeed(announcementsData?.items, visibleAnnouncements)
+  const latestAnnouncements = announcementFeed.visible
   const participantCount = statsData?.participant_count ?? 0
   const trackCount = statsData?.track_count ?? 0
   const milestones = milestonesData?.items ?? []
@@ -437,12 +451,14 @@ function DashboardContent({ orgSlug }: { orgSlug: string }) {
               </div>
             )}
           </div>
-          {latestAnnouncements.length > 0 && (
+          {announcementFeed.hasMore && (
             <button
               type="button"
+              onClick={() => setVisibleAnnouncements(announcementFeed.nextVisibleCount)}
               className="mt-4 flex w-full items-center justify-center gap-1 text-xs font-medium text-portal-secondary hover:text-foreground transition-colors"
             >
               {t('competitions.portal.dashboard.loadOlder', 'Load Older Announcements')}
+              <ChevronDown className="size-3.5" />
             </button>
           )}
         </div>
