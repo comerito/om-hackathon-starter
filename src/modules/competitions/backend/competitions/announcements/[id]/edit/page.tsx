@@ -8,6 +8,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { LoadingMessage, ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useQuery } from '@tanstack/react-query'
+import { announcementFormSchema } from '@/modules/competitions/data/validators'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -47,7 +48,7 @@ export default function EditAnnouncementPage({ params }: { params?: { id?: strin
       { value: 'info', label: 'Info' }, { value: 'warning', label: 'Warning' }, { value: 'urgent', label: 'Urgent' },
     ], defaultValue: 'info' },
     { id: 'pinned', label: 'Pinned', type: 'checkbox' },
-    { id: 'action_url', label: 'Action URL', type: 'text' },
+    { id: 'action_url', label: 'Action URL', type: 'text', placeholder: '/acme-corp/portal/project or https://example.com/project' },
     { id: 'action_label', label: 'Action Label', type: 'text' },
   ], [t])
 
@@ -63,6 +64,7 @@ export default function EditAnnouncementPage({ params }: { params?: { id?: strin
   return (
     <Page><PageBody>
       <CrudForm
+        schema={announcementFormSchema}
         title={t('competitions.announcements.editTitle', 'Edit Announcement')}
         backHref="/backend/competitions/announcements"
         entityId="competitions:announcement"

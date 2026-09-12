@@ -32,6 +32,7 @@ import {
   ProfileCompletionCard,
   AnnouncementRichText,
 } from '@/components/portal'
+import { isSafeActionUrl } from '../../../../lib/action-url'
 
 /* ---------- types ---------- */
 
@@ -97,7 +98,10 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const [isClamped, setIsClamped] = React.useState(false)
 
   const category = announcement.category || 'general'
-  const actionUrl = announcement.action_url?.trim() || null
+  // Defence in depth: rows written before the action-url validation fix (issue #82) may hold a
+  // `javascript:` / `data:` href, which the old `z.string().url()` check happily accepted.
+  const rawActionUrl = announcement.action_url?.trim() || null
+  const actionUrl = rawActionUrl && isSafeActionUrl(rawActionUrl) ? rawActionUrl : null
   const actionLabel = announcement.action_label?.trim() || null
   const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
 

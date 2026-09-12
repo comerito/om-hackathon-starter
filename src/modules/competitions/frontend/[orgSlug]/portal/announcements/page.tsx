@@ -11,6 +11,7 @@ import { PortalCompetitionLayout } from '../../../../components/PortalCompetitio
 import { useCompetitionContext } from '../../../../components/CompetitionContext'
 import { PortalPageTitle, PortalBadge, ActionLink, AnnouncementRichText } from '@/components/portal'
 import { Info, AlertTriangle, AlertCircle, Copy, Pin } from 'lucide-react'
+import { isSafeActionUrl } from '../../../../lib/action-url'
 
 type Announcement = {
   id: string; title: string; content: string; priority: string
@@ -48,7 +49,10 @@ function formatTimeAgo(dateStr: string, t: ReturnType<typeof useT>): string {
 function AnnouncementCard({ announcement, showPinned }: { announcement: Announcement; showPinned?: boolean }) {
   const t = useT()
   const category = announcement.category || 'general'
-  const actionUrl = announcement.action_url?.trim() || null
+  // Defence in depth: rows written before the action-url validation fix (issue #82) may hold a
+  // `javascript:` / `data:` href, which the old `z.string().url()` check happily accepted.
+  const rawActionUrl = announcement.action_url?.trim() || null
+  const actionUrl = rawActionUrl && isSafeActionUrl(rawActionUrl) ? rawActionUrl : null
   const actionLabel = announcement.action_label?.trim() || null
   const isCode = announcement.content.includes('npm ') || announcement.content.includes('yarn ')
   const priority = priorityIcons[announcement.priority] ?? priorityIcons.info

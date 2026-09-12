@@ -4,6 +4,7 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { announcementFormSchema } from '@/modules/competitions/data/validators'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -30,7 +31,7 @@ export default function CreateAnnouncementPage() {
       { value: 'info', label: 'Info' }, { value: 'warning', label: 'Warning' }, { value: 'urgent', label: 'Urgent' },
     ], defaultValue: 'info' },
     { id: 'pinned', label: 'Pinned', type: 'checkbox' },
-    { id: 'action_url', label: 'Action URL', type: 'text' },
+    { id: 'action_url', label: 'Action URL', type: 'text', placeholder: '/acme-corp/portal/project or https://example.com/project' },
     { id: 'action_label', label: 'Action Label', type: 'text' },
   ], [t])
 
@@ -44,6 +45,7 @@ export default function CreateAnnouncementPage() {
     <Page>
       <PageBody>
         <CrudForm
+          schema={announcementFormSchema}
           title={t('competitions.announcements.createTitle', 'New Announcement')}
           backHref="/backend/competitions/announcements"
           entityId="competitions:announcement"

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { locales } from '@open-mercato/shared/lib/i18n/config'
+import { ACTION_URL_MAX_LENGTH, ACTION_URL_MESSAGE, isSafeActionUrl, normalizeActionUrl } from '../lib/action-url'
 
 export const portalLocaleEnum = z.enum(locales as [typeof locales[number], ...typeof locales[number][]])
 
@@ -215,13 +216,37 @@ export type UpdateAgendaItemInput = z.infer<typeof updateAgendaItemSchema>
 export const announcementPriorityValues = ['info', 'warning', 'urgent'] as const
 export const announcementCategoryValues = ['general', 'logistics', 'technical', 'schedule', 'judging'] as const
 
+export { ACTION_URL_MAX_LENGTH, ACTION_URL_MESSAGE, isSafeActionUrl } from '../lib/action-url'
+
+export const actionUrlSchema = z.preprocess(
+  normalizeActionUrl,
+  z
+    .string()
+    .max(ACTION_URL_MAX_LENGTH)
+    .refine(isSafeActionUrl, { message: ACTION_URL_MESSAGE })
+    .nullable()
+    .optional(),
+)
+
+/**
+ * Same rule as {@link actionUrlSchema}, but without the `preprocess` normalisation so the schema's
+ * input and output types stay identical — required for use as a `CrudForm` schema. A blank field
+ * means "no action link" and is accepted here; the server turns it into `null`.
+ */
+export const actionUrlFormField = z
+  .string()
+  .max(ACTION_URL_MAX_LENGTH)
+  .refine((value) => value.trim() === '' || isSafeActionUrl(value), { message: ACTION_URL_MESSAGE })
+  .nullable()
+  .optional()
+
 export const createAnnouncementSchema = z.object({
   competition_id: z.string().uuid(),
   title: z.string().min(1).max(255),
   content: z.string().min(1),
   priority: z.enum(announcementPriorityValues).default('info'),
   category: z.enum(announcementCategoryValues).default('general'),
-  action_url: z.string().url().max(1000).nullable().optional(),
+  action_url: actionUrlSchema,
   action_label: z.string().max(255).nullable().optional(),
   target_roles: z.array(z.string()).default([]),
   target_track_ids: z.array(z.string().uuid()).default([]),
@@ -237,7 +262,7 @@ export const updateAnnouncementSchema = z.object({
   content: z.string().min(1).optional(),
   priority: z.enum(announcementPriorityValues).optional(),
   category: z.enum(announcementCategoryValues).optional(),
-  action_url: z.string().url().max(1000).nullable().optional(),
+  action_url: actionUrlSchema,
   action_label: z.string().max(255).nullable().optional(),
   target_roles: z.array(z.string()).optional(),
   target_track_ids: z.array(z.string().uuid()).optional(),
@@ -245,6 +270,30 @@ export const updateAnnouncementSchema = z.object({
 })
 
 export type UpdateAnnouncementInput = z.infer<typeof updateAnnouncementSchema>
+
+/**
+ * Client-side schema for the backend announcement forms (create + edit).
+ *
+ * Wiring this into `CrudForm` is what makes a bad Action URL show up as a field-level error on the
+ * field itself instead of only failing on the server. It mirrors the fields the forms actually
+ * render; `looseObject` keeps every other key (custom fields, `id`, audit columns coming from the
+ * edit page's initial values) so parsing the form never drops data from the submitted payload.
+ *
+ * It deliberately declares no `.default()` / `.transform()`, so its input and output types match
+ * and normalisation stays a server-side concern (`actionUrlSchema`).
+ */
+export const announcementFormSchema = z.looseObject({
+  competition_id: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  content: z.string().min(1),
+  priority: z.enum(announcementPriorityValues).optional(),
+  category: z.enum(announcementCategoryValues).optional(),
+  action_url: actionUrlFormField,
+  action_label: z.string().max(255).nullable().optional(),
+  pinned: z.boolean().optional(),
+})
+
+export type AnnouncementFormValues = z.infer<typeof announcementFormSchema>
 
 // ── Milestone ────────────────────────────────────────────────────────
 
