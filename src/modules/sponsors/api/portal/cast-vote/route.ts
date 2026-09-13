@@ -9,7 +9,12 @@ import { CompetitionParticipation } from '../../../../competitions/data/entities
 import { TeamMember } from '../../../../teams/data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { castVoteSchema } from '../../../data/validators'
+import { evaluateVotingWindow, DEFAULT_VOTES_PER_PERSON, type PeerVotingConfig } from '../../../lib/voting-eligibility'
+import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+
+/** Registry resource kind for peer votes — matches the `sponsors.vote.*` events. */
+const VOTE_RESOURCE_KIND = 'sponsors.vote'
 
 export const metadata = {
   POST: { requireCustomerAuth: true },
@@ -26,9 +31,33 @@ export async function POST(req: Request) {
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
+    // Mutation-guard registry — this is a custom (non-`makeCrudRoute`) write
+    // route, so it has to run the same guard set a CRUD write would. Run before
+    // the eligibility checks so a guard that rewrites the payload cannot slip a
+    // different project past them.
+    const guard = await runRouteMutationGuards({
+      container,
+      req,
+      auth: {
+        userId: auth.sub,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        userFeatures: auth.resolvedFeatures ?? [],
+      },
+      input: {
+        resourceKind: VOTE_RESOURCE_KIND,
+        operation: 'create',
+        mutationPayload: { ...parsed },
+      },
+    })
+    if (!guard.ok) return guard.response
+    const input = guard.modifiedPayload
+      ? castVoteSchema.parse({ ...parsed, ...guard.modifiedPayload })
+      : parsed
+
     // Verify participation and check-in
     const participation = await em.findOne(CompetitionParticipation, {
-      customerUserId: auth.sub, competitionId: parsed.competition_id,
+      customerUserId: auth.sub, competitionId: input.competition_id,
       tenantId: auth.tenantId, deletedAt: null,
     } as FilterQuery<CompetitionParticipation>)
     if (!participation) return NextResponse.json({ error: 'Not a participant in this competition' }, { status: 403 })
@@ -36,25 +65,25 @@ export async function POST(req: Request) {
 
     // Get competition config for vote limits and window
     const competition = await em.findOne(Competition, {
-      id: parsed.competition_id, tenantId: auth.tenantId,
+      id: input.competition_id, tenantId: auth.tenantId,
     } as FilterQuery<Competition>)
     if (!competition) return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
 
-    const votingConfig = (competition as unknown as Record<string, unknown>).peerVotingConfig as { enabled?: boolean; votesPerPerson?: number; votingEndsAt?: string | null } | undefined
-    if (votingConfig?.enabled === false) return NextResponse.json({ error: 'Voting is not enabled' }, { status: 409 })
+    const votingConfig = (competition as unknown as Record<string, unknown>).peerVotingConfig as PeerVotingConfig | undefined
 
-    // Check voting window
-    if (votingConfig?.votingEndsAt) {
-      const endsAt = new Date(votingConfig.votingEndsAt)
-      if (new Date() > endsAt) return NextResponse.json({ error: 'Voting window has closed' }, { status: 409 })
+    // Is voting open at all? Stage first, then the (optional) explicit window —
+    // `votingEndsAt` alone never closes voting because it is null by default.
+    const votingWindow = evaluateVotingWindow({ stage: competition.stage, config: votingConfig })
+    if (!votingWindow.open) {
+      return NextResponse.json({ error: votingWindow.message, reason: votingWindow.reason }, { status: 409 })
     }
 
     // No self-voting: check if project belongs to voter's team
     const voterMembership = await em.findOne(TeamMember, {
-      customerUserId: auth.sub, competitionId: parsed.competition_id, deletedAt: null,
+      customerUserId: auth.sub, competitionId: input.competition_id, deletedAt: null,
     } as FilterQuery<TeamMember>)
     if (voterMembership) {
-      const project = await em.findOne(Project, { id: parsed.project_id, deletedAt: null } as FilterQuery<Project>)
+      const project = await em.findOne(Project, { id: input.project_id, deletedAt: null } as FilterQuery<Project>)
       if (project && project.teamId === voterMembership.teamId) {
         return NextResponse.json({ error: 'You cannot vote for your own team\'s project' }, { status: 409 })
       }
@@ -62,32 +91,35 @@ export async function POST(req: Request) {
 
     // Check vote limit
     const existingVotes = await em.find(PeerVote, {
-      voterId: auth.sub, competitionId: parsed.competition_id, tenantId: auth.tenantId,
+      voterId: auth.sub, competitionId: input.competition_id, tenantId: auth.tenantId,
     } as FilterQuery<PeerVote>)
-    const maxVotes = votingConfig?.votesPerPerson ?? 3
+    const maxVotes = votingConfig?.votesPerPerson ?? DEFAULT_VOTES_PER_PERSON
     if (existingVotes.length >= maxVotes) {
       return NextResponse.json({ error: `You have already used all ${maxVotes} votes` }, { status: 409 })
     }
 
     // Check duplicate vote
-    const duplicate = existingVotes.find(v => v.projectId === parsed.project_id)
+    const duplicate = existingVotes.find(v => v.projectId === input.project_id)
     if (duplicate) return NextResponse.json({ error: 'You have already voted for this project' }, { status: 409 })
 
     // Cast vote
     const vote = em.create(PeerVote, {
-      competitionId: parsed.competition_id, voterId: auth.sub,
-      projectId: parsed.project_id, tenantId: auth.tenantId!, organizationId: auth.orgId!,
+      competitionId: input.competition_id, voterId: auth.sub,
+      projectId: input.project_id, tenantId: auth.tenantId!, organizationId: auth.orgId!,
       createdAt: new Date(),
     })
     em.persist(vote)
     await em.flush()
 
+    // Guard after-success callbacks run only once the write has committed.
+    await guard.runAfterSuccess()
+
     // Emit event
     try {
       const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
       await eventBus.emit('sponsors.vote.cast', {
-        voteId: vote.id, voterId: auth.sub, projectId: parsed.project_id,
-        competitionId: parsed.competition_id, tenantId: auth.tenantId, organizationId: auth.orgId,
+        voteId: vote.id, voterId: auth.sub, projectId: input.project_id,
+        competitionId: input.competition_id, tenantId: auth.tenantId, organizationId: auth.orgId,
       })
     } catch (e) { console.error('[portal/cast-vote] Event emit error:', e) }
 
@@ -115,17 +147,47 @@ export async function DELETE(req: Request) {
     } as FilterQuery<PeerVote>)
     if (!vote) return NextResponse.json({ error: 'Vote not found' }, { status: 404 })
 
-    // Check if vote change is allowed
     const competition = await em.findOne(Competition, {
       id: vote.competitionId, tenantId: auth.tenantId,
     } as FilterQuery<Competition>)
-    const votingConfig = (competition as unknown as Record<string, unknown> | null)?.peerVotingConfig as { allowVoteChange?: boolean } | undefined
+    if (!competition) return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+    const votingConfig = (competition as unknown as Record<string, unknown>).peerVotingConfig as PeerVotingConfig | undefined
+
+    // Retracting a vote changes the tally just as casting one does, so it is
+    // gated by the same window — otherwise a participant could still edit the
+    // People's Choice result during deliberation.
+    const votingWindow = evaluateVotingWindow({ stage: competition.stage, config: votingConfig })
+    if (!votingWindow.open) {
+      return NextResponse.json({ error: votingWindow.message, reason: votingWindow.reason }, { status: 409 })
+    }
+
+    // Check if vote change is allowed
     if (!votingConfig?.allowVoteChange) {
       return NextResponse.json({ error: 'Vote changes are not allowed' }, { status: 409 })
     }
 
+    const guard = await runRouteMutationGuards({
+      container,
+      req,
+      auth: {
+        userId: auth.sub,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        userFeatures: auth.resolvedFeatures ?? [],
+      },
+      input: {
+        resourceKind: VOTE_RESOURCE_KIND,
+        resourceId: vote.id,
+        operation: 'delete',
+        mutationPayload: { vote_id: vote.id, competition_id: vote.competitionId, project_id: vote.projectId },
+      },
+    })
+    if (!guard.ok) return guard.response
+
     em.remove(vote)
     await em.flush()
+
+    await guard.runAfterSuccess()
 
     try {
       const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
