@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole, TeamTrack } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
+import { isSelectableTrack } from '../../../../tracks/lib/track-visibility'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../../../../competitions/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -81,6 +82,11 @@ export async function POST(req: Request) {
       } as FilterQuery<Track>)
       if (!track) {
         return NextResponse.json({ error: 'Track not found in this competition' }, { status: 404 })
+      }
+      // A removed or deactivated track is no longer a valid choice, even if the
+      // client is working from a stale list.
+      if (!isSelectableTrack(track)) {
+        return NextResponse.json({ error: 'This track is no longer available' }, { status: 409 })
       }
     }
 

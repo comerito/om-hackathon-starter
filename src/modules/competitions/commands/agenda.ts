@@ -6,7 +6,7 @@ import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { FilterQuery } from '@mikro-orm/postgresql'
 import { AgendaItem } from '../data/entities'
-import { createAgendaItemSchema, updateAgendaItemSchema } from '../data/validators'
+import { TIME_RANGE_MESSAGE, createAgendaItemSchema, updateAgendaItemSchema } from '../data/validators'
 
 const ENTITY_ID = 'competitions:agenda_item'
 
@@ -101,6 +101,15 @@ const updateAgendaItemCommand: CommandHandler<Record<string, unknown>, AgendaIte
         organizationId: scope.organizationId,
       } as FilterQuery<AgendaItem>,
       apply: (entity) => {
+        // updateAgendaItemSchema can only compare the two edges when the caller sends both.
+        // A partial update that moves just one of them past the other has to be checked
+        // against the persisted row, which is only reachable here. Do it before applying
+        // anything so a rejected update leaves the entity untouched.
+        const nextStartsAt = parsed.starts_at !== undefined ? new Date(parsed.starts_at) : entity.startsAt
+        const nextEndsAt = parsed.ends_at !== undefined ? new Date(parsed.ends_at) : entity.endsAt
+        if (nextEndsAt.getTime() <= nextStartsAt.getTime()) {
+          throw new CrudHttpError(400, { error: TIME_RANGE_MESSAGE, fields: { ends_at: TIME_RANGE_MESSAGE } })
+        }
         if (parsed.title !== undefined) entity.title = parsed.title
         if (parsed.description !== undefined) entity.description = parsed.description
         if (parsed.type !== undefined) entity.type = parsed.type

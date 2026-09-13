@@ -4,7 +4,8 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { TeamInvitation, InvitationStatus, TeamMember, TeamRole, InvitationType } from '../../../data/entities'
-import { CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { Competition, CompetitionParticipation, ParticipationRole } from '../../../../competitions/data/entities'
+import { activeTeamMemberFilter, canJoinTeam } from '../../../lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const respondSchema = z.object({
@@ -83,6 +84,28 @@ export async function POST(req: Request) {
       } as FilterQuery<TeamMember>)
       if (existingMember) {
         return NextResponse.json({ error: 'This user is already on a team' }, { status: 409 })
+      }
+
+      // Enforce the competition's team size cap at the moment the seat is taken.
+      // The invite path checks it too, but an invitation issued while there was room
+      // can be accepted much later, after the team filled up another way.
+      const competition = await em.findOne(Competition, {
+        id: invitation.competitionId,
+        tenantId: auth.tenantId,
+        deletedAt: null,
+      } as FilterQuery<Competition>)
+      if (!competition) {
+        return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
+      }
+
+      const memberCount = await em.count(TeamMember, activeTeamMemberFilter({
+        teamId: invitation.teamId,
+        tenantId: auth.tenantId,
+      }) as FilterQuery<TeamMember>)
+
+      const capacity = canJoinTeam(competition, { memberCount })
+      if (!capacity.allowed) {
+        return NextResponse.json({ error: capacity.reason }, { status: 409 })
       }
 
       // Create team member

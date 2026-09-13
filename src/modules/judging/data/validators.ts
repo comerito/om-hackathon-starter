@@ -102,6 +102,19 @@ export const leaderboardQuerySchema = z.object({
 
 export type LeaderboardQueryInput = z.infer<typeof leaderboardQuerySchema>
 
+// ── Scores listing ──────────────────────────────────────────────────
+// `competition_id` is REQUIRED: a score row only means something next to the competition it
+// belongs to, and an optional filter is what let the back-office Scoring Progress tab
+// interleave rows from every competition in the tenant.
+export const scoresQuerySchema = z.object({
+  competition_id: z.string().uuid('competition_id must be a valid UUID'),
+  project_id: z.string().uuid('project_id must be a valid UUID').nullish(),
+  judge_id: z.string().uuid('judge_id must be a valid UUID').nullish(),
+  round: z.enum(judgingRoundValues).nullish(),
+})
+
+export type ScoresQueryInput = z.infer<typeof scoresQuerySchema>
+
 export type CreatePanelInput = z.infer<typeof createPanelSchema>
 export type UpdatePanelInput = z.infer<typeof updatePanelSchema>
 export type CreateCriterionInput = z.infer<typeof createCriterionSchema>
