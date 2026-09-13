@@ -98,15 +98,22 @@ Run the full gate: `yarn generate`, `yarn typecheck`, `yarn lint`, `yarn test`, 
 
 ### Phase 1: app-owned customer-user lookup endpoint
 
-- [ ] 1.1 Add the `customer-users` admin route with `ids` / `search` support
-- [ ] 1.2 Add unit tests covering ids lookup, token search, short-query fallback and scoping
+- [x] 1.1 Add the `customer-users` admin route with `ids` / `search` support — 029b128
+- [x] 1.2 Add unit tests covering ids lookup, token search, short-query fallback and scoping — 029b128
 
 ### Phase 2: repoint the three participants pages
 
-- [ ] 2.1 Point the Add Participant combobox at the new route
-- [ ] 2.2 Point the participants list name map at the new route
-- [ ] 2.3 Point the participant detail page at the new route
+- [x] 2.1 Point the Add Participant combobox at the new route — f7c8efd
+- [x] 2.2 Point the participants list name map at the new route — f7c8efd
+- [x] 2.3 Point the participant detail page at the new route — f7c8efd
 
 ### Phase 3: validation
 
-- [ ] 3.1 Run the full validation gate
+- [x] 3.1 Run the full validation gate — `yarn generate` ✅, `yarn typecheck` ✅, `yarn test`
+  (554/554 passed) ✅, `yarn build` ✅. `yarn lint` cannot run: `next lint` was removed in the
+  installed Next.js 16.1.5 and no standalone ESLint config exists in this app, so the command
+  errors before checking anything (`Invalid project directory provided, no such directory:
+  .../lint`) — a pre-existing, repo-wide gap unrelated to this change, not something this run
+  introduced or can fix in scope.
+
+Status: complete
