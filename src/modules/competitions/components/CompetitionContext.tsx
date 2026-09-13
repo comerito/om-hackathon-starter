@@ -1,6 +1,7 @@
 "use client"
 import * as React from 'react'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { PORTAL_SELECTION_EVENT, PORTAL_SELECTION_KEYS } from '@/components/portal/portal-selection'
 import { AcceptTermsGate } from './AcceptTermsGate'
 
 type CompetitionSummary = {
@@ -38,9 +39,25 @@ export function useCompetitionContext() {
   return React.useContext(CompetitionContext)
 }
 
-const STORAGE_KEY = 'hackon:selected-competition'
-const STAGE_STORAGE_KEY = 'hackon:selected-competition-stage'
-const ROLE_STORAGE_KEY = 'hackon:selected-competition-role'
+const STORAGE_KEY = PORTAL_SELECTION_KEYS.competitionId
+const STAGE_STORAGE_KEY = PORTAL_SELECTION_KEYS.stage
+const ROLE_STORAGE_KEY = PORTAL_SELECTION_KEYS.role
+
+/**
+ * Publish the selection to the persistent layout chrome (sidebar, top bar, chat icon).
+ *
+ * `storage` events only reach *other* tabs, so this tab's own writes have to be announced
+ * explicitly — otherwise the chrome, which the router never remounts, keeps rendering whatever
+ * it read when the tab first loaded (#115: stage-gated sidebar items needing a reload).
+ */
+function publishSelection(competition: CompetitionSummary) {
+  localStorage.setItem(STORAGE_KEY, competition.id)
+  localStorage.setItem(STAGE_STORAGE_KEY, competition.stage)
+  localStorage.setItem(ROLE_STORAGE_KEY, competition.role)
+  window.dispatchEvent(new CustomEvent(PORTAL_SELECTION_EVENT, {
+    detail: { competitionId: competition.id, stage: competition.stage, role: competition.role },
+  }))
+}
 
 export function CompetitionProvider({ children }: { children: React.ReactNode }) {
   const [competitions, setCompetitions] = React.useState<CompetitionSummary[]>([])
@@ -63,15 +80,10 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
           const valid = result.items.find(c => c.id === stored)
           if (valid) {
             setSelectedIdState(valid.id)
-            localStorage.setItem(STAGE_STORAGE_KEY, valid.stage)
-            localStorage.setItem(ROLE_STORAGE_KEY, valid.role)
-            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: valid.role } }))
+            publishSelection(valid)
           } else if (result.items.length > 0) {
             setSelectedIdState(result.items[0].id)
-            localStorage.setItem(STORAGE_KEY, result.items[0].id)
-            localStorage.setItem(STAGE_STORAGE_KEY, result.items[0].stage)
-            localStorage.setItem(ROLE_STORAGE_KEY, result.items[0].role)
-            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: result.items[0].role } }))
+            publishSelection(result.items[0])
           }
         }
       } catch (err) {
@@ -88,11 +100,7 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
     setSelectedIdState(id)
     localStorage.setItem(STORAGE_KEY, id)
     const comp = competitions.find(c => c.id === id)
-    if (comp) {
-      localStorage.setItem(STAGE_STORAGE_KEY, comp.stage)
-      localStorage.setItem(ROLE_STORAGE_KEY, comp.role)
-      window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: comp.role } }))
-    }
+    if (comp) publishSelection(comp)
   }, [competitions])
 
   const selected = React.useMemo(
