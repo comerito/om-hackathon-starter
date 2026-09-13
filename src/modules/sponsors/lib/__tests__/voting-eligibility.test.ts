@@ -2,8 +2,10 @@ import {
   DEFAULT_VOTES_PER_PERSON,
   VOTING_CLOSES_AT_STAGE,
   VOTING_OPENS_AT_STAGE,
+  evaluateVoteEligibility,
   evaluateVotingWindow,
   isVotingStage,
+  resolveVotesPerPerson,
 } from '../voting-eligibility'
 
 const ALL_STAGES = [
@@ -162,4 +164,120 @@ describe('evaluateVotingWindow — explicit instants', () => {
     expect(evaluateVotingWindow({ stage: 'demos', config: { votingEndsAt: '2000-01-01T00:00:00.000Z' } }).open).toBe(false)
     expect(evaluateVotingWindow({ stage: 'demos', config: { votingEndsAt: '2999-01-01T00:00:00.000Z' } }).open).toBe(true)
   })
+})
+
+describe('resolveVotesPerPerson', () => {
+  it('falls back to the default for missing or nonsensical values', () => {
+    expect(resolveVotesPerPerson(undefined)).toBe(DEFAULT_VOTES_PER_PERSON)
+    expect(resolveVotesPerPerson(null)).toBe(DEFAULT_VOTES_PER_PERSON)
+    expect(resolveVotesPerPerson({})).toBe(DEFAULT_VOTES_PER_PERSON)
+    expect(resolveVotesPerPerson({ votesPerPerson: -1 })).toBe(DEFAULT_VOTES_PER_PERSON)
+    expect(resolveVotesPerPerson({ votesPerPerson: Number.NaN })).toBe(DEFAULT_VOTES_PER_PERSON)
+  })
+
+  it('honours a configured budget', () => {
+    expect(resolveVotesPerPerson({ votesPerPerson: 5 })).toBe(5)
+    expect(resolveVotesPerPerson({ votesPerPerson: 0 })).toBe(0)
+    expect(resolveVotesPerPerson({ votesPerPerson: 2.7 })).toBe(2)
+  })
+})
+
+describe('evaluateVoteEligibility', () => {
+  const OWN_TEAM = 'team-aurora'
+  const OTHER_TEAM = 'team-borealis'
+  const OWN_PROJECT = 'project-aurora-agent-mesh'
+  const OTHER_PROJECT = 'project-borealis'
+
+  const base = {
+    stage: 'demos',
+    config: { enabled: true, votesPerPerson: 3, votingStartsAt: null, votingEndsAt: null },
+    now,
+    projectId: OTHER_PROJECT,
+    voterTeamId: OWN_TEAM,
+    projectTeamId: OTHER_TEAM,
+    votedProjectIds: [] as string[],
+  }
+
+  it('allows a vote for another team while voting is open', () => {
+    expect(evaluateVoteEligibility(base)).toEqual({ ok: true })
+  })
+
+  it('refuses a vote for the voter’s own team (issue #110)', () => {
+    expect(evaluateVoteEligibility({
+      ...base,
+      projectId: OWN_PROJECT,
+      projectTeamId: OWN_TEAM,
+    })).toEqual({
+      ok: false,
+      reason: 'own_team_project',
+      message: "You cannot vote for your own team's project",
+    })
+  })
+
+  it('allows a teamless voter to vote for anything votable', () => {
+    expect(evaluateVoteEligibility({ ...base, voterTeamId: null })).toEqual({ ok: true })
+    expect(evaluateVoteEligibility({ ...base, voterTeamId: undefined })).toEqual({ ok: true })
+  })
+
+  it('does not treat an unknown project team as the voter’s own', () => {
+    expect(evaluateVoteEligibility({ ...base, projectTeamId: null })).toEqual({ ok: true })
+  })
+
+  it('refuses a duplicate vote for the same project', () => {
+    const state = evaluateVoteEligibility({ ...base, votedProjectIds: [OTHER_PROJECT] })
+    expect(state).toEqual({
+      ok: false,
+      reason: 'already_voted',
+      message: 'You have already voted for this project',
+    })
+  })
+
+  it('refuses once the vote budget is spent', () => {
+    const state = evaluateVoteEligibility({ ...base, votedProjectIds: ['a', 'b', 'c'] })
+    expect(state).toEqual({
+      ok: false,
+      reason: 'no_votes_left',
+      message: 'You have already used all 3 votes',
+    })
+  })
+
+  it('reports the duplicate, not the budget, when both apply', () => {
+    const state = evaluateVoteEligibility({ ...base, votedProjectIds: ['a', 'b', OTHER_PROJECT] })
+    expect(state.ok).toBe(false)
+    expect(state.ok === false && state.reason).toBe('already_voted')
+  })
+
+  it('uses the configured budget, not the default', () => {
+    expect(evaluateVoteEligibility({
+      ...base,
+      config: { ...base.config, votesPerPerson: 1 },
+      votedProjectIds: ['a'],
+    })).toEqual({
+      ok: false,
+      reason: 'no_votes_left',
+      message: 'You have already used all 1 votes',
+    })
+  })
+
+  it('reports the closed window before anything else (issue #107)', () => {
+    const state = evaluateVoteEligibility({
+      ...base,
+      stage: 'deliberation',
+      projectId: OWN_PROJECT,
+      projectTeamId: OWN_TEAM,
+      votedProjectIds: ['a', 'b', 'c'],
+    })
+    expect(state).toEqual({
+      ok: false,
+      reason: 'voting_closed',
+      message: 'Voting has closed for this competition',
+    })
+  })
+
+  it.each(['draft', 'open', 'team_formation', 'track_selection', 'deliberation', 'finished', 'archived'])(
+    'refuses every vote at stage %s',
+    (stage) => {
+      expect(evaluateVoteEligibility({ ...base, stage }).ok).toBe(false)
+    },
+  )
 })
