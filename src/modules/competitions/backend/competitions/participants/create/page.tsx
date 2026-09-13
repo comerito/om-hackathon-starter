@@ -3,32 +3,18 @@ import * as React from 'react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
-import { readApiResultOrThrow } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
+import { loadCustomerUserOptions } from '../../../../lib/customerUserOptions'
 
 type CompetitionOption = { id: string; name: string }
-type CustomerUserOption = { id: string; displayName: string; email: string }
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
   if (query) params.name = query
   const res = await fetchCrudList<CompetitionOption>('competitions/competitions', params)
   return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
-}
-
-async function loadCustomerUsers(query?: string) {
-  try {
-    const params: Record<string, string> = { pageSize: '20' }
-    if (query) params.displayName = query
-    const data = await readApiResultOrThrow<{ items: CustomerUserOption[] }>(
-      `/api/customer_accounts/admin/users?${new URLSearchParams(params).toString()}`,
-    )
-    return (data?.items ?? []).map((u) => ({ value: u.id, label: `${u.displayName || u.email} (${u.email})` }))
-  } catch {
-    return []
-  }
 }
 
 export default function AddParticipantPage() {
@@ -50,7 +36,7 @@ export default function AddParticipantPage() {
       label: t('competitions.participants.form.customerUser', 'Customer Account'),
       type: 'combobox',
       required: true,
-      loadOptions: loadCustomerUsers,
+      loadOptions: loadCustomerUserOptions,
     },
     {
       id: 'role',
