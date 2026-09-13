@@ -2,54 +2,21 @@
 import * as React from 'react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
-import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
+import { createCrud } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
-import { loadCustomerUserOptions } from '../../../../lib/customerUserOptions'
-
-type CompetitionOption = { id: string; name: string }
-
-async function loadCompetitions(query?: string) {
-  const params: Record<string, string> = { pageSize: '20' }
-  if (query) params.name = query
-  const res = await fetchCrudList<CompetitionOption>('competitions/competitions', params)
-  return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
-}
+import { buildFields } from './fields'
 
 export default function AddParticipantPage() {
   const t = useT()
   const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
   const competitionSeedOptions = useScopedCompetitionSeedOptions()
 
-  const fields = React.useMemo<CrudField[]>(() => [
-    {
-      id: 'competition_id',
-      label: t('competitions.participants.form.competition', 'Competition'),
-      type: 'combobox',
-      required: true,
-      loadOptions: loadCompetitions,
-      seedOptions: competitionSeedOptions,
-    },
-    {
-      id: 'customer_user_id',
-      label: t('competitions.participants.form.customerUser', 'Customer Account'),
-      type: 'combobox',
-      required: true,
-      loadOptions: loadCustomerUserOptions,
-    },
-    {
-      id: 'role',
-      label: t('competitions.participants.form.role', 'Role'),
-      type: 'select',
-      required: true,
-      options: [
-        { value: 'participant', label: 'Participant' },
-        { value: 'mentor', label: 'Mentor' },
-        { value: 'judge', label: 'Judge' },
-      ],
-    },
-  ], [t, competitionSeedOptions])
+  const fields = React.useMemo<CrudField[]>(
+    () => buildFields(t, competitionSeedOptions),
+    [t, competitionSeedOptions],
+  )
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     {
