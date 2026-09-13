@@ -4,9 +4,11 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { AgendaItem, Announcement, CompetitionParticipation, Milestone } from '../../../data/entities'
 import { Track } from '../../../../tracks/data/entities'
+import { SELECTABLE_TRACK_FILTER } from '../../../../tracks/lib/track-visibility'
 import { Project } from '../../../../projects/data/entities'
 import { Team, TeamTrack } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { sortAnnouncementsForDisplay } from '../../../lib/announcement-order'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
@@ -47,6 +49,7 @@ export async function GET(req: Request) {
       const items = await em.find(AgendaItem, {
         competitionId,
         tenantId: auth.tenantId,
+        deletedAt: null,
       }, { orderBy: { startsAt: 'asc' } })
 
       const translatedItems = await applyPortalTranslationOverlays(
@@ -92,15 +95,21 @@ export async function GET(req: Request) {
         },
       )
 
+      // Participant-facing order: pinned first, then urgent > warning > info,
+      // then newest published first. The `createdAt` orderBy above only provides
+      // the deterministic tie-break for the (stable) sort below.
       return NextResponse.json({
-        items: translatedItems,
+        items: sortAnnouncementsForDisplay(translatedItems),
       })
     }
 
     if (dataType === 'tracks') {
+      // Soft-deleted and deactivated tracks are gone from the organiser's list and
+      // must not be offered as a choice in the portal picker.
       const items = await em.find(Track, {
         competitionId,
         tenantId: auth.tenantId,
+        ...SELECTABLE_TRACK_FILTER,
       }, { orderBy: { order: 'asc' } })
 
       const translatedItems = await applyPortalTranslationOverlays(

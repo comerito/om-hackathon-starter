@@ -11,9 +11,10 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
+import { isAtOrAfterStage } from '../../../../../competitions/lib/stages'
 import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge, SectionLabel } from '@/components/portal'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil, FileCode2, Download, Trash2 } from 'lucide-react'
+import { AlertTriangle, Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil, FileCode2, Download, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 /* ---------- types ---------- */
@@ -88,7 +89,7 @@ const labelClass = 'text-xs font-bold uppercase tracking-widest text-foreground 
 function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
+  const { selected: competition, selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
 
   // Form state
   const [title, setTitle] = React.useState('')
@@ -526,6 +527,13 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     return t('projects.portal.autosavedMinutesAgo', 'Saved {count}m ago', { count: mins })
   }, [saving, saveFailed, lastSaved, now, t])
 
+  // `projects:create-draft-projects` runs once, on entry to `hacking`, and creates one
+  // draft per team per assigned track. Past that point the "a project will be created
+  // automatically" reassurance below describes an event that already happened and will
+  // not happen again, so the empty state has to name the real cause instead.
+  const hackingHasStarted = isAtOrAfterStage(competition?.stage, 'hacking')
+  const teamHasNoTrack = !data?.team?.track_id && (data?.tracks?.length ?? 0) === 0
+
   /* -- No team state -- */
   if (!isLoading && !data?.hasTeam) {
     return (
@@ -540,6 +548,33 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
           </Button>
         }
       />
+    )
+  }
+
+  /* -- No project, and the stage that would have created one has already passed -- */
+  if (!isLoading && data?.hasTeam && !project && hackingHasStarted) {
+    return (
+      <div className="rounded-xl border border-dashed border-red-500/30 py-12 px-6">
+        <div className="mx-auto max-w-md text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10">
+              <AlertTriangle className="size-6 text-red-500" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              {teamHasNoTrack
+                ? t('projects.portal.noProjectNoTrack', 'No project — your team never selected a track')
+                : t('projects.portal.noProjectMissing', 'No project was created for your team')}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              {teamHasNoTrack
+                ? t('projects.portal.noProjectNoTrackDesc', 'Draft projects are created per track when the hacking stage begins, and your team had no track at that moment. Track selection is now closed, so this cannot be fixed from here — contact an organizer.')
+                : t('projects.portal.noProjectMissingDesc', 'The hacking stage has already started but your team has no draft project. Contact an organizer.')}
+            </p>
+          </div>
+        </div>
+      </div>
     )
   }
 

@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
-import { TeamResource } from '../../data/entities'
+import { Team, TeamResource } from '../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
+import type { CrudCtx } from '@open-mercato/shared/lib/crud/factory'
 
 // Must match the generated entity id, which is derived from the CLASS name
 // (`TeamResource` -> `teams:team_resource`), not the table name. With the wrong id the
@@ -17,6 +19,7 @@ const querySchema = z
     sortField: z.string().optional().default('created_at'),
     sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
     team_id: z.string().uuid().optional(),
+    competition_id: z.string().uuid().optional(),
     organizationId: z.string().uuid().optional(),
   })
   .passthrough()
@@ -60,11 +63,25 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     entityId: ENTITY_ID,
     fields: ['id', 'team_id', 'name', 'type', 'url', 'file_id', 'metadata', 'added_by', 'tenant_id', 'organization_id', 'created_at', 'updated_at'],
     sortFieldMap: { id: 'id', name: 'name', type: 'type', created_at: 'created_at' },
-    buildFilters: async (q: Query) => {
+    buildFilters: async (q: Query, ctx: CrudCtx) => {
       const filters: Record<string, unknown> = {}
       if (q.id) filters.id = q.id
       if (q.team_id) filters.team_id = q.team_id
       if (q.organizationId) filters.organization_id = q.organizationId
+      // Resources hang off teams, not competitions, so narrow through the
+      // competition's teams. Callers (the global competition scope) pass
+      // competition_id; team_id still wins when both are given.
+      if (q.competition_id && !q.team_id) {
+        const em = ctx.container.resolve('em') as EntityManager
+        const where: Record<string, unknown> = { competitionId: q.competition_id, deletedAt: null }
+        if (ctx.auth?.tenantId) where.tenantId = ctx.auth.tenantId
+        if (ctx.organizationIds?.length) where.organizationId = { $in: ctx.organizationIds }
+        const teams = await em.find(Team, where as FilterQuery<Team>, { fields: ['id'] })
+        const teamIds = teams.map((team) => String(team.id))
+        // `$in: []` renders as `in ()`, which does not parse — use a UUID that
+        // gen_random_uuid() never produces so "no teams" returns no rows.
+        filters.team_id = { $in: teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000'] }
+      }
       return filters
     },
     transformItem: (item: BaseFields) => ({

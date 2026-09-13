@@ -10,6 +10,7 @@ import { Button } from '@open-mercato/ui/primitives/button'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -44,6 +45,7 @@ export default function ResourcesListPage() {
   const [page, setPage] = React.useState(1)
   const [searchValue, setSearchValue] = React.useState('')
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -52,12 +54,15 @@ export default function ResourcesListPage() {
       sortField: sorting[0]?.id || 'created_at',
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
+    // Resolved server-side through the competition's teams.
+    if (scopedCompetitionId) params.competition_id = scopedCompetitionId
     return new URLSearchParams(params).toString()
-  }, [page, sorting])
+  }, [page, sorting, scopedCompetitionId])
 
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['teams-resources', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<ResourceRow>('teams/resources', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   const columns = React.useMemo<ColumnDef<ResourceRow>[]>(() => [
@@ -127,7 +132,7 @@ export default function ResourcesListPage() {
           title={t('teams.resources.table.title', 'Resources')}
           actions={
             <Button asChild>
-              <Link href="/backend/teams/resources/create">{t('teams.resources.table.create', 'New Resource')}</Link>
+              <Link href="/backend/resources/create">{t('teams.resources.table.create', 'New Resource')}</Link>
             </Button>
           }
           columns={columns}
@@ -141,7 +146,7 @@ export default function ResourcesListPage() {
           rowActions={(row) => (
             <RowActions
               items={[
-                { label: t('teams.resources.table.edit', 'Edit'), href: `/backend/teams/resources/${row.id}/edit` },
+                { label: t('teams.resources.table.edit', 'Edit'), href: `/backend/resources/${row.id}/edit` },
               ]}
             />
           )}
@@ -152,8 +157,8 @@ export default function ResourcesListPage() {
             totalPages: data?.totalPages || 0,
             onPageChange: setPage,
           }}
-          isLoading={isLoading}
-          onRowClick={(row) => router.push(`/backend/teams/resources/${row.id}/edit`)}
+          isLoading={isLoading || !scopeReady}
+          onRowClick={(row) => router.push(`/backend/resources/${row.id}/edit`)}
         />
       </PageBody>
     </Page>

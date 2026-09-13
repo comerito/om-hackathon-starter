@@ -7,6 +7,12 @@ export const injectionTable: ModuleInjectionTable = {
       priority: 10,
     },
   ],
+  'backend:topbar:actions': [
+    {
+      widgetId: 'competitions.backend-competition-scope',
+      priority: 10,
+    },
+  ],
 }
 
 export default injectionTable

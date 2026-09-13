@@ -5,6 +5,8 @@ import { CrudForm, type CrudField, type CrudFormGroup, type CrudCustomFieldRende
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { ComboboxInput } from '@open-mercato/ui/backend/inputs/ComboboxInput'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -43,8 +45,10 @@ function TrackField(props: CrudCustomFieldRenderProps) {
 
 export default function CreatePrizePage() {
   const t = useT()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('sponsors.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    { id: 'competition_id', label: t('sponsors.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, seedOptions: competitionSeedOptions },
     { id: 'name', label: t('sponsors.fields.name', 'Prize Name'), type: 'text', required: true },
     { id: 'description', label: t('sponsors.fields.description', 'Description'), type: 'textarea' },
     { id: 'category', label: t('sponsors.fields.category', 'Category'), type: 'select', defaultValue: 'special_award',
@@ -55,7 +59,7 @@ export default function CreatePrizePage() {
     { id: 'value', label: t('sponsors.fields.value', 'Value'), type: 'text', placeholder: 'e.g., 5000 PLN, API Credits' },
     { id: 'rank', label: t('sponsors.fields.rank', 'Rank'), type: 'number', placeholder: '1st, 2nd, 3rd' },
     { id: 'order', label: t('sponsors.fields.order', 'Display Order'), type: 'number', defaultValue: 0 },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('sponsors.groups.prize', 'Prize Details'), column: 1, fields: ['competition_id', 'name', 'description', 'category', 'track_id'] },
@@ -65,6 +69,15 @@ export default function CreatePrizePage() {
   return (
     <Page><PageBody>
       <CrudForm
+        // The scope only resolves after hydration, and CrudForm will not push a
+        // late `initialValues` into a combobox it considers user-touched — so remount
+        // the form once the scope is known (and again if it changes).
+        key={scopeReady ? scopedCompetitionId ?? 'home' : 'pending'}
+        initialValues={scopedCompetitionId ? { competition_id: scopedCompetitionId } : undefined}
+        // The competition combobox is the first field, so it would auto-focus — and a
+        // focused combobox never renders the label for a value it did not receive from
+        // the user, then clears that value on blur. Skip initial focus when prefilled.
+        disableInitialFocus={Boolean(scopedCompetitionId)}
         title={t('sponsors.prizes.create.title', 'Add Prize')}
         backHref="/backend/sponsors" entityId="sponsors:prize"
         fields={fields} groups={groups}

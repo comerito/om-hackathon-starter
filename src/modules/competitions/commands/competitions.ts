@@ -7,6 +7,7 @@ import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Competition, CompetitionStage, STAGE_ORDER } from '../data/entities'
+import { withCompetitionSlugConflict } from '../lib/slugConflict'
 import {
   createCompetitionSchema,
   updateCompetitionSchema,
@@ -60,7 +61,7 @@ const createCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
 
-    const competition = await de.createOrmEntity({
+    const competition = await withCompetitionSlugConflict(() => de.createOrmEntity({
       entity: Competition,
       data: {
         name: parsed.name,
@@ -91,7 +92,7 @@ const createCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
       },
-    })
+    }), parsed.slug)
 
     await emitCrudSideEffects({
       dataEngine: de,
@@ -117,7 +118,7 @@ const updateCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
     const scope = ensureScope(ctx)
     const de = ctx.container.resolve('dataEngine') as DataEngine
 
-    const competition = await de.updateOrmEntity({
+    const competition = await withCompetitionSlugConflict(() => de.updateOrmEntity({
       entity: Competition,
       where: {
         id: parsed.id,
@@ -152,7 +153,7 @@ const updateCompetitionCommand: CommandHandler<Record<string, unknown>, Competit
         if (parsed.privacy_policy_content !== undefined) entity.privacyPolicyContent = parsed.privacy_policy_content
         if (parsed.cover_image_url !== undefined) entity.coverImageUrl = parsed.cover_image_url
       },
-    })
+    }), parsed.slug)
     if (!competition) throw new CrudHttpError(404, { error: 'Competition not found' })
 
     await emitCrudSideEffects({

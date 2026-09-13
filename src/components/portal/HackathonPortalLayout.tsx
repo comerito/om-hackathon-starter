@@ -4,10 +4,12 @@ import * as React from 'react'
 import { usePathname } from 'next/navigation'
 import { usePortalEventBridge } from '@open-mercato/ui/portal/hooks/usePortalEventBridge'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
+import { FlashMessages } from '@open-mercato/ui/backend/FlashMessages'
 import dynamic from 'next/dynamic'
 import { PortalSidebar } from './PortalSidebar'
 import { PortalTopBar } from './PortalTopBar'
 import { PortalFooter } from './PortalFooter'
+import { usePortalSelection } from './usePortalSelection'
 
 const MilestonesDrawer = dynamic(() => import('./MilestonesDrawer').then(m => ({ default: m.MilestonesDrawer })), { ssr: false })
 const CompetitionGuideDrawer = dynamic(() => import('./CompetitionGuideDrawer').then(m => ({ default: m.CompetitionGuideDrawer })), { ssr: false })
@@ -59,7 +61,25 @@ type HackathonPortalLayoutProps = {
  *
  * Must be rendered INSIDE PortalProvider (which provides auth + tenant context).
  */
-export function HackathonPortalLayout({
+export function HackathonPortalLayout(props: HackathonPortalLayoutProps) {
+  return (
+    <>
+      {/*
+        The portal's single flash-message host.
+
+        `flash()` only dispatches a `window` CustomEvent; without a host mounted to listen for
+        it, every flash() call is silently dropped. The backend AppShell mounts one —
+        the portal never did, so no portal page has ever been able to confirm an action (#115).
+        It belongs here, at the layout, rather than per page: one host, every portal route,
+        including the ones that only flash from a dialog.
+      */}
+      <FlashMessages />
+      <PortalLayoutShell {...props} />
+    </>
+  )
+}
+
+function PortalLayoutShell({
   children,
   enableEventBridge = false,
   variant = 'full',
@@ -78,11 +98,10 @@ export function HackathonPortalLayout({
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
 
-  // Read competition ID from localStorage (same key as CompetitionContext)
-  const [selectedCompetitionId, setSelectedCompetitionId] = React.useState<string | null>(null)
-  React.useEffect(() => {
-    setSelectedCompetitionId(typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null)
-  }, [])
+  // Selected competition, kept in sync with CompetitionContext — the layout is not remounted by
+  // client-side navigation, so a one-shot localStorage read would pin the Milestones drawer to
+  // whichever competition the tab was loaded with.
+  const { competitionId: selectedCompetitionId } = usePortalSelection()
 
   // Close mobile menu on route change
   React.useEffect(() => {

@@ -7,13 +7,20 @@ import { Project } from '../../../../projects/data/entities'
 import { Team } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
+import { PORTAL_VIEW_ASSIGNED_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
 
-export const metadata = { GET: { requireCustomerAuth: true } }
+// NOTE: `requireCustomerAuth` / `requireCustomerFeatures` are NOT enforced for API routes —
+// see `lib/portalAuth.ts`. The enforcement lives in the handler below.
+export const metadata = {
+  GET: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_VIEW_ASSIGNED_FEATURE] },
+}
 
 export async function GET(req: Request) {
   try {
     const auth = await getCustomerAuthFromRequest(req)
     if (!auth?.sub) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    const forbidden = requirePortalFeatures(auth, [PORTAL_VIEW_ASSIGNED_FEATURE])
+    if (forbidden) return forbidden
 
     const url = new URL(req.url)
     const competitionId = url.searchParams.get('competition_id')
@@ -34,30 +41,43 @@ export async function GET(req: Request) {
 
     const panelIds = panelJudges.map(pj => pj.panelId)
     const panels = await em.find(JudgePanel, {
-      id: { $in: panelIds }, competitionId, deletedAt: null, organizationId: auth.orgId,
+      id: { $in: panelIds }, competitionId, tenantId: auth.tenantId,
+      deletedAt: null, organizationId: auth.orgId,
     } as FilterQuery<JudgePanel>)
+    // Only the panels that belong to THIS competition may contribute assignments. Using every
+    // panel the judge sits on pulled in the tracks of another competition's panel, so a judge
+    // who serves two events was offered projects from the wrong one.
+    const competitionPanelIds = panels.map(p => p.id)
+    if (!competitionPanelIds.length) {
+      return NextResponse.json({ panels: [], projects: [], scores: [] })
+    }
 
-    // Find tracks assigned to these panels
+    // Find tracks assigned to those panels
     const panelTracks = await em.find(JudgePanelTrack, {
-      panelId: { $in: panelIds },
+      panelId: { $in: competitionPanelIds },
+      tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<JudgePanelTrack>)
     const trackIds = [...new Set(panelTracks.map(pt => pt.trackId))]
 
     // Find published projects in those tracks
     const projects = trackIds.length ? await em.find(Project, {
       competitionId, trackId: { $in: trackIds },
-      status: { $ne: 'draft' }, deletedAt: null, tenantId: auth.tenantId,
+      status: { $ne: 'draft' }, deletedAt: null,
+      tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<Project>) : []
 
     // Get teams
     const teamIds = [...new Set(projects.map(p => p.teamId))]
-    const teams = teamIds.length ? await em.find(Team, { id: { $in: teamIds } } as FilterQuery<Team>) : []
+    const teams = teamIds.length ? await em.find(Team, {
+      id: { $in: teamIds }, tenantId: auth.tenantId, organizationId: auth.orgId,
+    } as FilterQuery<Team>) : []
     const teamMap = new Map(teams.map(t => [t.id, t.name]))
 
     // Get this judge's existing scores
     const projectIds = projects.map(p => p.id)
     const scores = projectIds.length ? await em.find(ProjectScore, {
       judgeId: auth.sub, projectId: { $in: projectIds },
+      tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<ProjectScore>) : []
     const scoreMap = new Map(scores.map(s => [s.projectId + ':' + s.round, s]))
 

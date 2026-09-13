@@ -10,6 +10,7 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -42,6 +43,7 @@ export default function TracksTable() {
   const [page, setPage] = React.useState(1)
   const [searchValue, setSearchValue] = React.useState('')
   const scopeVersion = useOrganizationScopeVersion()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
   const queryParams = React.useMemo(() => {
     const params: Record<string, string> = {
@@ -51,12 +53,15 @@ export default function TracksTable() {
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
     }
     if (searchValue) params.name = searchValue
+    // Narrowed by the global header competition scope.
+    if (scopedCompetitionId) params.competition_id = scopedCompetitionId
     return new URLSearchParams(params).toString()
-  }, [page, sorting, searchValue])
+  }, [page, sorting, searchValue, scopedCompetitionId])
 
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['tracks', queryParams, scopeVersion],
     queryFn: () => fetchCrudList<TrackRow>('tracks/tracks', Object.fromEntries(new URLSearchParams(queryParams))),
+    enabled: scopeReady,
   })
 
   const columns = React.useMemo<ColumnDef<TrackRow>[]>(() => [
@@ -145,7 +150,7 @@ export default function TracksTable() {
           totalPages: data?.totalPages || 0,
           onPageChange: setPage,
         }}
-        isLoading={isLoading}
+        isLoading={isLoading || !scopeReady}
         onRowClick={(row) => router.push(`/backend/tracks/${row.id}/edit`)}
       />
       {ConfirmDialogElement}

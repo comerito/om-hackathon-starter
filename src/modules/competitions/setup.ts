@@ -88,11 +88,13 @@ export const setup: ModuleSetupConfig = {
       'competitions.view', 'competitions.create', 'competitions.edit', 'competitions.delete',
       'competitions.stages.manage', 'competitions.agenda.manage', 'competitions.announcements.manage',
       'competitions.participants.manage', 'competitions.checkin.manage',
+      'competitions.milestones.manage', 'competitions.chat',
     ],
     admin: [
       'competitions.view', 'competitions.create', 'competitions.edit', 'competitions.delete',
       'competitions.stages.manage', 'competitions.agenda.manage', 'competitions.announcements.manage',
       'competitions.participants.manage', 'competitions.checkin.manage',
+      'competitions.milestones.manage', 'competitions.chat',
     ],
   },
   defaultCustomerRoleFeatures: {

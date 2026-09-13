@@ -20,9 +20,14 @@ export const setup: ModuleSetupConfig = {
     mentor: [
       'portal.judging.demos.view', 'portal.judging.results.view',
     ],
+    // `portal.judging.results.export` is granted to `judge` only, and deliberately NOT to
+    // `participant` or `mentor`: they may view the published ranking, they may not download the
+    // full CSV of every project's scores (issue #118). Organisers reach the export through the
+    // portal-admin `['*']` grant.
     judge: [
       'portal.judging.score', 'portal.judging.view_assigned',
       'portal.judging.demos.view', 'portal.judging.results.view',
+      'portal.judging.results.export',
     ],
   },
 }

@@ -4,7 +4,7 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { IncidentReport } from '../../../data/entities'
-import { createIncidentSchema } from '../../../data/validators'
+import { createIncidentSchema, zodFieldErrors } from '../../../data/validators'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 export const metadata = { POST: { requireCustomerAuth: true } }
@@ -50,7 +50,20 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, incident_id: report.id })
   } catch (error) {
-    if (error instanceof z.ZodError) return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
+    if (error instanceof z.ZodError) {
+      // A safety report must never fail anonymously. `fieldErrors` lets the caller put the
+      // message on the offending field instead of showing a bare "Validation failed" — or, as
+      // in #103, nothing at all.
+      const fieldErrors = zodFieldErrors(error)
+      return NextResponse.json(
+        {
+          error: Object.values(fieldErrors)[0] ?? 'Validation failed',
+          fieldErrors,
+          details: error.issues,
+        },
+        { status: 422 },
+      )
+    }
     console.error('[portal/report-incident] POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
