@@ -63,8 +63,8 @@ function VotingContent() {
   const queryClient = useQueryClient()
   const { selectedId: competitionId, selected, isLoading: contextLoading } = useCompetitionContext()
   const [voting, setVoting] = React.useState<string | null>(null)
-  // Portal pages mount no `<FlashMessages />` host, so a flash() toast here is
-  // a no-op — the result of a vote is rendered inline instead.
+  // A toast expires and does not sit next to the project it refers to, so the result of a
+  // vote is rendered inline on the card instead.
   const [notice, setNotice] = React.useState<{ status: 'success' | 'error'; text: string } | null>(null)
 
   const blockedLabel = React.useCallback((reason: BlockedReason, votesMax: number): string => {

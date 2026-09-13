@@ -49,6 +49,7 @@ jest.mock('../../../../data/entities', () => ({
   JudgingCriterion: class JudgingCriterion {},
   JudgePanel: class JudgePanel {},
   JudgePanelJudge: class JudgePanelJudge {},
+  JudgePanelTrack: class JudgePanelTrack {},
 }))
 jest.mock('../../../../../projects/data/entities', () => ({ Project: class Project {} }))
 
@@ -61,6 +62,7 @@ const entities = require('../../../../data/entities') as {
   JudgingCriterion: unknown
   JudgePanel: unknown
   JudgePanelJudge: unknown
+  JudgePanelTrack: unknown
 }
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const projectEntities = require('../../../../../projects/data/entities') as { Project: unknown }
@@ -85,10 +87,18 @@ function auth(features: string[]) {
 
 type PanelRow = { id: string; competitionId: string }
 type MembershipRow = { panelId: string }
+type PanelTrackRow = { panelId: string; trackId: string }
 
 type EmOptions = {
   /** Panels the caller sits on, as `JudgePanel` rows. */
   panels?: PanelRow[]
+  /**
+   * `judging_panel_track` rows. A panel that covers no track can score nothing, so the default
+   * gives every supplied panel the project's own track: these tests are about the *competition*
+   * scope, and track coverage has its own suite in `route.panel-scope.test.ts`. Pass an explicit
+   * value to exercise a panel that does not cover the project.
+   */
+  panelTracks?: PanelTrackRow[]
   project?: { id: string; competitionId: string; trackId: string } | null
 }
 
@@ -99,6 +109,8 @@ type EmOptions = {
  */
 function makeEm(options: EmOptions = {}) {
   const panels = options.panels ?? []
+  const panelTracks = options.panelTracks
+    ?? panels.map((p): PanelTrackRow => ({ panelId: p.id, trackId: TRACK_ID }))
   const project = options.project === undefined
     ? { id: PROJECT_ID, competitionId: COMPETITION_ID, trackId: TRACK_ID }
     : options.project
@@ -123,6 +135,7 @@ function makeEm(options: EmOptions = {}) {
       return panels.map((p): MembershipRow => ({ panelId: p.id }))
     }
     if (entity === entities.JudgePanel) return panels
+    if (entity === entities.JudgePanelTrack) return panelTracks
     if (entity === entities.JudgingCriterion) return []
     return []
   })
