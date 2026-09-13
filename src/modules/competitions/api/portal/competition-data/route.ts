@@ -7,6 +7,7 @@ import { Track } from '../../../../tracks/data/entities'
 import { Project } from '../../../../projects/data/entities'
 import { Team, TeamTrack } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { sortAnnouncementsForDisplay } from '../../../lib/announcement-order'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 
 export const metadata = {
@@ -92,8 +93,11 @@ export async function GET(req: Request) {
         },
       )
 
+      // Participant-facing order: pinned first, then urgent > warning > info,
+      // then newest published first. The `createdAt` orderBy above only provides
+      // the deterministic tie-break for the (stable) sort below.
       return NextResponse.json({
-        items: translatedItems,
+        items: sortAnnouncementsForDisplay(translatedItems),
       })
     }
 

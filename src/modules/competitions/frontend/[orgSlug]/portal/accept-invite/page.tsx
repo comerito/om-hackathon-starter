@@ -26,6 +26,32 @@ export default function AcceptInvitePage({ params }: Props) {
     judge: t('competitions.portal.acceptInvite.role.judge', 'Judge'),
   }
 
+  // The portal APIs answer with untranslated English error strings
+  // (`Invalid or expired invitation` from /api/competitions/portal/invite-info and
+  // /api/customer_accounts/invitations/accept, `Internal server error`, ...). Rendering
+  // them verbatim leaks English into an otherwise localised screen, so map the known
+  // conditions onto module translation keys and fall back to a translated message for
+  // anything unrecognised instead of echoing the server text.
+  const translateServerError = useCallback(
+    (raw: unknown, fallbackKey: string, fallbackText: string): string => {
+      const normalized = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+      switch (normalized) {
+        case 'invalid or expired invitation':
+          return t('competitions.portal.acceptInvite.errors.invalidOrExpired', 'This invitation link is invalid or has expired.')
+        case 'token parameter required':
+          return t('competitions.portal.acceptInvite.errors.noToken', 'No invitation token provided.')
+        case 'invalid request body':
+        case 'validation failed':
+          return t('competitions.portal.acceptInvite.errors.invalidRequest', 'The submitted data could not be processed. Please check the form and try again.')
+        case 'internal server error':
+          return t('competitions.portal.acceptInvite.errors.serverError', 'The server could not process this request. Please try again later.')
+        default:
+          return t(fallbackKey, fallbackText)
+      }
+    },
+    [t],
+  )
+
   const [info, setInfo] = useState<InviteInfo | null>(null)
   const [loadingInfo, setLoadingInfo] = useState(true)
   const [infoError, setInfoError] = useState<string | null>(null)
@@ -54,12 +80,17 @@ export default function AcceptInvitePage({ params }: Props) {
         setInfo(result)
         if (result.display_name) setDisplayName(result.display_name)
       } else {
-        setInfoError((result as any)?.error ?? t('competitions.portal.acceptInvite.errors.invalidOrExpired', 'This invitation link is invalid or has expired.'))
+        const serverError = (result as Partial<{ error: unknown }> | null | undefined)?.error
+        setInfoError(translateServerError(
+          serverError,
+          'competitions.portal.acceptInvite.errors.invalidOrExpired',
+          'This invitation link is invalid or has expired.',
+        ))
       }
       setLoadingInfo(false)
     }
     load()
-  }, [token, t])
+  }, [token, t, translateServerError])
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -95,14 +126,18 @@ export default function AcceptInvitePage({ params }: Props) {
           return
         }
 
-        setError(result.result?.error || t('competitions.portal.acceptInvite.errors.acceptFailed', 'Failed to accept invitation. The link may have expired.'))
+        setError(translateServerError(
+          result.result?.error,
+          'competitions.portal.acceptInvite.errors.acceptFailed',
+          'Failed to accept invitation. The link may have expired.',
+        ))
       } catch {
         setError(t('competitions.portal.acceptInvite.errors.generic', 'Something went wrong. Please try again.'))
       } finally {
         setSubmitting(false)
       }
     },
-    [token, password, confirmPassword, displayName, orgSlug, t],
+    [token, password, confirmPassword, displayName, orgSlug, t, translateServerError],
   )
 
   return (

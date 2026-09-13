@@ -120,11 +120,16 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
         const item = data?.items?.[0]
         if (!item) throw new Error('Competition not found')
         if (!cancelled) {
-          // Convert ISO dates to datetime-local format (YYYY-MM-DDTHH:MM)
-          const toLocal = (iso: unknown) => {
-            if (!iso) return ''
-            const s = String(iso)
-            try { return new Date(s).toISOString().slice(0, 16) } catch { return s.slice(0, 16) }
+          // The CrudForm `datetime` field takes an absolute instant in, renders it in the
+          // browser's local timezone, and emits a full ISO-8601 UTC string on change. Keep the
+          // stored instant intact here: narrowing it to a zone-less `YYYY-MM-DDTHH:mm` string
+          // (as this loader used to) makes the picker re-read it as *local* wall-clock time, so
+          // every save shifted both timestamps by the UTC offset, cumulatively (issue #81).
+          const toInstant = (value: unknown) => {
+            if (!value) return ''
+            const raw = String(value)
+            const parsed = new Date(raw)
+            return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString()
           }
           setInitial({
             id: String(item.id),
@@ -132,8 +137,8 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             slug: String(item.slug ?? ''),
             description: String(item.description ?? ''),
             location: String(item.location ?? ''),
-            starts_at: toLocal(item.starts_at),
-            ends_at: toLocal(item.ends_at),
+            starts_at: toInstant(item.starts_at),
+            ends_at: toInstant(item.ends_at),
             timezone: String(item.timezone ?? 'Europe/Warsaw'),
             min_team_size: Number(item.min_team_size ?? 2),
             max_team_size: Number(item.max_team_size ?? 5),
@@ -347,11 +352,14 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             isLoading={loading}
             loadingMessage={t('competitions.edit.loading', 'Loading competition...')}
             onSubmit={async (vals) => {
-              // Convert datetime-local to ISO and empty URLs to null
+              // `starts_at` / `ends_at` already hold ISO-8601 UTC instants — either the value
+              // loaded from the API or the picker's own `date.toISOString()` output — so they are
+              // forwarded untouched. Re-parsing them here was the second half of issue #81: a
+              // zone-less string would have been read as browser-local and shifted on every save.
               const cleaned = {
                 ...vals,
-                starts_at: vals.starts_at ? new Date(vals.starts_at).toISOString() : undefined,
-                ends_at: vals.ends_at ? new Date(vals.ends_at).toISOString() : undefined,
+                starts_at: vals.starts_at || undefined,
+                ends_at: vals.ends_at || undefined,
                 code_of_conduct_url: vals.code_of_conduct_url,
                 code_of_conduct_content: vals.code_of_conduct_content || null,
                 rules_url: vals.rules_url || null,

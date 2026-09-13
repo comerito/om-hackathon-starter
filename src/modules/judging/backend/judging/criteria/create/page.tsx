@@ -4,6 +4,8 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 import { TrackCombobox } from '../../../../components/TrackCombobox'
 
 async function loadCompetitions(query?: string) {
@@ -15,8 +17,10 @@ async function loadCompetitions(query?: string) {
 
 export default function CreateCriterionPage() {
   const t = useT()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('judging.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    { id: 'competition_id', label: t('judging.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, seedOptions: competitionSeedOptions },
     {
       id: 'track_id',
       label: t('judging.fields.track', 'Track (optional)'),
@@ -36,7 +40,7 @@ export default function CreateCriterionPage() {
     { id: 'round', label: t('judging.fields.round', 'Applicable Round'), type: 'select', defaultValue: 'both',
       options: [{ value: 'both', label: 'Both rounds' }, { value: 'preliminary', label: 'Preliminary only' }, { value: 'final', label: 'Final only' }] },
     { id: 'order', label: t('judging.fields.order', 'Display Order'), type: 'number', defaultValue: 0 },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('judging.groups.criterion', 'Criterion Details'), column: 1, fields: ['competition_id', 'track_id', 'name', 'description'] },
@@ -46,6 +50,15 @@ export default function CreateCriterionPage() {
   return (
     <Page><PageBody>
       <CrudForm
+        // The scope only resolves after hydration, and CrudForm will not push a
+        // late `initialValues` into a combobox it considers user-touched — so remount
+        // the form once the scope is known (and again if it changes).
+        key={scopeReady ? scopedCompetitionId ?? 'home' : 'pending'}
+        initialValues={scopedCompetitionId ? { competition_id: scopedCompetitionId } : undefined}
+        // The competition combobox is the first field, so it would auto-focus — and a
+        // focused combobox never renders the label for a value it did not receive from
+        // the user, then clears that value on blur. Skip initial focus when prefilled.
+        disableInitialFocus={Boolean(scopedCompetitionId)}
         title={t('judging.criteria.create.title', 'Create Judging Criterion')}
         backHref="/backend/judging" entityId="judging:criterion"
         fields={fields} groups={groups}

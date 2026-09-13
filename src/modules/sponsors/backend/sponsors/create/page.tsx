@@ -4,6 +4,8 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
+import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -14,8 +16,10 @@ async function loadCompetitions(query?: string) {
 
 export default function CreateSponsorPage() {
   const t = useT()
+  const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
+  const competitionSeedOptions = useScopedCompetitionSeedOptions()
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('sponsors.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    { id: 'competition_id', label: t('sponsors.fields.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions, seedOptions: competitionSeedOptions },
     { id: 'name', label: t('sponsors.fields.name', 'Name'), type: 'text', required: true },
     { id: 'tier', label: t('sponsors.fields.tier', 'Tier'), type: 'select', defaultValue: 'partner',
       options: [{ value: 'title', label: 'Title' }, { value: 'gold', label: 'Gold' }, { value: 'silver', label: 'Silver' }, { value: 'partner', label: 'Partner' }, { value: 'in_kind', label: 'In-Kind' }] },
@@ -27,7 +31,7 @@ export default function CreateSponsorPage() {
     { id: 'contact_name', label: t('sponsors.fields.contactName', 'Contact Name'), type: 'text' },
     { id: 'contact_email', label: t('sponsors.fields.contactEmail', 'Contact Email'), type: 'text' },
     { id: 'order', label: t('sponsors.fields.order', 'Display Order'), type: 'number', defaultValue: 0 },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('sponsors.groups.details', 'Sponsor Details'), column: 1, fields: ['competition_id', 'name', 'tier', 'logo_url', 'website_url', 'description'] },
@@ -38,6 +42,15 @@ export default function CreateSponsorPage() {
   return (
     <Page><PageBody>
       <CrudForm
+        // The scope only resolves after hydration, and CrudForm will not push a
+        // late `initialValues` into a combobox it considers user-touched — so remount
+        // the form once the scope is known (and again if it changes).
+        key={scopeReady ? scopedCompetitionId ?? 'home' : 'pending'}
+        initialValues={scopedCompetitionId ? { competition_id: scopedCompetitionId } : undefined}
+        // The competition combobox is the first field, so it would auto-focus — and a
+        // focused combobox never renders the label for a value it did not receive from
+        // the user, then clears that value on blur. Skip initial focus when prefilled.
+        disableInitialFocus={Boolean(scopedCompetitionId)}
         title={t('sponsors.create.title', 'Add Sponsor')}
         backHref="/backend/sponsors" entityId="sponsors:sponsor"
         fields={fields} groups={groups}

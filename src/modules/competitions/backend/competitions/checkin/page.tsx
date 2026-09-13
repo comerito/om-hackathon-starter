@@ -8,6 +8,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useCompetitionScope } from '@/lib/competition-scope'
 import { Keyboard, Camera, Mail } from 'lucide-react'
 
 type Competition = { id: string; name: string }
@@ -71,7 +72,11 @@ export default function CheckinPage() {
   const queryClient = useQueryClient()
   const [participationId, setParticipationId] = React.useState('')
   const [emailSearch, setEmailSearch] = React.useState('')
-  const [selectedCompetition, setSelectedCompetition] = React.useState('')
+  const { competitionId: scopedCompetitionId } = useCompetitionScope()
+  const [localCompetition, setLocalCompetition] = React.useState('')
+  // Under the global scope this page follows the header; on Home it falls back
+  // to its own picker so check-in still works without scoping first.
+  const selectedCompetition = scopedCompetitionId ?? localCompetition
   const [checking, setChecking] = React.useState(false)
   const [lastResult, setLastResult] = React.useState<{ displayName: string; email: string; already?: boolean } | null>(null)
   const [mode, setMode] = React.useState<CheckinMode>('code')
@@ -169,18 +174,20 @@ export default function CheckinPage() {
         <div className="max-w-2xl mx-auto space-y-6">
           <h1 className="text-2xl font-bold">{t('competitions.checkin.title', 'Check-In')}</h1>
 
-          {/* Competition selector */}
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('competitions.checkin.selectCompetition', 'Competition')}</label>
-            <select
-              value={selectedCompetition}
-              onChange={(e) => setSelectedCompetition(e.target.value)}
-              className="h-9 w-full max-w-md rounded-md border border-input bg-background px-3 py-1 text-sm"
-            >
-              <option value="">{t('competitions.checkin.choose', '— Select competition —')}</option>
-              {(comps?.items ?? []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+          {/* Competition selector — hidden while the header scope pins one */}
+          {scopedCompetitionId ? null : (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('competitions.checkin.selectCompetition', 'Competition')}</label>
+              <select
+                value={localCompetition}
+                onChange={(e) => setLocalCompetition(e.target.value)}
+                className="h-9 w-full max-w-md rounded-md border border-input bg-background px-3 py-1 text-sm"
+              >
+                <option value="">{t('competitions.checkin.choose', '— Select competition —')}</option>
+                {(comps?.items ?? []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Stats */}
           {stats && (

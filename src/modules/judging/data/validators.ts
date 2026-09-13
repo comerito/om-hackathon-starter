@@ -91,6 +91,17 @@ export const selectFinalistsSchema = z.object({
   project_ids: z.array(z.string().uuid()),
 })
 
+// ── Leaderboard ─────────────────────────────────────────────────────
+// The leaderboard query params land straight in uuid-typed DB filters, so a
+// non-uuid value (the UI used to send the literal `all`) must be rejected with
+// a 400 instead of exploding inside the query as a 500.
+export const leaderboardQuerySchema = z.object({
+  competition_id: z.string().uuid('competition_id must be a valid UUID'),
+  track_id: z.string().uuid('track_id must be a valid UUID').nullish(),
+})
+
+export type LeaderboardQueryInput = z.infer<typeof leaderboardQuerySchema>
+
 export type CreatePanelInput = z.infer<typeof createPanelSchema>
 export type UpdatePanelInput = z.infer<typeof updatePanelSchema>
 export type CreateCriterionInput = z.infer<typeof createCriterionSchema>
