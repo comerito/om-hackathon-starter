@@ -41,9 +41,10 @@ That is exactly the reported rendering.
 
 - No changes to info-card data, API, validators, entities or the backend CRUD pages.
 - No redesign of the card's visual style; the desktop column counts must stay as they are.
-- No new test framework. This repo currently ships no jest config and no test files, so
-  `yarn test` cannot run; bootstrapping it is out of scope for a CSS fix. Verification is a
-  measured headless-browser render instead (see Risks).
+- Not fixing `yarn lint`. It is broken repo-wide and independently of this change: the script
+  is `next lint`, which Next 16 removed, so it exits with
+  `Invalid project directory provided, no such directory: <root>/lint`. `package.json` is
+  untouched by this PR. Flagged for a separate change.
 
 ## Fix
 
@@ -66,18 +67,20 @@ That is exactly the reported rendering.
 
 ## Verification
 
-A headless-Chrome harness renders the real agenda-sidebar DOM against CSS compiled by the
-project's own Tailwind v4 pipeline, at a desktop viewport, and measures the text block's
-width — before and after the fix. Expected: 0px before, >150px after.
+1. A headless-Chrome harness renders the real agenda-sidebar DOM against CSS compiled by the
+   project's own Tailwind v4 pipeline, at a desktop viewport, and measures the text block's
+   width — before and after the fix.
+2. A source-reading regression guard, following the repo's existing idiom for defects with no
+   logic to unit-test (`src/modules/judging/__tests__/results-header.test.ts`).
 
 ## Risks
 
 - **Low.** CSS-only change to one presentational component.
-- `grid-cols-[repeat(auto-fit,...)]` is an arbitrary-value utility; it is a literal string in
-  the source file so Tailwind's content scanner picks it up. The measured render confirms the
-  class actually emits CSS.
-- `yarn test` is not runnable in this repo (no jest config, zero test files); the validation
-  gate is run without it and the gap is disclosed on the PR.
+- `grid-cols-[repeat(auto-fit,...)]` is an arbitrary-value utility, so it only works if
+  Tailwind's content scanner sees it. Confirmed twice: compiled from the real `.tsx` source,
+  and present in the production stylesheet after `yarn build`. The same
+  `minmax(min(100%,Nrem),1fr)` pattern is already used elsewhere in the shipped CSS (9rem,
+  12rem), so this is existing house style rather than a new idiom.
 
 ## Progress
 
@@ -95,7 +98,7 @@ width — before and after the fix. Expected: 0px before, >150px after.
 ### Phase 3: Verify
 
 - [x] 3.1 Re-measure with the fix and capture screenshot evidence
-- [ ] 3.2 Run the validation gate
+- [x] 3.2 Run the validation gate
 
 ## Measured results
 
@@ -110,3 +113,15 @@ rendering the real agenda-sidebar ancestor chain:
 Full-width layout column count: **4 before, 4 after** — no visual regression.
 Tailwind's content scanner emits the arbitrary grid class from the real `.tsx` source
 (verified against the compiled stylesheet).
+
+## Validation gate
+
+| command | result |
+|---|---|
+| `yarn generate` | pass |
+| `yarn typecheck` | pass |
+| `yarn lint` | **fails repo-wide, pre-existing** — `next lint` was removed in Next 16 |
+| `yarn test` | pass — 46 suites, 531 tests (6 new) |
+| `yarn build` | pass |
+
+Regression guard added in 3ce3dec; 5 of its 6 tests fail against the pre-fix component.
