@@ -90,5 +90,7 @@
   "projects.export.action": "Download Competition Attachments",
   "projects.export.exporting": "Preparing archive...",
   "projects.export.started": "Project attachments download started",
-  "projects.export.error": "Failed to export project attachments"
+  "projects.export.error": "Failed to export project attachments",
+  "projects.notifications.autoPublishSkipped.title": "Your project was not submitted",
+  "projects.notifications.autoPublishSkipped.body": "The competition moved to Demo Day and your project was left out because it is incomplete: {reasons}."
 }
