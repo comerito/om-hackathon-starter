@@ -104,7 +104,23 @@ export function CompetitionInfoCards({
         </div>
       )}
 
-      <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-4', gridClassName)}>
+      {/*
+        Container-driven track, NOT viewport breakpoints. `sm:`/`xl:` respond to the viewport,
+        so on a desktop screen they also split narrow containers (the agenda sidebar is 300px)
+        into 4 columns, leaving less room than the icon alone and collapsing the card text to
+        zero width. This measures the real container instead.
+
+        `auto-fill`, not `auto-fit`: `auto-fit` collapses the empty tracks, so a single info
+        card would stretch across the whole row (measured: 1110px instead of 269px at 1440px).
+        `auto-fill` keeps the empty tracks, which is what the old 4-column grid did.
+
+        `min(100%,14rem)` keeps the track from overflowing a container narrower than the floor.
+        The 14rem floor reproduces the previous layout exactly at 1280/1366/1440/1920 (4 cols)
+        and at `sm` and mobile (2 / 1). Between 1024 and 1279 it gives 3 columns where the old
+        `sm:grid-cols-2` gave 2 — denser, and intentional: at that width 2 columns meant 351px
+        tiles.
+      */}
+      <div className={cn('grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))]', gridClassName)}>
         {items.map((card) => {
           const Icon = getInfoCardIcon(card)
           return (
@@ -119,8 +135,8 @@ export function CompetitionInfoCards({
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-portal-primary/10">
                   <Icon className="size-4 text-portal-primary" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest break-words text-portal-secondary">
                     {card.label}
                   </p>
                   <p className="mt-1 whitespace-pre-line break-words text-sm font-bold text-foreground">
