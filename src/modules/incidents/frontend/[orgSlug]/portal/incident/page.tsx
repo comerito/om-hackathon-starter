@@ -156,8 +156,9 @@ function IncidentReportContent() {
   const [submitting, setSubmitting] = React.useState(false)
   const [submitted, setSubmitted] = React.useState(false)
   const [showConfirm, setShowConfirm] = React.useState(false)
-  // The portal mounts no <FlashMessages /> host, so flash() alone is invisible here — that is the
-  // second half of #103. Errors are rendered inline, next to the field where possible.
+  // A flash toast alone is not enough for a safety channel — it expires, and it cannot sit next
+  // to the field that was rejected. That is the second half of #103: errors are also rendered
+  // inline, beside the field where possible.
   const [formError, setFormError] = React.useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
 
@@ -337,8 +338,8 @@ function IncidentReportContent() {
         </div>
       </div>
 
-      {/* A rejected report must say so on the page. flash() is a no-op in the portal (no
-          <FlashMessages /> host), which is how a 422 became invisible in #103. */}
+      {/* A rejected report must say so on the page, not only in a toast that expires — a 422
+          going unnoticed is how #103 lost a safety report. */}
       {formError && (
         <div role="alert" className="rounded-xl border border-portal-danger/30 bg-portal-danger/5 p-4">
           <p className="text-sm font-semibold text-portal-danger">
