@@ -269,7 +269,7 @@ function AgendaContent() {
           />
         </div>
 
-        {/* Featured curator — derived from first agenda item with a speaker */}
+        {/* Featured speakers — derived from first agenda item with a speaker */}
         {(() => {
           const featured = activeDayItems.find(i => i.speaker_name)
           if (!featured) return null
@@ -283,7 +283,7 @@ function AgendaContent() {
               >
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-1">
-                    {t('competitions.portal.agenda.featuredCurator', 'Featured Curator')}
+                    {t('competitions.portal.agenda.featuredSpeakers', 'Featured Speakers')}
                   </p>
                   <p className="text-sm font-bold text-white">{featured.speaker_name}</p>
                   <p className="text-xs text-white/70">{featured.speaker_bio || featured.title}</p>
@@ -300,7 +300,7 @@ function AgendaContent() {
             </div>
             <div>
               <p className="text-xs font-bold text-foreground">{t('competitions.portal.agenda.needHelp.title', 'Need help?')}</p>
-              <p className="text-[11px] text-portal-secondary">{t('competitions.portal.agenda.needHelp.description', 'Curators are available in the Slack #help channel 24/7.')}</p>
+              <p className="text-[11px] text-portal-secondary">{t('competitions.portal.agenda.needHelp.description', 'Mentors and organizers are available in the Discord #help channel 24/7.')}</p>
             </div>
           </div>
         </div>
