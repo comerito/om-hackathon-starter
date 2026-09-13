@@ -51,9 +51,16 @@ describe('CompetitionInfoCards layout', () => {
   const source = code(COMPONENT)
 
   it('sizes its grid from the container, not the viewport', () => {
+    // Either repeat() keyword is container-driven, which is the invariant that matters here.
     const grid = gridClasses(source)
-    expect(grid).toContain('auto-fit')
+    expect(grid).toMatch(/repeat\(auto-fi(ll|t)/)
     expect(grid).toContain('minmax(')
+  })
+
+  it('keeps empty tracks so a single card does not stretch across the row', () => {
+    // `auto-fit` collapses empty tracks: one info card measured 1110px instead of 269px at a
+    // 1440px viewport. Both portal call sites render the component from one card upwards.
+    expect(gridClasses(source)).not.toContain('auto-fit')
   })
 
   it('uses no viewport breakpoint in the grid defaults callers may override', () => {
@@ -63,7 +70,7 @@ describe('CompetitionInfoCards layout', () => {
   })
 
   it('caps the column floor with min() so a narrow container cannot overflow', () => {
-    // `minmax(16rem, 1fr)` would overflow any container narrower than 16rem.
+    // A bare `minmax(14rem, 1fr)` would overflow any container narrower than 14rem.
     expect(gridClasses(source)).toMatch(/minmax\(min\(100%,\s*\d+(\.\d+)?rem\)/)
   })
 

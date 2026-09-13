@@ -51,13 +51,13 @@ That is exactly the reported rendering.
 1. Replace the viewport-breakpoint track with a container-driven one:
 
    ```
-   grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]
+   grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))]
    ```
 
-   `auto-fit` sizes from the actual container width, so a narrow sidebar gets one column no
-   matter how wide the viewport is. `min(100%,16rem)` keeps the track from overflowing a
-   container narrower than 16rem. The 16rem floor reproduces today's column counts in the
-   full-width layout (4 columns at `max-w-6xl`, 2 at `sm`, 1 on mobile).
+   `repeat()` sizes from the actual container width, so a narrow sidebar gets one column no
+   matter how wide the viewport is. `auto-fill` rather than `auto-fit`, because `auto-fit`
+   collapses the empty tracks and a single info card would then stretch across the whole row.
+   `min(100%,14rem)` keeps the track from overflowing a container narrower than the floor.
 
 2. Give the text block the correct flex idiom `min-w-0 flex-1` so it claims the remaining
    row width instead of sizing to content.
@@ -110,9 +110,25 @@ rendering the real agenda-sidebar ancestor chain:
 | before | **0px** | 56px | **32** (one per character) |
 | after | 172px | 258px | 2 |
 
-Full-width layout column count: **4 before, 4 after** — no visual regression.
-Tailwind's content scanner emits the arbitrary grid class from the real `.tsx` source
-(verified against the compiled stylesheet).
+Column counts across the full-width layout, measured the same way. `auto-fill` + 14rem
+reproduces the previous layout exactly everywhere except 1024–1279:
+
+| viewport | before (`sm:grid-cols-2 xl:grid-cols-4`) | after (`auto-fill`, 14rem) |
+|---|---|---|
+| 1920 | 4 cols, 269px | 4 cols, 269px |
+| 1440 | 4 cols, 269px | 4 cols, 269px |
+| 1366 | 4 cols, 255px | 4 cols, 255px |
+| 1280 | 4 cols, 234px | 4 cols, 234px |
+| 1024 | 2 cols, 351px | **3 cols, 230px** — denser, intentional |
+| 640 | 2 cols, 269px | 2 cols, 269px |
+| mobile | 1 col | 1 col |
+
+`auto-fit` was measured and rejected: with a single info card it stretched the card to
+**1110px** instead of 269px, because it collapses the empty tracks. Both portal call sites
+render the component from one card upwards.
+
+Tailwind's content scanner emits the arbitrary grid class from the real `.tsx` source, and the
+rule is present in the production stylesheet after `yarn build`.
 
 ## Validation gate
 
@@ -121,7 +137,19 @@ Tailwind's content scanner emits the arbitrary grid class from the real `.tsx` s
 | `yarn generate` | pass |
 | `yarn typecheck` | pass |
 | `yarn lint` | **fails repo-wide, pre-existing** — `next lint` was removed in Next 16 |
-| `yarn test` | pass — 46 suites, 531 tests (6 new) |
+| `yarn test` | pass — 46 suites, 532 tests (7 new) |
 | `yarn build` | pass |
 
-Regression guard added in 3ce3dec; 5 of its 6 tests fail against the pre-fix component.
+Regression guard added in 3ce3dec; 5 of its 7 tests fail against the pre-fix component.
+
+## Review pass
+
+`/code-review` (the replacement AGENTS.md points to; the external `om-auto-review-pr` engine is
+not installed in this repo — only its repo-local override file). Two findings, both confirmed by
+measurement and both fixed:
+
+1. `auto-fit` collapsed empty tracks, stretching a single card to 1110px. → `auto-fill`.
+2. The 16rem floor gave 3 columns at 1280/1366 where the old grid gave 4. → 14rem.
+
+A third, non-blocking note (the guard asserted the `auto-fit` literal and would have failed the
+fix for finding 1) was also applied.
