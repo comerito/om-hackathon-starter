@@ -104,7 +104,15 @@ export function CompetitionInfoCards({
         </div>
       )}
 
-      <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-4', gridClassName)}>
+      {/*
+        Container-driven track, NOT viewport breakpoints. `sm:`/`xl:` respond to the viewport,
+        so on a desktop screen they also split narrow containers (the agenda sidebar is 300px)
+        into 4 columns, leaving less room than the icon alone and collapsing the card text to
+        zero width. `auto-fit` measures the real container instead. `min(100%,16rem)` keeps the
+        track from overflowing a container narrower than the 16rem floor, and that floor
+        reproduces the previous column counts in the full-width layout (4 / 2 / 1).
+      */}
+      <div className={cn('grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]', gridClassName)}>
         {items.map((card) => {
           const Icon = getInfoCardIcon(card)
           return (
@@ -119,8 +127,8 @@ export function CompetitionInfoCards({
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-portal-primary/10">
                   <Icon className="size-4 text-portal-primary" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-portal-secondary">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest break-words text-portal-secondary">
                     {card.label}
                   </p>
                   <p className="mt-1 whitespace-pre-line break-words text-sm font-bold text-foreground">
