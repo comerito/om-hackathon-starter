@@ -40,7 +40,8 @@ That is exactly the reported rendering.
 ## Non-goals
 
 - No changes to info-card data, API, validators, entities or the backend CRUD pages.
-- No redesign of the card's visual style; the desktop column counts must stay as they are.
+- No redesign of the card's visual style. The desktop (xl) column counts are preserved exactly;
+  see the measured table below for the one deliberate change, at 1024–1279.
 - Not fixing `yarn lint`. It is broken repo-wide and independently of this change: the script
   is `next lint`, which Next 16 removed, so it exits with
   `Invalid project directory provided, no such directory: <root>/lint`. `package.json` is
@@ -76,7 +77,7 @@ That is exactly the reported rendering.
 ## Risks
 
 - **Low.** CSS-only change to one presentational component.
-- `grid-cols-[repeat(auto-fit,...)]` is an arbitrary-value utility, so it only works if
+- `grid-cols-[repeat(auto-fill,...)]` is an arbitrary-value utility, so it only works if
   Tailwind's content scanner sees it. Confirmed twice: compiled from the real `.tsx` source,
   and present in the production stylesheet after `yarn build`. The same
   `minmax(min(100%,Nrem),1fr)` pattern is already used elsewhere in the shipped CSS (9rem,
