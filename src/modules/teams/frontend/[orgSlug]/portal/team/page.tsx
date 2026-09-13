@@ -13,6 +13,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
+import { MIN_PARTICIPANT_SEARCH_LENGTH } from '../../../../../competitions/lib/participantSearch'
 import {
   PortalPageTitle,
   SectionLabel,
@@ -354,7 +355,9 @@ function NoTeamView({
 
 /* ========== InviteMemberSection ========== */
 
-type SearchResult = { id: string; displayName: string; email: string }
+// `maskedEmail` is what the search endpoint discloses about a peer — `a***@hackon.test`, enough
+// to tell two people with the same name apart, never a deliverable address.
+type SearchResult = { id: string; displayName: string; maskedEmail: string }
 
 function InviteMemberSection({ teamId, competitionId }: { teamId: string; competitionId: string }) {
   const t = useT()
@@ -379,13 +382,13 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
   const { data: searchResults } = useQuery({
     queryKey: ['portal-search-participants', competitionId, debouncedQuery],
     queryFn: async () => {
-      if (debouncedQuery.length < 2) return []
+      if (debouncedQuery.length < MIN_PARTICIPANT_SEARCH_LENGTH) return []
       const { ok, result } = await apiCall<{ items: SearchResult[] }>(
         `/api/competitions/portal/search-participants?competition_id=${competitionId}&q=${encodeURIComponent(debouncedQuery)}`,
       )
       return ok && result ? result.items : []
     },
-    enabled: debouncedQuery.length >= 2 && showForm,
+    enabled: debouncedQuery.length >= MIN_PARTICIPANT_SEARCH_LENGTH && showForm,
   })
 
   const results = searchResults ?? []
@@ -403,7 +406,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
 
   function handleSelectUser(user: SearchResult) {
     setInviteeId(user.id)
-    setInviteeName(`${user.displayName} (${user.email})`)
+    setInviteeName(`${user.displayName} (${user.maskedEmail})`)
     setSearchQuery('')
     setShowDropdown(false)
   }
@@ -454,7 +457,7 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
           {/* Email/Name search with autocomplete */}
           <div>
             <label className="block text-xs font-medium text-portal-secondary mb-1">
-              {t('teams.portal.myTeam.searchParticipant', 'Search by email or name')}
+              {t('teams.portal.myTeam.searchParticipant', 'Search by full email address or name')}
             </label>
             {inviteeId ? (
               <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-3 py-2">
@@ -483,11 +486,11 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                     setShowDropdown(true)
                   }}
                   onFocus={() => setShowDropdown(true)}
-                  placeholder={t('teams.portal.myTeam.searchPlaceholder', 'Type email or name...')}
+                  placeholder={t('teams.portal.myTeam.searchPlaceholder', 'Full email address or name...')}
                   className="text-sm rounded-xl"
                   autoFocus
                 />
-                {showDropdown && searchQuery.length >= 2 && (
+                {showDropdown && searchQuery.length >= MIN_PARTICIPANT_SEARCH_LENGTH && (
                   <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 shadow-lg max-h-48 overflow-y-auto">
                     {results.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-portal-secondary">
@@ -502,11 +505,11 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
                           className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                         >
                           <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-portal-primary/10 text-portal-primary text-xs font-semibold">
-                            {(user.displayName || user.email)[0].toUpperCase()}
+                            {(user.displayName || user.maskedEmail || '?')[0].toUpperCase()}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{user.displayName}</p>
-                            <p className="text-xs text-portal-secondary truncate">{user.email}</p>
+                            <p className="text-xs text-portal-secondary truncate">{user.maskedEmail}</p>
                           </div>
                         </button>
                       ))
