@@ -12,11 +12,17 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
 import { downloadCompetitionAttachments } from '../../../../../projects/lib/downloadCompetitionAttachments'
+import { STAGE_SEQUENCE } from '../../../../lib/stages'
 
-const STAGE_ORDER = [
-  'draft', 'open', 'team_formation', 'track_selection',
-  'hacking', 'demos', 'deliberation', 'finished', 'archived',
-]
+const STAGE_ORDER: readonly string[] = STAGE_SEQUENCE
+
+type AdvanceStageResponse = {
+  ok: boolean
+  error?: string
+  code?: string
+  competition?: { stage: string }
+  warnings?: { teams_without_track?: Array<{ id: string; name: string }> }
+}
 
 const STAGE_LABELS: Record<string, string> = {
   draft: 'Draft', open: 'Registration Open', team_formation: 'Team Formation',
@@ -29,8 +35,8 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   open: 'Participants can register and accept the Code of Conduct.',
   team_formation: 'Participants form teams and send invitations.',
   track_selection: 'Teams choose their competition track.',
-  hacking: 'Teams build their projects. Draft projects auto-created for all teams. Team membership locked.',
-  demos: 'Remaining draft projects auto-published. Demo presentation queue generated.',
+  hacking: 'Teams build their projects. A draft project is auto-created for every team that has selected a track — teams with no track get none, and track selection closes now. Team membership locked.',
+  demos: 'Remaining draft projects are auto-published if they meet the submission requirements; incomplete drafts stay unsubmitted. Demo presentation queue generated.',
   deliberation: 'Judges deliberate. Voting closes.',
   finished: 'Final scores calculated. Rankings published. Results visible to all.',
   archived: 'Competition archived. No further changes.',
@@ -120,11 +126,16 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
         const item = data?.items?.[0]
         if (!item) throw new Error('Competition not found')
         if (!cancelled) {
-          // Convert ISO dates to datetime-local format (YYYY-MM-DDTHH:MM)
-          const toLocal = (iso: unknown) => {
-            if (!iso) return ''
-            const s = String(iso)
-            try { return new Date(s).toISOString().slice(0, 16) } catch { return s.slice(0, 16) }
+          // The CrudForm `datetime` field takes an absolute instant in, renders it in the
+          // browser's local timezone, and emits a full ISO-8601 UTC string on change. Keep the
+          // stored instant intact here: narrowing it to a zone-less `YYYY-MM-DDTHH:mm` string
+          // (as this loader used to) makes the picker re-read it as *local* wall-clock time, so
+          // every save shifted both timestamps by the UTC offset, cumulatively (issue #81).
+          const toInstant = (value: unknown) => {
+            if (!value) return ''
+            const raw = String(value)
+            const parsed = new Date(raw)
+            return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString()
           }
           setInitial({
             id: String(item.id),
@@ -132,8 +143,8 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             slug: String(item.slug ?? ''),
             description: String(item.description ?? ''),
             location: String(item.location ?? ''),
-            starts_at: toLocal(item.starts_at),
-            ends_at: toLocal(item.ends_at),
+            starts_at: toInstant(item.starts_at),
+            ends_at: toInstant(item.ends_at),
             timezone: String(item.timezone ?? 'Europe/Warsaw'),
             min_team_size: Number(item.min_team_size ?? 2),
             max_team_size: Number(item.max_team_size ?? 5),
@@ -172,6 +183,18 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     ? STAGE_ORDER[currentStageIdx + 1]
     : null
 
+  function postAdvanceStage(targetStage: string, acknowledgeWarnings: boolean) {
+    return apiCall<AdvanceStageResponse>('/api/competitions/advance-stage', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        competition_id: id,
+        target_stage: targetStage,
+        ...(acknowledgeWarnings ? { acknowledge_warnings: true } : {}),
+      }),
+    })
+  }
+
   async function handleAdvanceStage() {
     if (!id || !nextStage) return
     const description = STAGE_DESCRIPTIONS[nextStage] ?? ''
@@ -186,16 +209,30 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
 
     setAdvancing(true)
     try {
-      const { ok, result } = await apiCall<{ ok: boolean; error?: string; competition?: { stage: string } }>(
-        '/api/competitions/advance-stage',
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ competition_id: id, target_stage: nextStage }),
-        },
-      )
+      let advanced = await postAdvanceStage(nextStage, false)
+
+      // The server refuses to advance to `hacking` while active teams have no track,
+      // because those teams get no draft project and can no longer pick one. Show the
+      // organiser exactly who would be left out, then let them decide.
+      if (!advanced.ok && advanced.result?.code === 'teams_without_track') {
+        const affected = advanced.result.warnings?.teams_without_track ?? []
+        const confirmedAnyway = await confirm({
+          title: `${affected.length} team(s) have no track: ${affected.map(team => team.name).join(', ')}.\n\n`
+            + 'They will not get a draft project, and track selection closes with this transition — '
+            + 'they cannot fix it themselves. Assign them a track first, or advance without them.',
+          variant: 'destructive',
+        })
+        if (!confirmedAnyway) return
+        advanced = await postAdvanceStage(nextStage, true)
+      }
+
+      const { ok, result } = advanced
       if (ok && result?.competition) {
         flash(`Stage advanced to ${STAGE_LABELS[result.competition.stage] ?? result.competition.stage}`, 'success')
+        const leftOut = result.warnings?.teams_without_track ?? []
+        if (leftOut.length > 0) {
+          flash(`${leftOut.length} team(s) advanced without a track and have no project: ${leftOut.map(team => team.name).join(', ')}`, 'error')
+        }
         setInitial(prev => prev ? { ...prev, stage: result.competition!.stage } : prev)
       } else {
         flash(result?.error ?? 'Failed to advance stage', 'error')
@@ -347,11 +384,14 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
             isLoading={loading}
             loadingMessage={t('competitions.edit.loading', 'Loading competition...')}
             onSubmit={async (vals) => {
-              // Convert datetime-local to ISO and empty URLs to null
+              // `starts_at` / `ends_at` already hold ISO-8601 UTC instants — either the value
+              // loaded from the API or the picker's own `date.toISOString()` output — so they are
+              // forwarded untouched. Re-parsing them here was the second half of issue #81: a
+              // zone-less string would have been read as browser-local and shifted on every save.
               const cleaned = {
                 ...vals,
-                starts_at: vals.starts_at ? new Date(vals.starts_at).toISOString() : undefined,
-                ends_at: vals.ends_at ? new Date(vals.ends_at).toISOString() : undefined,
+                starts_at: vals.starts_at || undefined,
+                ends_at: vals.ends_at || undefined,
                 code_of_conduct_url: vals.code_of_conduct_url,
                 code_of_conduct_content: vals.code_of_conduct_content || null,
                 rules_url: vals.rules_url || null,

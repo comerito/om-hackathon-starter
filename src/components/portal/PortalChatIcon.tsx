@@ -7,29 +7,17 @@ import { usePortalAppEvent } from '@open-mercato/ui/portal/hooks/usePortalAppEve
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { MessageCircle } from 'lucide-react'
-
-const STORAGE_KEY = 'hackon:selected-competition'
-
-function useCompetitionId(): string | null {
-  const [id, setId] = React.useState<string | null>(null)
-  React.useEffect(() => {
-    setId(localStorage.getItem(STORAGE_KEY))
-    // Poll localStorage since the competition selector writes to it without dispatching events
-    const interval = setInterval(() => {
-      const current = localStorage.getItem(STORAGE_KEY)
-      setId(prev => prev !== current ? current : prev)
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
-  return id
-}
+import { usePortalSelection } from './usePortalSelection'
 
 export function PortalChatIcon() {
   const t = useT()
   const router = useRouter()
   const { auth } = usePortalContext()
   const queryClient = useQueryClient()
-  const competitionId = useCompetitionId()
+  // Was a 1s localStorage poll, because "the competition selector writes to it without
+  // dispatching events". It does now — CompetitionProvider announces every write, so the poll
+  // (and its permanent timer on every portal page) is gone.
+  const { competitionId } = usePortalSelection()
 
   const { data } = useQuery({
     queryKey: ['chat-unread', competitionId],

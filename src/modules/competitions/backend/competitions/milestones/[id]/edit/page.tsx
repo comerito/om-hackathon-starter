@@ -1,18 +1,35 @@
 "use client"
 import * as React from 'react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
+import { CrudForm, type CrudField, type CrudFieldOption, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { updateCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { LoadingMessage, ErrorMessage } from '@open-mercato/ui/backend/detail'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useQuery } from '@tanstack/react-query'
+import { toFormInstant } from '@/modules/competitions/lib/formInstant'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
   if (query) params.name = query
   const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', params)
   return (res?.items ?? []).map((c) => ({ value: c.id, label: c.name }))
+}
+
+// The milestone API returns only `competition_id` and `loadCompetitions` is paginated, so the
+// picker cannot resolve the label of a pre-selected id on its own. Best-effort: a missing label
+// only degrades the picker to the raw id, it must never keep the form from loading.
+async function loadCompetitionSeedOptions(competitionId: unknown): Promise<CrudFieldOption[]> {
+  const id = typeof competitionId === 'string' ? competitionId : ''
+  if (!id) return []
+  try {
+    const res = await fetchCrudList<{ id: string; name: string }>('competitions/competitions', { id, pageSize: '1' })
+    const competition = res?.items?.[0]
+    if (!competition?.id || !competition?.name) return []
+    return [{ value: String(competition.id), label: String(competition.name) }]
+  } catch {
+    return []
+  }
 }
 
 export default function EditMilestonePage({ params }: { params?: { id?: string } }) {
@@ -27,17 +44,32 @@ export default function EditMilestonePage({ params }: { params?: { id?: string }
       )
       if (!ok || !result?.items?.[0]) throw new Error('Failed to load milestone')
       const item = result.items[0]
-      // Convert datetime to local format for the datetime input
-      if (item.due_date) {
-        try { item.due_date = new Date(String(item.due_date)).toISOString().slice(0, 16) } catch { /* keep as-is */ }
-      }
-      return item
+      // Keep the stored instant intact for the `datetime` picker, which renders it in the
+      // browser's local timezone. Narrowing it to a zone-less `YYYY-MM-DDTHH:mm` string (as
+      // this loader used to) made the picker re-read a UTC instant as local wall-clock time,
+      // so every save shifted the due date by the UTC offset — issue #122, same defect as #81.
+      if (item.due_date) item.due_date = toFormInstant(item.due_date)
+      // Resolved here rather than in a follow-up query so the form mounts with the picker's
+      // label already known, instead of flashing an empty control first.
+      const competitionOptions = await loadCompetitionSeedOptions(item.competition_id)
+      return { item, competitionOptions }
     },
     enabled: !!milestoneId,
   })
 
+  const competitionSeedOptions = data?.competitionOptions
+
   const fields = React.useMemo<CrudField[]>(() => [
-    { id: 'competition_id', label: t('competitions.milestones.competition', 'Competition'), type: 'combobox', required: true, loadOptions: loadCompetitions },
+    {
+      id: 'competition_id',
+      label: t('competitions.milestones.competition', 'Competition'),
+      type: 'combobox',
+      required: true,
+      loadOptions: loadCompetitions,
+      // Hydrate the option map with the linked competition so the picker renders its name
+      // instead of the raw uuid (or nothing) before the user interacts with it.
+      seedOptions: competitionSeedOptions,
+    },
     { id: 'name', label: t('competitions.milestones.name', 'Name'), type: 'text', required: true },
     { id: 'description', label: t('competitions.milestones.description', 'Description'), type: 'textarea' },
     { id: 'due_date', label: t('competitions.milestones.dueDate', 'Due Date'), type: 'datetime', required: true },
@@ -47,7 +79,7 @@ export default function EditMilestonePage({ params }: { params?: { id?: string }
       { value: 'completed', label: 'Completed' },
     ]},
     { id: 'sort_order', label: t('competitions.milestones.sortOrder', 'Sort Order'), type: 'number', defaultValue: 0 },
-  ], [t])
+  ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('competitions.milestones.groups.details', 'Milestone Details'), column: 1, fields: ['competition_id', 'name', 'description', 'due_date'] },
@@ -65,13 +97,19 @@ export default function EditMilestonePage({ params }: { params?: { id?: string }
         entityId="competitions:milestone"
         fields={fields}
         groups={groups}
-        initialValues={data}
+        initialValues={data.item}
+        // "Competition" is the first field, so CrudForm would autofocus it on mount, and
+        // ComboboxInput only mirrors its `value` into the visible text while NOT focused — see
+        // the prize/criteria forms and #90. Suppressing the autofocus lets it show its selection.
+        disableInitialFocus
         submitLabel={t('competitions.milestones.edit.submit', 'Save Changes')}
         cancelHref="/backend/competitions/milestones"
         successRedirect={`/backend/competitions/milestones?flash=${encodeURIComponent(t('competitions.milestones.flash.updated', 'Milestone updated'))}&type=success`}
         onSubmit={async (vals) => {
+          // `due_date` already holds an ISO-8601 UTC instant — either the value loaded from the
+          // API or the picker's own `date.toISOString()` output — so it is forwarded untouched.
+          // Re-parsing it here was the second half of issue #122.
           const cleaned = { ...vals, id: milestoneId } as Record<string, unknown>
-          if (cleaned.due_date) cleaned.due_date = new Date(String(cleaned.due_date)).toISOString()
           await updateCrud('competitions/milestones', cleaned)
         }}
       />

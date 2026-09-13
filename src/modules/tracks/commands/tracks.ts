@@ -10,6 +10,17 @@ import { createTrackSchema, updateTrackSchema } from '../data/validators'
 
 const ENTITY_ID = 'tracks:track'
 
+/**
+ * The Track create/edit forms submit an empty string for a cleared "Category"
+ * text input and for the "None" option of the "Badge" select. Both columns are
+ * nullable, so normalize the empty string to NULL instead of storing ''.
+ */
+function emptyToNull(value: string | null | undefined): string | null {
+  if (value == null) return null
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
 function ensureScope(ctx: CommandRuntimeContext): { tenantId: string; organizationId: string } {
   const tenantId = ctx.auth?.tenantId ?? null
   if (!tenantId) throw new CrudHttpError(400, { error: 'Tenant context is required' })
@@ -64,6 +75,8 @@ const createTrackCommand: CommandHandler<Record<string, unknown>, Track> = {
         iconUrl: parsed.icon_url ?? null,
         maxTeams: parsed.max_teams ?? null,
         order: parsed.order,
+        category: emptyToNull(parsed.category),
+        badge: emptyToNull(parsed.badge),
         mentorIds: parsed.mentor_ids,
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
@@ -108,6 +121,8 @@ const updateTrackCommand: CommandHandler<Record<string, unknown>, Track> = {
         if (parsed.icon_url !== undefined) entity.iconUrl = parsed.icon_url
         if (parsed.max_teams !== undefined) entity.maxTeams = parsed.max_teams
         if (parsed.order !== undefined) entity.order = parsed.order
+        if (parsed.category !== undefined) entity.category = emptyToNull(parsed.category)
+        if (parsed.badge !== undefined) entity.badge = emptyToNull(parsed.badge)
         if (parsed.mentor_ids !== undefined) entity.mentorIds = parsed.mentor_ids
       },
     })

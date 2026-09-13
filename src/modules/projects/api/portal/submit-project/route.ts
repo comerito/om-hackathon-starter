@@ -7,6 +7,8 @@ import { Project, ProjectStatus } from '../../../data/entities'
 import { TeamMember } from '../../../../teams/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
+import { collectProjectSubmissionErrors } from '../../../lib/submission-validation'
+import { meetsMinimumTeamSize } from '../../../../teams/lib/team-size'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const submitSchema = z.object({
@@ -71,23 +73,26 @@ export async function POST(req: Request) {
       }
     }
 
-    // Validate required fields
-    const errors: string[] = []
-    if (!project.title || project.title.trim().length === 0) errors.push('Title is required')
-    if (!project.description || project.description.trim().length === 0) errors.push('Description is required')
-    if (project.usesPreexistingCode && (!project.preexistingCodeDescription || project.preexistingCodeDescription.trim().length === 0)) {
-      errors.push('Pre-existing code description is required when declaring code reuse')
-    }
-    if (!project.attachmentIds || project.attachmentIds.length === 0) {
-      errors.push('README.md feedback file is required')
-    } else {
-      const attachments = await em.find(Attachment, {
-        id: { $in: project.attachmentIds },
-      } as FilterQuery<Attachment>)
-      const hasReadme = attachments.some((attachment) => attachment.fileName.trim().toLowerCase() === 'readme.md')
-      if (!hasReadme) {
-        errors.push('Upload a README.md feedback file before submitting')
-      }
+    // Validate required fields — the same rules the `demos` stage transition applies
+    // to the drafts it auto-publishes (see lib/submission-validation.ts).
+    const attachmentIds = project.attachmentIds ?? []
+    const attachments = attachmentIds.length > 0
+      ? await em.find(Attachment, { id: { $in: attachmentIds } } as FilterQuery<Attachment>)
+      : []
+    const errors = collectProjectSubmissionErrors(project, {
+      attachmentFileNames: attachments.map((attachment) => attachment.fileName),
+    })
+
+    // The competition's minimum team size is a submission requirement too: an
+    // undersized team must not be able to enter. Checked here rather than inside
+    // the shared rule module because it is a property of the team, not the project.
+    if (competition) {
+      const memberCount = await em.count(TeamMember, {
+        teamId: project.teamId,
+        deletedAt: null,
+      } as FilterQuery<TeamMember>)
+      const teamSize = meetsMinimumTeamSize(competition, { memberCount })
+      if (!teamSize.allowed) errors.push(teamSize.reason)
     }
 
     if (errors.length > 0) {

@@ -4,6 +4,7 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/backend/CrudForm'
 import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { announcementFormSchema } from '@/modules/competitions/data/validators'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
 
@@ -34,7 +35,7 @@ export default function CreateAnnouncementPage() {
       { value: 'info', label: 'Info' }, { value: 'warning', label: 'Warning' }, { value: 'urgent', label: 'Urgent' },
     ], defaultValue: 'info' },
     { id: 'pinned', label: 'Pinned', type: 'checkbox' },
-    { id: 'action_url', label: 'Action URL', type: 'text' },
+    { id: 'action_url', label: 'Action URL', type: 'text', placeholder: '/acme-corp/portal/project or https://example.com/project' },
     { id: 'action_label', label: 'Action Label', type: 'text' },
   ], [t, competitionSeedOptions])
 
@@ -48,6 +49,7 @@ export default function CreateAnnouncementPage() {
     <Page>
       <PageBody>
         <CrudForm
+          schema={announcementFormSchema}
           // The scope only resolves after hydration, and CrudForm will not push a
           // late `initialValues` into a combobox it considers user-touched — so remount
           // the form once the scope is known (and again if it changes).

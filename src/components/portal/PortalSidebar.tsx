@@ -9,6 +9,8 @@ import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
 import { cn } from '@open-mercato/shared/lib/utils'
+import { filterNavItemsByStage } from './portal-selection'
+import { usePortalSelection } from './usePortalSelection'
 
 type PortalSidebarProps = {
   variant?: 'full' | 'minimal'
@@ -31,6 +33,7 @@ const NAV_ORDER: string[] = [
   'projects.portal-my-project',
   // Community
   'competitions.portal-participants',
+  'competitions.portal-chat',
   'teams.portal-browse-teams',
   'sponsors.portal-sponsors',
   // Judging & Results
@@ -50,7 +53,7 @@ const NAV_ORDER: string[] = [
 type NavGroup = { id: string; labelKey?: string; fallbackLabel: string; itemIds: string[] }
 const NAV_GROUPS: NavGroup[] = [
   { id: 'main', fallbackLabel: '', itemIds: ['competitions.portal-dashboard', 'competitions.portal-agenda', 'competitions.portal-announcements'] },
-  { id: 'hackathon', labelKey: 'portal.sidebar.group.hackathon', fallbackLabel: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
+  { id: 'hackathon', labelKey: 'portal.sidebar.group.hackathon', fallbackLabel: 'Hackathon', itemIds: ['competitions.portal-competition', 'tracks.portal-tracks', 'teams.portal-my-team', 'projects.portal-my-project', 'competitions.portal-participants', 'competitions.portal-chat', 'teams.portal-browse-teams', 'sponsors.portal-sponsors'] },
   { id: 'results', labelKey: 'portal.sidebar.group.results', fallbackLabel: 'Judging & Results', itemIds: ['judging.portal-presentations', 'judging.portal-results', 'sponsors.portal-voting', 'judging.portal-judging'] },
   { id: 'bounties', labelKey: 'portal.sidebar.group.bounties', fallbackLabel: 'Bounty Hunting', itemIds: ['bounties.portal-leaderboard', 'bounties.portal-my-prs'] },
   { id: 'tools', labelKey: 'portal.sidebar.group.tools', fallbackLabel: 'Tools', itemIds: ['competitions.portal-qr', 'incidents.portal-report'] },
@@ -64,38 +67,19 @@ const MINIMAL_IDS = new Set([
   'competitions.portal-agenda',
 ])
 
-/** Stage ordering for visibility comparisons */
-const STAGE_INDEX: Record<string, number> = {
-  draft: 0, open: 1, team_formation: 2, track_selection: 3,
-  hacking: 4, demos: 5, deliberation: 6, finished: 7, archived: 8,
-}
-
-/** Nav items hidden until competition reaches a minimum stage.
- *  `roles`: restrict only these roles (omit to apply to all roles) */
-const MIN_STAGE_FOR_ITEM: Array<{ id: string; minStage: string; roles?: string[] }> = [
-  { id: 'projects.portal-my-project', minStage: 'team_formation' },
-  { id: 'judging.portal-presentations', minStage: 'demos', roles: ['participant'] },
-  { id: 'judging.portal-results', minStage: 'deliberation', roles: ['participant'] },
-  { id: 'sponsors.portal-voting', minStage: 'demos', roles: ['participant'] },
-]
-
 export function PortalSidebar({ variant = 'full', competitionName, competitionSubtitle, onClose }: PortalSidebarProps) {
   const t = useT()
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
 
-  // Get selected competition ID, stage, and role from localStorage (same keys as CompetitionContext)
-  const [selectedCompetitionId, setSelectedCompetitionId] = React.useState<string | null>(null)
-  const [competitionStage, setCompetitionStage] = React.useState<string | null>(null)
-  const [competitionRole, setCompetitionRole] = React.useState<string | null>(null)
-  React.useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null
-    const stage = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-stage') : null
-    const role = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-role') : null
-    setSelectedCompetitionId(stored)
-    setCompetitionStage(stage)
-    setCompetitionRole(role)
-  }, [])
+  // Selected competition, stage and role — live, not a one-shot read. The sidebar lives in the
+  // layout and is therefore never remounted by client-side navigation, so advancing the stage
+  // used to leave the stage-gated items hidden until a full page reload (#115).
+  const {
+    competitionId: selectedCompetitionId,
+    stage: competitionStage,
+    role: competitionRole,
+  } = usePortalSelection()
   const { items: mainItems } = usePortalInjectedMenuItems('menu:portal:sidebar:main')
   const { items: accountItems } = usePortalInjectedMenuItems('menu:portal:sidebar:account')
 
@@ -107,15 +91,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     }
 
     // Hide nav items that require a minimum competition stage
-    const currentStageIdx = competitionStage ? (STAGE_INDEX[competitionStage] ?? -1) : -1
-    items = items.filter((item) => {
-      const rule = MIN_STAGE_FOR_ITEM.find(r => r.id === item.id)
-      if (!rule) return true
-      // If the rule is role-scoped, skip it for non-matching roles
-      if (rule.roles && competitionRole && !rule.roles.includes(competitionRole)) return true
-      if (currentStageIdx < 0) return false // stage unknown — hide stage-gated items
-      return currentStageIdx >= (STAGE_INDEX[rule.minStage] ?? 0)
-    })
+    items = filterNavItemsByStage(items, competitionStage, competitionRole)
 
     items.sort((a, b) => {
       const aIdx = NAV_ORDER.indexOf(a.id)
@@ -124,7 +100,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     })
 
     return items
-  }, [mainItems, accountItems, variant, competitionStage])
+  }, [mainItems, accountItems, variant, competitionStage, competitionRole])
 
   const prefix = `/${orgSlug}/portal`
 
