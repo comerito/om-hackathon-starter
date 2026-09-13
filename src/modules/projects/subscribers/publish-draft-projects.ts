@@ -1,7 +1,9 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
 import { resolveNotificationService } from '@open-mercato/core/modules/notifications/lib/notificationService'
+import { Competition } from '../../competitions/data/entities'
 import { Team, TeamMember, TeamRole } from '../../teams/data/entities'
+import { meetsMinimumTeamSize } from '../../teams/lib/team-size'
 import { Project, ProjectStatus } from '../data/entities'
 import { partitionBySubmissionReadiness } from '../lib/submission-validation'
 
@@ -58,9 +60,35 @@ export default async function handler(
 
   const teamIds = [...new Set(draftProjects.map((project) => project.teamId))]
   const teamNamesById = new Map<string, string>()
+  const memberCountsByTeam = new Map<string, number>()
   if (teamIds.length > 0) {
     const teams = await em.find(Team, { id: { $in: teamIds } } as FilterQuery<Team>)
     for (const team of teams) teamNamesById.set(team.id, team.name)
+
+    const members = await em.find(TeamMember, {
+      teamId: { $in: teamIds },
+      deletedAt: null,
+      tenantId: payload.tenantId,
+    } as FilterQuery<TeamMember>)
+    for (const member of members) {
+      memberCountsByTeam.set(member.teamId, (memberCountsByTeam.get(member.teamId) ?? 0) + 1)
+    }
+  }
+
+  // The competition's minimum team size is a submission requirement too, so an
+  // undersized team must not be auto-published either — the manual submit route
+  // rejects it, and the two paths have to agree.
+  const competition = await em.findOne(Competition, {
+    id: payload.competitionId,
+    tenantId: payload.tenantId,
+  } as FilterQuery<Competition>)
+
+  const teamSizeReasonByTeam = new Map<string, string>()
+  if (competition) {
+    for (const teamId of teamIds) {
+      const decision = meetsMinimumTeamSize(competition, { memberCount: memberCountsByTeam.get(teamId) ?? 0 })
+      if (!decision.allowed) teamSizeReasonByTeam.set(teamId, decision.reason)
+    }
   }
 
   // Decide, per draft, whether it satisfies the same requirements the team owner
@@ -71,14 +99,25 @@ export default async function handler(
       .filter((name): name is string => typeof name === 'string'),
   )
 
-  const publishable = partition.ready
-  const skipped: SkippedProject[] = partition.incomplete.map(({ project, reasons }) => ({
+  const publishable: Project[] = []
+  const skipped: SkippedProject[] = []
+  const skip = (project: Project, reasons: string[]) => skipped.push({
     projectId: project.id,
     teamId: project.teamId,
     teamName: teamNamesById.get(project.teamId) ?? null,
     trackId: project.trackId,
     reasons,
-  }))
+  })
+
+  for (const project of partition.ready) {
+    const teamSizeReason = teamSizeReasonByTeam.get(project.teamId)
+    if (teamSizeReason) skip(project, [teamSizeReason])
+    else publishable.push(project)
+  }
+  for (const { project, reasons } of partition.incomplete) {
+    const teamSizeReason = teamSizeReasonByTeam.get(project.teamId)
+    skip(project, teamSizeReason ? [...reasons, teamSizeReason] : reasons)
+  }
 
   // Team owners to notify about a draft that did NOT make it in. Read here, for
   // the same reason as above — the notification itself is sent after the flush.
