@@ -108,7 +108,7 @@ export default function ParticipantsListPage() {
     queryFn: async () => {
       if (userIds.length === 0) return new Map<string, { name: string | null; email: string }>()
       const { ok, result } = await apiCall<{ items: Array<{ id: string; displayName: string; email: string }> }>(
-        `/api/customer_accounts/admin/users?pageSize=100&ids=${userIds.join(',')}`,
+        `/api/competitions/admin/customer-users?ids=${userIds.join(',')}`,
       )
       const map = new Map<string, { name: string | null; email: string }>()
       if (ok && result?.items) {

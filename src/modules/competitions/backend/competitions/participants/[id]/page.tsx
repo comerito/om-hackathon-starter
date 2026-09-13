@@ -54,8 +54,8 @@ export default function ParticipantDetailPage({ params }: { params?: { id?: stri
     queryKey: ['customer-user-detail', userId],
     queryFn: async () => {
       if (!userId) return null
-      const { ok, result } = await apiCall<{ items: Array<{ id: string; display_name: string; email: string }> }>(
-        `/api/customer_accounts/admin/users?ids=${userId}&pageSize=1`,
+      const { ok, result } = await apiCall<{ items: Array<{ id: string; displayName: string; email: string }> }>(
+        `/api/competitions/admin/customer-users?ids=${userId}`,
       )
       return ok ? result?.items?.[0] ?? null : null
     },
@@ -114,7 +114,7 @@ export default function ParticipantDetailPage({ params }: { params?: { id?: stri
     return <Page><PageBody><p className="text-sm text-portal-danger">Participation not found</p></PageBody></Page>
   }
 
-  const displayName = userData?.display_name || userData?.email || participationData.customer_user_id.slice(0, 12)
+  const displayName = userData?.displayName || userData?.email || participationData.customer_user_id.slice(0, 12)
 
   return (
     <Page>
