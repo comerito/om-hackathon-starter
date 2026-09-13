@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
-import { hashForLookup } from '@open-mercato/shared/lib/encryption/aes'
+import { lookupHashCandidates } from '@open-mercato/shared/lib/encryption/aes'
+import { findOneWithDecryption } from '@open-mercato/shared/lib/encryption/find'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { CustomerInvitationService } from '@open-mercato/core/modules/customer_accounts/services/customerInvitationService'
@@ -10,17 +11,18 @@ import { CustomerRole, CustomerUser, CustomerUserInvitation } from '@open-mercat
 import { Competition, CompetitionInvitation } from '../../../data/entities'
 import { bulkInviteSchema } from '../../../data/validators'
 import { sendInvitationEmail } from '../../../lib/sendInvitationEmail'
+import {
+  applyEmailOutcomes,
+  summarizeInviteResults,
+  INVITE_SKIP_REASONS,
+  type EmailOutcome,
+  type InviteResult,
+} from '../../../lib/inviteOutcome'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawFirst } from '@/lib/db'
 
 export const metadata = {
   POST: { requireAuth: true, requireFeatures: ['competitions.participants.manage'] },
-}
-
-type InviteResult = {
-  email: string
-  status: 'sent' | 'skipped' | 'error'
-  reason?: string
 }
 
 export async function POST(req: Request) {
@@ -85,27 +87,53 @@ export async function POST(req: Request) {
     for (const invitee of parsed.invitees) {
       const emailLower = invitee.email.toLowerCase().trim()
 
-      // Check if user already exists
-      const emailHash = hashForLookup(emailLower)
-      const existingUser = await em.findOne(CustomerUser, {
-        emailHash,
-        tenantId,
-        deletedAt: null,
-      } as FilterQuery<typeof CustomerUser.prototype>)
+      // Match BOTH lookup-hash formats. `hashForLookup` returns the keyed `v2:` digest once a
+      // pepper/encryption key is configured, but rows written before that carry the legacy
+      // unkeyed digest — a single-format `=` comparison silently misses them, which is exactly
+      // how an existing portal user slipped past this guard (issue #93). Core's own
+      // `CustomerUserService.findByEmail` uses the same `$in` candidate set.
+      const emailHashCandidates = lookupHashCandidates(emailLower)
+      // Belt and braces: `email` is an encrypted column with `email_hash` as its lookup hash,
+      // so plaintext only matches on tenants that have not been seeded with encryption yet.
+      // It never produces a false positive — an encrypted value simply will not compare equal.
+      const emailMatch = { $or: [{ emailHash: { $in: emailHashCandidates } }, { email: emailLower }] }
+
+      // Check if user already exists. An existing CustomerUser must NOT be invited: the
+      // accept-invite flow CREATES an account, so the invitation would be un-acceptable.
+      // The operator attaches the existing account via Add Participant instead.
+      const existingUser = await findOneWithDecryption(
+        em,
+        CustomerUser,
+        { ...emailMatch, tenantId, deletedAt: null } as FilterQuery<typeof CustomerUser.prototype>,
+        undefined,
+        { tenantId, organizationId },
+      )
       if (existingUser) {
-        results.push({ email: emailLower, status: 'skipped', reason: 'User already exists' })
+        results.push({
+          email: emailLower,
+          status: 'skipped',
+          invitationCreated: false,
+          reasonCode: 'user_already_exists',
+          reason: INVITE_SKIP_REASONS.user_already_exists,
+        })
         continue
       }
 
       // Check for pending invitation
       const existingInvitation = await em.findOne(CustomerUserInvitation, {
-        emailHash,
+        ...emailMatch,
         tenantId,
         acceptedAt: null,
         cancelledAt: null,
       } as FilterQuery<typeof CustomerUserInvitation.prototype>)
       if (existingInvitation && existingInvitation.expiresAt.getTime() > Date.now()) {
-        results.push({ email: emailLower, status: 'skipped', reason: 'Invitation already pending' })
+        results.push({
+          email: emailLower,
+          status: 'skipped',
+          invitationCreated: false,
+          reasonCode: 'invitation_already_pending',
+          reason: INVITE_SKIP_REASONS.invitation_already_pending,
+        })
         continue
       }
 
@@ -143,19 +171,27 @@ export async function POST(req: Request) {
           acceptUrl,
         })
 
-        results.push({ email: emailLower, status: 'sent' })
+        results.push({ email: emailLower, status: 'sent', invitationCreated: true })
       } catch (err) {
-        results.push({ email: emailLower, status: 'error', reason: err instanceof Error ? err.message : 'Failed to create invitation' })
+        results.push({
+          email: emailLower,
+          status: 'error',
+          invitationCreated: false,
+          reason: err instanceof Error ? err.message : 'Failed to create invitation',
+        })
       }
     }
 
-    // Flush all competition invitation records
+    // Flush (and therefore COMMIT) every invitation BEFORE any email is attempted.
+    // From here on, email delivery is a separate outcome: it can fail without
+    // invalidating the invitations that already exist in the database.
     await em.flush()
 
     // Send emails with concurrency limit (4 at a time, with 1s delay between batches)
     // Resend allows max 5 requests/second
     const CONCURRENCY = 4
     const BATCH_DELAY_MS = 1000
+    const emailOutcomes: EmailOutcome[] = []
     for (let i = 0; i < emailsToSend.length; i += CONCURRENCY) {
       if (i > 0) {
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS))
@@ -164,29 +200,30 @@ export async function POST(req: Request) {
       const emailResults = await Promise.allSettled(
         batch.map(e => sendInvitationEmail(e)),
       )
-      // Mark failures
       emailResults.forEach((result, idx) => {
-        if (result.status === 'rejected') {
-          const email = batch[idx].to
-          const existingResult = results.find(r => r.email === email)
-          if (existingResult) {
-            existingResult.status = 'error'
-            existingResult.reason = `Email send failed: ${result.reason}`
-          }
-        }
+        emailOutcomes.push(
+          result.status === 'rejected'
+            ? { email: batch[idx].to, ok: false, error: result.reason }
+            : { email: batch[idx].to, ok: true },
+        )
       })
     }
 
-    const sent = results.filter(r => r.status === 'sent').length
-    const skipped = results.filter(r => r.status === 'skipped').length
-    const errors = results.filter(r => r.status === 'error')
+    // A rejected email downgrades the row to `created` (invited, not notified) — never `error`.
+    const finalResults = applyEmailOutcomes(results, emailOutcomes)
+    const summary = summarizeInviteResults(finalResults)
 
     return NextResponse.json({
       total: parsed.invitees.length,
-      sent,
-      skipped,
-      errors: errors.map(e => ({ email: e.email, reason: e.reason })),
-      results,
+      sent: summary.sent,
+      created: summary.created,
+      skipped: summary.skipped,
+      failed: summary.failed,
+      invitationsCreated: summary.invitationsCreated,
+      existingUsers: summary.existingUsers,
+      errors: summary.errors,
+      emailFailures: summary.emailFailures,
+      results: finalResults,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -200,5 +237,10 @@ export async function POST(req: Request) {
 export const openApi: OpenApiRouteDoc = {
   tag: 'Competitions',
   summary: 'Bulk invite participants',
-  methods: { POST: { summary: 'Create invitations and send emails for multiple participants from CSV' } },
+  methods: {
+    POST: {
+      summary:
+        'Create invitations and send emails for multiple participants. Creation and email delivery are reported separately: per-row status is sent | created (invited, email failed) | skipped | error (nothing created). An address that already has a CustomerUser is skipped with reasonCode "user_already_exists" and listed in existingUsers — attach that account with Add Participant instead, an invitation would be un-acceptable.',
+    },
+  },
 }

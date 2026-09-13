@@ -6,8 +6,13 @@ import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
+import {
+  INVITE_SKIP_REASONS,
+  INVITE_SKIP_REASON_KEYS,
+  type InviteResult,
+} from '../lib/inviteOutcome'
+
 type ParsedRow = { email: string; display_name: string; role: string }
-type InviteResult = { email: string; status: 'sent' | 'skipped' | 'error'; reason?: string }
 
 const VALID_ROLES = ['participant', 'mentor', 'judge']
 
@@ -65,7 +70,7 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
 
   // Results
   const [results, setResults] = React.useState<InviteResult[]>([])
-  const [summary, setSummary] = React.useState<{ total: number; sent: number; skipped: number; errors: number } | null>(null)
+  const [summary, setSummary] = React.useState<{ total: number; sent: number; created: number; skipped: number; errors: number; existingUsers: string[] } | null>(null)
 
   // Load competitions
   React.useEffect(() => {
@@ -118,8 +123,11 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
     const orgSlug = window.location.pathname.split('/')[1] || 'default'
 
     const { ok, result } = await apiCall<{
-      total: number; sent: number; skipped: number
+      total: number; sent: number; created: number; skipped: number; failed: number
+      invitationsCreated: number
+      existingUsers?: string[]
       errors: Array<{ email: string; reason: string }>
+      emailFailures: Array<{ email: string; reason: string }>
       results: InviteResult[]
     }>('/api/competitions/admin/bulk-invite', {
       method: 'POST',
@@ -133,14 +141,28 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
 
     if (ok && result) {
       setResults(result.results ?? [])
-      setSummary({ total: result.total, sent: result.sent, skipped: result.skipped, errors: result.errors?.length ?? 0 })
+      setSummary({
+        total: result.total,
+        sent: result.sent,
+        created: result.created ?? 0,
+        skipped: result.skipped,
+        errors: result.errors?.length ?? 0,
+        existingUsers: result.existingUsers ?? [],
+      })
     } else {
-      setSummary({ total: parsedRows.length, sent: 0, skipped: 0, errors: parsedRows.length })
+      setSummary({ total: parsedRows.length, sent: 0, created: 0, skipped: 0, errors: parsedRows.length, existingUsers: [] })
     }
     setStep('results')
   }
 
   const validRows = parsedRows.filter((_, i) => !validateRow(parsedRows[i], i))
+
+  // Prefer the translated text for a known skip cause over the server's English `reason`.
+  function reasonText(r: InviteResult): string {
+    if (r.emailError) return r.emailError
+    if (r.reasonCode) return t(INVITE_SKIP_REASON_KEYS[r.reasonCode], INVITE_SKIP_REASONS[r.reasonCode])
+    return r.reason ?? '—'
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -252,20 +274,55 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
 
         {step === 'results' && summary && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-lg bg-portal-success/10 p-3 text-center">
                 <p className="text-2xl font-bold text-portal-success">{summary.sent}</p>
-                <p className="text-xs text-portal-success/70">Sent</p>
+                <p className="text-xs text-portal-success/70">{t('competitions.bulkInvite.summary.sent', 'Sent')}</p>
+              </div>
+              <div className="rounded-lg bg-amber-100 p-3 text-center">
+                <p className="text-2xl font-bold text-amber-700">{summary.created}</p>
+                <p className="text-xs text-amber-700/70">{t('competitions.bulkInvite.summary.created', 'Invited, email failed')}</p>
               </div>
               <div className="rounded-lg bg-amber-50 p-3 text-center">
                 <p className="text-2xl font-bold text-amber-600">{summary.skipped}</p>
-                <p className="text-xs text-amber-600/70">Skipped</p>
+                <p className="text-xs text-amber-600/70">{t('competitions.bulkInvite.summary.skipped', 'Skipped')}</p>
               </div>
               <div className="rounded-lg bg-portal-danger/10 p-3 text-center">
                 <p className="text-2xl font-bold text-portal-danger">{summary.errors}</p>
-                <p className="text-xs text-portal-danger/70">Errors</p>
+                <p className="text-xs text-portal-danger/70">{t('competitions.bulkInvite.summary.errors', 'Not created')}</p>
               </div>
             </div>
+
+            {summary.created > 0 && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                {t(
+                  'competitions.bulkInvite.summary.createdHint',
+                  '{count} invitation(s) were created and saved, but the notification email could not be delivered. Do not re-invite these people — open the Invitations tab to resend once email delivery is configured.',
+                  { count: summary.created },
+                )}
+              </p>
+            )}
+
+            {summary.existingUsers.length > 0 && (
+              /* These addresses already sign in to the portal. An invitation would be a dead
+                 link, so nothing was created — they are attached with Add Participant. */
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1">
+                <p className="text-xs text-amber-700">
+                  {t(
+                    'competitions.bulkInvite.summary.existingUsersHint',
+                    '{count} address(es) already have a portal account, so no invitation was created for them. Use Add Participant to attach those accounts to this competition.',
+                    { count: summary.existingUsers.length },
+                  )}
+                </p>
+                <p className="text-xs text-amber-700/80 break-words">{summary.existingUsers.join(', ')}</p>
+                <a
+                  href="/backend/competitions/participants/create"
+                  className="inline-block text-xs font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
+                >
+                  {t('competitions.bulkInvite.summary.existingUsersAction', 'Go to Add Participant')}
+                </a>
+              </div>
+            )}
 
             {results.filter(r => r.status !== 'sent').length > 0 && (
               <div className="max-h-48 overflow-y-auto rounded-md border">
@@ -283,10 +340,18 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
                         <td className="p-2">{r.email}</td>
                         <td className="p-2">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            r.status === 'skipped' ? 'bg-amber-50 text-amber-700' : 'bg-portal-danger/10 text-portal-danger'
-                          }`}>{r.status}</span>
+                            r.status === 'created'
+                              ? 'bg-amber-100 text-amber-800'
+                              : r.status === 'skipped'
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-portal-danger/10 text-portal-danger'
+                          }`}>
+                            {r.status === 'created'
+                              ? t('competitions.bulkInvite.status.created', 'invited, email failed')
+                              : r.status}
+                          </span>
                         </td>
-                        <td className="p-2 text-xs text-muted-foreground">{r.reason ?? '—'}</td>
+                        <td className="p-2 text-xs text-muted-foreground">{reasonText(r)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -295,8 +360,22 @@ export function BulkInviteDialog({ onClose }: { onClose: () => void }) {
             )}
 
             <div className="flex justify-end">
-              <Button onClick={() => { onClose(); flash(`${summary.sent} invitations sent`, 'success') }}>
-                Done
+              <Button onClick={() => {
+                onClose()
+                if (summary.created > 0) {
+                  flash(
+                    t(
+                      'competitions.bulkInvite.flash.partial',
+                      '{invited} invitation(s) created, {failed} email(s) could not be sent',
+                      { invited: summary.sent + summary.created, failed: summary.created },
+                    ),
+                    'warning',
+                  )
+                } else {
+                  flash(t('competitions.bulkInvite.flash.sent', '{count} invitations sent', { count: summary.sent }), 'success')
+                }
+              }}>
+                {t('competitions.bulkInvite.done', 'Done')}
               </Button>
             </div>
           </div>

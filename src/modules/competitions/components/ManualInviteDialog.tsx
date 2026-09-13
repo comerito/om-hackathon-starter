@@ -6,7 +6,11 @@ import { fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
-type InviteResult = { email: string; status: 'sent' | 'skipped' | 'error'; reason?: string }
+import {
+  INVITE_SKIP_REASONS,
+  INVITE_SKIP_REASON_KEYS,
+  type InviteResult,
+} from '../lib/inviteOutcome'
 
 const VALID_ROLES = ['participant', 'mentor', 'judge'] as const
 
@@ -56,8 +60,10 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
     const orgSlug = window.location.pathname.split('/')[1] || 'default'
 
     const { ok, result: apiResult } = await apiCall<{
-      total: number; sent: number; skipped: number
+      total: number; sent: number; created: number; skipped: number; failed: number
+      invitationsCreated: number
       errors: Array<{ email: string; reason: string }>
+      emailFailures: Array<{ email: string; reason: string }>
       results: InviteResult[]
     }>('/api/competitions/admin/bulk-invite', {
       method: 'POST',
@@ -78,7 +84,7 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
     if (ok && apiResult?.results?.[0]) {
       setResult(apiResult.results[0])
     } else {
-      setResult({ email: email.trim(), status: 'error', reason: 'Request failed' })
+      setResult({ email: email.trim(), status: 'error', invitationCreated: false, reason: 'Request failed' })
     }
   }
 
@@ -176,24 +182,92 @@ export function ManualInviteDialog({ onClose }: { onClose: () => void }) {
           <div className="space-y-4">
             {result.status === 'sent' ? (
               <div className="rounded-lg bg-portal-success/10 p-4 text-center">
-                <p className="text-sm font-medium text-portal-success">Invitation sent to {result.email}</p>
+                <p className="text-sm font-medium text-portal-success">
+                  {t('competitions.manualInvite.result.sent', 'Invitation sent to {email}', { email: result.email })}
+                </p>
+              </div>
+            ) : result.status === 'created' ? (
+              /* Partial success: the invitation row IS committed, only the email failed. */
+              <div className="rounded-lg bg-amber-50 p-4 space-y-2">
+                <p className="text-sm font-medium text-amber-700">
+                  {t('competitions.manualInvite.result.createdTitle', '{email} is invited — but the email could not be sent', { email: result.email })}
+                </p>
+                <p className="text-xs text-amber-700/90">
+                  {t(
+                    'competitions.manualInvite.result.createdHint',
+                    'The invitation was created and saved. Do not invite this person again — open the Invitations tab to resend the email or copy the link once email delivery is configured.',
+                  )}
+                </p>
+                {result.emailError && (
+                  <p className="text-xs text-amber-700/70">
+                    {t('competitions.manualInvite.result.emailErrorLabel', 'Email error: {reason}', { reason: result.emailError })}
+                  </p>
+                )}
+              </div>
+            ) : result.status === 'skipped' && result.reasonCode === 'user_already_exists' ? (
+              /* Not a failure: the address already has a portal account, so an invitation
+                 would be a dead link (accept-invite creates an account). Point the operator
+                 at Add Participant, which attaches the existing account to a competition. */
+              <div className="rounded-lg bg-amber-50 p-4 space-y-2">
+                <p className="text-sm font-medium text-amber-700">
+                  {t('competitions.manualInvite.result.existingUserTitle', '{email} already has a portal account', { email: result.email })}
+                </p>
+                <p className="text-xs text-amber-700/90">
+                  {t(
+                    'competitions.manualInvite.result.existingUserHint',
+                    'No invitation was created — an invite link would not work for someone who can already sign in. Use Add Participant to attach the existing account to this competition.',
+                  )}
+                </p>
+                <a
+                  href="/backend/competitions/participants/create"
+                  className="inline-block text-xs font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
+                >
+                  {t('competitions.manualInvite.result.existingUserAction', 'Go to Add Participant')}
+                </a>
               </div>
             ) : result.status === 'skipped' ? (
               <div className="rounded-lg bg-amber-50 p-4 text-center">
-                <p className="text-sm font-medium text-amber-600">Skipped: {result.reason}</p>
+                <p className="text-sm font-medium text-amber-600">
+                  {t('competitions.manualInvite.result.skipped', 'Skipped: {reason}', {
+                    reason: result.reasonCode
+                      ? t(INVITE_SKIP_REASON_KEYS[result.reasonCode], INVITE_SKIP_REASONS[result.reasonCode])
+                      : result.reason ?? '',
+                  })}
+                </p>
               </div>
             ) : (
-              <div className="rounded-lg bg-portal-danger/10 p-4 text-center">
-                <p className="text-sm font-medium text-portal-danger">Error: {result.reason}</p>
+              <div className="rounded-lg bg-portal-danger/10 p-4 space-y-1 text-center">
+                <p className="text-sm font-medium text-portal-danger">
+                  {t('competitions.manualInvite.result.error', 'Error: {reason}', { reason: result.reason ?? '' })}
+                </p>
+                <p className="text-xs text-portal-danger/80">
+                  {t('competitions.manualInvite.result.errorHint', 'No invitation was created. You can safely try again.')}
+                </p>
               </div>
             )}
 
             <div className="flex justify-end">
               <Button onClick={() => {
                 onClose()
-                if (result.status === 'sent') flash(`Invitation sent to ${result.email}`, 'success')
+                if (result.status === 'sent') {
+                  flash(t('competitions.manualInvite.flash.sent', 'Invitation sent to {email}', { email: result.email }), 'success')
+                } else if (result.status === 'created') {
+                  flash(
+                    t('competitions.manualInvite.flash.created', 'Invitation created for {email}, but the email could not be sent', { email: result.email }),
+                    'warning',
+                  )
+                } else if (result.status === 'skipped' && result.reasonCode === 'user_already_exists') {
+                  flash(
+                    t(
+                      'competitions.manualInvite.flash.existingUser',
+                      '{email} already has an account — add them with Add Participant instead',
+                      { email: result.email },
+                    ),
+                    'warning',
+                  )
+                }
               }}>
-                Done
+                {t('competitions.manualInvite.done', 'Done')}
               </Button>
             </div>
           </div>
