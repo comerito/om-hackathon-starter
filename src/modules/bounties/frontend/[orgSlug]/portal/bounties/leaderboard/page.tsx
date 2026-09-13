@@ -8,6 +8,8 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { PortalCompetitionLayout } from '../../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../../competitions/components/CompetitionContext'
+import { usePortalBountyTrack } from '../../../../../lib/usePortalBountyTrack'
+import { BountyUnavailableNotice } from '../../../../../components/BountyUnavailableNotice'
 import { PortalPageTitle, SectionLabel, PortalBadge, CompetitionCountdown } from '@/components/portal'
 import { Trophy, Users, GitPullRequest, ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -60,6 +62,8 @@ function LeaderboardContent() {
   const { selectedId } = useCompetitionContext()
   const [expandedTeam, setExpandedTeam] = React.useState<string | null>(null)
 
+  const { hasBountyTrack, isLoading: bountyTrackLoading } = usePortalBountyTrack(selectedId)
+
   const { data, isLoading } = useQuery<LeaderboardData>({
     queryKey: ['portal-bounty-leaderboard', selectedId],
     queryFn: async () => {
@@ -70,6 +74,7 @@ function LeaderboardContent() {
       const { ok, result } = await apiCall<LeaderboardData>(`/api/bounties/leaderboard?${params}`)
       return ok && result ? result : { teams: [], lastUpdated: new Date().toISOString() }
     },
+    enabled: hasBountyTrack,
     refetchInterval: 10000,
   })
 
@@ -77,7 +82,7 @@ function LeaderboardContent() {
   const totalPoints = data?.teams?.reduce((s, t) => s + t.totalPoints, 0) ?? 0
   const totalPRs = data?.teams?.reduce((s, t) => s + t.members.reduce((ms, m) => ms + m.prCount, 0), 0) ?? 0
 
-  if (isLoading) {
+  if (bountyTrackLoading || (hasBountyTrack && isLoading)) {
     return (
       <div className="space-y-4">
         <div className="h-16 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
@@ -87,6 +92,10 @@ function LeaderboardContent() {
         {[1, 2, 3].map(i => <div key={i} className="h-20 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />)}
       </div>
     )
+  }
+
+  if (!hasBountyTrack) {
+    return <BountyUnavailableNotice title={t('bounties.portal.leaderboard.title', 'Leaderboard')} />
   }
 
   return (

@@ -42,6 +42,14 @@ const STORAGE_KEY = 'hackon:selected-competition'
 const STAGE_STORAGE_KEY = 'hackon:selected-competition-stage'
 const ROLE_STORAGE_KEY = 'hackon:selected-competition-role'
 
+/** Notify portal chrome (sidebar, top bar) that the active competition changed. */
+function announceCompetition(competition: CompetitionSummary) {
+  window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: competition.role } }))
+  window.dispatchEvent(new CustomEvent('competition-changed', {
+    detail: { id: competition.id, stage: competition.stage, role: competition.role },
+  }))
+}
+
 export function CompetitionProvider({ children }: { children: React.ReactNode }) {
   const [competitions, setCompetitions] = React.useState<CompetitionSummary[]>([])
   const [selectedId, setSelectedIdState] = React.useState<string | null>(null)
@@ -65,13 +73,13 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
             setSelectedIdState(valid.id)
             localStorage.setItem(STAGE_STORAGE_KEY, valid.stage)
             localStorage.setItem(ROLE_STORAGE_KEY, valid.role)
-            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: valid.role } }))
+            announceCompetition(valid)
           } else if (result.items.length > 0) {
             setSelectedIdState(result.items[0].id)
             localStorage.setItem(STORAGE_KEY, result.items[0].id)
             localStorage.setItem(STAGE_STORAGE_KEY, result.items[0].stage)
             localStorage.setItem(ROLE_STORAGE_KEY, result.items[0].role)
-            window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: result.items[0].role } }))
+            announceCompetition(result.items[0])
           }
         }
       } catch (err) {
@@ -91,7 +99,7 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
     if (comp) {
       localStorage.setItem(STAGE_STORAGE_KEY, comp.stage)
       localStorage.setItem(ROLE_STORAGE_KEY, comp.role)
-      window.dispatchEvent(new CustomEvent('competition-role-changed', { detail: { role: comp.role } }))
+      announceCompetition(comp)
     }
   }, [competitions])
 

@@ -8,6 +8,7 @@ import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
+import { usePortalBountyTrack } from '@/modules/bounties/lib/usePortalBountyTrack'
 import { cn } from '@open-mercato/shared/lib/utils'
 
 type PortalSidebarProps = {
@@ -84,18 +85,31 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
   const pathname = usePathname()
   const { orgSlug } = usePortalContext()
 
-  // Get selected competition ID, stage, and role from localStorage (same keys as CompetitionContext)
+  // Get selected competition ID, stage, and role from localStorage (same keys as
+  // CompetitionContext), re-reading whenever the active competition changes.
   const [selectedCompetitionId, setSelectedCompetitionId] = React.useState<string | null>(null)
   const [competitionStage, setCompetitionStage] = React.useState<string | null>(null)
   const [competitionRole, setCompetitionRole] = React.useState<string | null>(null)
   React.useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition') : null
-    const stage = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-stage') : null
-    const role = typeof window !== 'undefined' ? localStorage.getItem('hackon:selected-competition-role') : null
-    setSelectedCompetitionId(stored)
-    setCompetitionStage(stage)
-    setCompetitionRole(role)
+    if (typeof window === 'undefined') return
+    const sync = () => {
+      setSelectedCompetitionId(localStorage.getItem('hackon:selected-competition'))
+      setCompetitionStage(localStorage.getItem('hackon:selected-competition-stage'))
+      setCompetitionRole(localStorage.getItem('hackon:selected-competition-role'))
+    }
+    sync()
+    window.addEventListener('competition-changed', sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener('competition-changed', sync)
+      window.removeEventListener('storage', sync)
+    }
   }, [])
+
+  // Bounty hunting nav is only available when the selected competition has a
+  // bounty track assigned in backend -> Bounty Settings.
+  const { hasBountyTrack, isLoading: bountyTrackLoading } = usePortalBountyTrack(selectedCompetitionId)
+  const showBountyItems = !bountyTrackLoading && hasBountyTrack
   const { items: mainItems } = usePortalInjectedMenuItems('menu:portal:sidebar:main')
   const { items: accountItems } = usePortalInjectedMenuItems('menu:portal:sidebar:account')
 
@@ -104,6 +118,11 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
 
     if (variant === 'minimal') {
       items = items.filter((item) => MINIMAL_IDS.has(item.id))
+    }
+
+    // Hide bounty hunting items when this competition has no bounty track
+    if (!showBountyItems) {
+      items = items.filter((item) => !item.id.startsWith('bounties.'))
     }
 
     // Hide nav items that require a minimum competition stage
@@ -124,7 +143,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     })
 
     return items
-  }, [mainItems, accountItems, variant, competitionStage])
+  }, [mainItems, accountItems, variant, competitionStage, competitionRole, showBountyItems])
 
   const prefix = `/${orgSlug}/portal`
 
