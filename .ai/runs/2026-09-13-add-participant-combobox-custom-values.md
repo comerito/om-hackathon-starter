@@ -90,9 +90,12 @@ config; see PR #194's validation notes.)
 
 ### Phase 1: fix + test
 
-- [ ] 1.1 Extract `fields.ts`, set `allowCustomValues: false` on both FK comboboxes
-- [ ] 1.2 Add a unit test pinning `allowCustomValues: false`
+- [x] 1.1 Extract `fields.ts`, set `allowCustomValues: false` on both FK comboboxes — ba0534b
+- [x] 1.2 Add a unit test pinning `allowCustomValues: false` — ba0534b
 
 ### Phase 2: validation
 
-- [ ] 2.1 Run the full validation gate
+- [x] 2.1 Run the full validation gate — `yarn generate` ✅, `yarn typecheck` ✅, `yarn test`
+  (556/556 passed) ✅, `yarn build` ✅. `yarn lint` still cannot run (pre-existing, see PR #194).
+
+Status: complete
