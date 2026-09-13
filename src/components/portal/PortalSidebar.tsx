@@ -8,6 +8,7 @@ import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Milestone } from 'lucide-react'
 import { resolveIcon } from './icons'
+import { usePortalBountyTrack } from '@/modules/bounties/lib/usePortalBountyTrack'
 import { cn } from '@open-mercato/shared/lib/utils'
 import { filterNavItemsByStage } from './portal-selection'
 import { usePortalSelection } from './usePortalSelection'
@@ -80,6 +81,11 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     stage: competitionStage,
     role: competitionRole,
   } = usePortalSelection()
+
+  // Bounty hunting nav is only available when the selected competition has a
+  // bounty track assigned in backend -> Bounty Settings.
+  const { hasBountyTrack, isLoading: bountyTrackLoading } = usePortalBountyTrack(selectedCompetitionId)
+  const showBountyItems = !bountyTrackLoading && hasBountyTrack
   const { items: mainItems } = usePortalInjectedMenuItems('menu:portal:sidebar:main')
   const { items: accountItems } = usePortalInjectedMenuItems('menu:portal:sidebar:account')
 
@@ -88,6 +94,11 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
 
     if (variant === 'minimal') {
       items = items.filter((item) => MINIMAL_IDS.has(item.id))
+    }
+
+    // Hide bounty hunting items when this competition has no bounty track
+    if (!showBountyItems) {
+      items = items.filter((item) => !item.id.startsWith('bounties.'))
     }
 
     // Hide nav items that require a minimum competition stage
@@ -100,7 +111,7 @@ export function PortalSidebar({ variant = 'full', competitionName, competitionSu
     })
 
     return items
-  }, [mainItems, accountItems, variant, competitionStage, competitionRole])
+  }, [mainItems, accountItems, variant, competitionStage, competitionRole, showBountyItems])
 
   const prefix = `/${orgSlug}/portal`
 

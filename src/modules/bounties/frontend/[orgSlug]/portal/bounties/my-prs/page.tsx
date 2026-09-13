@@ -8,6 +8,8 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { PortalCompetitionLayout } from '../../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../../competitions/components/CompetitionContext'
+import { usePortalBountyTrack } from '../../../../../lib/usePortalBountyTrack'
+import { BountyUnavailableNotice } from '../../../../../components/BountyUnavailableNotice'
 import { PortalPageTitle, SectionLabel, PortalBadge, CompetitionCountdown } from '@/components/portal'
 import { GitPullRequest, Trophy, CheckCircle, ExternalLink, AlertTriangle, Plus, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
@@ -33,11 +35,6 @@ type MyPRsData = {
 
 type MembershipData = {
   team: { track_ids: string[] } | null
-}
-
-type ConfigData = {
-  ok: boolean
-  mappings: Record<string, string>
 }
 
 const statusBadgeVariant: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'muted'> = {
@@ -90,6 +87,9 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
   const queryClient = useQueryClient()
   const { selectedId } = useCompetitionContext()
 
+  // Bounty hunting only runs for competitions with a bounty track assigned
+  const { trackId: bountyTrackId, hasBountyTrack, isLoading: bountyTrackLoading } = usePortalBountyTrack(selectedId)
+
   // Check if the user's team is on the bounty track via existing APIs
   const { data: membership, isLoading: membershipLoading } = useQuery<MembershipData>({
     queryKey: ['portal-team-membership', selectedId],
@@ -97,19 +97,10 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
       const { ok, result } = await apiCall<MembershipData>(`/api/teams/portal/my-membership?competition_id=${selectedId}`)
       return ok && result ? result : { team: null }
     },
-    enabled: !!selectedId,
-  })
-
-  const { data: bountyConfig } = useQuery<ConfigData>({
-    queryKey: ['portal-bounty-config'],
-    queryFn: async () => {
-      const { ok, result } = await apiCall<ConfigData>('/api/bounties/portal/config')
-      return ok && result ? result : { ok: false, mappings: {} }
-    },
+    enabled: !!selectedId && hasBountyTrack,
   })
 
   // Determine if the user is on the bounty track for this competition
-  const bountyTrackId = selectedId ? bountyConfig?.mappings?.[selectedId] ?? null : null
   const teamTrackIds = membership?.team?.track_ids ?? []
   const isBountyParticipant = !!bountyTrackId && teamTrackIds.includes(bountyTrackId)
 
@@ -124,7 +115,7 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
     enabled: !!selectedId && isBountyParticipant,
   })
 
-  if (membershipLoading || isLoading) {
+  if (bountyTrackLoading || (hasBountyTrack && (membershipLoading || isLoading))) {
     return (
       <div className="space-y-4">
         <div className="h-16 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />
@@ -134,6 +125,10 @@ function MyPRsContent({ orgSlug }: { orgSlug: string }) {
         {[1, 2].map(i => <div key={i} className="h-24 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 animate-pulse" />)}
       </div>
     )
+  }
+
+  if (!hasBountyTrack) {
+    return <BountyUnavailableNotice title={t('bounties.portal.myPrs.title', 'My Pull Requests')} />
   }
 
   if (!isBountyParticipant) {

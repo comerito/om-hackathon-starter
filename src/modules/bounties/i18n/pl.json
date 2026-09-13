@@ -33,6 +33,10 @@
   "bounties.portal.leaderboard.emptyDesc": "Tablica wyników wypełni się, gdy sędziowie zatwierdzą pull requesty bounty hunting.",
   "bounties.portal.leaderboard.lastUpdated": "Ostatnia aktualizacja",
 
+  "bounties.portal.unavailable.label": "BOUNTY HUNTING",
+  "bounties.portal.unavailable.title": "Bounty Hunting jest niedostepne",
+  "bounties.portal.unavailable.desc": "Ten hackathon nie ma skonfigurowanej sciezki bounty hunting. Skontaktuj sie z organizatorem, jesli spodziewasz sie tutaj tej sekcji.",
+
   "bounties.leaderboard.heading": "Tablica Bounty Hunting",
   "bounties.leaderboard.lastUpdated": "Ostatnia aktualizacja",
   "bounties.leaderboard.empty": "Brak zatwierdzonych PR-ów. Tablica wyników wypełni się, gdy sędziowie zatwierdzą zgłoszenia.",

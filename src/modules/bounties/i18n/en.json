@@ -33,6 +33,10 @@
   "bounties.portal.leaderboard.emptyDesc": "The leaderboard will populate as judges approve bounty hunting pull requests.",
   "bounties.portal.leaderboard.lastUpdated": "Last updated",
 
+  "bounties.portal.unavailable.label": "BOUNTY HUNTING",
+  "bounties.portal.unavailable.title": "Bounty Hunting is not available",
+  "bounties.portal.unavailable.desc": "This hackathon has no bounty hunting track configured. Ask an organizer if you expected to find it here.",
+
   "bounties.leaderboard.heading": "Bounty Hunting Leaderboard",
   "bounties.leaderboard.lastUpdated": "Last updated",
   "bounties.leaderboard.empty": "No approved PRs yet. The leaderboard will populate as judges approve submissions.",
