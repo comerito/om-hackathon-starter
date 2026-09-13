@@ -40,11 +40,11 @@ export default function EditAnnouncementPage({ params }: { params?: { id?: strin
   const { data, isLoading, error } = useQuery({
     queryKey: ['announcement-edit', id],
     queryFn: async () => {
-      const { ok, result } = await apiCall<{ item: Record<string, unknown> }>(
-        `/api/competitions/announcements/${id}`,
+      const { ok, result } = await apiCall<{ items: Record<string, unknown>[] }>(
+        `/api/competitions/announcements?id=${id}&pageSize=1`,
       )
-      if (!ok || !result?.item) throw new Error('Failed to load announcement')
-      const item = result.item
+      if (!ok || !result?.items?.[0]) throw new Error('Failed to load announcement')
+      const item = result.items[0]
       // Resolved here rather than in a follow-up query so the form mounts with the picker's
       // label already known, instead of flashing an empty control first.
       const competitionOptions = await loadCompetitionSeedOptions(item.competition_id)
