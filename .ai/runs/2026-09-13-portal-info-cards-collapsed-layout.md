@@ -85,14 +85,28 @@ width — before and after the fix. Expected: 0px before, >150px after.
 
 ### Phase 1: Reproduce
 
-- [ ] 1.1 Build the headless-browser harness and measure the collapse on current code
+- [x] 1.1 Build the headless-browser harness and measure the collapse on current code
 
 ### Phase 2: Fix
 
-- [ ] 2.1 Make the info-cards grid container-driven instead of viewport-driven
-- [ ] 2.2 Give the card text block `min-w-0 flex-1` and wrap long labels
+- [x] 2.1 Make the info-cards grid container-driven instead of viewport-driven — af4271b
+- [x] 2.2 Give the card text block `min-w-0 flex-1` and wrap long labels — af4271b
 
 ### Phase 3: Verify
 
-- [ ] 3.1 Re-measure with the fix and capture screenshot evidence
+- [x] 3.1 Re-measure with the fix and capture screenshot evidence
 - [ ] 3.2 Run the validation gate
+
+## Measured results
+
+Headless Chrome, 1440px viewport, CSS compiled by the project's own Tailwind v4 pipeline,
+rendering the real agenda-sidebar ancestor chain:
+
+| probe | text block width | card width | value lines |
+|---|---|---|---|
+| before | **0px** | 56px | **32** (one per character) |
+| after | 172px | 258px | 2 |
+
+Full-width layout column count: **4 before, 4 after** — no visual regression.
+Tailwind's content scanner emits the arbitrary grid class from the real `.tsx` source
+(verified against the compiled stylesheet).
