@@ -110,6 +110,62 @@ TODO: Fix that latter to have reference by the package names
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ---------------------------------------------------------------------------
+     Semantic status palette.
+
+     @open-mercato/ui 0.6.x colours every Alert, Badge, Tag, StatusBadge, Notice
+     and form error through `status-<family>-<role>` utilities (1000+ usages
+     across the packages). Tailwind v4 only emits `bg-status-success-border` &c.
+     when a matching `--color-status-*` theme token exists — the app defined none,
+     so every one of those classes compiled to NOTHING.
+
+     Symptom: flash toasts (`FlashMessages` renders `<Alert style="light">`,
+     i.e. `bg-status-<x>-border text-foreground`) had a fully TRANSPARENT
+     background and floated unreadably over the page. Verified by grepping the
+     dev server's compiled stylesheet: `status-` matched 0 times.
+
+     Role mapping follows the Figma comments in `primitives/alert.tsx`:
+       -bg     → state/{x}/lighter  (surface behind text)
+       -border → state/{x}/light    (tinted surface / hairline)
+       -icon   → state/{x}/base     (saturated: icon badges, dots, swatches)
+       -text   → state/{x}/dark     (readable on -bg; -fg/-foreground alias it)
+  --------------------------------------------------------------------------- */
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-success-icon: var(--status-success-icon);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-success-fg: var(--status-success-text);
+  --color-status-success-foreground: var(--status-success-text);
+
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-error-border: var(--status-error-border);
+  --color-status-error-icon: var(--status-error-icon);
+  --color-status-error-text: var(--status-error-text);
+  --color-status-error-fg: var(--status-error-text);
+  --color-status-error-foreground: var(--status-error-text);
+
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-warning-icon: var(--status-warning-icon);
+  --color-status-warning-text: var(--status-warning-text);
+  --color-status-warning-fg: var(--status-warning-text);
+  --color-status-warning-foreground: var(--status-warning-text);
+
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-info-icon: var(--status-info-icon);
+  --color-status-info-text: var(--status-info-text);
+
+  --color-status-neutral-bg: var(--status-neutral-bg);
+  --color-status-neutral-border: var(--status-neutral-border);
+  --color-status-neutral-icon: var(--status-neutral-icon);
+  --color-status-neutral-text: var(--status-neutral-text);
+
+  --color-status-pink-bg: var(--status-pink-bg);
+  --color-status-pink-border: var(--status-pink-border);
+  --color-status-pink-icon: var(--status-pink-icon);
+  --color-status-pink-text: var(--status-pink-text);
 }
 
 :root {
@@ -167,6 +223,32 @@ TODO: Fix that latter to have reference by the package names
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Semantic status palette — see the --color-status-* block above for the
+     role mapping. Light theme. */
+  --status-success-bg: #effaf6;
+  --status-success-border: #c2f5da;
+  --status-success-icon: #1fc16b;
+  --status-success-text: #176448;
+  --status-error-bg: #ffebec;
+  --status-error-border: #ffc0c5;
+  --status-error-icon: #fb3748;
+  --status-error-text: #af1d38;
+  --status-warning-bg: #fff1eb;
+  --status-warning-border: #ffdac2;
+  --status-warning-icon: #ff8447;
+  --status-warning-text: #9e4b11;
+  --status-info-bg: #ebf1ff;
+  --status-info-border: #c2d6ff;
+  --status-info-icon: #335cff;
+  --status-info-text: #253ea7;
+  --status-neutral-bg: #f6f8fa;
+  --status-neutral-border: #e2e4e9;
+  --status-neutral-icon: #525866;
+  --status-neutral-text: #31373d;
+  --status-pink-bg: #ffebf4;
+  --status-pink-border: #ffc0dd;
+  --status-pink-icon: #fb4ba3;
+  --status-pink-text: #a3004c;
 }
 
 .dark {
@@ -220,6 +302,33 @@ TODO: Fix that latter to have reference by the package names
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Semantic status palette — dark overrides. Surfaces darken, the saturated
+     -icon shade stays recognisable, -text flips to the pale shade so it still
+     reads on the darkened -bg. */
+  --status-success-bg: #0e2018;
+  --status-success-border: #17492f;
+  --status-success-icon: #3ee08d;
+  --status-success-text: #c2f5da;
+  --status-error-bg: #2b1417;
+  --status-error-border: #5b1d26;
+  --status-error-icon: #ff6171;
+  --status-error-text: #ffc0c5;
+  --status-warning-bg: #2a1a0f;
+  --status-warning-border: #5c3312;
+  --status-warning-icon: #ff9d6b;
+  --status-warning-text: #ffdac2;
+  --status-info-bg: #101a33;
+  --status-info-border: #1e3170;
+  --status-info-icon: #6e8bff;
+  --status-info-text: #c2d6ff;
+  --status-neutral-bg: #1b1f24;
+  --status-neutral-border: #2b3138;
+  --status-neutral-icon: #a0a8b4;
+  --status-neutral-text: #e2e4e9;
+  --status-pink-bg: #2b0f1d;
+  --status-pink-border: #5c1f3c;
+  --status-pink-icon: #ff79bd;
+  --status-pink-text: #ffc0dd;
 }
 
 @layer base {
@@ -274,6 +383,40 @@ TODO: Fix that latter to have reference by the package names
 
 .schedule-calendar .rbc-time-content {
   font-size: 0.8125rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Flash toast placement.
+
+   `FlashMessages` (@open-mercato/ui) hard-codes its host as
+   `pointer-events-none fixed left-3 right-3 top-3 z-toast`. `z-toast` is 50,
+   while the portal header is `z-30` and the backend header is `z-sticky` (10),
+   so the toast always drew ON TOP of the header instead of below it.
+
+   The host cannot be restyled from the app — it ships from node_modules and the
+   portal's single mount point is asserted by
+   `src/components/portal/__tests__/portal-flash-and-refresh.test.ts`, so the fix
+   belongs here.
+
+   `.fixed.top-3.z-toast` (0,3,0) beats Tailwind's `.top-3` (0,1,0) regardless of
+   order, and matches only this host: the other two `z-toast` users sit at
+   `bottom-6` (BulkActionsBar) and `top-4` (NotificationStack).
+
+   4.75rem clears the tallest header of either shell at every width: the backend
+   header measures 61px (py-3 around the icon-button row, not responsive) and the
+   portal header is h-12 / sm:h-14 (48 / 56px). Measured, not estimated.
+--------------------------------------------------------------------------- */
+.fixed.top-3.z-toast {
+  top: 4.75rem;
+}
+
+/* The Alert inside it is a `light`-style tint; give it a hairline and a real
+   drop shadow so it reads as a raised surface over whatever it covers. */
+.fixed.top-3.z-toast [data-slot='alert'] {
+  border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+  box-shadow:
+    0 10px 24px -6px rgb(0 0 0 / 0.22),
+    0 3px 8px -4px rgb(0 0 0 / 0.14);
 }
 
 /* Flash message animations */
