@@ -78,6 +78,7 @@ export async function GET(request: Request) {
     profile_complete: p.profileComplete,
     looking_for_team: p.lookingForTeam,
     discord_nick: profileMap.get(p.customerUserId)?.discordNick ?? null,
+    mercato_sandboxes_invited_at: p.mercatoSandboxesInvitedAt ?? null,
     created_at: p.createdAt,
   }))
 

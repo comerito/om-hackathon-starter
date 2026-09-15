@@ -496,5 +496,17 @@
   "competitions.manualInvite.result.existingUserAction": "Przejdź do Dodaj uczestnika",
   "competitions.manualInvite.flash.existingUser": "{email} ma już konto — dodaj tę osobę przez Dodaj uczestnika",
   "competitions.bulkInvite.summary.existingUsersHint": "{count} adres(ów) ma już konto w portalu, więc nie utworzono dla nich zaproszeń. Użyj opcji Dodaj uczestnika, aby przypisać te konta do tych zawodów.",
-  "competitions.bulkInvite.summary.existingUsersAction": "Przejdź do Dodaj uczestnika"
+  "competitions.bulkInvite.summary.existingUsersAction": "Przejdź do Dodaj uczestnika",
+  "competitions.participants.sandboxInvite.action": "Zaproś do Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.column": "Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.sent": "Wysłano: {timestamp}",
+  "competitions.participants.sandboxInvite.confirmTitle": "Zaprosić wybranych uczestników do Mercato Sandboxes?",
+  "competitions.participants.sandboxInvite.confirmText": "To wyśle {count} zaproszeń przez Mercato Sandboxes. Osoby już oznaczone w tym wyborze zostaną pominięte.",
+  "competitions.participants.sandboxInvite.confirmAction": "Wyślij zaproszenia",
+  "competitions.participants.sandboxInvite.error": "Nie udało się wysłać zaproszeń do Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.mixedCompetition": "Wybierz uczestników tylko z jednego konkursu.",
+  "competitions.participants.sandboxInvite.alreadySent": "Wybrani uczestnicy zostali już zaproszeni.",
+  "competitions.participants.sandboxInvite.flash.complete": "Wysłano {count} zaproszeń do Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.flash.partial": "Wysłano {sent}, konfliktów {conflicts}, nieudanych {failed}",
+  "competitions.participants.sandboxInvite.flash.none": "Nie wysłano zaproszeń (konfliktów {conflicts}, nieudanych {failed})"
 }
