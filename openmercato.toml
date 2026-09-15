@@ -1,0 +1,4 @@
+version = 2
+
+[preview]
+command = ["env", "OM_DEV_INOTIFY_CHECK=0", "OM_DEV_BUNDLER=turbopack", "yarn", "dev", "--watch=auto-optimized"]

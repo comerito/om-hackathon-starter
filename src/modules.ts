@@ -48,6 +48,7 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'customer_accounts', from: '@open-mercato/core' },
   // App modules BEFORE portal so app pages override core portal defaults
   { id: 'competitions', from: '@app' },
+  { id: 'addons', from: '@app' },
   { id: 'tracks', from: '@app' },
   { id: 'teams', from: '@app' },
   { id: 'projects', from: '@app' },
