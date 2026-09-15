@@ -55,6 +55,7 @@ export const enabledModules: ModuleEntry[] = [
   { id: 'sponsors', from: '@app' },
   { id: 'incidents', from: '@app' },
   { id: 'bounties', from: '@app' },
+  { id: 'portal_users', from: '@app' },
   { id: 'portal', from: '@open-mercato/core' },
 
 ]
