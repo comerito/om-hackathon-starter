@@ -441,3 +441,18 @@ export const bulkInviteSchema = z.object({
 
 export type BulkInviteRow = z.infer<typeof bulkInviteRowSchema>
 export type BulkInviteInput = z.infer<typeof bulkInviteSchema>
+
+// ── Mercato Sandboxes invitations ───────────────────────────────────
+
+export const sandboxInvitationSelectionSchema = z.object({
+  mode: z.literal('selected'),
+  participation_ids: z.array(z.string().uuid()).min(1),
+})
+
+export const sandboxInvitationSchema = z.object({
+  competition_id: z.string().uuid(),
+  selection: sandboxInvitationSelectionSchema,
+})
+
+export type SandboxInvitationSelection = z.infer<typeof sandboxInvitationSelectionSchema>
+export type SandboxInvitationInput = z.infer<typeof sandboxInvitationSchema>

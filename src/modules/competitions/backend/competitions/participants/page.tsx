@@ -18,6 +18,13 @@ import Link from 'next/link'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { BulkInviteDialog } from '../../../components/BulkInviteDialog'
 import { ManualInviteDialog } from '../../../components/ManualInviteDialog'
+import {
+  buildSandboxInvitePayload,
+  formatSentMarker,
+  prepareSandboxBulkInvite,
+  sandboxInviteFlashKind,
+  type SandboxInviteSummary,
+} from '../../../lib/sandboxInvitations'
 
 type ParticipationRow = {
   id: string
@@ -29,6 +36,7 @@ type ParticipationRow = {
   privacy_policy_accepted: boolean
   looking_for_team: boolean
   discord_nick: string | null
+  mercato_sandboxes_invited_at: string | null
   organization_id: string
   created_at: string
 }
@@ -44,6 +52,11 @@ type InvitationRow = {
   accepted_at: string | null
   expires_at: string | null
   created_at: string
+}
+
+type InviteResponse = SandboxInviteSummary & {
+  ok?: boolean
+  error?: string
 }
 
 const rolePreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -228,7 +241,103 @@ export default function ParticipantsListPage() {
         return nick || <span className="text-muted-foreground">—</span>
       },
     },
+    {
+      accessorKey: 'mercato_sandboxes_invited_at',
+      header: t('competitions.participants.sandboxInvite.column', 'Mercato Sandboxes'),
+      meta: { priority: 3 },
+      cell: ({ getValue }) => {
+        const sent = formatSentMarker(getValue() as string | null)
+        if (!sent) return <span className="text-muted-foreground">—</span>
+        return t('competitions.participants.sandboxInvite.sent', 'Sent: {timestamp}', { timestamp: sent })
+      },
+    },
   ], [t, userNameMap, competitionNameMap])
+
+  const handleSandboxBulkInvite = React.useCallback(async (selectedRows: ParticipationRow[]) => {
+    const prepared = prepareSandboxBulkInvite(selectedRows)
+    if (!prepared.ok) {
+      if (prepared.reason === 'mixed-competition') {
+        flash(
+          t(
+            'competitions.participants.sandboxInvite.mixedCompetition',
+            'Select participants from one competition only.',
+          ),
+          'error',
+        )
+      } else if (prepared.reason === 'already-sent-only') {
+        flash(
+          t(
+            'competitions.participants.sandboxInvite.alreadySent',
+            'The selected participants were already invited.',
+          ),
+          'error',
+        )
+      }
+      return false
+    }
+
+    const confirmed = await confirm({
+      title: t(
+        'competitions.participants.sandboxInvite.confirmTitle',
+        'Invite selected participants to Mercato Sandboxes?',
+      ),
+      description: t(
+        'competitions.participants.sandboxInvite.confirmText',
+        'This sends {count} invitation(s) through Mercato Sandboxes. Already-sent rows in this selection are skipped.',
+        { count: prepared.participationIds.length },
+      ),
+      confirmText: t('competitions.participants.sandboxInvite.confirmAction', 'Send invitations'),
+    })
+    if (!confirmed) return false
+
+    const { ok, result } = await apiCall<InviteResponse>(
+      '/api/competitions/admin/sandbox-invitations',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildSandboxInvitePayload(prepared.competitionId, prepared.participationIds)),
+      },
+    )
+    if (!ok || !result || typeof result.sent !== 'number') {
+      flash(
+        result?.error
+          || t('competitions.participants.sandboxInvite.error', 'Failed to send Mercato Sandboxes invitations'),
+        'error',
+      )
+      return false
+    }
+
+    const kind = sandboxInviteFlashKind(result)
+    if (kind === 'success') {
+      flash(
+        t(
+          'competitions.participants.sandboxInvite.flash.complete',
+          'Sent {count} Mercato Sandboxes invitation(s)',
+          { count: result.sent },
+        ),
+        'success',
+      )
+    } else if (kind === 'warning') {
+      flash(
+        t(
+          'competitions.participants.sandboxInvite.flash.partial',
+          'Sent {sent}, {conflicts} conflict(s), {failed} failed',
+          { sent: result.sent, conflicts: result.conflicts, failed: result.failed },
+        ),
+        'warning',
+      )
+    } else {
+      flash(
+        t(
+          'competitions.participants.sandboxInvite.flash.none',
+          'No invitations were sent ({conflicts} conflict(s), {failed} failed)',
+          { conflicts: result.conflicts, failed: result.failed },
+        ),
+        'error',
+      )
+    }
+    await queryClient.invalidateQueries({ queryKey: ['participations'] })
+  }, [confirm, queryClient, t])
 
   // Count pending invitations for tab badge
   const pendingCount = (invitationsData ?? []).filter(i => i.status === 'pending').length
@@ -288,6 +397,17 @@ export default function ParticipantsListPage() {
             sortable
             sorting={sorting}
             onSortingChange={(s) => { setSorting(s); setPage(1) }}
+            selectionScopeKey={
+              scopedCompetitionId
+              || (typeof filterValues.competition_id === 'string' ? filterValues.competition_id : 'all')
+            }
+            bulkActions={[
+              {
+                id: 'invite-mercato-sandboxes',
+                label: t('competitions.participants.sandboxInvite.action', 'Invite to Mercato Sandboxes'),
+                onExecute: handleSandboxBulkInvite,
+              },
+            ]}
             filters={[
               ...(scopedCompetitionId ? [] : [{
                 id: 'competition_id',

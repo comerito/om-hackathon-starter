@@ -496,5 +496,17 @@
   "competitions.manualInvite.result.existingUserAction": "Go to Add Participant",
   "competitions.manualInvite.flash.existingUser": "{email} already has an account — add them with Add Participant instead",
   "competitions.bulkInvite.summary.existingUsersHint": "{count} address(es) already have a portal account, so no invitation was created for them. Use Add Participant to attach those accounts to this competition.",
-  "competitions.bulkInvite.summary.existingUsersAction": "Go to Add Participant"
+  "competitions.bulkInvite.summary.existingUsersAction": "Go to Add Participant",
+  "competitions.participants.sandboxInvite.action": "Invite to Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.column": "Mercato Sandboxes",
+  "competitions.participants.sandboxInvite.sent": "Sent: {timestamp}",
+  "competitions.participants.sandboxInvite.confirmTitle": "Invite selected participants to Mercato Sandboxes?",
+  "competitions.participants.sandboxInvite.confirmText": "This sends {count} invitation(s) through Mercato Sandboxes. Already-sent rows in this selection are skipped.",
+  "competitions.participants.sandboxInvite.confirmAction": "Send invitations",
+  "competitions.participants.sandboxInvite.error": "Failed to send Mercato Sandboxes invitations",
+  "competitions.participants.sandboxInvite.mixedCompetition": "Select participants from one competition only.",
+  "competitions.participants.sandboxInvite.alreadySent": "The selected participants were already invited.",
+  "competitions.participants.sandboxInvite.flash.complete": "Sent {count} Mercato Sandboxes invitation(s)",
+  "competitions.participants.sandboxInvite.flash.partial": "Sent {sent}, {conflicts} conflict(s), {failed} failed",
+  "competitions.participants.sandboxInvite.flash.none": "No invitations were sent ({conflicts} conflict(s), {failed} failed)"
 }

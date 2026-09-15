@@ -294,6 +294,9 @@ export class CompetitionParticipation {
   @Property({ name: 'github_username', type: 'varchar', length: 255, nullable: true })
   githubUsername?: string | null
 
+  @Property({ name: 'mercato_sandboxes_invited_at', type: 'timestamptz', nullable: true })
+  mercatoSandboxesInvitedAt?: Date | null
+
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string
