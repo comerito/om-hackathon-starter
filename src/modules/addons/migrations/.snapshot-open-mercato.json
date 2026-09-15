@@ -1,0 +1,1300 @@
+{
+  "name": "public",
+  "namespaces": [
+    "public"
+  ],
+  "tables": [
+    {
+      "name": "addons_assignments",
+      "schema": "public",
+      "columns": {
+        "addon_key": {
+          "name": "addon_key",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'mercato_sandboxes'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "assigned_by": {
+          "name": "assigned_by",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "customer_user_id": {
+          "name": "customer_user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id",
+            "organization_id",
+            "competition_id",
+            "customer_user_id",
+            "addon_key"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "addons_assignment_identity",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "id",
+            "tenant_id",
+            "organization_id",
+            "customer_user_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "addons_assignment_scoped_id",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "assigned_by"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_assignments_assigned_by_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "competition_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_assignments_competition_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "customer_user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_assignments_customer_user_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "organization_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_assignments_organization_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "addons_assignments_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_assignments_tenant_id_index",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "addons_assignment_key",
+          "expression": "addon_key = 'mercato_sandboxes'",
+          "definition": "check (addon_key = 'mercato_sandboxes')"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {},
+      "comment": null
+    },
+    {
+      "name": "addons_delivery_attempts",
+      "schema": "public",
+      "columns": {
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "attempt_number": {
+          "name": "attempt_number",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "customer_user_id": {
+          "name": "customer_user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "mode": {
+          "name": "mode",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'mock'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'selected'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "batch_id",
+            "customer_user_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "addons_attempt_batch_customer",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "organization_id",
+            "assignment_id",
+            "mode"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "addons_attempt_delivery_slot",
+          "primary": false,
+          "unique": true,
+          "where": "assignment_id is not null and status in ('pending', 'succeeded')"
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "organization_id",
+            "assignment_id",
+            "mode",
+            "status"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "addons_attempt_evidence",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "assignment_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_attempts_assignment_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "batch_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_attempts_batch_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "customer_user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_attempts_customer_user_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "organization_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_attempts_organization_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "addons_delivery_attempts_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_attempts_tenant_id_index",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "addons_attempt_mode",
+          "expression": "mode in ('mock', 'real')",
+          "definition": "check (mode in ('mock', 'real'))"
+        },
+        {
+          "name": "addons_attempt_number",
+          "expression": "attempt_number is null or attempt_number > 0",
+          "definition": "check (attempt_number is null or attempt_number > 0)"
+        },
+        {
+          "name": "addons_attempt_outcome",
+          "expression": "(status = 'selected' and assignment_id is null and reason_code is null and attempt_number is null and started_at is null and finished_at is null)\nor (status = 'pending' and assignment_id is not null and reason_code is null and attempt_number is null and started_at is not null and finished_at is null)\nor (status = 'succeeded' and assignment_id is not null and reason_code is null and attempt_number is not null and started_at is not null and finished_at is not null)\nor (status = 'failed' and assignment_id is not null and reason_code is not null and reason_code = 'mock_failure' and mode = 'mock' and attempt_number is not null and started_at is not null and finished_at is not null)\nor (status = 'skipped' and reason_code is not null and reason_code in ('already_succeeded', 'already_pending', 'no_longer_eligible', 'assignment_unavailable') and attempt_number is null and started_at is null and finished_at is not null and ((reason_code = 'no_longer_eligible' and assignment_id is null) or (reason_code <> 'no_longer_eligible' and assignment_id is not null)))\nor (status in ('cancelled', 'expired') and assignment_id is null and reason_code is null and attempt_number is null and started_at is null and finished_at is not null)",
+          "definition": "check ((status = 'selected' and assignment_id is null and reason_code is null and attempt_number is null and started_at is null and finished_at is null)\nor (status = 'pending' and assignment_id is not null and reason_code is null and attempt_number is null and started_at is not null and finished_at is null)\nor (status = 'succeeded' and assignment_id is not null and reason_code is null and attempt_number is not null and started_at is not null and finished_at is not null)\nor (status = 'failed' and assignment_id is not null and reason_code is not null and reason_code = 'mock_failure' and mode = 'mock' and attempt_number is not null and started_at is not null and finished_at is not null)\nor (status = 'skipped' and reason_code is not null and reason_code in ('already_succeeded', 'already_pending', 'no_longer_eligible', 'assignment_unavailable') and attempt_number is null and started_at is null and finished_at is not null and ((reason_code = 'no_longer_eligible' and assignment_id is null) or (reason_code <> 'no_longer_eligible' and assignment_id is not null)))\nor (status in ('cancelled', 'expired') and assignment_id is null and reason_code is null and attempt_number is null and started_at is null and finished_at is not null))"
+        },
+        {
+          "name": "addons_attempt_status",
+          "expression": "status in ('selected', 'pending', 'succeeded', 'failed', 'skipped', 'cancelled', 'expired')",
+          "definition": "check (status in ('selected', 'pending', 'succeeded', 'failed', 'skipped', 'cancelled', 'expired'))"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "addons_attempt_assignment_scope_fk": {
+          "columnNames": [
+            "assignment_id",
+            "tenant_id",
+            "organization_id",
+            "customer_user_id"
+          ],
+          "constraintName": "addons_attempt_assignment_scope_fk",
+          "localTableName": "public.addons_delivery_attempts",
+          "referencedColumnNames": [
+            "id",
+            "tenant_id",
+            "organization_id",
+            "customer_user_id"
+          ],
+          "referencedTableName": "public.addons_assignments",
+          "updateRule": "restrict",
+          "deleteRule": "restrict"
+        },
+        "addons_attempt_batch_scope_fk": {
+          "columnNames": [
+            "batch_id",
+            "tenant_id",
+            "organization_id",
+            "mode"
+          ],
+          "constraintName": "addons_attempt_batch_scope_fk",
+          "localTableName": "public.addons_delivery_attempts",
+          "referencedColumnNames": [
+            "id",
+            "tenant_id",
+            "organization_id",
+            "mode"
+          ],
+          "referencedTableName": "public.addons_delivery_batches",
+          "updateRule": "restrict",
+          "deleteRule": "restrict"
+        }
+      },
+      "comment": null
+    },
+    {
+      "name": "addons_delivery_batches",
+      "schema": "public",
+      "columns": {
+        "addon_key": {
+          "name": "addon_key",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'mercato_sandboxes'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "failed_count": {
+          "name": "failed_count",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "gen_random_uuid()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "mode": {
+          "name": "mode",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'mock'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "recipient_count": {
+          "name": "recipient_count",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "requested_customer_user_ids": {
+          "name": "requested_customer_user_ids",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "selection_kind": {
+          "name": "selection_kind",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "skipped_count": {
+          "name": "skipped_count",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": "'draft'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "succeeded_count": {
+          "name": "succeeded_count",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id",
+            "organization_id",
+            "competition_id",
+            "created_at",
+            "id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "addons_batch_history",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "organization_id",
+            "request_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "addons_batch_request",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "id",
+            "tenant_id",
+            "organization_id",
+            "mode"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "addons_batch_scoped_id",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "competition_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_batches_competition_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "created_by"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_batches_created_by_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "organization_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_batches_organization_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "addons_delivery_batches_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "request_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_batches_request_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "addons_delivery_batches_tenant_id_index",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "addons_batch_counts",
+          "expression": "recipient_count between 1 and 1000 and succeeded_count >= 0 and failed_count >= 0 and skipped_count >= 0 and succeeded_count + failed_count + skipped_count <= recipient_count",
+          "definition": "check (recipient_count between 1 and 1000 and succeeded_count >= 0 and failed_count >= 0 and skipped_count >= 0 and succeeded_count + failed_count + skipped_count <= recipient_count)"
+        },
+        {
+          "name": "addons_batch_key",
+          "expression": "addon_key = 'mercato_sandboxes'",
+          "definition": "check (addon_key = 'mercato_sandboxes')"
+        },
+        {
+          "name": "addons_batch_mode",
+          "expression": "mode in ('mock', 'real')",
+          "definition": "check (mode in ('mock', 'real'))"
+        },
+        {
+          "name": "addons_batch_outcome",
+          "expression": "(status in ('completed', 'completed_with_errors') and succeeded_count + failed_count + skipped_count = recipient_count and confirmed_at is not null and finished_at is not null and ((status = 'completed' and failed_count = 0) or (status = 'completed_with_errors' and failed_count > 0))) or (status in ('draft', 'cancelled', 'expired') and succeeded_count = 0 and failed_count = 0 and skipped_count = 0 and confirmed_at is null and ((status = 'draft' and finished_at is null) or (status in ('cancelled', 'expired') and finished_at is not null)))",
+          "definition": "check ((status in ('completed', 'completed_with_errors') and succeeded_count + failed_count + skipped_count = recipient_count and confirmed_at is not null and finished_at is not null and ((status = 'completed' and failed_count = 0) or (status = 'completed_with_errors' and failed_count > 0))) or (status in ('draft', 'cancelled', 'expired') and succeeded_count = 0 and failed_count = 0 and skipped_count = 0 and confirmed_at is null and ((status = 'draft' and finished_at is null) or (status in ('cancelled', 'expired') and finished_at is not null))))"
+        },
+        {
+          "name": "addons_batch_roles",
+          "expression": "jsonb_typeof(roles) = 'array' and roles <@ '[\"participant\",\"mentor\",\"judge\"]'::jsonb",
+          "definition": "check (jsonb_typeof(roles) = 'array' and roles <@ '[\"participant\",\"mentor\",\"judge\"]'::jsonb)"
+        },
+        {
+          "name": "addons_batch_selection",
+          "expression": "(selection_kind = 'explicit' and requested_customer_user_ids is not null and jsonb_typeof(requested_customer_user_ids) = 'array') or (selection_kind = 'all_filtered' and requested_customer_user_ids is null)",
+          "definition": "check ((selection_kind = 'explicit' and requested_customer_user_ids is not null and jsonb_typeof(requested_customer_user_ids) = 'array') or (selection_kind = 'all_filtered' and requested_customer_user_ids is null))"
+        },
+        {
+          "name": "addons_batch_status",
+          "expression": "status in ('draft', 'completed', 'completed_with_errors', 'cancelled', 'expired')",
+          "definition": "check (status in ('draft', 'completed', 'completed_with_errors', 'cancelled', 'expired'))"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {},
+      "comment": null
+    }
+  ],
+  "views": [],
+  "nativeEnums": {}
+}

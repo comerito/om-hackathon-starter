@@ -1,7 +1,7 @@
 # Dodatki: Mercato Sandboxes per Competition
 
 **Date**: 2026-09-15
-**Status**: Ready for implementation; implementation and runtime verification not started
+**Status**: Phase 1 foundation in progress; migration application approval and runtime verification pending
 **Source brief**: [Approved brief](briefs/2026-09-15-competition-addons.md)
 
 ## 📝 TLDR
@@ -214,3 +214,22 @@ Review completed 2026-09-15 against AGENTS.md and the specification checklist. V
 1. **Recipient screen.** Add metadata/navigation and PL/EN UI using shared components. Verify scope switching, stale responses, selectors beyond 100 Competitions, role changes, page/row/all-filtered selection and view-only permissions; confirm the 1,000 limit is explicit and never truncates selections.
 2. **Confirmation/results/history.** Wire server draft preparation, snapshot inspection, keyboard controls, cancellation, persisted results and retry-as-new-draft. Browser tests with fixtures ending `00` and `01` cover both simulator paths, accurate counts across pages, reload after network error, safe translated reasons and clear no-access mock labels. Assert no outbound provisioning/notification calls.
 3. **Validation and rollout.** Prepare the configured integration environment; run `yarn generate`, `yarn typecheck`, `yarn lint`, `yarn test`, `yarn build`, plus targeted PostgreSQL integration and browser tests. Load-test 1,000 recipients with overlapping requests against the deployed request timeout; record duration and lock-timeout behavior. Verify new ACLs on an existing tenant, dependency-disabled behavior and rollback/re-enable preserving deduplication. Update acceptance checkboxes only with recorded evidence; preserve this brief/spec as the implementation source.
+
+## Implementation Status
+
+| Phase | Status | Date | Notes |
+|-------|--------|------|-------|
+| Phase 1 — Persisted mock operation | In Progress | 2026-09-15 | Module registration, ACL/default grants, validators and entity definitions added. Two scoped migrations generated and reviewed; application awaits approval. |
+| Phase 2 — Operator UI and release validation | Not Started | — | Depends on persisted operation and approved migration. |
+
+### Phase 1 — Detailed Progress
+
+- [ ] Step 1: Schema and registration — module registered; 22 request-validation and schema-metadata tests pass; generation, typecheck, structural-cache refresh and existing-tenant role ACL synchronization passed. Two scoped migrations add three tables and composite FKs; snapshot is current and repeat addon generation reports no changes. Application approval and PostgreSQL runtime tests remain pending; no phase completion claimed.
+- [ ] Step 2: Scope reader and preview.
+- [ ] Step 3: Execution and history.
+
+### Phase 2 — Detailed Progress
+
+- [ ] Step 1: Recipient screen.
+- [ ] Step 2: Confirmation/results/history.
+- [ ] Step 3: Validation and rollout.
