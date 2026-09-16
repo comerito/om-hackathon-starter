@@ -34,9 +34,13 @@ jest.mock('../../../../data/entities', () => ({
   JudgePanelTrack: class JudgePanelTrack {},
   JudgePanel: class JudgePanel {},
   ProjectScore: class ProjectScore {},
+  DemoSession: class DemoSession {},
+  JudgingCriterion: class JudgingCriterion {},
+  JudgingRound: { PRELIMINARY: 'preliminary', FINAL: 'final' },
 }))
 jest.mock('../../../../../projects/data/entities', () => ({ Project: class Project {} }))
 jest.mock('../../../../../teams/data/entities', () => ({ Team: class Team {} }))
+jest.mock('../../../../../tracks/data/entities', () => ({ Track: class Track {} }))
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { GET } = require('../route') as typeof import('../route')
@@ -46,6 +50,10 @@ const entities = require('../../../../data/entities') as Record<string, unknown>
 const projectEntities = require('../../../../../projects/data/entities') as { Project: unknown }
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const teamEntities = require('../../../../../teams/data/entities') as { Team: unknown }
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const trackEntities = require('../../../../../tracks/data/entities') as { Track: unknown }
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const competitionEntities = require('../../../../../competitions/data/entities') as { Competition: unknown }
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const setup = (require('../../../../setup') as { default: typeof import('../../../../setup').default }).default
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -87,8 +95,23 @@ function inList(filter: Filter, key: string): string[] | null {
   return Array.isArray(clause?.$in) ? clause!.$in! : null
 }
 
+type Fixture = {
+  projects: Array<Record<string, unknown> & { id: string; title: string; trackId: string; competitionId: string }>
+  demos: Array<{ projectId: string; competitionId: string; round: string; presentationOrder: number; status: string; tenantId: string; organizationId: string }>
+  criteria: Array<{ id: string; competitionId: string; round: string; trackId: string | null; order: number; tenantId: string; organizationId: string }>
+  competitionStage: string | null
+}
+
+function defaultFixture(): Fixture {
+  return { projects: PROJECTS, demos: [], criteria: [], competitionStage: 'judging' }
+}
+
+function scoped(row: { tenantId: string; organizationId: string }, filter: Filter): boolean {
+  return row.tenantId === filter.tenantId && row.organizationId === filter.organizationId
+}
+
 /** Honours the filters the route passes, so a widened query really does widen the response. */
-function makeEm() {
+function makeEm(fixture: Fixture = defaultFixture()) {
   const find = jest.fn(async (entity: unknown, filter: Filter): Promise<unknown[]> => {
     if (entity === entities.JudgePanelJudge) return PANELS.map(p => ({ panelId: p.id }))
     if (entity === entities.JudgePanel) {
@@ -101,15 +124,36 @@ function makeEm() {
     }
     if (entity === projectEntities.Project) {
       const tracks = inList(filter, 'trackId')
-      return PROJECTS.filter(p => !tracks || tracks.includes(p.trackId))
+      return fixture.projects.filter(p => !tracks || tracks.includes(p.trackId))
     }
     if (entity === teamEntities.Team) {
       const ids = inList(filter, 'id')
       return (ids ?? []).map(id => ({ id, name: `Team ${id}` }))
     }
+    if (entity === trackEntities.Track) {
+      const ids = inList(filter, 'id')
+      return (ids ?? []).map(id => ({ id, name: `Track ${id}` }))
+    }
+    if (entity === entities.DemoSession) {
+      const ids = inList(filter, 'projectId')
+      return fixture.demos.filter(d => (!ids || ids.includes(d.projectId))
+        && d.competitionId === filter.competitionId && d.round === filter.round && scoped(d, filter))
+    }
+    if (entity === entities.JudgingCriterion) {
+      return fixture.criteria.filter(c => c.competitionId === filter.competitionId && scoped(c, filter))
+    }
     return []
   })
-  return { find }
+  const findOne = jest.fn(async (entity: unknown, filter: Filter): Promise<unknown> => {
+    if (entity === competitionEntities.Competition) {
+      if (fixture.competitionStage === null) return null
+      return filter.id === COMPETITION_ID || filter.id === OTHER_COMPETITION_ID
+        ? { id: filter.id, stage: fixture.competitionStage }
+        : null
+    }
+    return null
+  })
+  return { find, findOne }
 }
 
 function container(em: unknown) {
@@ -165,6 +209,160 @@ describe('portal my-assignments — competition scoping (#106)', () => {
     // Sanity for the fixture: the judge *does* have a panel in the other competition, so this
     // returns that event's own project — never the home one.
     expect(body.projects.map(p => p.id)).toEqual(['foreign-project'])
+  })
+})
+
+describe('portal my-assignments — voting queue data (SPEC-007 phase 1)', () => {
+  const HOME_DEMO_BASE = { competitionId: COMPETITION_ID, round: 'preliminary', tenantId: TENANT, organizationId: ORG }
+
+  function homeProjects() {
+    return [
+      { id: 'p-zeta', title: 'Zeta', teamId: 'team-z', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted', screenshotIds: ['shot-1'] },
+      { id: 'p-alpha', title: 'Alpha', teamId: 'team-a', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted', screenshotIds: [] },
+      { id: 'p-second', title: 'Second', teamId: 'team-s', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted' },
+      { id: 'p-first', title: 'First', teamId: 'team-f', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted', problemStatement: 'Hard problem' },
+    ]
+  }
+
+  type QueueBody = {
+    projects: Array<{
+      id: string; demo: { order: number; status: string } | null; criteria_count: number
+      track_name: string | null; problem_statement: string | null
+      screenshots: Array<{ id: string; url: string }>
+    }>
+    scores: Array<{ project_id: string; track_id: string | null }>
+    voting_open: boolean
+  }
+
+  it('returns projects in demo order, projects without a slot last by title', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = makeEm({
+      ...defaultFixture(),
+      projects: homeProjects(),
+      demos: [
+        { ...HOME_DEMO_BASE, projectId: 'p-second', presentationOrder: 2, status: 'queued' },
+        { ...HOME_DEMO_BASE, projectId: 'p-first', presentationOrder: 1, status: 'presenting' },
+      ],
+    })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+    const body = await res.json() as QueueBody
+
+    expect(body.projects.map(p => p.id)).toEqual(['p-first', 'p-second', 'p-alpha', 'p-zeta'])
+    expect(body.projects[0].demo).toEqual({ order: 1, status: 'presenting' })
+    expect(body.projects[2].demo).toBeNull()
+    expect(body.projects[0].problem_statement).toBe('Hard problem')
+    expect(body.projects[0].track_name).toBe(`Track ${HOME_TRACK_ID}`)
+    const zeta = body.projects.find(p => p.id === 'p-zeta')!
+    expect(zeta.screenshots).toEqual([{ id: 'shot-1', url: '/api/projects/portal/asset-file/shot-1' }])
+    expect(body.projects.find(p => p.id === 'p-second')!.screenshots).toEqual([])
+    expect(body.voting_open).toBe(true)
+  })
+
+  it('looks up demo slots only for the requested competition, preliminary round, tenant and org', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = makeEm({
+      ...defaultFixture(),
+      projects: homeProjects(),
+      demos: [
+        { ...HOME_DEMO_BASE, projectId: 'p-zeta', presentationOrder: 1, status: 'queued', competitionId: OTHER_COMPETITION_ID },
+        { ...HOME_DEMO_BASE, projectId: 'p-alpha', presentationOrder: 1, status: 'queued', round: 'final' },
+        { ...HOME_DEMO_BASE, projectId: 'p-second', presentationOrder: 1, status: 'queued', organizationId: 'other-org' },
+      ],
+    })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+    const body = await res.json() as QueueBody
+
+    expect(body.projects.every(p => p.demo === null)).toBe(true)
+    const demoCall = em.find.mock.calls.find(([entity]) => entity === entities.DemoSession)
+    expect(demoCall).toBeDefined()
+    const filter = demoCall![1] as Filter
+    expect(filter).toMatchObject({ competitionId: COMPETITION_ID, round: 'preliminary', tenantId: TENANT, organizationId: ORG })
+    expect(inList(filter, 'projectId')?.sort()).toEqual(['p-alpha', 'p-first', 'p-second', 'p-zeta'])
+  })
+
+  it('counts only criteria applicable to the project track and the preliminary round', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const base = { competitionId: COMPETITION_ID, tenantId: TENANT, organizationId: ORG }
+    const em = makeEm({
+      ...defaultFixture(),
+      projects: [PROJECTS[0]],
+      criteria: [
+        { ...base, id: 'c-global-both', round: 'both', trackId: null, order: 1 },
+        { ...base, id: 'c-global-prelim', round: 'preliminary', trackId: null, order: 2 },
+        { ...base, id: 'c-track-prelim', round: 'preliminary', trackId: HOME_TRACK_ID, order: 3 },
+        { ...base, id: 'c-global-final', round: 'final', trackId: null, order: 4 },
+        { ...base, id: 'c-other-track', round: 'both', trackId: OTHER_TRACK_ID, order: 5 },
+      ],
+    })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+    const body = await res.json() as QueueBody
+
+    expect(body.projects.map(p => p.criteria_count)).toEqual([3])
+    const criteriaCall = em.find.mock.calls.find(([entity]) => entity === entities.JudgingCriterion)
+    expect(criteriaCall![1]).toMatchObject({ competitionId: COMPETITION_ID, tenantId: TENANT, organizationId: ORG, deletedAt: null })
+  })
+
+  it('adds the project track to each score', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = makeEm()
+    const baseFind = em.find.getMockImplementation()!
+    em.find.mockImplementation(async (entity: unknown, filter: Filter) => {
+      if (entity === entities.ProjectScore) {
+        return [{ id: 's1', projectId: 'home-project', round: 'preliminary', totalScore: 68, isSubmitted: true, conflictOfInterest: false }]
+      }
+      return baseFind(entity, filter)
+    })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+    const body = await res.json() as QueueBody
+
+    expect(body.scores).toEqual([expect.objectContaining({ project_id: 'home-project', track_id: HOME_TRACK_ID })])
+  })
+
+  it('reports voting closed once the competition is finished', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    mockCreateRequestContainer.mockResolvedValue(container(makeEm({ ...defaultFixture(), competitionStage: 'finished' })))
+
+    const res = await GET(request())
+    const body = await res.json() as QueueBody
+
+    expect(body.voting_open).toBe(false)
+    expect(body.projects.map(p => p.id)).toEqual(['home-project'])
+  })
+
+  it('does not query demo slots or criteria when the judge has no projects', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = makeEm({ ...defaultFixture(), projects: [] })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+
+    expect(res.status).toBe(200)
+    const body = await res.json() as QueueBody
+    expect(body).toMatchObject({ projects: [], scores: [], voting_open: true })
+    const queried = em.find.mock.calls.map(([entity]) => entity)
+    expect(queried).not.toContain(entities.DemoSession)
+    expect(queried).not.toContain(entities.JudgingCriterion)
+  })
+
+  it('answers an empty, closed assignment set for a competition outside the caller scope', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = makeEm({ ...defaultFixture(), competitionStage: null })
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ panels: [], projects: [], scores: [], voting_open: false })
+    expect(em.findOne.mock.calls[0][1]).toMatchObject({ id: COMPETITION_ID, tenantId: TENANT, organizationId: ORG, deletedAt: null })
+    expect(em.find).not.toHaveBeenCalled()
   })
 })
 
