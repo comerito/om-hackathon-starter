@@ -59,8 +59,8 @@ backend Project edit page already links to.
 
 ### Phase 1: Attachment helpers
 
-- [ ] 1.1 Add track attachment helpers
-- [ ] 1.2 Unit-test track attachment helpers
+- [x] 1.1 Add track attachment helpers — a590d99
+- [x] 1.2 Unit-test track attachment helpers — d15a785
 
 ### Phase 2: Track edit page
 
