@@ -64,5 +64,5 @@ backend Project edit page already links to.
 
 ### Phase 2: Track edit page
 
-- [ ] 2.1 Render real file details on the track edit page
-- [ ] 2.2 Add download action and translated labels
+- [x] 2.1 Render real file details on the track edit page — 730df12
+- [x] 2.2 Add download action and translated labels — 730df12, 11e8d0f
