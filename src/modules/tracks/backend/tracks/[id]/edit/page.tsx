@@ -144,7 +144,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
       formatAttachmentSize(att.fileSize),
       attachmentTypeLabel(att),
       createdAt && !Number.isNaN(createdAt.getTime())
-        ? t('tracks.attachments.uploadedAt', 'Uploaded {date}', { date: createdAt.toLocaleString() })
+        ? t('tracks.attachments.uploadedAt', 'Uploaded {date}', { date: createdAt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) })
         : null,
     ].filter(Boolean).join(' · ')
   }
@@ -179,29 +179,29 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
               {attachments.map((att) => {
                 const fileName = att.fileName || t('tracks.attachments.unnamed', 'Unnamed file')
                 const details = describeAttachment(att)
+                // The section sits in the narrow side column, so the name and details wrap instead
+                // of truncating, and the actions get their own line.
                 return (
-                  <li key={att.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium" title={fileName}>{fileName}</p>
-                        {details ? <p className="truncate text-xs text-muted-foreground">{details}</p> : null}
+                  <li key={att.id} className="flex items-start gap-2 px-3 py-2">
+                    <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium [overflow-wrap:anywhere]">{fileName}</p>
+                      {details ? <p className="text-xs text-muted-foreground">{details}</p> : null}
+                      <div className="-ml-1.5 mt-1 flex flex-wrap items-center gap-1">
+                        <Button asChild variant="ghost" size="2xs">
+                          <a
+                            href={attachmentDownloadUrl(att.id)}
+                            download={att.fileName || undefined}
+                            aria-label={t('tracks.attachments.downloadFile', 'Download {name}', { name: fileName })}
+                          >
+                            <Download aria-hidden />
+                            {t('tracks.attachments.download', 'Download')}
+                          </a>
+                        </Button>
+                        <Button type="button" variant="destructive-ghost" size="2xs" onClick={() => handleRemoveAttachment(att.id)}>
+                          {t('tracks.attachments.remove', 'Remove')}
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button asChild variant="ghost" size="2xs">
-                        <a
-                          href={attachmentDownloadUrl(att.id)}
-                          download={att.fileName || undefined}
-                          aria-label={t('tracks.attachments.downloadFile', 'Download {name}', { name: fileName })}
-                        >
-                          <Download aria-hidden />
-                          {t('tracks.attachments.download', 'Download')}
-                        </a>
-                      </Button>
-                      <Button type="button" variant="destructive-ghost" size="2xs" onClick={() => handleRemoveAttachment(att.id)}>
-                        {t('tracks.attachments.remove', 'Remove')}
-                      </Button>
                     </div>
                   </li>
                 )
