@@ -115,7 +115,7 @@ export async function GET(req: Request) {
       : []
     // Stored as the canonical attachment URL, which only a backoffice session can read — the
     // conversation list needs the portal-servable thumbnail. See lib/avatarUrls.ts.
-    const avatarMap = new Map<string, string | null>(profileRows.map((p: any) => [
+    const avatarMap = new Map<string, string | null>(profileRows.map((p) => [
       p.customer_user_id,
       toPortalAvatarUrl(p.avatar_url, { width: CHAT_AVATAR_SIZE, height: CHAT_AVATAR_SIZE, cropType: 'cover' }),
     ] as [string, string | null]))

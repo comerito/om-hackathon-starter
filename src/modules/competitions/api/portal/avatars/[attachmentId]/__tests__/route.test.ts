@@ -78,6 +78,11 @@ jest.mock('sharp', () => {
   const factory = () => ({ resize: (...args: unknown[]) => mockSharpResize(...args) })
   return { __esModule: true, default: factory }
 })
+// The entity module pulls in MikroORM decorators; the route only uses the classes as query tokens.
+jest.mock('../../../../../data/entities', () => ({
+  CompetitionParticipation: class CompetitionParticipation {},
+  ParticipantProfile: class ParticipantProfile {},
+}))
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { GET } = require('../route') as typeof import('../route')
@@ -85,12 +90,20 @@ const { GET } = require('../route') as typeof import('../route')
 const { Attachment } = require('@open-mercato/core/modules/attachments/data/entities') as {
   Attachment: unknown
 }
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { CompetitionParticipation, ParticipantProfile } =
+  require('../../../../../data/entities') as {
+    CompetitionParticipation: unknown
+    ParticipantProfile: unknown
+  }
 
 const TENANT = '11111111-1111-4111-8111-111111111111'
 const OTHER_TENANT = '99999999-9999-4999-8999-999999999999'
 const ORG = 'org-1'
 const CALLER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const ATTACHMENT = '55555555-5555-4555-8555-555555555555'
+/** The profile the avatar under test belongs to (`Attachment.recordId`). */
+const OWNER_PROFILE = '77777777-7777-4777-8777-777777777777'
 
 /** What a leaked read would put in the body. Only the allowed cases may contain it. */
 const ORIGINAL_BYTES = 'SECRET-AVATAR-ORIGINAL-BYTES'
@@ -101,6 +114,10 @@ let attachmentTenantId: string | null
 let attachmentEntityId: string
 let attachmentMimeType: string
 let findOneFilter: Record<string, unknown> | null
+/** Does the caller participate in any competition in the tenant? */
+let callerParticipates: boolean
+/** The caller's own profile id, or `null` when they have no profile at all. */
+let callerProfileId: string | null
 
 async function fetchAvatar(
   query = '',
@@ -124,6 +141,8 @@ beforeEach(() => {
   attachmentEntityId = 'competitions:participant_profile'
   attachmentMimeType = 'image/png'
   findOneFilter = null
+  callerParticipates = true
+  callerProfileId = null
 
   mockReadThumbnailCache.mockResolvedValue(null)
   mockWriteThumbnailCache.mockResolvedValue(undefined)
@@ -132,22 +151,31 @@ beforeEach(() => {
 
   const em = {
     findOne: jest.fn(async (entity: unknown, where: Record<string, unknown>) => {
-      if (entity !== Attachment) throw new Error('unexpected entity in em.findOne')
-      findOneFilter = where
-      // Mirror the tenant scoping the route puts in the query itself.
-      if (where.tenantId !== attachmentTenantId) return null
-      return {
-        id: ATTACHMENT,
-        tenantId: attachmentTenantId,
-        organizationId: ORG,
-        entityId: attachmentEntityId,
-        partitionCode: 'productsMedia',
-        storagePath: 'me.png',
-        storageDriver: 'local',
-        mimeType: attachmentMimeType,
-        fileName: 'me.png',
-        fileSize: ORIGINAL_BYTES.length,
+      if (entity === Attachment) {
+        findOneFilter = where
+        // Mirror the tenant scoping the route puts in the query itself.
+        if (where.tenantId !== attachmentTenantId) return null
+        return {
+          id: ATTACHMENT,
+          recordId: OWNER_PROFILE,
+          tenantId: attachmentTenantId,
+          organizationId: ORG,
+          entityId: attachmentEntityId,
+          partitionCode: 'productsMedia',
+          storagePath: 'me.png',
+          storageDriver: 'local',
+          mimeType: attachmentMimeType,
+          fileName: 'me.png',
+          fileSize: ORIGINAL_BYTES.length,
+        }
       }
+      if (entity === CompetitionParticipation) {
+        return callerParticipates ? { customerUserId: CALLER, role: 'participant' } : null
+      }
+      if (entity === ParticipantProfile) {
+        return callerProfileId ? { id: callerProfileId, customerUserId: CALLER } : null
+      }
+      throw new Error('unexpected entity in em.findOne')
     }),
   }
   mockCreateRequestContainer.mockResolvedValue({
@@ -214,6 +242,35 @@ describe('GET portal avatar — scope checks', () => {
     expect(res.status).toBe(400)
     expect(res.body).not.toContain(ORIGINAL_BYTES)
     expect(mockDriverRead).not.toHaveBeenCalled()
+  })
+
+  it('refuses a portal session with no participation and no matching profile', async () => {
+    // The lesson of issue #117 on the projects asset route: a valid session is not entitlement.
+    callerParticipates = false
+    callerProfileId = null
+    const res = await fetchAvatar()
+
+    expect(res.status).toBe(403)
+    expect(res.body).toBe('{"error":"Forbidden"}')
+    expect(mockDriverRead).not.toHaveBeenCalled()
+  })
+
+  it('refuses a non-participant whose profile is not the avatar owner', async () => {
+    callerParticipates = false
+    callerProfileId = '88888888-8888-4888-8888-888888888888'
+    const res = await fetchAvatar()
+
+    expect(res.status).toBe(403)
+    expect(res.body).not.toContain(ORIGINAL_BYTES)
+  })
+
+  it('still serves a non-participant their own avatar', async () => {
+    callerParticipates = false
+    callerProfileId = OWNER_PROFILE
+    const res = await fetchAvatar()
+
+    expect(res.status).toBe(200)
+    expect(res.body).toBe(ORIGINAL_BYTES)
   })
 
   it('answers 404 when the stored file is gone', async () => {

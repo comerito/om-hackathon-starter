@@ -34,6 +34,7 @@ import {
 } from '@open-mercato/core/modules/attachments/lib/thumbnailCache'
 import { StorageDriverFactory } from '@open-mercato/core/modules/attachments/lib/drivers'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { CompetitionParticipation, ParticipantProfile } from '../../../../data/entities'
 import { AVATAR_ENTITY_ID } from '../../../../lib/avatarUrls'
 
 export const metadata = {
@@ -68,34 +69,56 @@ export async function GET(
   }
   const { width, height, cropType } = parsedQuery.data
 
-  const container = await createRequestContainer()
-  const em = container.resolve('em') as EntityManager
-
-  // Tenant scoping lives in the query, so an attachment belonging to another tenant is simply not
-  // found rather than confirming its existence with a 403.
-  const attachment = await em.findOne(Attachment, {
-    id: attachmentId,
-    tenantId: auth.tenantId,
-  } as FilterQuery<Attachment>)
-  if (!attachment) {
-    return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
-  }
-
-  // This route serves participant avatars and nothing else. Without the guard it would be a
-  // generic reader for every attachment in the tenant — backoffice documents included.
-  if (attachment.entityId !== AVATAR_ENTITY_ID) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  if (!canRenderInlineAttachment(attachment.mimeType)) {
-    return NextResponse.json({ error: 'Unsupported media type' }, { status: 400 })
-  }
-
-  const storageDriverFactory =
-    (container.resolve('storageDriverFactory') as StorageDriverFactory | undefined) ??
-    new StorageDriverFactory(em)
-
   try {
+    const container = await createRequestContainer()
+    const em = container.resolve('em') as EntityManager
+
+    // Tenant scoping lives in the query, so an attachment belonging to another tenant is simply
+    // not found rather than confirming its existence with a 403. Organisation is deliberately not
+    // part of it: every portal query in this module — participations, profiles, team members —
+    // scopes by tenant alone, and the participants directory is competition-wide.
+    const attachment = await em.findOne(Attachment, {
+      id: attachmentId,
+      tenantId: auth.tenantId,
+    } as FilterQuery<Attachment>)
+    if (!attachment) {
+      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+    }
+
+    // This route serves participant avatars and nothing else. Without the guard it would be a
+    // generic reader for every attachment in the tenant — backoffice documents included.
+    if (attachment.entityId !== AVATAR_ENTITY_ID) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (!canRenderInlineAttachment(attachment.mimeType)) {
+      return NextResponse.json({ error: 'Unsupported media type' }, { status: 400 })
+    }
+
+    // Entitlement, not "is logged in" — the lesson of issue #117 on the projects asset route.
+    // Avatars are shown in the participants directory and in chat, so a participant of any
+    // competition in the tenant (judges and mentors included) may read them. Someone holding a
+    // portal session with no participation at all may still read their own avatar, so the profile
+    // page keeps working before they join anything.
+    const participation = await em.findOne(CompetitionParticipation, {
+      customerUserId: auth.sub,
+      tenantId: auth.tenantId,
+      deletedAt: null,
+    } as FilterQuery<CompetitionParticipation>)
+    if (!participation) {
+      const ownProfile = await em.findOne(ParticipantProfile, {
+        customerUserId: auth.sub,
+        tenantId: auth.tenantId,
+      } as FilterQuery<ParticipantProfile>)
+      if (!ownProfile || !attachment.recordId || ownProfile.id !== attachment.recordId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    const storageDriverFactory =
+      (container.resolve('storageDriverFactory') as StorageDriverFactory | undefined) ??
+      new StorageDriverFactory(em)
+
     const cacheKey = buildThumbnailCacheKey(width, height, cropType)
     let buffer: Buffer | null = cacheKey
       ? await readThumbnailCache(attachment.partitionCode, attachment.id, cacheKey)
@@ -173,7 +196,7 @@ export const openApi: OpenApiRouteDoc = {
   methods: {
     GET: {
       summary:
-        'Serve a participant profile avatar to an authenticated portal user in the same tenant, with optional width/height/cropType resizing',
+        'Serve a participant profile avatar to a participant of any competition in the caller tenant (or to the owner of the avatar), with optional width/height/cropType resizing',
     },
   },
 }
