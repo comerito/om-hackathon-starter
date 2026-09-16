@@ -5,16 +5,22 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { CompetitionParticipation, ParticipantProfile } from '../../../data/entities'
 import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
-import { buildAttachmentImageUrl } from '@open-mercato/core/modules/attachments/lib/imageUrls'
 import { rawAll } from '@/lib/db'
+import { toPortalAvatarUrl } from '../../../lib/avatarUrls'
 
 const AVATAR_THUMBNAIL_SIZE = 128
 
+/**
+ * The directory renders a grid of avatars, so ask for thumbnails rather than the originals. This
+ * used to point at core's `/api/attachments/image/<id>`, which authenticates with the backoffice
+ * session and therefore answered 401 for every portal visitor. See lib/avatarUrls.ts.
+ */
 function toThumbnailUrl(avatarUrl: string | null | undefined): string | null {
-  if (!avatarUrl) return null
-  const match = avatarUrl.match(/\/api\/attachments\/file\/([^/?]+)/)
-  if (!match) return avatarUrl
-  return buildAttachmentImageUrl(match[1], { width: AVATAR_THUMBNAIL_SIZE, height: AVATAR_THUMBNAIL_SIZE, cropType: 'cover' })
+  return toPortalAvatarUrl(avatarUrl, {
+    width: AVATAR_THUMBNAIL_SIZE,
+    height: AVATAR_THUMBNAIL_SIZE,
+    cropType: 'cover',
+  })
 }
 
 export const metadata = {

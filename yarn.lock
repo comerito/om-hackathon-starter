@@ -11646,6 +11646,7 @@ __metadata:
     remark-gfm: "npm:^4.0.1"
     resend: "npm:^6.5.2"
     semver: "npm:^7.7.3"
+    sharp: "npm:^0.35.3"
     tailwind-merge: "npm:^3.4.0"
     tailwindcss: "npm:^4.1.17"
     ts-jest: "npm:^29.4.6"

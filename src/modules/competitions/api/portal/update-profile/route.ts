@@ -5,6 +5,7 @@ import type { EntityManager } from '@mikro-orm/postgresql'
 import { ParticipantProfile, CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawFirst, rawRun } from '@/lib/db'
+import { toCanonicalAvatarUrl, toPortalAvatarUrl } from '../../../lib/avatarUrls'
 
 const ALLOWED_SKILLS = new Set([
   'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'Swift',
@@ -62,7 +63,9 @@ export async function GET(req: Request) {
         display_name: userRow?.display_name ?? null,
         bio: profile.bio,
         organization: profile.organization,
-        avatar_url: profile.avatarUrl,
+        // The column holds the canonical attachment URL, which only a backoffice session can
+        // read; the portal gets the URL it can actually fetch. See lib/avatarUrls.ts.
+        avatar_url: toPortalAvatarUrl(profile.avatarUrl),
         portfolio_url: profile.portfolioUrl,
         office_hours_url: profile.officeHoursUrl,
         specialty: profile.specialty,
@@ -115,7 +118,9 @@ export async function PUT(req: Request) {
       profile.socialLinks = body.social_links
       profile.discordNick = body.social_links?.discord || null
     }
-    if (body.avatar_url !== undefined) profile.avatarUrl = body.avatar_url
+    // A client that read `avatar_url` from us and sent it back would otherwise persist the portal
+    // URL; normalise it so the column keeps exactly one shape.
+    if (body.avatar_url !== undefined) profile.avatarUrl = toCanonicalAvatarUrl(body.avatar_url)
     if (body.portfolio_url !== undefined) profile.portfolioUrl = body.portfolio_url
     if (body.office_hours_url !== undefined) profile.officeHoursUrl = body.office_hours_url
     if (body.specialty !== undefined) profile.specialty = body.specialty
@@ -149,7 +154,7 @@ export async function PUT(req: Request) {
       display_name: body.display_name?.trim() ?? null,
       bio: profile.bio,
       organization: profile.organization,
-      avatar_url: profile.avatarUrl,
+      avatar_url: toPortalAvatarUrl(profile.avatarUrl),
       portfolio_url: profile.portfolioUrl,
       office_hours_url: profile.officeHoursUrl,
       specialty: profile.specialty,
