@@ -116,9 +116,25 @@ A single place that knows how to turn a stored attachment URL into a portal-serv
 - 4.1 Run the full configured gate: `yarn generate`, `yarn typecheck`, `yarn lint`, `yarn test`,
   `yarn build`.
 
+### Phase 5 — Review (added after the `om-auto-review-pr` pass)
+
+The review found one major and two minors on this run's own code, all fixed in `662be5f`:
+
+- **major** — the avatar route treated a valid portal session as entitlement, the same defect shape
+  issue #117 closed on `projects/api/portal/asset-file/[id]`. Now the caller must hold a
+  `CompetitionParticipation` in the tenant; a session-holder with no participation may still read
+  their own avatar so the profile page keeps working before they join anything.
+- **minor** — container/ORM work sat outside the handler's `try`, so a DI or database failure
+  escaped instead of answering 500 through the route's own logging.
+- **minor** — nothing covered the *wiring*, which is what the original bug was. Added
+  `api/portal/update-profile/__tests__/route.test.ts` pinning what shape of `avatar_url` leaves the
+  API and what shape reaches the column.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
+
+PR: #204
 
 ### Phase 1: Portal avatar URL helper
 
@@ -140,8 +156,8 @@ A single place that knows how to turn a stored attachment URL into a portal-serv
 
 ### Phase 4: Validation
 
-- [x] 4.1 Run the full validation gate — `yarn generate` ✅, `yarn typecheck` ✅, `yarn test` ✅ (612
-  passed / 55 suites), `yarn build` ✅. `yarn lint` ❌ **pre-existing**: the script is `next lint`,
+- [x] 4.1 Run the full validation gate — re-run after the review fixes: `yarn generate` ✅,
+  `yarn typecheck` ✅, `yarn test` ✅ (620 passed / 56 suites), `yarn build` ✅. `yarn lint` ❌ **pre-existing**: the script is `next lint`,
   which Next 16 removed, so it reads `lint` as a directory name and exits 1; the repo also carries
   no `eslint.config.*`. `git show origin/main:package.json` has the identical script, so this fails
   the same way on an untouched checkout and is not caused by this change. Not fixed here — giving
