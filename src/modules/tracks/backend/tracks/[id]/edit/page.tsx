@@ -9,10 +9,19 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { Button } from '@open-mercato/ui/primitives/button'
+import {
+  attachmentDownloadUrl,
+  attachmentTypeLabel,
+  formatAttachmentSize,
+  normalizeTrackAttachment,
+  normalizeTrackAttachments,
+  type TrackAttachment,
+} from '../../../../lib/attachments'
 
 import {
   Cpu, Brain, Globe, Palette, Shield, Rocket, Heart, Zap, Database, Code,
   Smartphone, Cloud, Lock, Music, Camera, Gamepad2, Leaf, Lightbulb, Microscope, Wifi,
+  Download, FileText,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -40,8 +49,6 @@ const ICON_OPTIONS: Array<{ value: string; name: string; Icon: LucideIcon }> = [
 ]
 
 type CompetitionOption = { id: string; name: string }
-
-type Attachment = { id: string; file_name: string; file_size: number; url: string; mime_type: string }
 
 type TrackFormValues = {
   id: string
@@ -78,19 +85,20 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   }, [])
 
   // Attachment management state
-  const [attachments, setAttachments] = React.useState<Attachment[]>([])
+  const [attachments, setAttachments] = React.useState<TrackAttachment[]>([])
   const [uploading, setUploading] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Load attachments when track loads
   React.useEffect(() => {
     if (!id) return
+    const trackId = id
     let cancelled = false
     async function loadAttachments() {
-      const { ok, result } = await apiCall<{ items: Attachment[] }>(
-        `/api/attachments?entityId=tracks:track&recordId=${id}`,
+      const { ok, result } = await apiCall<{ items?: unknown }>(
+        `/api/attachments?entityId=tracks:track&recordId=${encodeURIComponent(trackId)}`,
       )
-      if (!cancelled && ok && result?.items) setAttachments(result.items)
+      if (!cancelled && ok) setAttachments(normalizeTrackAttachments(result?.items))
     }
     loadAttachments()
     return () => { cancelled = true }
@@ -106,12 +114,18 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
       formData.set('recordId', id)
       formData.set('fieldKey', 'attachments')
       formData.set('file', file)
-      const { ok, result } = await apiCall<{ item: Attachment }>('/api/attachments', {
+      const { ok, result } = await apiCall<{ item?: unknown }>('/api/attachments', {
         method: 'POST',
         body: formData,
       })
-      if (ok && result?.item) {
-        setAttachments((prev) => [...prev, result.item])
+      const uploaded = ok ? normalizeTrackAttachment(result?.item) : null
+      if (uploaded) {
+        // The upload response carries no MIME type or timestamp; fill in what the browser knows.
+        setAttachments((prev) => [...prev, {
+          ...uploaded,
+          mimeType: uploaded.mimeType ?? (file.type || null),
+          createdAt: uploaded.createdAt ?? new Date().toISOString(),
+        }])
       }
     } finally {
       setUploading(false)
@@ -124,12 +138,18 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
     setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
   }
 
-  function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  function describeAttachment(att: TrackAttachment): string {
+    const createdAt = att.createdAt ? new Date(att.createdAt) : null
+    return [
+      formatAttachmentSize(att.fileSize),
+      attachmentTypeLabel(att),
+      createdAt && !Number.isNaN(createdAt.getTime())
+        ? t('tracks.attachments.uploadedAt', 'Uploaded {date}', { date: createdAt.toLocaleString() })
+        : null,
+    ].filter(Boolean).join(' · ')
   }
 
+  // The attachments field renders page state, so the field list is rebuilt when that state changes.
   const fields = React.useMemo<CrudField[]>(() => [
     {
       id: 'competition_id',
@@ -156,24 +176,42 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
         <div className="space-y-3">
           {attachments.length > 0 && (
             <ul className="divide-y rounded-md border">
-              {attachments.map((att) => (
-                <li key={att.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground">
-                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    <span className="truncate text-sm">{att.file_name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">({formatFileSize(att.file_size)})</span>
-                  </div>
-                  <button type="button" onClick={() => handleRemoveAttachment(att.id)} className="shrink-0 text-xs text-red-500 hover:text-red-700">Remove</button>
-                </li>
-              ))}
+              {attachments.map((att) => {
+                const fileName = att.fileName || t('tracks.attachments.unnamed', 'Unnamed file')
+                const details = describeAttachment(att)
+                return (
+                  <li key={att.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium" title={fileName}>{fileName}</p>
+                        {details ? <p className="truncate text-xs text-muted-foreground">{details}</p> : null}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button asChild variant="ghost" size="2xs">
+                        <a
+                          href={attachmentDownloadUrl(att.id)}
+                          download={att.fileName || undefined}
+                          aria-label={t('tracks.attachments.downloadFile', 'Download {name}', { name: fileName })}
+                        >
+                          <Download aria-hidden />
+                          {t('tracks.attachments.download', 'Download')}
+                        </a>
+                      </Button>
+                      <Button type="button" variant="destructive-ghost" size="2xs" onClick={() => handleRemoveAttachment(att.id)}>
+                        {t('tracks.attachments.remove', 'Remove')}
+                      </Button>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <div className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" onChange={handleUpload} className="hidden" />
             <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-              {uploading ? 'Uploading...' : 'Upload File'}
+              {uploading ? t('tracks.attachments.uploading', 'Uploading...') : t('tracks.attachments.upload', 'Upload File')}
             </Button>
           </div>
         </div>
@@ -221,7 +259,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
     ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
-  ], [t, loadCompetitions, competitionSeedOptions])
+  ], [t, loadCompetitions, competitionSeedOptions, attachments, uploading])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'short_description', 'description', 'category', 'badge'] },
