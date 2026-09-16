@@ -6,7 +6,7 @@ import { CrudForm, type CrudField, type CrudFieldOption, type CrudFormGroup } fr
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
-import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useLocale, useT } from '@open-mercato/shared/lib/i18n/context'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { Button } from '@open-mercato/ui/primitives/button'
 import {
@@ -67,6 +67,7 @@ type TrackFormValues = {
 
 export default function EditTrackPage({ params }: { params?: { id?: string } }) {
   const t = useT()
+  const locale = useLocale()
   const router = useRouter()
   const id = params?.id
   const [initial, setInitial] = React.useState<TrackFormValues | null>(null)
@@ -121,11 +122,12 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
       const uploaded = ok ? normalizeTrackAttachment(result?.item) : null
       if (uploaded) {
         // The upload response carries no MIME type or timestamp; fill in what the browser knows.
-        setAttachments((prev) => [...prev, {
+        // Newest first, matching the order the list API returns after a reload.
+        setAttachments((prev) => [{
           ...uploaded,
           mimeType: uploaded.mimeType ?? (file.type || null),
           createdAt: uploaded.createdAt ?? new Date().toISOString(),
-        }])
+        }, ...prev])
       }
     } finally {
       setUploading(false)
@@ -134,8 +136,8 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
   }
 
   async function handleRemoveAttachment(attachmentId: string) {
-    await apiCall(`/api/attachments?id=${attachmentId}`, { method: 'DELETE' })
-    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
+    const { ok } = await apiCall(`/api/attachments?id=${encodeURIComponent(attachmentId)}`, { method: 'DELETE' })
+    if (ok) setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
   }
 
   function describeAttachment(att: TrackAttachment): string {
@@ -144,7 +146,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
       formatAttachmentSize(att.fileSize),
       attachmentTypeLabel(att),
       createdAt && !Number.isNaN(createdAt.getTime())
-        ? t('tracks.attachments.uploadedAt', 'Uploaded {date}', { date: createdAt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) })
+        ? t('tracks.attachments.uploadedAt', 'Uploaded {date}', { date: createdAt.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) })
         : null,
     ].filter(Boolean).join(' · ')
   }
@@ -198,7 +200,13 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
                             {t('tracks.attachments.download', 'Download')}
                           </a>
                         </Button>
-                        <Button type="button" variant="destructive-ghost" size="2xs" onClick={() => handleRemoveAttachment(att.id)}>
+                        <Button
+                          type="button"
+                          variant="destructive-ghost"
+                          size="2xs"
+                          aria-label={t('tracks.attachments.removeFile', 'Remove {name}', { name: fileName })}
+                          onClick={() => handleRemoveAttachment(att.id)}
+                        >
                           {t('tracks.attachments.remove', 'Remove')}
                         </Button>
                       </div>
@@ -259,7 +267,7 @@ export default function EditTrackPage({ params }: { params?: { id?: string } }) 
     ]},
     { id: 'max_teams', label: t('tracks.fields.maxTeams', 'Max Teams'), type: 'number' },
     { id: 'order', label: t('tracks.fields.order', 'Order'), type: 'number' },
-  ], [t, loadCompetitions, competitionSeedOptions, attachments, uploading])
+  ], [t, locale, loadCompetitions, competitionSeedOptions, attachments, uploading])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'general', title: t('tracks.groups.general', 'General'), column: 1, fields: ['competition_id', 'name', 'short_description', 'description', 'category', 'badge'] },

@@ -59,6 +59,7 @@
   "tracks.attachments.download": "Download",
   "tracks.attachments.downloadFile": "Download {name}",
   "tracks.attachments.remove": "Remove",
+  "tracks.attachments.removeFile": "Remove {name}",
   "tracks.attachments.upload": "Upload File",
   "tracks.attachments.uploading": "Uploading...",
   "tracks.attachments.uploadedAt": "Uploaded {date}",

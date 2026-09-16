@@ -59,6 +59,7 @@
   "tracks.attachments.download": "Pobierz",
   "tracks.attachments.downloadFile": "Pobierz {name}",
   "tracks.attachments.remove": "Usuń",
+  "tracks.attachments.removeFile": "Usuń {name}",
   "tracks.attachments.upload": "Prześlij plik",
   "tracks.attachments.uploading": "Przesyłanie...",
   "tracks.attachments.uploadedAt": "Przesłano {date}",

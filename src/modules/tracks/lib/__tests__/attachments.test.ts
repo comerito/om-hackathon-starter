@@ -80,6 +80,11 @@ describe('attachmentTypeLabel', () => {
     expect(attachmentTypeLabel({ fileName: 'logo', mimeType: 'image/svg+xml' })).toBe('SVG')
   })
 
+  it('does not mistake a numeric suffix for a file type', () => {
+    expect(attachmentTypeLabel({ fileName: 'report.2024', mimeType: 'application/pdf' })).toBe('PDF')
+    expect(attachmentTypeLabel({ fileName: 'report.2024', mimeType: null })).toBeNull()
+  })
+
   it('returns null when nothing is known', () => {
     expect(attachmentTypeLabel({ fileName: 'blob', mimeType: 'application/octet-stream' })).toBeNull()
     expect(attachmentTypeLabel({ fileName: '.env', mimeType: null })).toBeNull()

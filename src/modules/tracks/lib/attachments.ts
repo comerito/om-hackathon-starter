@@ -86,7 +86,8 @@ export function attachmentTypeLabel(attachment: Pick<TrackAttachment, 'fileName'
   const lastDot = name.lastIndexOf('.')
   if (lastDot > 0 && lastDot < name.length - 1) {
     const extension = name.slice(lastDot + 1)
-    if (/^[a-z0-9]{1,8}$/i.test(extension)) return extension.toUpperCase()
+    // Require a letter so a dotted version or year ("report.2024") is not read as a type.
+    if (/^(?=.*[a-z])[a-z0-9]{1,8}$/i.test(extension)) return extension.toUpperCase()
   }
   const mimeType = attachment.mimeType?.trim().toLowerCase()
   if (!mimeType || mimeType === 'application/octet-stream') return null
