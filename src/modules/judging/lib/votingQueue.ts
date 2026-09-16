@@ -75,3 +75,47 @@ export function findOnStage<T extends QueueItem>(projects: ReadonlyArray<T>): T 
 export function findUpNext<T extends QueueItem>(projects: ReadonlyArray<T>): T | null {
   return projects.find((project) => project.demo?.status === 'on_deck') ?? null
 }
+
+/** A score row as the queue sees it: the stored flags plus what it takes to match and label it. */
+export type QueueScore = VoteScoreSummary & { project_id: string; round: string; total_score: number | null }
+
+export type QueueEntry<P, S> = { project: P; score: S | null; state: VoteState }
+
+/**
+ * Pairs each project (kept in the given order) with the judge's score row for `round` and the
+ * resulting Phase 1 vote state. Rows for other rounds are ignored, so a final-round score never
+ * marks a preliminary project as voted.
+ */
+export function resolveQueueEntries<P extends { id: string }, S extends QueueScore>(
+  projects: ReadonlyArray<P>,
+  scores: ReadonlyArray<S>,
+  round: string = 'preliminary',
+): Array<QueueEntry<P, S>> {
+  const byProject = new Map<string, S>()
+  for (const score of scores) {
+    if (score.round === round) byProject.set(score.project_id, score)
+  }
+  return projects.map((project) => {
+    const score = byProject.get(project.id) ?? null
+    return { project, score, state: voteState(score) }
+  })
+}
+
+/** Entries shown by the queue: everything, or only the ones still to do when "Hide voted" is on. */
+export function filterQueueEntries<E extends { state: VoteState }>(entries: ReadonlyArray<E>, hideVoted: boolean): E[] {
+  return hideVoted ? entries.filter((entry) => !isDone(entry.state)) : [...entries]
+}
+
+/** Queue progress: `done` counts voted and recused projects out of every assigned project. */
+export function queueProgress(entries: ReadonlyArray<{ state: VoteState }>): { done: number; total: number } {
+  return { done: entries.filter((entry) => isDone(entry.state)).length, total: entries.length }
+}
+
+/**
+ * The number on a "Voted" badge: the stored 0–100 total on the 0–10 scale with one decimal
+ * (`68` → `"6.8"`). `null` when there is no usable total, so the badge shows just "Voted".
+ */
+export function formatVoteScore(totalScore: number | null | undefined): string | null {
+  if (typeof totalScore !== 'number' || !Number.isFinite(totalScore)) return null
+  return (totalScore / 10).toFixed(1)
+}

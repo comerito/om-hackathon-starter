@@ -1,5 +1,8 @@
 import type { DemoStatus } from '../../data/entities'
-import { findOnStage, findUpNext, isDone, sortByDemoOrder, voteState, type VoteState } from '../votingQueue'
+import {
+  filterQueueEntries, findOnStage, findUpNext, formatVoteScore, isDone, queueProgress, resolveQueueEntries,
+  sortByDemoOrder, voteState, type VoteState,
+} from '../votingQueue'
 
 /**
  * SPEC-007 step 1: the judge portal list becomes a voting queue in presentation order, with
@@ -149,5 +152,74 @@ describe('findOnStage / findUpNext', () => {
     expect(findOnStage(deckOnly)).toBeNull()
     const stageOnly = [project('stage', 'Stage', { order: 0, status: 'presenting' })]
     expect(findUpNext(stageOnly)).toBeNull()
+  })
+})
+
+describe('resolveQueueEntries', () => {
+  const score = (projectId: string, round: string, flags: Partial<{ is_submitted: boolean; conflict_of_interest: boolean; total_score: number | null }> = {}) => ({
+    id: `score-${projectId}-${round}`,
+    project_id: projectId,
+    round,
+    total_score: flags.total_score ?? null,
+    is_submitted: flags.is_submitted ?? false,
+    conflict_of_interest: flags.conflict_of_interest ?? false,
+  })
+
+  it('keeps the project order and matches preliminary scores by project id', () => {
+    const projects = [project('b', 'Beta'), project('a', 'Alpha'), project('c', 'Gamma')]
+    const entries = resolveQueueEntries(projects, [
+      score('a', 'preliminary', { is_submitted: true, total_score: 68 }),
+      score('c', 'preliminary', { conflict_of_interest: true }),
+    ])
+    expect(entries.map((e) => e.project.id)).toEqual(['b', 'a', 'c'])
+    expect(entries.map((e) => e.state)).toEqual(['not_voted', 'voted', 'recused'])
+    expect(entries[1].score?.total_score).toBe(68)
+    expect(entries[0].score).toBeNull()
+  })
+
+  it('ignores score rows from another round', () => {
+    const entries = resolveQueueEntries([project('a', 'Alpha')], [score('a', 'final', { is_submitted: true })])
+    expect(entries[0].state).toBe('not_voted')
+    expect(entries[0].score).toBeNull()
+  })
+
+  it('handles no projects and no scores', () => {
+    expect(resolveQueueEntries([], [score('a', 'preliminary')])).toEqual([])
+    expect(resolveQueueEntries([project('a', 'Alpha')], []).map((e) => e.state)).toEqual(['not_voted'])
+  })
+})
+
+describe('filterQueueEntries and queueProgress', () => {
+  const states: VoteState[] = ['voted', 'in_progress', 'recused', 'not_voted', 'voted']
+  const entries = states.map((state, i) => ({ id: String(i), state }))
+
+  it('returns every entry when hide voted is off', () => {
+    const shown = filterQueueEntries(entries, false)
+    expect(shown).toEqual(entries)
+    expect(shown).not.toBe(entries)
+  })
+
+  it('hides voted and recused entries when hide voted is on', () => {
+    expect(filterQueueEntries(entries, true).map((e) => e.id)).toEqual(['1', '3'])
+  })
+
+  it('counts voted and recused as done out of all entries', () => {
+    expect(queueProgress(entries)).toEqual({ done: 3, total: 5 })
+    expect(queueProgress([])).toEqual({ done: 0, total: 0 })
+  })
+})
+
+describe('formatVoteScore', () => {
+  it('converts the 0–100 total to the 0–10 scale with one decimal', () => {
+    expect(formatVoteScore(68)).toBe('6.8')
+    expect(formatVoteScore(100)).toBe('10.0')
+    expect(formatVoteScore(0)).toBe('0.0')
+    expect(formatVoteScore(58.75)).toBe('5.9')
+  })
+
+  it('is null when there is no usable total', () => {
+    expect(formatVoteScore(null)).toBeNull()
+    expect(formatVoteScore(undefined)).toBeNull()
+    expect(formatVoteScore(Number.NaN)).toBeNull()
   })
 })
