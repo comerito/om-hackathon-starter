@@ -140,4 +140,9 @@ A single place that knows how to turn a stored attachment URL into a portal-serv
 
 ### Phase 4: Validation
 
-- [ ] 4.1 Run the full validation gate
+- [x] 4.1 Run the full validation gate — `yarn generate` ✅, `yarn typecheck` ✅, `yarn test` ✅ (612
+  passed / 55 suites), `yarn build` ✅. `yarn lint` ❌ **pre-existing**: the script is `next lint`,
+  which Next 16 removed, so it reads `lint` as a directory name and exits 1; the repo also carries
+  no `eslint.config.*`. `git show origin/main:package.json` has the identical script, so this fails
+  the same way on an untouched checkout and is not caused by this change. Not fixed here — giving
+  the repo an ESLint 9 flat config is its own change.
