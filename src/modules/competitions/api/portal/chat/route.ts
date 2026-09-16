@@ -8,6 +8,10 @@ import { newOrmEntity } from '@/lib/orm/entity-class'
 import { CompetitionParticipation } from '../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawAll } from '@/lib/db'
+import { toPortalAvatarUrl } from '../../../lib/avatarUrls'
+
+/** Chat renders avatars as small circles; no reason to ship the original. */
+const CHAT_AVATAR_SIZE = 64
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -109,7 +113,12 @@ export async function GET(req: Request) {
           [otherUserIds, auth.tenantId],
         )
       : []
-    const avatarMap = new Map<string, string | null>(profileRows.map((p: any) => [p.customer_user_id, p.avatar_url] as [string, string | null]))
+    // Stored as the canonical attachment URL, which only a backoffice session can read — the
+    // conversation list needs the portal-servable thumbnail. See lib/avatarUrls.ts.
+    const avatarMap = new Map<string, string | null>(profileRows.map((p: any) => [
+      p.customer_user_id,
+      toPortalAvatarUrl(p.avatar_url, { width: CHAT_AVATAR_SIZE, height: CHAT_AVATAR_SIZE, cropType: 'cover' }),
+    ] as [string, string | null]))
 
     const items = conversationsRaw.map((r: any) => ({
       threadId: r.thread_id,

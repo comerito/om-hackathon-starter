@@ -9,12 +9,12 @@ import { buildAttachmentFileUrl } from '@open-mercato/core/modules/attachments/l
 import { ensureDefaultPartitions } from '@open-mercato/core/modules/attachments/lib/partitions'
 import { storePartitionFile } from '@open-mercato/core/modules/attachments/lib/storage'
 import { ParticipantProfile } from '../../../data/entities'
+import { AVATAR_ENTITY_ID, toPortalAvatarUrl } from '../../../lib/avatarUrls'
 
 export const metadata = {
   POST: { requireCustomerAuth: true },
 }
 
-const AVATAR_ENTITY_ID = 'competitions:participant_profile'
 const AVATAR_FIELD_KEY = 'avatar'
 const AVATAR_PARTITION_CODE = 'productsMedia'
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024
@@ -108,7 +108,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      avatar_url: attachment.url,
+      // `attachment.url` is the canonical /api/attachments/file/<id>, which only a backoffice
+      // session can read. The portal gets the URL it can actually fetch, so the avatar the
+      // uploader just picked renders immediately. See lib/avatarUrls.ts.
+      avatar_url: toPortalAvatarUrl(attachment.url),
       profile_id: profile.id,
       attachment_id: attachment.id,
     })

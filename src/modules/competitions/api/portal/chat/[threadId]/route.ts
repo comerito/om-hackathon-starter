@@ -5,6 +5,10 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { CompetitionParticipation } from '../../../../data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawAll, rawRun } from '@/lib/db'
+import { toPortalAvatarUrl } from '../../../../lib/avatarUrls'
+
+/** Chat renders avatars as small circles; no reason to ship the original. */
+const CHAT_AVATAR_SIZE = 64
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -79,7 +83,13 @@ export async function GET(req: Request, { params }: { params: { threadId: string
       otherUser = {
         id: otherUserId,
         displayName: userRow?.display_name || userRow?.email?.split('@')[0] || 'Unknown',
-        avatarUrl: profileRow?.avatar_url ?? null,
+        // Stored as the canonical attachment URL, which only a backoffice session can read — the
+        // thread header needs the portal-servable thumbnail. See lib/avatarUrls.ts.
+        avatarUrl: toPortalAvatarUrl(profileRow?.avatar_url, {
+          width: CHAT_AVATAR_SIZE,
+          height: CHAT_AVATAR_SIZE,
+          cropType: 'cover',
+        }),
       }
     }
 
