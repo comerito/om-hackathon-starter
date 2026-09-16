@@ -97,8 +97,9 @@ A single place that knows how to turn a stored attachment URL into a portal-serv
   `metadata.GET.requireCustomerAuth`, tenant scoping, the participant-profile entity guard,
   optional `width`/`height`/`cropType` resizing via `sharp` reusing core's thumbnail cache and
   image-safety helpers, and `openApi`.
-- 2.3 Unit tests for the route: unauthenticated → 401, wrong tenant → 403, non-avatar attachment →
-  403, missing attachment → 404, happy path → 200 with the image bytes.
+- 2.3 Unit tests for the route: unauthenticated → 401, another tenant → 404 (the tenant filter
+  lives in the query, so a foreign id is simply not found rather than confirmed), non-avatar
+  attachment → 403, missing file → 404, happy path → 200 with the image bytes.
 
 ### Phase 3 — Emit the portal URL from every portal API
 
@@ -121,21 +122,21 @@ A single place that knows how to turn a stored attachment URL into a portal-serv
 
 ### Phase 1: Portal avatar URL helper
 
-- [ ] 1.1 Add the avatar URL helper module
-- [ ] 1.2 Unit tests for the avatar URL helper
+- [x] 1.1 Add the avatar URL helper module — 7642268
+- [x] 1.2 Unit tests for the avatar URL helper — 7642268
 
 ### Phase 2: Portal-authenticated avatar route
 
-- [ ] 2.1 Declare `sharp` as a direct dependency
-- [ ] 2.2 Add the portal avatar route
-- [ ] 2.3 Unit tests for the portal avatar route
+- [x] 2.1 Declare `sharp` as a direct dependency — 95bce08
+- [x] 2.2 Add the portal avatar route — 00a6114
+- [x] 2.3 Unit tests for the portal avatar route — 00a6114
 
 ### Phase 3: Emit the portal URL from every portal API
 
-- [ ] 3.1 Rewrite the avatar URL in the upload response
-- [ ] 3.2 Rewrite the avatar URL in the profile API
-- [ ] 3.3 Rewrite the avatar URL in the participants directory
-- [ ] 3.4 Rewrite the avatar URL in the chat APIs
+- [x] 3.1 Rewrite the avatar URL in the upload response — 7d466e6
+- [x] 3.2 Rewrite the avatar URL in the profile API — 7d466e6
+- [x] 3.3 Rewrite the avatar URL in the participants directory — 7d466e6
+- [x] 3.4 Rewrite the avatar URL in the chat APIs — 7d466e6
 
 ### Phase 4: Validation
 
