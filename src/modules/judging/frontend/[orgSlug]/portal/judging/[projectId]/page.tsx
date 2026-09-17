@@ -250,7 +250,7 @@ function VotingContent({ projectId, orgSlug, competitionId }: { projectId: strin
               {t('judging.portal.projectCard.title', 'Project card')}
             </Button>
           ) : null}
-          {nextProject ? (
+          {nextProject && !closed ? (
             <Button asChild variant="outline" size="sm">
               <Link href={`/${orgSlug}/portal/judging/${nextProject.id}${queueQuery}`} data-testid="vote-next-in-queue">
                 {t('judging.portal.vote.nextInQueue', 'Next in queue')}
@@ -290,8 +290,8 @@ function VotingContent({ projectId, orgSlug, competitionId }: { projectId: strin
               <div className="flex items-start gap-2">
                 <UserX className="mt-0.5 size-4 shrink-0 text-status-neutral-icon" aria-hidden="true" />
                 <div>
-                  <p className="text-sm font-semibold">{t('judging.portal.recused', 'Recused')}</p>
-                  <p className="text-sm">{t('judging.portal.recusedDesc', 'You have recused yourself from scoring this project due to a conflict of interest.')}</p>
+                  <p className="text-sm font-semibold">{t('judging.portal.vote.recused', 'Recused')}</p>
+                  <p className="text-sm">{t('judging.portal.vote.recusedNotice', 'You are recused from this project due to a conflict of interest. Your stars are kept but do not count towards the results.')}</p>
                 </div>
               </div>
               <Button type="button" variant="outline" size="sm" disabled={closed} onClick={() => setRecused(false)}>
@@ -392,7 +392,7 @@ function VotingContent({ projectId, orgSlug, competitionId }: { projectId: strin
           <DialogHeader>
             <DialogTitle>{t('judging.portal.vote.recuseConfirmTitle', 'Recuse yourself from this project?')}</DialogTitle>
             <DialogDescription>
-              {t('judging.portal.vote.recuseConfirmDesc', 'Your vote on this project will not count. Your stars are kept, and you can undo this until results are published.')}
+              {t('judging.portal.vote.recuseConfirmDesc', 'Your vote on this project will not count. Your stars are kept, and you can undo the recusal until results are published.')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

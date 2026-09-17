@@ -131,15 +131,6 @@ export function queueProgress(entries: ReadonlyArray<{ state: VoteState }>): { d
 }
 
 /**
- * The number on a "Voted" badge: the stored 0–100 total on the 0–10 scale with one decimal
- * (`68` → `"6.8"`). `null` when there is no usable total, so the badge shows just "Voted".
- */
-export function formatVoteScore(totalScore: number | null | undefined): string | null {
-  if (typeof totalScore !== 'number' || !Number.isFinite(totalScore)) return null
-  return (totalScore / 10).toFixed(1)
-}
-
-/**
  * The number on a "Voted" badge from the server's weighted average (0–10) with one decimal
  * (`6.83` → `"6.8"`). `null` when there is no usable average, so the badge shows just "Voted".
  */

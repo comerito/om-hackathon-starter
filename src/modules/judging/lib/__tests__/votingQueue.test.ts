@@ -1,6 +1,6 @@
 import type { DemoStatus } from '../../data/entities'
 import {
-  filterQueueEntries, findNextInQueue, findOnStage, findUpNext, formatVoteScore, formatWeightedAverage, isDone, liveVoteState,
+  filterQueueEntries, findNextInQueue, findOnStage, findUpNext, formatWeightedAverage, isDone, liveVoteState,
   queueProgress, resolveQueueEntries, sortByDemoOrder, voteState, withEntryState, type VoteState,
 } from '../votingQueue'
 
@@ -229,21 +229,6 @@ describe('filterQueueEntries and queueProgress', () => {
   it('counts voted and recused as done out of all entries', () => {
     expect(queueProgress(entries)).toEqual({ done: 3, total: 5 })
     expect(queueProgress([])).toEqual({ done: 0, total: 0 })
-  })
-})
-
-describe('formatVoteScore', () => {
-  it('converts the 0–100 total to the 0–10 scale with one decimal', () => {
-    expect(formatVoteScore(68)).toBe('6.8')
-    expect(formatVoteScore(100)).toBe('10.0')
-    expect(formatVoteScore(0)).toBe('0.0')
-    expect(formatVoteScore(58.75)).toBe('5.9')
-  })
-
-  it('is null when there is no usable total', () => {
-    expect(formatVoteScore(null)).toBeNull()
-    expect(formatVoteScore(undefined)).toBeNull()
-    expect(formatVoteScore(Number.NaN)).toBeNull()
   })
 })
 

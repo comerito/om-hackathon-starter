@@ -50,11 +50,31 @@ function SaveIndicator({ saveState, onRetry }: { saveState: VoteSaveState; onRet
   )
 }
 
-function Stat({ label, value, testId }: { label: string; value: string; testId: string }) {
+type StatProps = {
+  label: string
+  /** Label below `lg:`, where the summary is a narrow bottom bar. */
+  shortLabel: string
+  value: string
+  /** Value below `lg:`; defaults to `value`. */
+  shortValue?: string
+  testId: string
+}
+
+function Stat({ label, shortLabel, value, shortValue, testId }: StatProps) {
   return (
     <div className="min-w-0" data-testid={testId}>
-      <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground lg:text-xs">{label}</dt>
-      <dd className="text-sm font-semibold tabular-nums lg:text-base">{value}</dd>
+      <dt className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground lg:text-xs">
+        <span className="lg:hidden">{shortLabel}</span>
+        <span className="hidden lg:inline">{label}</span>
+      </dt>
+      <dd className="whitespace-nowrap text-sm font-semibold tabular-nums lg:text-base">
+        {shortValue !== undefined && shortValue !== value ? (
+          <>
+            <span className="lg:hidden">{shortValue}</span>
+            <span className="hidden lg:inline">{value}</span>
+          </>
+        ) : value}
+      </dd>
     </div>
   )
 }
@@ -93,46 +113,52 @@ export function VoteSummary({ summary, place, progress, saveState, onRetry, recu
             <div>
               <p className="font-semibold">{t('judging.portal.vote.recused', 'Recused')}</p>
               <p className="hidden text-xs lg:block">
-                {t('judging.portal.vote.recusedDesc', 'Your stars are kept but not counted while you are recused.')}
+                {t('judging.portal.vote.recusedDesc', 'Your stars do not count towards the results.')}
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-4 lg:flex-col lg:items-stretch">
+          <div className="flex items-center gap-3 lg:flex-col lg:items-stretch lg:gap-4">
             <div
               className="shrink-0 rounded-lg bg-muted/40 px-3 py-1.5 lg:px-4 lg:py-3"
               data-testid="vote-summary-average"
             >
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground lg:text-xs">
-                {t('judging.portal.vote.weightedAverage', 'Weighted average')}
+              <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground lg:text-xs">
+                <span className="lg:hidden">{t('judging.portal.vote.weightedAverageShort', 'Average')}</span>
+                <span className="hidden lg:inline">{t('judging.portal.vote.weightedAverage', 'Weighted average')}</span>
               </p>
-              <p className="tabular-nums">
+              <p className="whitespace-nowrap tabular-nums">
                 <span className="text-2xl font-bold leading-tight lg:text-4xl">{average ?? '–'}</span>
                 <span className="text-sm text-muted-foreground lg:text-base"> / {STAR_SCALE}</span>
               </p>
             </div>
-            <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4 lg:grid-cols-2 lg:gap-y-3">
+            <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4 lg:grid-cols-2 lg:gap-x-3 lg:gap-y-3">
               <Stat
                 testId="vote-summary-rated"
                 label={t('judging.portal.vote.ratedCriteria', 'Rated criteria')}
+                shortLabel={t('judging.portal.vote.ratedCriteriaShort', 'Criteria')}
                 value={outOf(String(summary.ratedCount), String(summary.criteriaCount))}
               />
               <Stat
                 testId="vote-summary-star-sum"
                 label={t('judging.portal.vote.starSum', 'Star sum')}
+                shortLabel={t('judging.portal.vote.starSumShort', 'Stars')}
                 value={outOf(formatPoints(summary.starSum), String(summary.criteriaCount * STAR_SCALE))}
               />
               {place ? (
                 <Stat
                   testId="vote-summary-place"
                   label={t('judging.portal.vote.place', 'Place')}
+                  shortLabel={t('judging.portal.vote.placeShort', 'Place')}
                   value={t('judging.portal.vote.placeValue', '{place} of {of}', { place: place.place, of: place.of })}
                 />
               ) : null}
               <Stat
                 testId="vote-summary-progress"
                 label={t('judging.portal.vote.progress', 'Queue progress')}
+                shortLabel={t('judging.portal.vote.progressShort', 'Progress')}
                 value={t('judging.portal.vote.progressValue', '{done} / {total} done', { done: progress.done, total: progress.total })}
+                shortValue={t('judging.portal.vote.progressValueShort', '{done}/{total}', { done: progress.done, total: progress.total })}
               />
             </dl>
           </div>

@@ -27,6 +27,7 @@ export type StarCriterionCardProps = {
 /**
  * One criterion on the judge's voting page (SPEC-007 phase 2): a 1–10 star rating with the value
  * converted to the criterion's own points, plus a note that stays collapsed until it is used.
+ * When `disabled` (voting closed) an existing note is shown read-only and "Add note" is hidden.
  *
  * Presentational only — the page owns the state and the save queue.
  */
@@ -124,13 +125,12 @@ export function StarCriterionCard({
             className="min-h-[64px]"
           />
         </div>
-      ) : (
+      ) : disabled ? null : (
         <Button
           type="button"
           variant="muted"
           size="sm"
           className="-ml-2"
-          disabled={disabled}
           onClick={handleOpenNote}
         >
           <MessageSquarePlus className="size-4" aria-hidden="true" />
