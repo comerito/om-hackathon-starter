@@ -104,6 +104,25 @@ describe('GET /api/teams/portal/browse-teams — recruitment', () => {
     })
   })
 
+  it('withholds a closed posting from readers even though the team still stores it', async () => {
+    mockRawAll.mockImplementation(async (_em: unknown, sql: string, params: unknown[] = []) => {
+      queries.push([sql, params])
+      if (/COUNT\(/i.test(sql)) return [{ count: 1 }]
+      if (/FROM teams_team t/i.test(sql)) {
+        return [teamRow({ looking_for_members: false, needed_skills: ['React'], recruitment_note: 'Join us' })]
+      }
+      return []
+    })
+
+    const { body } = await browse(`competition_id=${COMPETITION}`)
+
+    expect((body.items as Record<string, unknown>[])[0]).toMatchObject({
+      looking_for_members: false,
+      needed_skills: [],
+      recruitment_note: null,
+    })
+  })
+
   it('leaves a row written before this shipped as a closed posting', async () => {
     mockRawAll.mockImplementation(async (_em: unknown, sql: string, params: unknown[] = []) => {
       queries.push([sql, params])
@@ -143,6 +162,8 @@ describe('GET /api/teams/portal/browse-teams — recruitment', () => {
     const [sql, params] = teamsQuery()
     expect(sql).toMatch(/jsonb_array_elements_text\(t\.needed_skills\)/)
     expect(sql).toMatch(/IN \(\?\)/)
+    // Without the type guard a single non-array row fails the whole query, not just its own match.
+    expect(sql).toMatch(/jsonb_typeof\(t\.needed_skills\) = 'array'/)
     // Case-folded, so the stored spelling does not have to match what was typed.
     expect(params).toContainEqual(['react', 'postgres'])
   })

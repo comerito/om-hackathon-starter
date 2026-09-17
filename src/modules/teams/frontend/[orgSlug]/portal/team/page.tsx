@@ -1001,7 +1001,9 @@ function TeamView({
             <InviteMemberSection
               teamId={team.id}
               competitionId={competitionId}
-              neededSkills={neededSkills}
+              // Only while the posting is open: the shortlist speaks about a gap the team is
+              // advertising, and its empty state says so.
+              neededSkills={team.looking_for_members ? neededSkills : []}
               participantsHref={`/${orgSlug}/portal/participants`}
             />
           )}

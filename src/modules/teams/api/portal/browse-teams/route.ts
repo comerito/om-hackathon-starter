@@ -61,8 +61,12 @@ export async function GET(req: Request) {
     // element. `skillFilter` went through `normalizeNeededSkills`, so it is never empty here —
     // which matters, because `execute()` inlines an empty array as `IN ()` and that does not
     // parse (see lib/db.ts).
+    //
+    // `jsonb_typeof(...) = 'array'` is not decoration: `jsonb_array_elements_text` raises
+    // "cannot extract elements from a scalar" on a row whose jsonb is not an array, and one such
+    // row would take down the whole browse page rather than just itself.
     if (skillFilter.length > 0) {
-      conds.push(`EXISTS (
+      conds.push(`jsonb_typeof(t.needed_skills) = 'array' AND EXISTS (
         SELECT 1 FROM jsonb_array_elements_text(t.needed_skills) AS wanted(skill)
          WHERE lower(btrim(wanted.skill)) IN (?)
       )`)
@@ -146,10 +150,13 @@ export async function GET(req: Request) {
       is_active: Boolean(t.is_active),
       created_at: t.created_at,
       looking_for_members: Boolean(t.looking_for_members),
+      // A closed posting is withheld, not deleted: the team keeps its list for the next time it
+      // reopens, and nobody browsing sees wants the team is no longer advertising.
+      //
       // Normalized on read as well as on write: the column is jsonb, so a row written before
       // this shipped (or by anything other than update-recruitment) can still hold junk.
-      needed_skills: normalizeNeededSkills(t.needed_skills),
-      recruitment_note: t.recruitment_note ?? null,
+      needed_skills: t.looking_for_members ? normalizeNeededSkills(t.needed_skills) : [],
+      recruitment_note: t.looking_for_members ? (t.recruitment_note ?? null) : null,
       _teams: { memberCount: memberCounts.get(t.id) ?? 0 },
     }))
 
@@ -169,5 +176,11 @@ export async function GET(req: Request) {
 export const openApi: OpenApiRouteDoc = {
   tag: 'Teams',
   summary: 'Browse teams (portal)',
-  methods: { GET: { summary: 'List teams for portal participants' } },
+  methods: {
+    GET: {
+      summary: 'List teams for portal participants. `recruiting=true` narrows to teams with an open '
+        + 'recruitment posting; `skills=a,b` narrows to teams recruiting for any of those skills '
+        + '(case-insensitive). A closed posting reports no skills and no note.',
+    },
+  },
 }

@@ -4,27 +4,13 @@ import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
 import { Team, TeamMember, TeamRole } from '../../../data/entities'
-import { MAX_RECRUITMENT_NOTE_LENGTH, MAX_NEEDED_SKILLS, MAX_SKILL_LENGTH, normalizeNeededSkills } from '../../../lib/recruitment'
+import { normalizeNeededSkills } from '../../../lib/recruitment'
+import { updateTeamRecruitmentSchema } from '../../../data/validators'
 import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 /** Registry resource kind for the team row this route writes to. */
 const TEAM_RESOURCE_KIND = 'teams.team'
-
-/**
- * The team owner publishes or withdraws the team's recruitment posting: *"we are looking for
- * someone with these skills"*.
- *
- * The schema is deliberately looser than the stored shape — `normalizeNeededSkills` is what
- * trims, de-duplicates and caps the list. The bounds here only stop an absurd payload from
- * reaching it.
- */
-const updateRecruitmentSchema = z.object({
-  team_id: z.string().uuid(),
-  looking_for_members: z.boolean(),
-  needed_skills: z.array(z.string().max(MAX_SKILL_LENGTH * 2)).max(MAX_NEEDED_SKILLS * 4).optional(),
-  recruitment_note: z.string().max(MAX_RECRUITMENT_NOTE_LENGTH).nullable().optional(),
-})
 
 export const metadata = {
   POST: { requireCustomerAuth: true },
@@ -38,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const parsed = updateRecruitmentSchema.parse(body)
+    const parsed = updateTeamRecruitmentSchema.parse(body)
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
@@ -62,7 +48,7 @@ export async function POST(req: Request) {
     })
     if (!guard.ok) return guard.response
     const input = guard.modifiedPayload
-      ? updateRecruitmentSchema.parse({ ...parsed, ...guard.modifiedPayload })
+      ? updateTeamRecruitmentSchema.parse({ ...parsed, ...guard.modifiedPayload })
       : parsed
 
     // Only the owner speaks for the team. Same rule as inviting and managing tracks.
@@ -88,17 +74,17 @@ export async function POST(req: Request) {
 
     const lookingForMembers = input.looking_for_members
 
-    // Closing the posting clears it rather than parking stale wants on a team that is done
-    // recruiting — a closed posting that still lists "React" reads as an open one the moment
-    // anything surfaces the fields without checking the flag.
-    const neededSkills = lookingForMembers
-      ? normalizeNeededSkills(input.needed_skills ?? team.neededSkills)
-      : []
+    // `looking_for_members` is a visibility flag, not a delete button. Closing the posting keeps
+    // the skills and the note, so a team that fills a seat and reopens a week later does not have
+    // to retype the list — `browse-teams` is what withholds a closed posting from readers.
+    //
+    // Omitting a field means "leave it as it is"; sending `[]` / `null` clears it explicitly.
+    const neededSkills = normalizeNeededSkills(input.needed_skills ?? team.neededSkills)
 
     const trimmedNote = input.recruitment_note?.trim()
-    const recruitmentNote = lookingForMembers
-      ? (input.recruitment_note === undefined ? (team.recruitmentNote ?? null) : (trimmedNote || null))
-      : null
+    const recruitmentNote = input.recruitment_note === undefined
+      ? (team.recruitmentNote ?? null)
+      : (trimmedNote || null)
 
     team.lookingForMembers = lookingForMembers
     team.neededSkills = neededSkills

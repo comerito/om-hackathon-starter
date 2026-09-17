@@ -200,7 +200,7 @@ describe('POST /api/teams/portal/update-recruitment', () => {
     expect(flushed).toBe(1)
   })
 
-  it('clears the skills and the note when the posting is closed', async () => {
+  it('keeps the skills and the note when the posting is closed, so reopening is not retyping', async () => {
     teamRow = { ...(teamRow as TeamRow), lookingForMembers: true, neededSkills: ['React'], recruitmentNote: 'Join us' }
 
     const { status, body } = await post({ team_id: TEAM, looking_for_members: false })
@@ -209,11 +209,26 @@ describe('POST /api/teams/portal/update-recruitment', () => {
     expect(body).toEqual({
       ok: true,
       looking_for_members: false,
+      needed_skills: ['React'],
+      recruitment_note: 'Join us',
+    })
+    // The flag is what hides the posting; `browse-teams` withholds it from readers.
+    expect(teamRow).toMatchObject({ lookingForMembers: false, neededSkills: ['React'], recruitmentNote: 'Join us' })
+    expect(flushed).toBe(1)
+  })
+
+  it('still clears the list when the owner explicitly empties it', async () => {
+    teamRow = { ...(teamRow as TeamRow), lookingForMembers: true, neededSkills: ['React'], recruitmentNote: 'Join us' }
+
+    const { body } = await post({
+      team_id: TEAM,
+      looking_for_members: true,
       needed_skills: [],
       recruitment_note: null,
     })
-    expect(teamRow).toMatchObject({ lookingForMembers: false, neededSkills: [], recruitmentNote: null })
-    expect(flushed).toBe(1)
+
+    expect(body.needed_skills).toEqual([])
+    expect(body.recruitment_note).toBeNull()
   })
 
   it('keeps the stored skills when the payload omits them', async () => {
