@@ -145,7 +145,9 @@ export function formatVoteScore(totalScore: number | null | undefined): string |
  */
 export function formatWeightedAverage(weightedAverage: number | null | undefined): string | null {
   if (typeof weightedAverage !== 'number' || !Number.isFinite(weightedAverage)) return null
-  return weightedAverage.toFixed(1)
+  // Round half up before formatting: `toFixed` works on the binary value, so the API's rounded
+  // `6.35` (stored just below) would show `6.3` while the live page's unrounded `6.3500…05` shows `6.4`.
+  return (Math.round(weightedAverage * 10) / 10).toFixed(1)
 }
 
 /**

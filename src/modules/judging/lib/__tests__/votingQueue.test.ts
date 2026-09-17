@@ -254,6 +254,15 @@ describe('formatWeightedAverage', () => {
     expect(formatWeightedAverage(1)).toBe('1.0')
   })
 
+  it('rounds halves up, so the rounded API value and the live unrounded value agree', () => {
+    expect(formatWeightedAverage(6.35)).toBe('6.4')
+    expect(formatWeightedAverage(6 * 0.3 + 7 * 0.3 + 5 * 0.25 + 8 * 0.15)).toBe('6.4')
+    expect(formatWeightedAverage(8.15)).toBe('8.2')
+    expect(formatWeightedAverage(2.55)).toBe('2.6')
+    expect(formatWeightedAverage(9.95)).toBe('10.0')
+    expect(formatWeightedAverage(6.34)).toBe('6.3')
+  })
+
   it('is null when there is no usable average', () => {
     expect(formatWeightedAverage(null)).toBeNull()
     expect(formatWeightedAverage(undefined)).toBeNull()
