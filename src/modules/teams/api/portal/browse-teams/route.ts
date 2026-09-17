@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager } from '@mikro-orm/postgresql'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { normalizeNeededSkills } from '../../../lib/recruitment'
 import { rawAll } from '@/lib/db'
 
 export const metadata = {
@@ -28,6 +29,10 @@ export async function GET(req: Request) {
     const sortDir = url.searchParams.get('sortDir') === 'desc' ? 'desc' : 'asc'
     const nameFilter = url.searchParams.get('name')
 
+    // Recruitment filters — the team side of "who is looking for whom".
+    const recruitingOnly = url.searchParams.get('recruiting') === 'true'
+    const skillFilter = normalizeNeededSkills((url.searchParams.get('skills') ?? '').split(','))
+
     const allowedSortFields = ['name', 'created_at', 'status']
     const safeSortField = allowedSortFields.includes(sortField) ? sortField : 'name'
 
@@ -46,6 +51,22 @@ export async function GET(req: Request) {
     if (nameFilter) {
       conds.push('t.name ILIKE ?')
       values.push(`%${nameFilter}%`)
+    }
+
+    if (recruitingOnly) {
+      conds.push('t.looking_for_members = true')
+    }
+
+    // `needed_skills` is a jsonb array of free text, so the match is on the case-folded
+    // element. `skillFilter` went through `normalizeNeededSkills`, so it is never empty here —
+    // which matters, because `execute()` inlines an empty array as `IN ()` and that does not
+    // parse (see lib/db.ts).
+    if (skillFilter.length > 0) {
+      conds.push(`EXISTS (
+        SELECT 1 FROM jsonb_array_elements_text(t.needed_skills) AS wanted(skill)
+         WHERE lower(btrim(wanted.skill)) IN (?)
+      )`)
+      values.push(skillFilter.map((skill) => skill.toLocaleLowerCase()))
     }
 
     const whereSql = conds.join(' AND ')
@@ -72,10 +93,14 @@ export async function GET(req: Request) {
       table_location: string | null
       is_active: boolean
       created_at: Date | string
+      looking_for_members: boolean
+      needed_skills: unknown
+      recruitment_note: string | null
     }
     const items = await rawAll<TeamRow>(em,
       `SELECT t.id, t.competition_id, t.track_id, t.name, t.description, t.status,
-              t.is_finalist, t.table_number, t.table_location, t.is_active, t.created_at
+              t.is_finalist, t.table_number, t.table_location, t.is_active, t.created_at,
+              t.looking_for_members, t.needed_skills, t.recruitment_note
          FROM teams_team t
         WHERE ${whereSql}
         ORDER BY t.${safeSortField} ${sortDir}
@@ -120,6 +145,11 @@ export async function GET(req: Request) {
       table_location: t.table_location ?? null,
       is_active: Boolean(t.is_active),
       created_at: t.created_at,
+      looking_for_members: Boolean(t.looking_for_members),
+      // Normalized on read as well as on write: the column is jsonb, so a row written before
+      // this shipped (or by anything other than update-recruitment) can still hold junk.
+      needed_skills: normalizeNeededSkills(t.needed_skills),
+      recruitment_note: t.recruitment_note ?? null,
       _teams: { memberCount: memberCounts.get(t.id) ?? 0 },
     }))
 
