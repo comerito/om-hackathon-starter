@@ -3,6 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { TeamMember, Team, TeamTrack } from '../../../data/entities'
+import { normalizeNeededSkills } from '../../../lib/recruitment'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawAll } from '@/lib/db'
 
@@ -86,6 +87,9 @@ export async function GET(req: Request) {
         track_id: team.trackId,
         track_ids: trackIds,
         competition_id: team.competitionId,
+        looking_for_members: team.lookingForMembers === true,
+        needed_skills: normalizeNeededSkills(team.neededSkills),
+        recruitment_note: team.recruitmentNote ?? null,
       } : null,
       members: members.map(m => {
         const user = userMap.get(m.customerUserId)

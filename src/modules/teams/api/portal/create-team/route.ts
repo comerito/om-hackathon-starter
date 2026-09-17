@@ -63,6 +63,10 @@ export async function POST(req: Request) {
       status: TeamStatus.ACTIVE,
       isFinalist: false,
       isActive: true,
+      // A brand-new team is not advertising anything yet; the owner opens the posting from the
+      // My Team page.
+      lookingForMembers: false,
+      neededSkills: [],
       createdAt: now,
       updatedAt: now,
       tenantId: auth.tenantId!,

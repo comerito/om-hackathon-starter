@@ -9,8 +9,11 @@ import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmpty
 import { Button } from '@open-mercato/ui/primitives/button'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@open-mercato/ui/primitives/dialog'
+import { Checkbox } from '@open-mercato/ui/primitives/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@open-mercato/ui/primitives/popover'
 import { cn } from '@open-mercato/shared/lib/utils'
-import { Search, Users, UserPlus, Check } from 'lucide-react'
+import { Search, Users, UserPlus, Check, SlidersHorizontal, X } from 'lucide-react'
+import { normalizeNeededSkills } from '../../../../lib/recruitment'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
@@ -25,6 +28,9 @@ type Team = {
   description: string | null
   status: string
   track_id: string | null
+  looking_for_members?: boolean
+  needed_skills?: string[]
+  recruitment_note?: string | null
   _teams?: { memberCount: number }
 }
 
@@ -107,6 +113,44 @@ function CountPills({
   )
 }
 
+/**
+ * "We are looking for X" as it reads from the outside: a badge that says the team is open, and
+ * the skills it named. Rendered on the card and, with the note, in the team dialog.
+ */
+function RecruitmentSummary({ team, showNote = false }: { team: Team; showNote?: boolean }) {
+  const t = useT()
+  if (!team.looking_for_members) return null
+  const skills = normalizeNeededSkills(team.needed_skills)
+
+  return (
+    <div className="mt-2.5 space-y-1.5">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+        <UserPlus className="size-2.5" />
+        {t('teams.portal.browse.recruiting', 'Looking for members')}
+      </span>
+      {skills.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {skills.map((skill) => (
+            <span
+              key={skill}
+              className="inline-flex max-w-[140px] items-center truncate rounded-full bg-portal-primary/10 px-2 py-0.5 text-[10px] font-medium text-portal-primary"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-portal-secondary">
+          {t('teams.portal.browse.recruitingAnySkill', 'Open to anyone who wants to join.')}
+        </p>
+      )}
+      {showNote && team.recruitment_note && (
+        <p className="whitespace-pre-wrap text-xs text-portal-secondary">{team.recruitment_note}</p>
+      )}
+    </div>
+  )
+}
+
 const statusStyles: Record<string, string> = {
   active: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400',
   disqualified: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400',
@@ -132,11 +176,15 @@ function TeamsTab({
 }) {
   const t = useT()
   const [search, setSearch] = React.useState('')
+  const [recruitingOnly, setRecruitingOnly] = React.useState(false)
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([])
   const [requestingId, setRequestingId] = React.useState<string | null>(null)
   const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null)
 
+  const skillsParam = selectedSkills.join(',')
+
   const { data, isLoading } = useQuery({
-    queryKey: ['portal-teams', competitionId, search],
+    queryKey: ['portal-teams', competitionId, search, recruitingOnly, skillsParam],
     queryFn: async () => {
       const params = new URLSearchParams({
         pageSize: '50',
@@ -145,6 +193,8 @@ function TeamsTab({
         competition_id: competitionId,
       })
       if (search) params.set('name', search)
+      if (recruitingOnly) params.set('recruiting', 'true')
+      if (skillsParam) params.set('skills', skillsParam)
       const { ok, result } = await apiCall<{ items: Team[]; total: number; page: number; pageSize: number; totalPages: number }>(
         `/api/teams/portal/browse-teams?${params}`,
       )
@@ -153,6 +203,45 @@ function TeamsTab({
     },
     enabled: !!competitionId,
   })
+
+  // The options for the skill filter come from every open posting, not from the currently
+  // filtered page — otherwise picking one skill would erase the others from the menu.
+  const { data: recruitingData } = useQuery({
+    queryKey: ['portal-teams-recruiting', competitionId],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        pageSize: '100',
+        sortField: 'name',
+        sortDir: 'asc',
+        competition_id: competitionId,
+        recruiting: 'true',
+      })
+      const { ok, result } = await apiCall<{ items: Team[] }>(`/api/teams/portal/browse-teams?${params}`)
+      return ok && result ? result.items : []
+    },
+    enabled: !!competitionId,
+  })
+
+  const recruitingTeams = React.useMemo(() => recruitingData ?? [], [recruitingData])
+
+  const availableSkills = React.useMemo(() => {
+    const bySortKey = new Map<string, string>()
+    for (const team of recruitingTeams) {
+      for (const skill of normalizeNeededSkills(team.needed_skills)) {
+        const key = skill.toLocaleLowerCase()
+        if (!bySortKey.has(key)) bySortKey.set(key, skill)
+      }
+    }
+    return [...bySortKey.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  }, [recruitingTeams])
+
+  function toggleSkill(skill: string) {
+    setSelectedSkills((current) => (
+      current.includes(skill)
+        ? current.filter((entry) => entry !== skill)
+        : [...current, skill].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    ))
+  }
 
   const teams = data?.items ?? []
 
@@ -211,6 +300,80 @@ function TeamsTab({
             className="pl-9"
           />
         </div>
+
+        {/* Recruitment filters — the way to find a team that is actually open, and open for
+            what you can do. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setRecruitingOnly((current) => !current)}
+            aria-pressed={recruitingOnly}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors',
+              recruitingOnly
+                ? 'bg-portal-primary text-white'
+                : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/15',
+            )}
+          >
+            <UserPlus className="size-3.5" />
+            {t('teams.portal.browse.recruitingFilter', 'Looking for members')}
+            <span className={cn(
+              'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+              recruitingOnly ? 'bg-white/20 text-white' : 'bg-white dark:bg-white/10 text-gray-500 dark:text-slate-400',
+            )}>
+              {recruitingTeams.length}
+            </span>
+          </button>
+
+          {availableSkills.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <SlidersHorizontal className="size-4" />
+                  {t('teams.portal.browse.skillsFilter', 'Skills needed')}
+                  {selectedSkills.length > 0 && (
+                    <span className="ml-1 inline-flex items-center rounded-full bg-portal-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-portal-primary">
+                      {selectedSkills.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-64 p-0">
+                <div className="border-b border-gray-100 px-3 py-2 dark:border-white/10">
+                  <p className="text-xs font-semibold text-foreground">
+                    {t('teams.portal.browse.skillsFilter', 'Skills needed')}
+                  </p>
+                  <p className="text-[11px] text-portal-secondary">
+                    {t('teams.portal.browse.skillsFilterHint', 'Show teams looking for these skills')}
+                  </p>
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1">
+                  {availableSkills.map((skill) => (
+                    <label
+                      key={skill}
+                      className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-white/5"
+                    >
+                      <Checkbox checked={selectedSkills.includes(skill)} onCheckedChange={() => toggleSkill(skill)} />
+                      <span className="min-w-0 flex-1 truncate text-foreground">{skill}</span>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {selectedSkills.map((skill) => (
+            <button
+              key={skill}
+              type="button"
+              onClick={() => toggleSkill(skill)}
+              className="inline-flex items-center gap-1 rounded-full bg-portal-primary/10 px-2.5 py-1 text-xs font-medium text-portal-primary"
+            >
+              {skill}
+              <X className="size-3" />
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (
@@ -221,9 +384,11 @@ function TeamsTab({
         <PortalEmptyState
           title={t('teams.portal.browse.empty', 'No teams found')}
           description={
-            search
-              ? t('teams.portal.browse.emptySearch', 'Try a different search term.')
-              : t('teams.portal.browse.emptyAll', 'No teams have been created yet.')
+            recruitingOnly || selectedSkills.length > 0
+              ? t('teams.portal.browse.emptyFiltered', 'No team is looking for these skills right now. Try clearing a filter.')
+              : search
+                ? t('teams.portal.browse.emptySearch', 'Try a different search term.')
+                : t('teams.portal.browse.emptyAll', 'No teams have been created yet.')
           }
         />
       ) : (
@@ -274,6 +439,8 @@ function TeamsTab({
                   <p className="mt-2.5 text-xs text-portal-secondary line-clamp-2">{team.description}</p>
                 )}
 
+                <RecruitmentSummary team={team} />
+
                 {/* Footer */}
                 <div className="flex items-center justify-between mt-auto pt-2 sm:pt-3">
                   <button
@@ -312,6 +479,12 @@ function TeamsTab({
               </DialogHeader>
               {selectedTeam.description && (
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedTeam.description}</p>
+              )}
+              <RecruitmentSummary team={selectedTeam} showNote />
+              {selectedTeam.looking_for_members && !myMembership && isParticipant && (
+                <p className="text-xs text-portal-secondary">
+                  {t('teams.portal.browse.recruitingHint', 'This team is open — send a join request and tell them what you bring.')}
+                </p>
               )}
               <div className="flex justify-end pt-2">
                 {renderAction(selectedTeam)}
