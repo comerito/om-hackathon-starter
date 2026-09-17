@@ -147,3 +147,39 @@ export function formatWeightedAverage(weightedAverage: number | null | undefined
   if (typeof weightedAverage !== 'number' || !Number.isFinite(weightedAverage)) return null
   return weightedAverage.toFixed(1)
 }
+
+/**
+ * The project a judge should vote on after `currentProjectId`: the next entry in queue order that
+ * is not done (voted or recused), wrapping around to the start. `null` when every other project is
+ * done. When the current project is not in the queue the search starts at the top.
+ */
+export function findNextInQueue<E extends { project: { id: string }; state: VoteState }>(
+  entries: ReadonlyArray<E>,
+  currentProjectId: string,
+): E['project'] | null {
+  const total = entries.length
+  if (total === 0) return null
+  const currentIndex = entries.findIndex((entry) => entry.project.id === currentProjectId)
+  for (let step = 1; step <= total; step += 1) {
+    const entry = entries[(currentIndex + step + total) % total]
+    if (entry.project.id === currentProjectId) continue
+    if (!isDone(entry.state)) return entry.project
+  }
+  return null
+}
+
+/** Vote state of the project open on the voting page, from its live (unsaved-inclusive) values. */
+export function liveVoteState(live: { recused: boolean; isComplete: boolean; ratedCount: number; hasScore: boolean }): VoteState {
+  if (live.recused) return 'recused'
+  if (live.isComplete) return 'voted'
+  return live.ratedCount > 0 || live.hasScore ? 'in_progress' : 'not_voted'
+}
+
+/** Entries with the state of one project replaced (the live vote on the page); a new array. */
+export function withEntryState<E extends { project: { id: string }; state: VoteState }>(
+  entries: ReadonlyArray<E>,
+  projectId: string,
+  state: VoteState,
+): E[] {
+  return entries.map((entry) => (entry.project.id === projectId ? { ...entry, state } : entry))
+}

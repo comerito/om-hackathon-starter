@@ -1,7 +1,7 @@
 import type { DemoStatus } from '../../data/entities'
 import {
-  filterQueueEntries, findOnStage, findUpNext, formatVoteScore, formatWeightedAverage, isDone, queueProgress, resolveQueueEntries,
-  sortByDemoOrder, voteState, type VoteState,
+  filterQueueEntries, findNextInQueue, findOnStage, findUpNext, formatVoteScore, formatWeightedAverage, isDone, liveVoteState,
+  queueProgress, resolveQueueEntries, sortByDemoOrder, voteState, withEntryState, type VoteState,
 } from '../votingQueue'
 
 /**
@@ -258,5 +258,48 @@ describe('formatWeightedAverage', () => {
     expect(formatWeightedAverage(null)).toBeNull()
     expect(formatWeightedAverage(undefined)).toBeNull()
     expect(formatWeightedAverage(Number.NaN)).toBeNull()
+  })
+})
+
+describe('findNextInQueue', () => {
+  type Entry = { project: { id: string }; state: VoteState }
+  const entry = (id: string, state: VoteState): Entry => ({ project: { id }, state })
+
+  it('returns the next project after the current one that is not done', () => {
+    const entries = [entry('a', 'voted'), entry('b', 'in_progress'), entry('c', 'voted'), entry('d', 'recused'), entry('e', 'not_voted')]
+    expect(findNextInQueue(entries, 'b')?.id).toBe('e')
+  })
+
+  it('wraps around to the start of the queue', () => {
+    const entries = [entry('a', 'not_voted'), entry('b', 'voted'), entry('c', 'in_progress')]
+    expect(findNextInQueue(entries, 'c')?.id).toBe('a')
+  })
+
+  it('never returns the current project and returns null when everything else is done', () => {
+    const entries = [entry('a', 'voted'), entry('b', 'not_voted'), entry('c', 'recused')]
+    expect(findNextInQueue(entries, 'b')).toBeNull()
+    expect(findNextInQueue([], 'b')).toBeNull()
+  })
+
+  it('starts at the top when the current project is not in the queue', () => {
+    const entries = [entry('a', 'voted'), entry('b', 'not_voted')]
+    expect(findNextInQueue(entries, 'zzz')?.id).toBe('b')
+  })
+})
+
+describe('liveVoteState / withEntryState', () => {
+  it('derives the state of the open vote', () => {
+    expect(liveVoteState({ recused: true, isComplete: true, ratedCount: 3, hasScore: true })).toBe('recused')
+    expect(liveVoteState({ recused: false, isComplete: true, ratedCount: 3, hasScore: true })).toBe('voted')
+    expect(liveVoteState({ recused: false, isComplete: false, ratedCount: 1, hasScore: false })).toBe('in_progress')
+    expect(liveVoteState({ recused: false, isComplete: false, ratedCount: 0, hasScore: true })).toBe('in_progress')
+    expect(liveVoteState({ recused: false, isComplete: false, ratedCount: 0, hasScore: false })).toBe('not_voted')
+  })
+
+  it('replaces only the current project entry', () => {
+    const entries = [{ project: { id: 'a' }, state: 'not_voted' as VoteState }, { project: { id: 'b' }, state: 'not_voted' as VoteState }]
+    const next = withEntryState(entries, 'b', 'voted')
+    expect(next.map((e) => e.state)).toEqual(['not_voted', 'voted'])
+    expect(entries[1].state).toBe('not_voted')
   })
 })
