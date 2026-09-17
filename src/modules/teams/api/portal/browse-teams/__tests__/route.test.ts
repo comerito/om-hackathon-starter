@@ -155,3 +155,7 @@ describe('GET /api/teams/portal/browse-teams — recruitment', () => {
     expect(params.some((value) => Array.isArray(value) && value.length === 0)).toBe(false)
   })
 })
+
+// Keep this file a module so its top-level bindings stay file-scoped: the sibling route tests
+// declare the same names, and `yarn typecheck` sees every script-scoped test at once.
+export {}

@@ -14,6 +14,9 @@ import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { MIN_PARTICIPANT_SEARCH_LENGTH } from '../../../../../competitions/lib/participantSearch'
+import { normalizeNeededSkills } from '../../../../lib/recruitment'
+import { SkillMatchedCandidates } from '../../../../components/SkillMatchedCandidates'
+import { TeamRecruitmentCard } from '../../../../components/TeamRecruitmentCard'
 import {
   PortalPageTitle,
   SectionLabel,
@@ -35,6 +38,9 @@ type Team = {
   track_id: string | null
   track_ids?: string[]
   competition_id: string
+  looking_for_members?: boolean
+  needed_skills?: string[]
+  recruitment_note?: string | null
   _teams?: { memberCount: number }
 }
 
@@ -359,7 +365,17 @@ function NoTeamView({
 // to tell two people with the same name apart, never a deliverable address.
 type SearchResult = { id: string; displayName: string; maskedEmail: string }
 
-function InviteMemberSection({ teamId, competitionId }: { teamId: string; competitionId: string }) {
+function InviteMemberSection({
+  teamId,
+  competitionId,
+  neededSkills,
+  participantsHref,
+}: {
+  teamId: string
+  competitionId: string
+  neededSkills: string[]
+  participantsHref: string
+}) {
   const t = useT()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = React.useState(false)
@@ -442,6 +458,14 @@ function InviteMemberSection({ teamId, competitionId }: { teamId: string; compet
 
   return (
     <div className="pt-4 mt-4 border-t border-gray-100 dark:border-white/10">
+      {/* Skill-matched shortlist — the way in that does not require knowing a name. */}
+      <SkillMatchedCandidates
+        teamId={teamId}
+        competitionId={competitionId}
+        neededSkills={neededSkills}
+        participantsHref={participantsHref}
+      />
+
       {!showForm ? (
         <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="w-full rounded-xl">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
@@ -790,6 +814,13 @@ function TeamView({
   const { selected } = useCompetitionContext()
   const isOwner = membership.role === 'owner'
 
+  // Normalized once: the recruitment card, the shortlist and the badge must all agree on what
+  // the team asked for, and the column is jsonb.
+  const neededSkills = React.useMemo(
+    () => normalizeNeededSkills(team.needed_skills),
+    [team.needed_skills],
+  )
+
   // Fetch tracks for selection
   const { data: tracksData } = useQuery({
     queryKey: ['portal-tracks', competitionId],
@@ -966,8 +997,26 @@ function TeamView({
           )}
 
           {/* Invite Member (owner only) */}
-          {isOwner && <InviteMemberSection teamId={team.id} competitionId={competitionId} />}
+          {isOwner && (
+            <InviteMemberSection
+              teamId={team.id}
+              competitionId={competitionId}
+              neededSkills={neededSkills}
+              participantsHref={`/${orgSlug}/portal/participants`}
+            />
+          )}
         </div>
+
+        {/* Looking for teammates — the posting that lets people find the team by skill */}
+        <TeamRecruitmentCard
+          teamId={team.id}
+          isOwner={isOwner}
+          recruitment={{
+            looking_for_members: team.looking_for_members === true,
+            needed_skills: neededSkills,
+            recruitment_note: team.recruitment_note ?? null,
+          }}
+        />
 
         {/* Track Selection */}
         {(isOwner || selectedTrackIds.length > 0) && tracks.length > 0 && (

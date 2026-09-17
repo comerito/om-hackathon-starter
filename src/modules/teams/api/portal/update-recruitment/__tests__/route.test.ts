@@ -262,3 +262,7 @@ describe('POST /api/teams/portal/update-recruitment', () => {
     ])
   })
 })
+
+// Keep this file a module so its top-level bindings stay file-scoped: the sibling route tests
+// declare the same names, and `yarn typecheck` sees every script-scoped test at once.
+export {}
