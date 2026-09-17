@@ -172,7 +172,7 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
               >
                 <div className="flex flex-col sm:flex-row sm:items-stretch">
                   <Link
-                    href={`/${orgSlug}/portal/judging/${project.id}`}
+                    href={`/${orgSlug}/portal/judging/${project.id}${hideVoted ? '?hide_voted=1' : ''}`}
                     className={`flex min-w-0 flex-1 items-start gap-3 p-4 transition-colors hover:bg-muted/30 ${isOnStage ? 'bg-status-info-bg' : ''}`}
                   >
                     <span

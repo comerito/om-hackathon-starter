@@ -1,7 +1,7 @@
 "use client"
 import * as React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Lock, PanelRight, UserX } from 'lucide-react'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -69,7 +69,9 @@ function VotingSkeleton() {
 function VotingContent({ projectId, orgSlug, competitionId }: { projectId: string; orgSlug: string; competitionId: string }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const queueHref = `/${orgSlug}/portal/judging`
+  // Keep the queue's "Hide voted" filter (`?hide_voted=1`) across the voting page and back.
+  const queueQuery = useSearchParams().get('hide_voted') === '1' ? '?hide_voted=1' : ''
+  const queueHref = `/${orgSlug}/portal/judging${queueQuery}`
 
   const scoreQuery = useQuery<ScoreQueryResult>({
     queryKey: ['portal-vote', competitionId, projectId],
@@ -250,7 +252,7 @@ function VotingContent({ projectId, orgSlug, competitionId }: { projectId: strin
           ) : null}
           {nextProject ? (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/${orgSlug}/portal/judging/${nextProject.id}`} data-testid="vote-next-in-queue">
+              <Link href={`/${orgSlug}/portal/judging/${nextProject.id}${queueQuery}`} data-testid="vote-next-in-queue">
                 {t('judging.portal.vote.nextInQueue', 'Next in queue')}
                 <span className="max-w-[12rem] truncate text-muted-foreground">{nextProject.title}</span>
                 <ArrowRight className="size-4" aria-hidden="true" />
