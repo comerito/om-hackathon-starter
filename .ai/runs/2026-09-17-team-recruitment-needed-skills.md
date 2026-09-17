@@ -109,13 +109,13 @@ record the outcome, including anything blocked by the missing database.
 
 ### Phase 1: Data model
 
-- [ ] 1.1 Team recruitment fields, validators and shared skill helper with tests
-- [ ] 1.2 Migration and snapshot for the three new columns
+- [x] 1.1 Team recruitment fields, validators and shared skill helper with tests — 1ef8136
+- [x] 1.2 Migration and snapshot for the three new columns — 1ef8136
 
 ### Phase 2: Portal API
 
-- [ ] 2.1 Owner-only update-recruitment endpoint with route tests
-- [ ] 2.2 Recruitment fields and filters on my-membership and browse-teams
+- [x] 2.1 Owner-only update-recruitment endpoint with route tests — e09a189
+- [x] 2.2 Recruitment fields and filters on my-membership and browse-teams — 7b95102
 
 ### Phase 3: Portal UI
 
