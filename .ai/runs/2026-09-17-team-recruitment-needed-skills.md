@@ -119,6 +119,8 @@ Gate re-run after the fixes: `yarn generate` ✅ · `yarn typecheck` ✅ · `yar
 
 ## Progress
 
+PR: #207
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Data model
