@@ -198,7 +198,7 @@ export default function JudgingDashboard() {
     { accessorKey: 'name', header: t('judging.table.name', 'Name'), meta: { priority: 1 } },
     { accessorKey: 'track_id', header: t('judging.table.track', 'Track'), meta: { priority: 2 }, cell: ({ getValue }) => { const v = getValue() as string | null; return v ? (trackNameMap.get(v) ?? v.substring(0, 8)) : 'All' } },
     { accessorKey: 'weight', header: t('judging.table.weight', 'Weight'), meta: { priority: 2 }, cell: ({ getValue }) => `${(Number(getValue()) * 100).toFixed(0)}%` },
-    { accessorKey: 'max_score', header: t('judging.table.maxScore', 'Max'), meta: { priority: 2 } },
+    { accessorKey: 'max_score', header: t('judging.table.maxScore', 'Points'), meta: { priority: 2 } },
     { accessorKey: 'round', header: t('judging.table.round', 'Round'), meta: { priority: 3 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={roundPreset} /> },
   ], [t, trackNameMap])
 

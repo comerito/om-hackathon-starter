@@ -1,7 +1,7 @@
 # SPEC-007 — Judge Star Voting & Voting Queue
 
 **Date**: 2026-09-17
-**Status**: Draft — Open Questions resolved, ready for review
+**Status**: Implemented (Phase 1 + Phase 2)
 
 ## TLDR
 
@@ -363,3 +363,21 @@ Response gains `voting_open`.
 10. **Admin wording + docs** — criterion form helper text, pl/en strings, update SPEC-001 §4.5
     scoring rules to point here. *Test:* `yarn generate && yarn typecheck && yarn lint &&
     yarn test && yarn build`.
+
+## Implementation notes
+
+Deviations and details found while implementing:
+
+- **Three criterion subscriber files** (`subscribers/recompute-scores-on-criterion-{created,updated,deleted}.ts`)
+  instead of one: the generated registry and the persistent events worker match a subscriber by
+  a single exact event id. `.updated` is handled too, so weight / `max_score` / round edits
+  also recompute scores.
+- **Note-only placeholder rows** (`score = 0`, `scale = 10`) are written when a judge adds a
+  note before rating a criterion; they count as **not rated**.
+- **`legacySubmitted = is_submitted || submitted_at != null`** (`isLegacySubmitted` in
+  `lib/scoring.ts`): `submitted_at` means "voted at some point", so a submitted legacy `0` keeps
+  counting as rated after the vote drops back to in progress (recusal, new criterion).
+- **`commands/scores.ts`** (`judging.scores.save`) takes points on `0…max_score` and writes
+  `scale = null` (legacy points rows), not stars.
+- **E2E suite is local-only**: the `s08` / `regressions` / `s10` updates live in the untracked
+  `tests/` folder and are not part of the PR.

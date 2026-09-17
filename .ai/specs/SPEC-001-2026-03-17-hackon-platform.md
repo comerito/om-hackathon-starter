@@ -358,6 +358,7 @@ portal.projects.submit (team owner only)
 
 **Business Logic:**
 - Each judge scores each assigned project once per round
+  - Per-criterion scoring follows [SPEC-007](./SPEC-007-2026-09-17-judge-star-voting.md) (star voting): judges rate every applicable criterion with 1–10 stars (converted to the criterion's `max_score` points), `total_score` is the weighted average normalised by Σ weight (on 0–100), and there is no draft/submit — a project counts as voted once all applicable criteria are rated, and votes stay editable until results are published.
 - Scores updatable until DELIBERATION ends
 - Preliminary round: average of all judges' total_scores
 - Final round: weighted combo of preliminary + final

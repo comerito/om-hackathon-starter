@@ -161,5 +161,10 @@
   "judging.portal.vote.recuseConfirmTitle": "Wyłączyć się z oceny tego projektu?",
   "judging.portal.vote.recuseConfirmDesc": "Twój głos na ten projekt nie będzie liczony. Gwiazdki zostaną zachowane i możesz to cofnąć do czasu publikacji wyników.",
   "judging.portal.vote.recuseConfirm": "Wyłącz się z oceny",
-  "judging.portal.vote.undoRecusal": "Cofnij wyłączenie"
+  "judging.portal.vote.undoRecusal": "Cofnij wyłączenie",
+  "judging.fields.maxScore": "Punkty (jurorzy oceniają w skali 1–10 gwiazdek)",
+  "judging.fields.maxScoreHelp": "Jurorzy zawsze oceniają każde kryterium w skali 1–10 gwiazdek; gwiazdki są przeliczane na punkty tego kryterium i uwzględniają jego wagę. Zmiana kryteriów w trakcie głosowania przelicza oceny jurorów, a zmiana liczby punktów zmienia znaczenie głosów oddanych przed wprowadzeniem gwiazdek.",
+  "judging.fields.weight": "Waga (0-1)",
+  "judging.fields.weightHelp": "Wagi są normalizowane, więc nie muszą sumować się do 1 — zalecamy jednak, aby ich suma wynosiła 1.",
+  "judging.table.maxScore": "Punkty"
 }

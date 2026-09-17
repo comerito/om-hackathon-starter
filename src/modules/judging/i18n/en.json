@@ -161,5 +161,10 @@
   "judging.portal.vote.recuseConfirmTitle": "Recuse yourself from this project?",
   "judging.portal.vote.recuseConfirmDesc": "Your vote on this project will not count. Your stars are kept, and you can undo this until results are published.",
   "judging.portal.vote.recuseConfirm": "Recuse myself",
-  "judging.portal.vote.undoRecusal": "Undo recusal"
+  "judging.portal.vote.undoRecusal": "Undo recusal",
+  "judging.fields.maxScore": "Points (judges rate 1–10 stars)",
+  "judging.fields.maxScoreHelp": "Judges always rate each criterion with 1–10 stars; the stars are converted to this criterion's points and weighted. Changing criteria while voting is open recomputes judges' scores, and changing the points reinterprets votes cast before star voting.",
+  "judging.fields.weight": "Weight (0-1)",
+  "judging.fields.weightHelp": "Weights are normalised, so they don't have to add up to 1 — but keeping their sum at 1 is recommended.",
+  "judging.table.maxScore": "Points"
 }
