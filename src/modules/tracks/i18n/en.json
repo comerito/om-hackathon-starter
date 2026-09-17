@@ -55,5 +55,13 @@
   "tracks.portal.mentor.status.default": "inactive",
   "tracks.portal.nav.tracks": "Tracks",
   "tracks.portal.nav.groupHackathon": "Hackathon",
-  "tracks.fields.descriptionHelp": "Supports rich formatting and per-locale translations."
+  "tracks.fields.descriptionHelp": "Supports rich formatting and per-locale translations.",
+  "tracks.attachments.download": "Download",
+  "tracks.attachments.downloadFile": "Download {name}",
+  "tracks.attachments.remove": "Remove",
+  "tracks.attachments.removeFile": "Remove {name}",
+  "tracks.attachments.upload": "Upload File",
+  "tracks.attachments.uploading": "Uploading...",
+  "tracks.attachments.uploadedAt": "Uploaded {date}",
+  "tracks.attachments.unnamed": "Unnamed file"
 }
