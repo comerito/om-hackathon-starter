@@ -2,11 +2,14 @@ import {
   EMPTY_PATCH,
   INITIAL_SAVE_QUEUE,
   hasUnsavedChanges,
+  leaveRequest,
   mergePatch,
   nextRequest,
   patchToRequestFields,
   saveIndicatorState,
   saveQueueReducer,
+  sendAfterInFlight,
+  type SaveOutcome,
   type SaveQueueAction,
   type SaveQueueState,
   type VotePatch,
@@ -154,6 +157,75 @@ describe('saveQueueReducer', () => {
 
   it('does nothing on flush or retry with nothing pending', () => {
     expect(run([{ type: 'flush' }, { type: 'retry' }])).toEqual(INITIAL_SAVE_QUEUE)
+  })
+})
+
+describe('leaveRequest', () => {
+  it('sends nothing when nothing is queued or voting is closed', () => {
+    expect(leaveRequest(INITIAL_SAVE_QUEUE)).toBeNull()
+    expect(leaveRequest(send(run([stars('a', 4)])).state)).toBeNull()
+    expect(leaveRequest(run([note('a', 'x'), { type: 'close' }]))).toBeNull()
+  })
+
+  it('sends the in-flight values with the queued ones on top', () => {
+    const inFlight = send(run([stars('a', 4), note('b', 'first')])).state
+    const leaving = run([stars('a', 9), comment('bye')], inFlight)
+    expect(leaveRequest(leaving)).toEqual({ criteria: { a: { stars: 9 }, b: { note: 'first' } }, comment: 'bye' })
+  })
+})
+
+describe('sendAfterInFlight', () => {
+  const deferred = () => {
+    let resolve: (outcome: SaveOutcome) => void = () => undefined
+    let reject: (error: Error) => void = () => undefined
+    const promise = new Promise<SaveOutcome>((res, rej) => { resolve = res; reject = rej })
+    return { promise, resolve, reject }
+  }
+  const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+  it('sends right away, synchronously, when nothing is in flight', async () => {
+    const sendLeave = jest.fn(async () => undefined)
+    const done = sendAfterInFlight(null, sendLeave)
+    expect(sendLeave).toHaveBeenCalledTimes(1)
+    await done
+  })
+
+  it('waits for the in-flight request before sending, so the newer values land last', async () => {
+    const events: string[] = []
+    const inFlight = deferred()
+    const sendLeave = jest.fn(async () => { events.push('leave sent') })
+    const done = sendAfterInFlight(inFlight.promise, sendLeave)
+    await flushMicrotasks()
+    expect(sendLeave).not.toHaveBeenCalled()
+    events.push('in-flight settled')
+    inFlight.resolve('saved')
+    await done
+    expect(events).toEqual(['in-flight settled', 'leave sent'])
+  })
+
+  it('still sends after the in-flight request failed or threw', async () => {
+    for (const settle of ['failed', 'threw'] as const) {
+      const inFlight = deferred()
+      const sendLeave = jest.fn(async () => undefined)
+      const done = sendAfterInFlight(inFlight.promise, sendLeave)
+      if (settle === 'failed') inFlight.resolve('failed')
+      else inFlight.reject(new Error('network'))
+      await done
+      expect(sendLeave).toHaveBeenCalledTimes(1)
+    }
+  })
+
+  it('skips the send when the in-flight request reported voting closed', async () => {
+    const inFlight = deferred()
+    const sendLeave = jest.fn(async () => undefined)
+    const done = sendAfterInFlight(inFlight.promise, sendLeave)
+    inFlight.resolve('closed')
+    await done
+    expect(sendLeave).not.toHaveBeenCalled()
+  })
+
+  it('swallows a failing send', async () => {
+    await expect(sendAfterInFlight(null, async () => { throw new Error('offline') })).resolves.toBeUndefined()
   })
 })
 

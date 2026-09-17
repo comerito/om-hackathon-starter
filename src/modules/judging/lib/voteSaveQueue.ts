@@ -139,6 +139,43 @@ export function hasUnsavedChanges(state: SaveQueueState): boolean {
   return state.inFlight !== null || !isEmptyPatch(state.pending)
 }
 
+/**
+ * The patch to send when the page is left (unmount), or `null` when there is nothing to save.
+ * It includes the in-flight patch: if that request fails, its values are not lost, and resending
+ * values that did land is harmless because the POST is a per-field upsert.
+ */
+export function leaveRequest(state: SaveQueueState): VotePatch | null {
+  if (state.closed || isEmptyPatch(state.pending)) return null
+  return mergePatch(state.inFlight ?? EMPTY_PATCH, state.pending)
+}
+
+/** How a save request ended, as the hook's in-flight promise resolves it. */
+export type SaveOutcome = 'saved' | 'failed' | 'closed'
+
+/**
+ * Sends the leave request only after the request still in flight settles, so an older request
+ * landing last cannot overwrite the newer values. With nothing in flight it sends right away
+ * (synchronously, before the page is gone). Skipped when the in-flight request reported voting
+ * closed; `send` failures are swallowed (best effort).
+ */
+export function sendAfterInFlight(
+  inFlight: Promise<SaveOutcome> | null,
+  send: () => Promise<unknown>,
+): Promise<void> {
+  const sendSafely = async (): Promise<void> => {
+    try {
+      await send()
+    } catch {
+      // best effort: the page is already gone, there is nobody to report to
+    }
+  }
+  if (inFlight === null) return sendSafely()
+  return inFlight.then(
+    (outcome) => (outcome === 'closed' ? undefined : sendSafely()),
+    () => sendSafely(),
+  )
+}
+
 export type SaveIndicatorState = 'idle' | 'saving' | 'saved' | 'error'
 
 /**

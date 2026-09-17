@@ -2,16 +2,17 @@
 import * as React from 'react'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import {
-  EMPTY_PATCH,
   INITIAL_SAVE_QUEUE,
   hasUnsavedChanges,
   isEmptyPatch,
-  mergePatch,
+  leaveRequest,
   nextRequest,
   patchToRequestFields,
   saveIndicatorState,
   saveQueueReducer,
+  sendAfterInFlight,
   type SaveIndicatorState,
+  type SaveOutcome,
   type VotePatch,
 } from '../lib/voteSaveQueue'
 
@@ -64,6 +65,8 @@ export function useVoteSaver({ projectId, competitionId, round, votingClosed, on
   const onSavedRef = React.useRef(onSaved)
   const stateRef = React.useRef(state)
   const requestTargetRef = React.useRef({ projectId, competitionId, round })
+  /** The save request still running, if any; it keeps running after the page unmounts. */
+  const inFlightRef = React.useRef<Promise<SaveOutcome> | null>(null)
 
   React.useEffect(() => {
     onSavedRef.current = onSaved
@@ -94,7 +97,7 @@ export function useVoteSaver({ projectId, competitionId, round, votingClosed, on
       round: target.round,
       ...patchToRequestFields(request),
     })
-    void (async () => {
+    const inFlight = (async (): Promise<SaveOutcome> => {
       try {
         const response = await apiCall<SaveVoteResponse>(SAVE_URL, {
           method: 'POST',
@@ -104,13 +107,20 @@ export function useVoteSaver({ projectId, competitionId, round, votingClosed, on
         if (response.ok) {
           dispatch({ type: 'success' })
           onSavedRef.current?.(response.result)
-        } else {
-          dispatch({ type: 'failure', closed: response.status === 409 })
+          return 'saved'
         }
+        const closed = response.status === 409
+        dispatch({ type: 'failure', closed })
+        return closed ? 'closed' : 'failed'
       } catch {
         dispatch({ type: 'failure', closed: false })
+        return 'failed'
       }
     })()
+    inFlightRef.current = inFlight
+    void inFlight.finally(() => {
+      if (inFlightRef.current === inFlight) inFlightRef.current = null
+    })
   }, [request])
 
   const unsaved = hasUnsavedChanges(state)
@@ -125,25 +135,26 @@ export function useVoteSaver({ projectId, competitionId, round, votingClosed, on
   }, [unsaved])
 
   // Leaving the page inside the app (back link, "Next in queue") would drop debounced text:
-  // send whatever is still queued as a best-effort request that survives the navigation.
+  // send whatever is still queued as a best-effort request that survives the navigation. It waits
+  // for a request still in flight, otherwise that older request could land last and overwrite it.
   React.useEffect(() => () => {
     clearTimer()
-    const last = stateRef.current
-    if (last.closed || isEmptyPatch(last.pending)) return
-    const patch = mergePatch(last.inFlight ?? EMPTY_PATCH, last.pending)
+    const patch = leaveRequest(stateRef.current)
+    if (patch === null) return
     const target = requestTargetRef.current
-    void apiCall<SaveVoteResponse>(SAVE_URL, {
+    const body = JSON.stringify({
+      project_id: target.projectId,
+      competition_id: target.competitionId,
+      judge_panel_id: 'auto',
+      round: target.round,
+      ...patchToRequestFields(patch),
+    })
+    void sendAfterInFlight(inFlightRef.current, () => apiCall<SaveVoteResponse>(SAVE_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       keepalive: true,
-      body: JSON.stringify({
-        project_id: target.projectId,
-        competition_id: target.competitionId,
-        judge_panel_id: 'auto',
-        round: target.round,
-        ...patchToRequestFields(patch),
-      }),
-    }).catch(() => undefined)
+      body,
+    }))
   }, [clearTimer])
 
   const change = React.useCallback((patch: VotePatch, options: { immediate: boolean }) => {
