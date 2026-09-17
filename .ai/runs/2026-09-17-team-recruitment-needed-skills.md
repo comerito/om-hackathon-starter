@@ -119,11 +119,19 @@ record the outcome, including anything blocked by the missing database.
 
 ### Phase 3: Portal UI
 
-- [ ] 3.1 My Team recruitment editor card
-- [ ] 3.2 Skill-matched candidate shortlist in the invite section
-- [ ] 3.3 Recruiting badge, skill chips and filters on the teams browse page
+- [x] 3.1 My Team recruitment editor card — 19e0307
+- [x] 3.2 Skill-matched candidate shortlist in the invite section — 19e0307
+- [x] 3.3 Recruiting badge, skill chips and filters on the teams browse page — 19e0307
 
 ### Phase 4: i18n and gate
 
-- [ ] 4.1 English and Polish translations for the new keys
-- [ ] 4.2 Full validation gate
+- [x] 4.1 English and Polish translations for the new keys — 659346d
+- [x] 4.2 Full validation gate
+
+**Gate result (2026-09-17):** `yarn generate` ✅ · `yarn typecheck` ✅ · `yarn test` ✅ (61 suites,
+673 tests) · `yarn build` ✅ · `yarn lint` ❌ **pre-existing** — the script runs `next lint`, which
+Next 16 removed, and the repo carries no `eslint.config.*`; it fails identically on `main` and no
+change here touches it.
+
+No database was reachable, so the new migration was not applied locally. It is a single
+`ALTER TABLE ... ADD COLUMN` with defaults/nullable columns only.
