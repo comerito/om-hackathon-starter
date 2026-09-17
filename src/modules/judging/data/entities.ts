@@ -215,6 +215,11 @@ export class CriterionScore {
   @Property({ type: 'int' })
   score!: number
 
+  // Scale `score` is expressed on: 10 for a star rating (SPEC-007); NULL for rows written before
+  // star voting, whose `score` is on `0…criterion.maxScore`.
+  @Property({ type: 'int', nullable: true })
+  scale?: number | null
+
   @Property({ type: 'text', nullable: true })
   note?: string | null
 
