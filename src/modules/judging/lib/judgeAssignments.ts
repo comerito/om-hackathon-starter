@@ -43,6 +43,10 @@ export type JudgeAssignmentScore = {
   is_submitted: boolean
   conflict_of_interest: boolean
   track_id: string | null
+  /** Applicable criteria this vote rates (SPEC-007 phase 2). */
+  rated_count: number
+  /** Weighted average on 0–10; `null` when nothing is rated or the judge recused. */
+  weighted_average: number | null
 }
 
 export type JudgeAssignmentsResponse = {

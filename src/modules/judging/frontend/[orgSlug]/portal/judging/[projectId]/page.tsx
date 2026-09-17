@@ -65,7 +65,10 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
   const criteria = data?.criteria ?? []
   const isSubmitted = data?.score?.is_submitted ?? false
 
-  function buildPayload(submit: boolean) {
+  // Interim adapter to the SPEC-007 partial-save contract until this page is replaced (step 9):
+  // clicked points are sent as 1–10 stars, unclicked criteria are omitted, and "voted" is derived
+  // by the server once every criterion is rated.
+  function buildPayload() {
     return {
       project_id: projectId,
       judge_panel_id: 'auto', // Will be resolved server-side
@@ -73,13 +76,14 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
       round: 'preliminary',
       comment: comment.trim() || null,
       private_notes: privateNotes.trim() || null,
-      conflict_of_interest: conflictOfInterest ?? false,
-      is_submitted: submit,
-      criterion_scores: criteria.map(c => ({
-        criterion_id: c.id,
-        score: criterionScores.get(c.id) ?? 0,
-        note: criterionNotes.get(c.id)?.trim() || null,
-      })),
+      ...(conflictOfInterest === null ? {} : { conflict_of_interest: conflictOfInterest }),
+      criterion_scores: criteria
+        .filter(c => (criterionScores.get(c.id) ?? 0) > 0 && c.max_score > 0)
+        .map(c => ({
+          criterion_id: c.id,
+          stars: Math.min(10, Math.max(1, Math.round(((criterionScores.get(c.id) ?? 0) / c.max_score) * 10))),
+          note: criterionNotes.get(c.id)?.trim() || null,
+        })),
     }
   }
 
@@ -89,7 +93,7 @@ function ScoreCardContent({ projectId, orgSlug }: { projectId: string; orgSlug: 
       const { ok, result } = await apiCall<{ ok: boolean; error?: string }>('/api/judging/portal/score-project', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(buildPayload(submit)),
+        body: JSON.stringify(buildPayload()),
       })
       if (ok) {
         flash(submit ? t('judging.portal.scoreSubmitted', 'Score submitted!') : t('judging.portal.scoreSaved', 'Score saved'), 'success')

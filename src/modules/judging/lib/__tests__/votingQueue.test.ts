@@ -1,6 +1,6 @@
 import type { DemoStatus } from '../../data/entities'
 import {
-  filterQueueEntries, findOnStage, findUpNext, formatVoteScore, isDone, queueProgress, resolveQueueEntries,
+  filterQueueEntries, findOnStage, findUpNext, formatVoteScore, formatWeightedAverage, isDone, queueProgress, resolveQueueEntries,
   sortByDemoOrder, voteState, type VoteState,
 } from '../votingQueue'
 
@@ -155,37 +155,60 @@ describe('findOnStage / findUpNext', () => {
   })
 })
 
-describe('resolveQueueEntries', () => {
-  const score = (projectId: string, round: string, flags: Partial<{ is_submitted: boolean; conflict_of_interest: boolean; total_score: number | null }> = {}) => ({
+describe('resolveQueueEntries — Phase 2 counts', () => {
+  type Flags = Partial<{
+    is_submitted: boolean; conflict_of_interest: boolean; total_score: number | null
+    rated_count: number; weighted_average: number | null
+  }>
+  const score = (projectId: string, round: string, flags: Flags = {}) => ({
     id: `score-${projectId}-${round}`,
     project_id: projectId,
     round,
     total_score: flags.total_score ?? null,
     is_submitted: flags.is_submitted ?? false,
     conflict_of_interest: flags.conflict_of_interest ?? false,
+    rated_count: flags.rated_count ?? 0,
+    weighted_average: flags.weighted_average ?? null,
   })
+  const queued = (id: string, title: string, criteriaCount = 5) => ({ ...project(id, title), criteria_count: criteriaCount })
 
   it('keeps the project order and matches preliminary scores by project id', () => {
-    const projects = [project('b', 'Beta'), project('a', 'Alpha'), project('c', 'Gamma')]
+    const projects = [queued('b', 'Beta'), queued('a', 'Alpha'), queued('c', 'Gamma')]
     const entries = resolveQueueEntries(projects, [
-      score('a', 'preliminary', { is_submitted: true, total_score: 68 }),
-      score('c', 'preliminary', { conflict_of_interest: true }),
+      score('a', 'preliminary', { is_submitted: true, total_score: 68, rated_count: 5, weighted_average: 6.8 }),
+      score('c', 'preliminary', { conflict_of_interest: true, rated_count: 2 }),
     ])
     expect(entries.map((e) => e.project.id)).toEqual(['b', 'a', 'c'])
     expect(entries.map((e) => e.state)).toEqual(['not_voted', 'voted', 'recused'])
-    expect(entries[1].score?.total_score).toBe(68)
+    expect(entries[1].score?.weighted_average).toBe(6.8)
     expect(entries[0].score).toBeNull()
   })
 
+  it('reports rated / applicable counts for an in-progress vote', () => {
+    const [entry] = resolveQueueEntries([queued('a', 'Alpha', 5)], [score('a', 'preliminary', { rated_count: 3 })])
+    expect(entry.state).toBe('in_progress')
+    expect(entry.ratedCount).toBe(3)
+    expect(entry.criteriaCount).toBe(5)
+  })
+
+  it('does not show voted when a criterion was added after the vote', () => {
+    const [entry] = resolveQueueEntries(
+      [queued('a', 'Alpha', 6)],
+      [score('a', 'preliminary', { is_submitted: true, rated_count: 5 })],
+    )
+    expect(entry.state).toBe('in_progress')
+  })
+
   it('ignores score rows from another round', () => {
-    const entries = resolveQueueEntries([project('a', 'Alpha')], [score('a', 'final', { is_submitted: true })])
+    const entries = resolveQueueEntries([queued('a', 'Alpha')], [score('a', 'final', { is_submitted: true, rated_count: 5 })])
     expect(entries[0].state).toBe('not_voted')
     expect(entries[0].score).toBeNull()
+    expect(entries[0].ratedCount).toBe(0)
   })
 
   it('handles no projects and no scores', () => {
     expect(resolveQueueEntries([], [score('a', 'preliminary')])).toEqual([])
-    expect(resolveQueueEntries([project('a', 'Alpha')], []).map((e) => e.state)).toEqual(['not_voted'])
+    expect(resolveQueueEntries([queued('a', 'Alpha')], []).map((e) => e.state)).toEqual(['not_voted'])
   })
 })
 
@@ -221,5 +244,19 @@ describe('formatVoteScore', () => {
     expect(formatVoteScore(null)).toBeNull()
     expect(formatVoteScore(undefined)).toBeNull()
     expect(formatVoteScore(Number.NaN)).toBeNull()
+  })
+})
+
+describe('formatWeightedAverage', () => {
+  it('shows the 0–10 weighted average with one decimal', () => {
+    expect(formatWeightedAverage(6.83)).toBe('6.8')
+    expect(formatWeightedAverage(10)).toBe('10.0')
+    expect(formatWeightedAverage(1)).toBe('1.0')
+  })
+
+  it('is null when there is no usable average', () => {
+    expect(formatWeightedAverage(null)).toBeNull()
+    expect(formatWeightedAverage(undefined)).toBeNull()
+    expect(formatWeightedAverage(Number.NaN)).toBeNull()
   })
 })

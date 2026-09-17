@@ -34,6 +34,7 @@ jest.mock('../../../../data/entities', () => ({
   JudgePanelTrack: class JudgePanelTrack {},
   JudgePanel: class JudgePanel {},
   ProjectScore: class ProjectScore {},
+  CriterionScore: class CriterionScore {},
   DemoSession: class DemoSession {},
   JudgingCriterion: class JudgingCriterion {},
   JudgingRound: { PRELIMINARY: 'preliminary', FINAL: 'final' },
@@ -363,6 +364,81 @@ describe('portal my-assignments — voting queue data (SPEC-007 phase 1)', () =>
     expect(await res.json()).toEqual({ panels: [], projects: [], scores: [], voting_open: false })
     expect(em.findOne.mock.calls[0][1]).toMatchObject({ id: COMPETITION_ID, tenantId: TENANT, organizationId: ORG, deletedAt: null })
     expect(em.find).not.toHaveBeenCalled()
+  })
+})
+
+describe('portal my-assignments — rated count and weighted average (SPEC-007 step 7)', () => {
+  const base = { competitionId: COMPETITION_ID, tenantId: TENANT, organizationId: ORG }
+  const CRITERIA = [
+    { ...base, id: 'c-a', round: 'both', trackId: null, order: 1, weight: 0.6, maxScore: 10 },
+    { ...base, id: 'c-b', round: 'preliminary', trackId: HOME_TRACK_ID, order: 2, weight: 0.4, maxScore: 5 },
+    { ...base, id: 'c-final', round: 'final', trackId: null, order: 3, weight: 1, maxScore: 10 },
+  ]
+  const PROJECTS_TWO = [
+    { id: 'p-1', title: 'One', teamId: 'team-1', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted' },
+    { id: 'p-2', title: 'Two', teamId: 'team-2', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted' },
+    { id: 'p-3', title: 'Three', teamId: 'team-3', trackId: HOME_TRACK_ID, competitionId: COMPETITION_ID, status: 'submitted' },
+  ]
+  type ScoreBody = { scores: Array<{ id: string; rated_count: number; weighted_average: number | null }> }
+
+  function emWithScores(
+    scores: Array<Record<string, unknown>>,
+    rows: Array<{ projectScoreId: string; criterionId: string; score: number; scale: number | null }>,
+  ) {
+    const em = makeEm({ ...defaultFixture(), projects: PROJECTS_TWO, criteria: CRITERIA })
+    const baseFind = em.find.getMockImplementation()!
+    em.find.mockImplementation(async (entity: unknown, filter: Filter) => {
+      if (entity === entities.ProjectScore) return scores
+      if (entity === entities.CriterionScore) {
+        const ids = inList(filter, 'projectScoreId') ?? []
+        return rows.filter(r => ids.includes(r.projectScoreId))
+      }
+      return baseFind(entity, filter)
+    })
+    return em
+  }
+
+  it('computes each score from its own criterion rows and the project\'s applicable criteria', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = emWithScores([
+      { id: 's-voted', projectId: 'p-1', round: 'preliminary', totalScore: 72, isSubmitted: true, submittedAt: new Date(), conflictOfInterest: false },
+      { id: 's-partial', projectId: 'p-2', round: 'preliminary', totalScore: 70, isSubmitted: false, submittedAt: null, conflictOfInterest: false },
+      { id: 's-recused', projectId: 'p-3', round: 'preliminary', totalScore: null, isSubmitted: false, submittedAt: null, conflictOfInterest: true },
+    ], [
+      { projectScoreId: 's-voted', criterionId: 'c-a', score: 8, scale: 10 },
+      { projectScoreId: 's-voted', criterionId: 'c-b', score: 6, scale: 10 },
+      // A rating for a criterion of another round does not count.
+      { projectScoreId: 's-voted', criterionId: 'c-final', score: 1, scale: 10 },
+      { projectScoreId: 's-partial', criterionId: 'c-a', score: 7, scale: 10 },
+      // An unsubmitted legacy 0 is an old "not clicked".
+      { projectScoreId: 's-partial', criterionId: 'c-b', score: 0, scale: null },
+      { projectScoreId: 's-recused', criterionId: 'c-a', score: 9, scale: 10 },
+    ])
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+    const body = await res.json() as ScoreBody
+
+    const byId = new Map(body.scores.map(s => [s.id, s]))
+    expect(byId.get('s-voted')).toMatchObject({ rated_count: 2, weighted_average: 7.2 })
+    expect(byId.get('s-partial')).toMatchObject({ rated_count: 1, weighted_average: 7 })
+    expect(byId.get('s-recused')).toMatchObject({ rated_count: 1, weighted_average: null })
+
+    const rowCalls = em.find.mock.calls.filter(([entity]) => entity === entities.CriterionScore)
+    expect(rowCalls).toHaveLength(1)
+    expect(inList(rowCalls[0][1] as Filter, 'projectScoreId')?.sort()).toEqual(['s-partial', 's-recused', 's-voted'])
+    expect(rowCalls[0][1]).toMatchObject({ tenantId: TENANT, organizationId: ORG })
+  })
+
+  it('does not query criterion rows when the judge has no scores', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    const em = emWithScores([], [])
+    mockCreateRequestContainer.mockResolvedValue(container(em))
+
+    const res = await GET(request())
+
+    expect(res.status).toBe(200)
+    expect(em.find.mock.calls.map(([entity]) => entity)).not.toContain(entities.CriterionScore)
   })
 })
 

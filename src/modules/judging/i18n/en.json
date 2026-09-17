@@ -6,6 +6,7 @@
   "judging.portal.queue.vote.voted": "Voted",
   "judging.portal.queue.vote.votedWithScore": "Voted · {score}",
   "judging.portal.queue.vote.inProgress": "In progress",
+  "judging.portal.queue.vote.inProgressCount": "In progress · {rated}/{total}",
   "judging.portal.queue.vote.notVoted": "Not voted",
   "judging.portal.queue.vote.recused": "Recused",
   "judging.portal.queue.onStage": "On stage",

@@ -16,11 +16,11 @@ import { PortalCompetitionLayout } from '../../../../../competitions/components/
 import { PortalPageTitle } from '@/components/portal'
 import Link from 'next/link'
 import { ProjectCardSheet } from '../../../../components/ProjectCardSheet'
-import type { JudgeAssignmentsResponse } from '../../../../lib/judgeAssignments'
+import type { JudgeAssignmentScore, JudgeAssignmentsResponse, JudgeProjectCard } from '../../../../lib/judgeAssignments'
 import { formatQueuePosition } from '../../../../lib/demoQueue'
 import {
-  filterQueueEntries, findOnStage, findUpNext, formatVoteScore, queueProgress, resolveQueueEntries,
-  type VoteState,
+  filterQueueEntries, findOnStage, findUpNext, formatWeightedAverage, queueProgress, resolveQueueEntries,
+  type QueueEntry, type VoteState,
 } from '../../../../lib/votingQueue'
 
 const EMPTY_RESPONSE: JudgeAssignmentsResponse = { panels: [], projects: [], scores: [], voting_open: true }
@@ -89,16 +89,20 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
   const onStageVisible = onStage !== null && visibleEntries.some(entry => entry.project.id === onStage.id)
   const cardProject = cardProjectId ? projects.find(project => project.id === cardProjectId) ?? null : null
 
-  const voteLabel = (state: VoteState, totalScore: number | null): string => {
-    switch (state) {
+  const voteLabel = (entry: QueueEntry<JudgeProjectCard, JudgeAssignmentScore>): string => {
+    switch (entry.state) {
       case 'voted': {
-        const score = formatVoteScore(totalScore)
+        const score = formatWeightedAverage(entry.score?.weighted_average)
         return score
           ? t('judging.portal.queue.vote.votedWithScore', 'Voted · {score}', { score })
           : t('judging.portal.queue.vote.voted', 'Voted')
       }
       case 'in_progress':
-        return t('judging.portal.queue.vote.inProgress', 'In progress')
+        return entry.criteriaCount > 0
+          ? t('judging.portal.queue.vote.inProgressCount', 'In progress · {rated}/{total}', {
+            rated: Math.min(entry.ratedCount, entry.criteriaCount), total: entry.criteriaCount,
+          })
+          : t('judging.portal.queue.vote.inProgress', 'In progress')
       case 'recused':
         return t('judging.portal.queue.vote.recused', 'Recused')
       default:
@@ -152,7 +156,8 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
         </div>
       ) : (
         <ul className="space-y-3">
-          {visibleEntries.map(({ project, score, state }) => {
+          {visibleEntries.map((entry) => {
+            const { project, state } = entry
             const isOnStage = onStage?.id === project.id
             const isUpNext = upNext?.id === project.id
             const position = formatQueuePosition(project.demo?.order)
@@ -194,7 +199,7 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
                       )}
                       <div className="mt-2">
                         <Badge variant={VOTE_BADGE_VARIANT[state]} className="tabular-nums">
-                          {voteLabel(state, score?.total_score ?? null)}
+                          {voteLabel(entry)}
                         </Badge>
                       </div>
                     </div>

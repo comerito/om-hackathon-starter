@@ -66,6 +66,15 @@ export type ComputeScoreOptions = {
   legacySubmitted: boolean
 }
 
+/**
+ * The `legacySubmitted` flag for a stored `ProjectScore`: submitted now, or voted at some point
+ * (`submittedAt` is "first time voted" and survives a recusal or a newly added criterion), so a
+ * submitted legacy `0` keeps counting as rated after the vote drops back to in progress.
+ */
+export function isLegacySubmitted(score: { isSubmitted: boolean; submittedAt?: Date | string | null }): boolean {
+  return score.isSubmitted || (score.submittedAt !== null && score.submittedAt !== undefined)
+}
+
 export type ScoreSummary = {
   ratedCount: number
   criteriaCount: number

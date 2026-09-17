@@ -82,10 +82,10 @@ export async function GET(req: Request) {
     const projectTitleMap = new Map(projects.map(p => [p.id, p.title]))
     const judgeNameMap = new Map(judges.map(j => [j.id, j.displayName || j.email || null]))
 
-    const csMap = new Map<string, Array<{ criterion_id: string; score: number; note: string | null }>>()
+    const csMap = new Map<string, Array<{ criterion_id: string; score: number; scale: number | null; note: string | null }>>()
     for (const cs of criterionScores) {
       const arr = csMap.get(cs.projectScoreId) ?? []
-      arr.push({ criterion_id: cs.criterionId, score: cs.score, note: cs.note ?? null })
+      arr.push({ criterion_id: cs.criterionId, score: cs.score, scale: cs.scale ?? null, note: cs.note ?? null })
       csMap.set(cs.projectScoreId, arr)
     }
 

@@ -6,6 +6,7 @@
   "judging.portal.queue.vote.voted": "Oceniony",
   "judging.portal.queue.vote.votedWithScore": "Oceniony · {score}",
   "judging.portal.queue.vote.inProgress": "W trakcie",
+  "judging.portal.queue.vote.inProgressCount": "W trakcie · {rated}/{total}",
   "judging.portal.queue.vote.notVoted": "Nieoceniony",
   "judging.portal.queue.vote.recused": "Wyłączony",
   "judging.portal.queue.onStage": "Na scenie",

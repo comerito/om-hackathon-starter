@@ -76,17 +76,34 @@ export function findUpNext<T extends QueueItem>(projects: ReadonlyArray<T>): T |
   return projects.find((project) => project.demo?.status === 'on_deck') ?? null
 }
 
-/** A score row as the queue sees it: the stored flags plus what it takes to match and label it. */
-export type QueueScore = VoteScoreSummary & { project_id: string; round: string; total_score: number | null }
+/** A score row as the queue sees it: the stored flags, the rated count and what it takes to match and label it. */
+export type QueueScore = VoteScoreSummary & {
+  project_id: string
+  round: string
+  total_score: number | null
+  /** Applicable criteria rated in this vote (`my-assignments`, SPEC-007 phase 2). */
+  rated_count: number
+  /** Weighted average on 0–10, `null` when nothing is rated or the judge recused. */
+  weighted_average: number | null
+}
 
-export type QueueEntry<P, S> = { project: P; score: S | null; state: VoteState }
+/** A project as the queue sees it: its id and how many criteria apply to it. */
+export type QueueProject = { id: string; criteria_count: number }
+
+export type QueueEntry<P, S> = {
+  project: P
+  score: S | null
+  state: VoteState
+  ratedCount: number
+  criteriaCount: number
+}
 
 /**
  * Pairs each project (kept in the given order) with the judge's score row for `round` and the
- * resulting Phase 1 vote state. Rows for other rounds are ignored, so a final-round score never
- * marks a preliminary project as voted.
+ * resulting Phase 2 vote state (`voteState` with rated / applicable counts). Rows for other rounds
+ * are ignored, so a final-round score never marks a preliminary project as voted.
  */
-export function resolveQueueEntries<P extends { id: string }, S extends QueueScore>(
+export function resolveQueueEntries<P extends QueueProject, S extends QueueScore>(
   projects: ReadonlyArray<P>,
   scores: ReadonlyArray<S>,
   round: string = 'preliminary',
@@ -97,7 +114,9 @@ export function resolveQueueEntries<P extends { id: string }, S extends QueueSco
   }
   return projects.map((project) => {
     const score = byProject.get(project.id) ?? null
-    return { project, score, state: voteState(score) }
+    const ratedCount = score?.rated_count ?? 0
+    const criteriaCount = project.criteria_count
+    return { project, score, state: voteState(score, { ratedCount, criteriaCount }), ratedCount, criteriaCount }
   })
 }
 
@@ -118,4 +137,13 @@ export function queueProgress(entries: ReadonlyArray<{ state: VoteState }>): { d
 export function formatVoteScore(totalScore: number | null | undefined): string | null {
   if (typeof totalScore !== 'number' || !Number.isFinite(totalScore)) return null
   return (totalScore / 10).toFixed(1)
+}
+
+/**
+ * The number on a "Voted" badge from the server's weighted average (0–10) with one decimal
+ * (`6.83` → `"6.8"`). `null` when there is no usable average, so the badge shows just "Voted".
+ */
+export function formatWeightedAverage(weightedAverage: number | null | undefined): string | null {
+  if (typeof weightedAverage !== 'number' || !Number.isFinite(weightedAverage)) return null
+  return weightedAverage.toFixed(1)
 }

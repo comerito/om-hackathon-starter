@@ -3,7 +3,7 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import {
-  DemoSession, JudgePanelJudge, JudgePanelTrack, JudgePanel, JudgingCriterion, JudgingRound, ProjectScore,
+  CriterionScore, DemoSession, JudgePanelJudge, JudgePanelTrack, JudgePanel, JudgingCriterion, JudgingRound, ProjectScore,
 } from '../../../data/entities'
 import type { DemoStatus } from '../../../data/entities'
 import { Project } from '../../../../projects/data/entities'
@@ -14,7 +14,7 @@ import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 import { PORTAL_VIEW_ASSIGNED_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
 import { areResultsPublished } from '../../../lib/resultsScope'
-import { resolveApplicableCriteria } from '../../../lib/scoring'
+import { computeScore, isLegacySubmitted, resolveApplicableCriteria } from '../../../lib/scoring'
 import { sortByDemoOrder } from '../../../lib/votingQueue'
 
 // NOTE: `requireCustomerAuth` / `requireCustomerFeatures` are NOT enforced for API routes —
@@ -132,6 +132,27 @@ export async function GET(req: Request) {
     } as FilterQuery<ProjectScore>) : []
     const projectTrackMap = new Map(projects.map(p => [p.id, p.trackId]))
 
+    // Every criterion row of those scores in one query, for the rated count and weighted average.
+    const scoreIds = scores.map(s => s.id)
+    const criterionRows = scoreIds.length ? await em.find(CriterionScore, {
+      projectScoreId: { $in: scoreIds }, tenantId: auth.tenantId, organizationId: auth.orgId,
+    } as FilterQuery<CriterionScore>) : []
+    const ratingsByScore = new Map<string, Array<{ criterionId: string; score: number; scale: number | null }>>()
+    for (const row of criterionRows) {
+      const list = ratingsByScore.get(row.projectScoreId) ?? []
+      list.push({ criterionId: row.criterionId, score: row.score, scale: row.scale ?? null })
+      ratingsByScore.set(row.projectScoreId, list)
+    }
+    const summarizeScore = (s: ProjectScore) => {
+      const trackId = projectTrackMap.get(s.projectId) ?? null
+      const applicable = resolveApplicableCriteria(criteria, { round: s.round, trackId })
+      const summary = computeScore(applicable, ratingsByScore.get(s.id) ?? [], { legacySubmitted: isLegacySubmitted(s) })
+      const weightedAverage = s.conflictOfInterest || summary.weightedAverage10 === null
+        ? null
+        : Math.round(summary.weightedAverage10 * 100) / 100
+      return { trackId, ratedCount: summary.ratedCount, weightedAverage }
+    }
+
     const translatedProjects = await applyPortalTranslationOverlays(
       projects.map(p => ({
         id: p.id, title: p.title, tagline: p.tagline, team_id: p.teamId,
@@ -168,12 +189,17 @@ export async function GET(req: Request) {
     return NextResponse.json({
       panels: panels.map(p => ({ id: p.id, name: p.name, round: p.round })),
       projects: queue,
-      scores: scores.map(s => ({
-        id: s.id, project_id: s.projectId, round: s.round,
-        total_score: s.totalScore, is_submitted: s.isSubmitted,
-        conflict_of_interest: s.conflictOfInterest,
-        track_id: projectTrackMap.get(s.projectId) ?? null,
-      })),
+      scores: scores.map(s => {
+        const summary = summarizeScore(s)
+        return {
+          id: s.id, project_id: s.projectId, round: s.round,
+          total_score: s.totalScore, is_submitted: s.isSubmitted,
+          conflict_of_interest: s.conflictOfInterest,
+          track_id: summary.trackId,
+          rated_count: summary.ratedCount,
+          weighted_average: summary.weightedAverage,
+        }
+      }),
       voting_open: votingOpen,
     })
   } catch (error) {
@@ -189,6 +215,7 @@ export const openApi: OpenApiRouteDoc = {
       summary: 'Get assigned projects and scoring status for current judge',
       description: 'Projects are returned in preliminary demo order (projects without a slot last, by title), '
         + 'each with its demo slot, applicable criteria count, track name and screenshots. '
+        + 'Each score carries `rated_count` and `weighted_average` (0–10, null when nothing is rated or recused). '
         + '`voting_open` is false once competition results are published.',
     },
   },

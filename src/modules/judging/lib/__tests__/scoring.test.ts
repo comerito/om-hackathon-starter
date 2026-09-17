@@ -1,6 +1,7 @@
 import {
   STAR_SCALE,
   computeScore,
+  isLegacySubmitted,
   legacyStarsForDisplay,
   rankAmong,
   resolveApplicableCriteria,
@@ -315,5 +316,17 @@ describe('rankAmong', () => {
     { name: 'float-equal totals tie', total: 0.3, others: [0.1 + 0.2], expected: { place: 1, of: 2 } },
   ])('$name', ({ total, others, expected }) => {
     expect(rankAmong(total, others)).toEqual(expected)
+  })
+})
+
+describe('isLegacySubmitted', () => {
+  it('is true for a submitted score or one that was voted before', () => {
+    expect(isLegacySubmitted({ isSubmitted: true, submittedAt: null })).toBe(true)
+    expect(isLegacySubmitted({ isSubmitted: false, submittedAt: new Date('2026-01-01T00:00:00Z') })).toBe(true)
+  })
+
+  it('is false for a score that was never voted', () => {
+    expect(isLegacySubmitted({ isSubmitted: false, submittedAt: null })).toBe(false)
+    expect(isLegacySubmitted({ isSubmitted: false })).toBe(false)
   })
 })
