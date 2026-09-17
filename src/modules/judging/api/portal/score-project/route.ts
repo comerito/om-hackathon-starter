@@ -5,13 +5,18 @@ import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-muta
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { ProjectScore, CriterionScore, JudgingCriterion, JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../../data/entities'
 import { Project } from '../../../../projects/data/entities'
-import { saveScoreSchema } from '../../../data/validators'
+import { Competition } from '../../../../competitions/data/entities'
+import { judgingRoundValues, portalSaveVoteSchema } from '../../../data/validators'
 import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
 import { PORTAL_SCORE_FEATURE, requirePortalFeatures } from '../../../lib/portalAuth'
 import { SCORING_PANEL_DENIAL_MESSAGE, resolveScoringPanel } from '../../../lib/panelScope'
 import { SCORE_RESOURCE_KIND } from '../../../lib/resourceKinds'
+import { areResultsPublished } from '../../../lib/resultsScope'
+import { resolveApplicableCriteria } from '../../../lib/scoring'
+import { VotingClosedError, saveJudgeVote, type SaveJudgeVoteResult } from '../../../lib/portalVote'
+import { createPortalVoteStore } from '../../../lib/portalVoteStore'
 
 // NOTE: `requireCustomerAuth` / `requireCustomerFeatures` are NOT enforced for API routes —
 // the dispatcher in `src/app/api/[...slug]/route.ts` only reads `requireAuth`,
@@ -20,6 +25,16 @@ import { SCORE_RESOURCE_KIND } from '../../../lib/resourceKinds'
 export const metadata = {
   GET: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_SCORE_FEATURE] },
   POST: { requireCustomerAuth: true, requireCustomerFeatures: [PORTAL_SCORE_FEATURE] },
+}
+
+const VOTING_CLOSED_MESSAGE = 'Voting is closed'
+
+type EventBus = { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
+
+function roundTo(value: number | null, decimals: number): number | null {
+  if (value === null) return null
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
 }
 
 // GET: load existing score + criteria for a project
@@ -32,12 +47,15 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url)
     const projectId = url.searchParams.get('project_id')
-    const round = url.searchParams.get('round') || 'preliminary'
+    const roundParam = url.searchParams.get('round') || 'preliminary'
     const competitionId = url.searchParams.get('competition_id')
 
     if (!projectId || !competitionId) {
       return NextResponse.json({ error: 'project_id and competition_id required' }, { status: 400 })
     }
+    const roundParsed = z.enum(judgingRoundValues).safeParse(roundParam)
+    if (!roundParsed.success) return NextResponse.json({ error: 'Invalid round' }, { status: 400 })
+    const round = roundParsed.data
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
@@ -50,27 +68,30 @@ export async function GET(req: Request) {
     } as FilterQuery<Project>)
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
-    // Load criteria for this competition — filtered by track (track-specific + global)
-    const criteriaFilter: FilterQuery<JudgingCriterion> = {
+    const competition = await em.findOne(Competition, {
+      id: competitionId, tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
+    } as FilterQuery<Competition>)
+    const votingOpen = competition ? !areResultsPublished(competition.stage) : false
+
+    // Criteria applicable to this project: this round or `both`, global or the project's track.
+    const allCriteria = await em.find(JudgingCriterion, {
       competitionId, tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
-      $and: [
-        { $or: [{ round }, { round: 'both' }] },
-        { $or: [{ trackId: null }, { trackId: project.trackId }] },
-      ],
-    } as FilterQuery<JudgingCriterion>
-    const criteria = await em.find(JudgingCriterion, criteriaFilter, { orderBy: { order: 'ASC' } })
+    } as FilterQuery<JudgingCriterion>, { orderBy: { order: 'ASC' } })
+    const criteria = resolveApplicableCriteria(allCriteria, { round, trackId: project.trackId })
 
     // Load existing score
     const projectScore = await em.findOne(ProjectScore, {
       projectId, judgeId: auth.sub, round, tenantId: auth.tenantId, organizationId: auth.orgId,
     } as FilterQuery<ProjectScore>)
 
-    let criterionScores: Array<{ criterion_id: string; score: number; note: string | null }> = []
+    let criterionScores: Array<{ criterion_id: string; score: number; scale: number | null; note: string | null }> = []
     if (projectScore) {
       const cs = await em.find(CriterionScore, {
-        projectScoreId: projectScore.id,
+        projectScoreId: projectScore.id, tenantId: auth.tenantId, organizationId: auth.orgId,
       } as FilterQuery<CriterionScore>)
-      criterionScores = cs.map(c => ({ criterion_id: c.criterionId, score: c.score, note: c.note ?? null }))
+      criterionScores = cs.map(c => ({
+        criterion_id: c.criterionId, score: c.score, scale: c.scale ?? null, note: c.note ?? null,
+      }))
     }
 
     const translatedCriteria = await applyPortalTranslationOverlays(
@@ -96,8 +117,10 @@ export async function GET(req: Request) {
         private_notes: projectScore.privateNotes,
         conflict_of_interest: projectScore.conflictOfInterest,
         is_submitted: projectScore.isSubmitted,
+        submitted_at: projectScore.submittedAt ? projectScore.submittedAt.toISOString() : null,
         criterion_scores: criterionScores,
       } : null,
+      voting_open: votingOpen,
     })
   } catch (error) {
     console.error('[portal/score-project] GET error:', error)
@@ -105,7 +128,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: save/submit score
+// POST: save part of a vote (one click). The server derives "voted" from the persisted ratings.
 export async function POST(req: Request) {
   try {
     const auth = await getCustomerAuthFromRequest(req)
@@ -114,7 +137,7 @@ export async function POST(req: Request) {
     if (forbidden) return forbidden
 
     const body = await req.json()
-    const requested = saveScoreSchema.parse(body)
+    const requested = portalSaveVoteSchema.parse(body)
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
@@ -126,6 +149,16 @@ export async function POST(req: Request) {
       tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
     } as FilterQuery<Project>)
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+
+    // Votes stay editable until results are published. Checked here, before the guard, and
+    // again under the row lock inside the write transaction.
+    const competition = await em.findOne(Competition, {
+      id: requested.competition_id, tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
+    } as FilterQuery<Competition>)
+    if (!competition) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    if (areResultsPublished(competition.stage)) {
+      return NextResponse.json({ error: VOTING_CLOSED_MESSAGE }, { status: 409 })
+    }
 
     const existingScore = await em.findOne(ProjectScore, {
       projectId: requested.project_id, judgeId: auth.sub, round: requested.round,
@@ -155,7 +188,7 @@ export async function POST(req: Request) {
 
     // A guard may rewrite the payload; re-validate the merged result rather than trusting it.
     const parsed = guard.modifiedPayload
-      ? saveScoreSchema.parse({ ...requested, ...guard.modifiedPayload })
+      ? portalSaveVoteSchema.parse({ ...requested, ...guard.modifiedPayload })
       : requested
 
     // Resolve the panel the score is filed under. The caller must sit on a judge panel of the
@@ -192,76 +225,44 @@ export async function POST(req: Request) {
     }
     const judgePanelId = resolution.panelId
 
-    // Wrap multi-step write in a transaction for atomicity
-    const scoreId = await em.transactional(async (txEm) => {
-      const now = new Date()
+    // Only criteria that apply to this project in this round may be rated.
+    const allCriteria = await em.find(JudgingCriterion, {
+      competitionId: parsed.competition_id, tenantId: auth.tenantId, organizationId: auth.orgId, deletedAt: null,
+    } as FilterQuery<JudgingCriterion>)
+    const applicable = resolveApplicableCriteria(allCriteria, { round: parsed.round, trackId: project.trackId })
+    const applicableIds = new Set(applicable.map(c => c.id))
+    const sentCriterionScores = parsed.criterion_scores ?? []
+    const notApplicable = sentCriterionScores.filter(cs => !applicableIds.has(cs.criterion_id))
+    if (notApplicable.length > 0) {
+      return NextResponse.json({
+        error: 'Criterion does not apply to this project',
+        criterion_ids: [...new Set(notApplicable.map(cs => cs.criterion_id))],
+      }, { status: 422 })
+    }
 
-      // Find or create ProjectScore
-      let projectScore = await txEm.findOne(ProjectScore, {
-        projectId: parsed.project_id, judgeId: auth.sub, round: parsed.round,
-        tenantId: auth.tenantId, organizationId: auth.orgId,
-      } as FilterQuery<ProjectScore>)
-
-      if (!projectScore) {
-        projectScore = txEm.create(ProjectScore, {
-          projectId: parsed.project_id, judgeId: auth.sub!, judgePanelId,
-          round: parsed.round, competitionId: parsed.competition_id,
-          comment: parsed.comment ?? null, privateNotes: parsed.private_notes ?? null,
-          conflictOfInterest: parsed.conflict_of_interest, isSubmitted: parsed.is_submitted,
-          submittedAt: parsed.is_submitted ? now : null,
-          tenantId: auth.tenantId!, organizationId: auth.orgId!,
-          createdAt: now, updatedAt: now,
-        })
-        txEm.persist(projectScore)
-        await txEm.flush()
-      } else {
-        projectScore.comment = parsed.comment ?? projectScore.comment
-        projectScore.privateNotes = parsed.private_notes ?? projectScore.privateNotes
-        projectScore.conflictOfInterest = parsed.conflict_of_interest
-        if (parsed.is_submitted && !projectScore.isSubmitted) {
-          projectScore.isSubmitted = true
-          projectScore.submittedAt = now
-        }
-        projectScore.updatedAt = now
+    let result: SaveJudgeVoteResult
+    try {
+      result = await saveJudgeVote(createPortalVoteStore(em), {
+        key: {
+          projectId: parsed.project_id, judgeId: auth.sub, round: parsed.round,
+          tenantId: auth.tenantId, organizationId: auth.orgId,
+        },
+        competitionId: parsed.competition_id,
+        judgePanelId,
+        applicable,
+        criterionScores: sentCriterionScores.map(cs => ({
+          criterionId: cs.criterion_id, stars: cs.stars, note: cs.note,
+        })),
+        comment: parsed.comment,
+        privateNotes: parsed.private_notes,
+        conflictOfInterest: parsed.conflict_of_interest,
+      })
+    } catch (writeError) {
+      if (writeError instanceof VotingClosedError) {
+        return NextResponse.json({ error: VOTING_CLOSED_MESSAGE }, { status: 409 })
       }
-
-      // Upsert criterion scores
-      for (const cs of parsed.criterion_scores) {
-        let criterionScore = await txEm.findOne(CriterionScore, {
-          projectScoreId: projectScore.id, criterionId: cs.criterion_id,
-        } as FilterQuery<CriterionScore>)
-        if (!criterionScore) {
-          criterionScore = txEm.create(CriterionScore, {
-            projectScoreId: projectScore.id, criterionId: cs.criterion_id,
-            score: cs.score, note: cs.note ?? null,
-            tenantId: auth.tenantId!, organizationId: auth.orgId!, updatedAt: now,
-          })
-          txEm.persist(criterionScore)
-        } else {
-          criterionScore.score = cs.score
-          criterionScore.note = cs.note ?? criterionScore.note
-          criterionScore.updatedAt = now
-        }
-      }
-
-      // Compute totalScore (weighted sum)
-      if (parsed.criterion_scores.length > 0) {
-        const criteria = await txEm.find(JudgingCriterion, {
-          competitionId: parsed.competition_id, tenantId: auth.tenantId,
-          organizationId: auth.orgId, deletedAt: null,
-        } as FilterQuery<JudgingCriterion>)
-        const criteriaMap = new Map(criteria.map(c => [c.id, c]))
-        let totalScore = 0
-        for (const cs of parsed.criterion_scores) {
-          const criterion = criteriaMap.get(cs.criterion_id)
-          if (criterion) totalScore += (cs.score / criterion.maxScore) * criterion.weight * 100
-        }
-        projectScore.totalScore = Math.round(totalScore * 100) / 100
-      }
-
-      await txEm.flush()
-      return projectScore.id
-    })
+      throw writeError
+    }
 
     // After commit only — a guard callback must never be able to roll the write back.
     try {
@@ -270,7 +271,38 @@ export async function POST(req: Request) {
       console.error('[portal/score-project] mutation guard afterSuccess failed:', guardError)
     }
 
-    return NextResponse.json({ ok: true, score_id: scoreId })
+    // Events only on vote-state transitions: both are client-broadcast, one per star click would
+    // flood the backend.
+    if (result.transition) {
+      try {
+        const eventBus = container.resolve('eventBus') as EventBus
+        await eventBus.emit(result.transition, {
+          projectScoreId: result.scoreId,
+          projectId: parsed.project_id,
+          judgeId: auth.sub,
+          round: parsed.round,
+          totalScore: result.totalScore,
+          isSubmitted: result.after.voted,
+          conflictOfInterest: result.after.recused,
+          competitionId: parsed.competition_id,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+        })
+      } catch (emitError) {
+        console.error('[portal/score-project] event emit failed:', emitError)
+      }
+    }
+
+    const recused = result.after.recused
+    return NextResponse.json({
+      ok: true,
+      score_id: result.scoreId,
+      rated_count: result.summary.ratedCount,
+      criteria_count: result.summary.criteriaCount,
+      is_voted: result.after.voted,
+      weighted_average: recused ? null : roundTo(result.summary.weightedAverage10, 2),
+      total_score: recused ? null : result.totalScore,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
@@ -280,7 +312,81 @@ export async function POST(req: Request) {
   }
 }
 
+const errorSchema = z.object({ error: z.string() })
+
+const criterionScoreSchema = z.object({
+  criterion_id: z.string().uuid(),
+  score: z.number().int().describe('Stars (1–10) when `scale` is 10; points on 0…max_score when `scale` is null (legacy)'),
+  scale: z.number().int().nullable().describe('10 = star rating; null = legacy row written before star voting'),
+  note: z.string().nullable(),
+})
+
+const getResponseSchema = z.object({
+  criteria: z.array(z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable(),
+    max_score: z.number().int(),
+    weight: z.number(),
+    order: z.number().int(),
+    round: z.string(),
+  })),
+  score: z.object({
+    id: z.string().uuid(),
+    total_score: z.number().nullable(),
+    comment: z.string().nullable(),
+    private_notes: z.string().nullable(),
+    conflict_of_interest: z.boolean(),
+    is_submitted: z.boolean().describe('Voted: every applicable criterion rated and not recused'),
+    submitted_at: z.string().nullable().describe('First time the vote became complete'),
+    criterion_scores: z.array(criterionScoreSchema),
+  }).nullable(),
+  voting_open: z.boolean().describe('False once competition results are published'),
+})
+
+const postResponseSchema = z.object({
+  ok: z.literal(true),
+  score_id: z.string().uuid(),
+  rated_count: z.number().int(),
+  criteria_count: z.number().int(),
+  is_voted: z.boolean(),
+  weighted_average: z.number().nullable().describe('Weighted average of the ratings on 0–10; null when nothing is rated or recused'),
+  total_score: z.number().nullable().describe('weighted_average × 10 (0–100); null when nothing is rated or recused'),
+})
+
 export const openApi: OpenApiRouteDoc = {
-  tag: 'Portal', summary: 'Score a project',
-  methods: { GET: { summary: 'Get criteria and existing score' }, POST: { summary: 'Save/submit score' } },
+  tag: 'Portal', summary: 'Judge vote on a project',
+  methods: {
+    GET: {
+      summary: 'Get applicable criteria and the judge\'s own vote',
+      query: z.object({
+        project_id: z.string().uuid(),
+        competition_id: z.string().uuid(),
+        round: z.enum(judgingRoundValues).optional(),
+      }),
+      responses: [{ status: 200, description: 'Criteria, existing vote and whether voting is open', schema: getResponseSchema }],
+      errors: [
+        { status: 400, description: 'Missing or invalid query parameters', schema: errorSchema },
+        { status: 401, description: 'No portal session', schema: errorSchema },
+        { status: 403, description: 'Missing portal scoring feature', schema: errorSchema },
+        { status: 404, description: 'Project not found in the caller scope', schema: errorSchema },
+      ],
+    },
+    POST: {
+      summary: 'Save part of a vote',
+      description: 'Partial save: only the fields sent are written (omitted = unchanged, null = cleared). '
+        + 'Each `criterion_scores` item sets 1–10 stars and/or a note. The server recomputes the vote from all '
+        + 'persisted ratings under a row lock: the project is voted once every applicable criterion is rated '
+        + 'and the judge is not recused. `conflict_of_interest` has no default.',
+      requestBody: { schema: portalSaveVoteSchema },
+      responses: [{ status: 200, description: 'Vote saved and recomputed', schema: postResponseSchema }],
+      errors: [
+        { status: 401, description: 'No portal session', schema: errorSchema },
+        { status: 403, description: 'Missing feature, no eligible judging panel, or blocked by a mutation guard', schema: errorSchema },
+        { status: 404, description: 'Project not found in the caller scope', schema: errorSchema },
+        { status: 409, description: 'Voting is closed (results published)', schema: errorSchema },
+        { status: 422, description: 'Validation failed, or a criterion does not apply to the project', schema: errorSchema },
+      ],
+    },
+  },
 }

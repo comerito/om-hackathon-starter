@@ -1,42 +1,67 @@
 "use client"
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import { ChevronRight, LocateFixed, PanelRight } from 'lucide-react'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { usePortalContext } from '@open-mercato/ui/portal/PortalContext'
-import { PortalCard } from '@open-mercato/ui/portal/components/PortalCard'
 import { PortalEmptyState } from '@open-mercato/ui/portal/components/PortalEmptyState'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { Badge, type BadgeVariant } from '@open-mercato/ui/primitives/badge'
+import { Button } from '@open-mercato/ui/primitives/button'
+import { Progress } from '@open-mercato/ui/primitives/progress'
+import { SwitchField } from '@open-mercato/ui/primitives/switch-field'
 import { useCompetitionContext } from '../../../../../competitions/components/CompetitionContext'
 import { PortalCompetitionLayout } from '../../../../../competitions/components/PortalCompetitionLayout'
 import { PortalPageTitle } from '@/components/portal'
 import Link from 'next/link'
+import { ProjectCardSheet } from '../../../../components/ProjectCardSheet'
+import type { JudgeAssignmentScore, JudgeAssignmentsResponse, JudgeProjectCard } from '../../../../lib/judgeAssignments'
+import { formatQueuePosition } from '../../../../lib/demoQueue'
+import {
+  filterQueueEntries, findOnStage, findUpNext, formatWeightedAverage, queueProgress, resolveQueueEntries,
+  type QueueEntry, type VoteState,
+} from '../../../../lib/votingQueue'
 
-type ProjectAssignment = {
-  id: string; title: string; tagline: string | null; team_name: string | null
-  track_id: string; flagged_for_reuse: boolean; uses_preexisting_code: boolean
+const EMPTY_RESPONSE: JudgeAssignmentsResponse = { panels: [], projects: [], scores: [], voting_open: true }
+
+const VOTE_BADGE_VARIANT: Record<VoteState, BadgeVariant> = {
+  voted: 'success',
+  in_progress: 'warning',
+  not_voted: 'neutral',
+  recused: 'muted',
 }
 
-type ScoreStatus = { id: string; project_id: string; round: string; total_score: number | null; is_submitted: boolean; conflict_of_interest: boolean }
-
-type AssignmentsResponse = {
-  panels: Array<{ id: string; name: string; round: string }>
-  projects: ProjectAssignment[]
-  scores: ScoreStatus[]
-}
+const queueRowId = (projectId: string) => `judging-queue-${projectId}`
 
 function JudgingContent({ orgSlug }: { orgSlug: string }) {
   const t = useT()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { selectedId: competitionId, isLoading: contextLoading } = useCompetitionContext()
+  const [cardProjectId, setCardProjectId] = React.useState<string | null>(null)
+  const [cardOpen, setCardOpen] = React.useState(false)
 
-  const { data, isLoading } = useQuery<AssignmentsResponse>({
+  const hideVoted = searchParams.get('hide_voted') === '1'
+
+  const setHideVoted = React.useCallback((next: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (next) params.set('hide_voted', '1')
+    else params.delete('hide_voted')
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
+
+  const { data, isLoading } = useQuery<JudgeAssignmentsResponse>({
     queryKey: ['portal-judge-assignments', competitionId],
     queryFn: async () => {
-      const { ok, result } = await apiCall<AssignmentsResponse>(`/api/judging/portal/my-assignments?competition_id=${competitionId}`)
+      const { ok, result } = await apiCall<JudgeAssignmentsResponse>(`/api/judging/portal/my-assignments?competition_id=${competitionId}`)
       if (ok && result) return result
-      return { panels: [], projects: [], scores: [] }
+      return EMPTY_RESPONSE
     },
     enabled: !!competitionId,
+    refetchInterval: 15000,
   })
 
   if (contextLoading || isLoading) {
@@ -51,15 +76,44 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
   }
 
   const projects = data?.projects ?? []
-  const scores = data?.scores ?? []
-  const scoreMap = new Map(scores.map(s => [s.project_id + ':' + s.round, s]))
 
   if (projects.length === 0) {
     return <PortalEmptyState title={t('judging.portal.noAssignments', 'No Projects Assigned')} description={t('judging.portal.noAssignmentsDesc', 'No projects assigned to you yet. Panels will be configured by the organizer.')} />
   }
 
-  const scored = scores.filter(s => s.is_submitted).length
-  const total = projects.length
+  const entries = resolveQueueEntries(projects, data?.scores ?? [])
+  const visibleEntries = filterQueueEntries(entries, hideVoted)
+  const { done, total } = queueProgress(entries)
+  const onStage = findOnStage(projects)
+  const upNext = findUpNext(projects)
+  const onStageVisible = onStage !== null && visibleEntries.some(entry => entry.project.id === onStage.id)
+  const cardProject = cardProjectId ? projects.find(project => project.id === cardProjectId) ?? null : null
+
+  const voteLabel = (entry: QueueEntry<JudgeProjectCard, JudgeAssignmentScore>): string => {
+    switch (entry.state) {
+      case 'voted': {
+        const score = formatWeightedAverage(entry.score?.weighted_average)
+        return score
+          ? t('judging.portal.queue.vote.votedWithScore', 'Voted · {score}', { score })
+          : t('judging.portal.queue.vote.voted', 'Voted')
+      }
+      case 'in_progress':
+        return entry.criteriaCount > 0
+          ? t('judging.portal.queue.vote.inProgressCount', 'In progress · {rated}/{total}', {
+            rated: Math.min(entry.ratedCount, entry.criteriaCount), total: entry.criteriaCount,
+          })
+          : t('judging.portal.queue.vote.inProgress', 'In progress')
+      case 'recused':
+        return t('judging.portal.queue.vote.recused', 'Recused')
+      default:
+        return t('judging.portal.queue.vote.notVoted', 'Not voted')
+    }
+  }
+
+  const jumpToOnStage = () => {
+    if (!onStage) return
+    document.getElementById(queueRowId(onStage.id))?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
 
   return (
     <div className="space-y-6">
@@ -67,55 +121,110 @@ function JudgingContent({ orgSlug }: { orgSlug: string }) {
       <div className="rounded-lg border bg-muted/30 p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">{t('judging.portal.scoringProgress', 'Scoring Progress')}</span>
-          <span className="text-sm text-muted-foreground">{scored} / {total}</span>
+          <span className="text-sm text-muted-foreground tabular-nums">{done} / {total}</span>
         </div>
-        <div className="h-2 rounded-full bg-muted">
-          <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${total ? (scored / total) * 100 : 0}%` }} />
-        </div>
+        <Progress value={done} max={Math.max(total, 1)} tone="success" />
       </div>
 
-      {/* Project list */}
-      <div className="space-y-3">
-        {projects.map(project => {
-          const score = scoreMap.get(project.id + ':preliminary')
-          const status = score?.is_submitted ? 'submitted' : score ? 'draft' : 'unscored'
-          const statusStyles = {
-            submitted: 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400',
-            draft: 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-800 dark:text-yellow-400',
-            unscored: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400',
-          }
+      {data?.voting_open === false && (
+        <div role="status" className="rounded-lg border border-status-warning-border bg-status-warning-bg px-3 py-2 text-sm font-medium text-status-warning-text">
+          {t('judging.portal.queue.votingClosed', 'Voting is closed')}
+        </div>
+      )}
 
-          return (
-            <Link key={project.id} href={`/${orgSlug}/portal/judging/${project.id}`}>
-              <PortalCard>
-                <div className="p-4 flex items-center gap-2 sm:gap-4 hover:bg-muted/30 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium truncate">{project.title}</h3>
-                      {project.flagged_for_reuse && (
-                        <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-800 dark:text-orange-400">{t('judging.portal.flagged', 'Flagged')}</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{project.team_name}</p>
-                    {project.tagline && <p className="text-xs text-muted-foreground mt-0.5 truncate">{project.tagline}</p>}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {score?.total_score != null && <span className="text-lg font-mono font-bold">{score.total_score.toFixed(1)}</span>}
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}>
-                      {status === 'submitted'
-                        ? t('judging.portal.assignmentStatus.submitted', 'Submitted')
-                        : status === 'draft'
-                          ? t('judging.portal.assignmentStatus.draft', 'Draft')
-                          : t('judging.portal.assignmentStatus.unscored', 'Unscored')}
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SwitchField
+          checked={hideVoted}
+          onCheckedChange={setHideVoted}
+          label={t('judging.portal.queue.hideVoted', 'Hide voted')}
+          flip
+        />
+        {onStageVisible && (
+          <Button type="button" variant="outline" size="sm" onClick={jumpToOnStage}>
+            <LocateFixed className="size-4" aria-hidden="true" />
+            {t('judging.portal.queue.jumpToOnStage', 'Jump to on stage')}
+          </Button>
+        )}
+      </div>
+
+      {/* Queue */}
+      {visibleEntries.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-6 text-center">
+          <p className="text-sm font-medium">{t('judging.portal.queue.allVoted', 'All projects voted')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('judging.portal.queue.allVotedDesc', 'Turn off "Hide voted" to see them again.')}</p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {visibleEntries.map((entry) => {
+            const { project, state } = entry
+            const isOnStage = onStage?.id === project.id
+            const isUpNext = upNext?.id === project.id
+            const position = formatQueuePosition(project.demo?.order)
+            const meta = [project.team_name, project.track_name].filter((value): value is string => !!value && value.trim().length > 0)
+
+            return (
+              <li
+                key={project.id}
+                id={queueRowId(project.id)}
+                data-vote-state={state}
+                className={`overflow-hidden rounded-xl border bg-card transition-colors ${isOnStage ? 'border-status-info-icon ring-2 ring-status-info-border' : ''}`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-stretch">
+                  <Link
+                    href={`/${orgSlug}/portal/judging/${project.id}${hideVoted ? '?hide_voted=1' : ''}`}
+                    className={`flex min-w-0 flex-1 items-start gap-3 p-4 transition-colors hover:bg-muted/30 ${isOnStage ? 'bg-status-info-bg' : ''}`}
+                  >
+                    <span
+                      className="w-9 shrink-0 pt-0.5 font-mono text-sm tabular-nums text-muted-foreground"
+                      title={t('judging.portal.projectCard.queuePosition', 'Demo order')}
+                    >
+                      {position ? `#${position}` : '—'}
                     </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground"><polyline points="9 18 15 12 9 6" /></svg>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <h3 className="font-medium break-words">{project.title}</h3>
+                        {isOnStage && (
+                          <Badge variant="info" size="sm" dot>{t('judging.portal.queue.onStage', 'On stage')}</Badge>
+                        )}
+                        {isUpNext && (
+                          <Badge variant="outline" size="sm">{t('judging.portal.queue.upNext', 'Up next')}</Badge>
+                        )}
+                        {project.flagged_for_reuse && (
+                          <Badge variant="error" size="sm">{t('judging.portal.flagged', 'Flagged')}</Badge>
+                        )}
+                      </div>
+                      {meta.length > 0 && (
+                        <p className="mt-0.5 text-sm text-muted-foreground break-words">{meta.join(' · ')}</p>
+                      )}
+                      <div className="mt-2">
+                        <Badge variant={VOTE_BADGE_VARIANT[state]} className="tabular-nums">
+                          {voteLabel(entry)}
+                        </Badge>
+                      </div>
+                    </div>
+                    <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                  <div className="flex items-center justify-end border-t px-3 py-2 sm:border-l sm:border-t-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setCardProjectId(project.id); setCardOpen(true) }}
+                      aria-label={t('judging.portal.queue.openProjectCard', 'Open project card: {title}', { title: project.title })}
+                    >
+                      <PanelRight className="size-4" aria-hidden="true" />
+                      {t('judging.portal.projectCard.title', 'Project card')}
+                    </Button>
                   </div>
                 </div>
-              </PortalCard>
-            </Link>
-          )
-        })}
-      </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <ProjectCardSheet project={cardProject} open={cardOpen && cardProject !== null} onOpenChange={setCardOpen} />
     </div>
   )
 }

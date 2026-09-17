@@ -48,6 +48,12 @@ jest.mock('../../../../data/entities', () => ({
   JudgePanelTrack: class JudgePanelTrack {},
 }))
 jest.mock('../../../../../projects/data/entities', () => ({ Project: class Project {} }))
+// The transactional write goes through the vote-store port; the in-memory store records the shell
+// row — and so the panel id — the route files the score under.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { MemoryVoteStore } = require('../../../../lib/__tests__/memoryVoteStore') as typeof import('../../../../lib/__tests__/memoryVoteStore')
+let mockStore = new MemoryVoteStore()
+jest.mock('../../../../lib/portalVoteStore', () => ({ createPortalVoteStore: () => mockStore }))
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { POST } = require('../route') as typeof import('../route')
@@ -55,6 +61,8 @@ const { POST } = require('../route') as typeof import('../route')
 const entities = require('../../../../data/entities') as Record<string, unknown>
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const projectEntities = require('../../../../../projects/data/entities') as { Project: unknown }
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const competitionEntities = require('../../../../../competitions/data/entities') as { Competition: unknown }
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const setup = (require('../../../../setup') as { default: typeof import('../../../../setup').default }).default
 
@@ -85,39 +93,28 @@ function auth(features: string[] = JUDGE_FEATURES) {
  * route is responsible for narrowing them, so the fake deliberately hands over all of them.
  */
 function makeEm(panels: PanelRow[], panelTracks: PanelTrackRow[]) {
-  const createdRows: Array<{ entity: unknown; data: Record<string, unknown> }> = []
-  const transactional = jest.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
-    const txEm = {
-      findOne: jest.fn(async () => null),
-      find: jest.fn(async () => []),
-      create: jest.fn((entity: unknown, data: Record<string, unknown>) => {
-        createdRows.push({ entity, data })
-        return { id: 'created-score-id', ...data }
-      }),
-      persist: jest.fn(),
-      flush: jest.fn(async () => undefined),
-    }
-    return cb(txEm)
-  })
   const findOne = jest.fn(async (entity: unknown) => {
     if (entity === projectEntities.Project) {
       return { id: PROJECT_ID, competitionId: COMPETITION_ID, trackId: TRACK_ID }
     }
+    if (entity === competitionEntities.Competition) return { id: COMPETITION_ID, stage: 'judging' }
     return null
   })
   const find = jest.fn(async (entity: unknown, filter: unknown): Promise<unknown[]> => {
     if (entity === entities.JudgePanelJudge) return panels.map(p => ({ panelId: p.id }))
     if (entity === entities.JudgePanel) return panels
     if (entity === entities.JudgePanelTrack) return panelTracks
-    if (entity === entities.JudgingCriterion) return []
+    if (entity === entities.JudgingCriterion) {
+      return [{ id: CRITERION_ID, round: 'both', trackId: null, order: 1, weight: 1, maxScore: 10 }]
+    }
     void filter
     return []
   })
-  /** Only the `ProjectScore` rows — the transaction also creates `CriterionScore` rows. */
-  const scoreRows = () => createdRows
-    .filter(row => row.entity === entities.ProjectScore)
-    .map(row => row.data)
-  return { findOne, find, transactional, createdRows, scoreRows }
+  /** The `ProjectScore` rows the write inserted (the shell carries the resolved panel). */
+  const scoreRows = () => mockStore.shells
+  /** Whether the route reached the transactional write at all. */
+  const wrote = () => mockStore.calls.length > 0
+  return { findOne, find, scoreRows, wrote }
 }
 
 function container(em: unknown) {
@@ -138,9 +135,7 @@ function scorePayload(overrides: Record<string, unknown> = {}) {
     competition_id: COMPETITION_ID,
     judge_panel_id: 'auto',
     round: 'preliminary',
-    conflict_of_interest: false,
-    is_submitted: true,
-    criterion_scores: [{ criterion_id: CRITERION_ID, score: 5 }],
+    criterion_scores: [{ criterion_id: CRITERION_ID, stars: 5 }],
     ...overrides,
   }
 }
@@ -157,6 +152,7 @@ const TRACKS_FOR_BOTH: PanelTrackRow[] = [
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockStore = new MemoryVoteStore()
   mockGetCustomerAuthFromRequest.mockResolvedValue(auth())
   mockRunRouteMutationGuards.mockResolvedValue({
     ok: true,
@@ -172,7 +168,7 @@ describe('portal score-project — an explicit foreign panel id (#106)', () => {
 
     const res = await POST(postRequest(scorePayload({ judge_panel_id: OTHER_COMPETITION_PANEL_ID })))
 
-    expect(em.transactional).not.toHaveBeenCalled()
+    expect(em.wrote()).toBe(false)
     expect(res.status).toBe(403)
     await expect(res.json()).resolves.toEqual({ error: 'That judging panel cannot score this project' })
   })
@@ -186,7 +182,7 @@ describe('portal score-project — an explicit foreign panel id (#106)', () => {
 
     const res = await POST(postRequest(scorePayload({ judge_panel_id: OTHER_COMPETITION_PANEL_ID })))
 
-    expect(em.transactional).not.toHaveBeenCalled()
+    expect(em.wrote()).toBe(false)
     expect(res.status).toBe(403)
     await expect(res.json()).resolves.toEqual({ error: 'You are not on a judging panel for this competition' })
   })
@@ -200,7 +196,7 @@ describe('portal score-project — an explicit foreign panel id (#106)', () => {
 
     const res = await POST(postRequest(scorePayload()))
 
-    expect(em.transactional).not.toHaveBeenCalled()
+    expect(em.wrote()).toBe(false)
     expect(res.status).toBe(403)
     await expect(res.json()).resolves.toEqual({ error: 'Your judging panel does not cover this project' })
   })
@@ -230,13 +226,14 @@ describe('portal score-project — `auto` resolution stays inside the competitio
     const res = await POST(postRequest(scorePayload({ judge_panel_id: 'auto' })))
 
     expect(res.status).toBe(403)
-    expect(em.transactional).not.toHaveBeenCalled()
+    expect(em.wrote()).toBe(false)
     expect(em.scoreRows()).toHaveLength(0)
   })
 
   it('resolves `auto` deterministically across repeated requests', async () => {
     const written: unknown[] = []
     for (const order of [PANELS_IN_TWO_COMPETITIONS, [...PANELS_IN_TWO_COMPETITIONS].reverse()]) {
+      mockStore = new MemoryVoteStore()
       const em = makeEm(order, TRACKS_FOR_BOTH)
       mockCreateRequestContainer.mockResolvedValue(container(em))
       await POST(postRequest(scorePayload({ judge_panel_id: 'auto' })))

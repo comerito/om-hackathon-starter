@@ -68,6 +68,30 @@ export const saveScoreSchema = z.object({
   })),
 })
 
+// ── Portal vote (SPEC-007 star voting) ──────────────────────────────
+// Partial save: every field except the identifiers may be omitted, and an omitted field is left
+// unchanged. `comment` / `private_notes` / `note` distinguish omitted (unchanged) from `null`
+// (cleared). `conflict_of_interest` deliberately has NO default — a default would un-recuse the
+// judge on every star click. `is_submitted` is not accepted: the server derives "voted".
+export const PORTAL_VOTE_MAX_STARS = 10
+
+export const portalSaveVoteSchema = z.object({
+  project_id: z.string().uuid(),
+  competition_id: z.string().uuid(),
+  judge_panel_id: z.union([z.string().uuid(), z.literal('auto')]),
+  round: z.enum(judgingRoundValues).default('preliminary'),
+  criterion_scores: z.array(z.object({
+    criterion_id: z.string().uuid(),
+    stars: z.number().int().min(1).max(PORTAL_VOTE_MAX_STARS).optional(),
+    note: z.string().nullable().optional(),
+  })).optional(),
+  comment: z.string().nullable().optional(),
+  private_notes: z.string().nullable().optional(),
+  conflict_of_interest: z.boolean().optional(),
+})
+
+export type PortalSaveVoteInput = z.infer<typeof portalSaveVoteSchema>
+
 // ── DemoSession ─────────────────────────────────────────────────────
 export const generateDemoQueueSchema = z.object({
   competition_id: z.string().uuid(),
