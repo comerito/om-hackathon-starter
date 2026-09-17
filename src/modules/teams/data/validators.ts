@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_NEEDED_SKILLS, MAX_RECRUITMENT_NOTE_LENGTH, MAX_SKILL_LENGTH } from '../lib/recruitment'
 
 // ── Team ────────────────────────────────────────────────────────────
 
@@ -29,6 +30,21 @@ export const updateTeamSchema = z.object({
   presentation_time_slot: z.string().datetime().nullable().optional(),
   is_finalist: z.boolean().optional(),
 })
+
+/**
+ * The team's recruitment posting, edited from the portal by the team owner.
+ *
+ * The array bound is generous on purpose — `normalizeNeededSkills` is what actually trims and
+ * caps the list; the schema only stops an absurd payload from reaching it.
+ */
+export const updateTeamRecruitmentSchema = z.object({
+  team_id: z.string().uuid(),
+  looking_for_members: z.boolean(),
+  needed_skills: z.array(z.string().max(MAX_SKILL_LENGTH * 2)).max(MAX_NEEDED_SKILLS * 4).optional(),
+  recruitment_note: z.string().max(MAX_RECRUITMENT_NOTE_LENGTH).nullable().optional(),
+})
+
+export type UpdateTeamRecruitmentInput = z.infer<typeof updateTeamRecruitmentSchema>
 
 export const disqualifyTeamSchema = z.object({
   id: z.string().uuid(),

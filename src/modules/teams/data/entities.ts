@@ -54,6 +54,22 @@ export class Team {
   @Property({ name: 'avatar_url', type: 'varchar', length: 500, nullable: true })
   avatarUrl?: string | null
 
+  // ── Recruitment posting ───────────────────────────────────────────
+  // The team-side mirror of a participant's `looking_for_team`: it lets a team advertise the
+  // gap it wants to fill instead of only being able to invite somebody whose name is already
+  // known. Kept on the team rather than in a separate table because a team advertises at most
+  // one opening at a time and every consumer (browse list, my-team page) reads it with the team.
+
+  @Property({ name: 'looking_for_members', type: 'boolean', default: false })
+  lookingForMembers: boolean = false
+
+  /** Free-text skill names, normalized by `lib/recruitment.ts`. No taxonomy is enforced. */
+  @Property({ name: 'needed_skills', type: 'jsonb', default: '[]' })
+  neededSkills: string[] = []
+
+  @Property({ name: 'recruitment_note', type: 'text', nullable: true })
+  recruitmentNote?: string | null
+
   @Property({ type: 'text', default: 'active' })
   status: TeamStatus = TeamStatus.ACTIVE
 
