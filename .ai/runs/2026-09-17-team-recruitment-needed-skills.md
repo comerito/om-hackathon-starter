@@ -103,6 +103,20 @@ record the outcome, including anything blocked by the missing database.
 - Skill strings are free text, so matching is case-insensitive on trimmed values; no taxonomy
   is introduced.
 
+## Review round 1 (om-auto-review-pr --autofix, 2026-09-17)
+
+Four findings, all fixed in `13cc95d`:
+
+| Severity | Finding |
+|---|---|
+| major | Closing the posting deleted the owner's curated skills and note with no undo. The flag is now visibility only; `browse-teams` withholds a closed posting, the team keeps it. |
+| major | `jsonb_array_elements_text` was called without a `jsonb_typeof(...) = 'array'` guard — one non-array row would fail the whole browse query. |
+| minor | The route redefined the zod schema `data/validators.ts` already exported. |
+| nit | `browse-teams`' `openApi` did not document `recruiting` / `skills`. |
+
+Gate re-run after the fixes: `yarn generate` ✅ · `yarn typecheck` ✅ · `yarn test` ✅ (61 suites,
+675 tests) · `yarn build` ✅ · `yarn lint` ❌ pre-existing.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
