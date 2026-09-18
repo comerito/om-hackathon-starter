@@ -45,6 +45,28 @@ export const notificationTypes: NotificationTypeDefinition[] = [
       { id: 'dismiss', labelKey: 'notifications.actions.dismiss', variant: 'ghost' },
     ],
   },
+  {
+    type: 'projects.gallery_published',
+    module: 'projects',
+    titleKey: 'projects.notifications.galleryPublished.title',
+    bodyKey: 'projects.notifications.galleryPublished.body',
+    icon: 'globe',
+    severity: 'success',
+    actions: [
+      { id: 'dismiss', labelKey: 'notifications.actions.dismiss', variant: 'ghost' },
+    ],
+  },
+  {
+    type: 'projects.gallery_rejected',
+    module: 'projects',
+    titleKey: 'projects.notifications.galleryRejected.title',
+    bodyKey: 'projects.notifications.galleryRejected.body',
+    icon: 'x-circle',
+    severity: 'warning',
+    actions: [
+      { id: 'dismiss', labelKey: 'notifications.actions.dismiss', variant: 'ghost' },
+    ],
+  },
 ]
 
 export default notificationTypes

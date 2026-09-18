@@ -3,7 +3,8 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Project, ProjectStatus } from '../../../data/entities'
+import { GalleryStatus, Project, ProjectStatus } from '../../../data/entities'
+import { findGallerySubmissions, loadGalleryImages, toGalleryCandidate } from '../../../lib/gallery/submission'
 import { TeamMember } from '../../../../teams/data/entities'
 import { Competition } from '../../../../competitions/data/entities'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
@@ -79,8 +80,12 @@ export async function POST(req: Request) {
     const attachments = attachmentIds.length > 0
       ? await em.find(Attachment, { id: { $in: attachmentIds } } as FilterQuery<Attachment>)
       : []
+    // Gallery opt-in (SPEC-008): its rules only bite when the team ticked the box.
+    const gallery = (await findGallerySubmissions(em, [project.id], { tenantId: project.tenantId })).get(project.id) ?? null
     const errors = collectProjectSubmissionErrors(project, {
       attachmentFileNames: attachments.map((attachment) => attachment.fileName),
+      gallery: toGalleryCandidate(gallery),
+      galleryImages: await loadGalleryImages(em, [gallery]),
     })
 
     // The competition's minimum team size is a submission requirement too: an
@@ -104,6 +109,11 @@ export async function POST(req: Request) {
     project.submittedAt = new Date()
     project.updatedAt = new Date()
     em.persist(project)
+    const galleryRequested = Boolean(gallery?.publishToGallery)
+    if (gallery && galleryRequested) {
+      gallery.status = GalleryStatus.REQUESTED
+      em.persist(gallery)
+    }
     await em.flush()
 
     // Emit submitted event
@@ -117,6 +127,15 @@ export async function POST(req: Request) {
         tenantId: auth.tenantId,
         organizationId: auth.orgId,
       })
+      if (galleryRequested) {
+        await eventBus.emit('projects.project.gallery_requested', {
+          projectId: project.id,
+          teamId: project.teamId,
+          competitionId: project.competitionId,
+          tenantId: auth.tenantId,
+          organizationId: auth.orgId,
+        })
+      }
     } catch (e) {
       console.error('[portal/submit-project] Event emit error:', e)
     }
