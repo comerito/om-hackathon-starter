@@ -133,3 +133,98 @@ export class Project {
   @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date | null
 }
+
+// ── Project Gallery (SPEC-008) ──────────────────────────────────────
+
+export const GalleryStatus = {
+  NOT_REQUESTED: 'not_requested',
+  REQUESTED: 'requested',
+  PR_OPEN: 'pr_open',
+  PUBLISHED: 'published',
+  REJECTED: 'rejected',
+} as const
+export type GalleryStatus = (typeof GalleryStatus)[keyof typeof GalleryStatus]
+
+export type GalleryScreenshot = { attachment_id: string; alt: string }
+
+/**
+ * 1:1 sidecar of `Project` holding the team's opt-in to the Open Mercato Project
+ * Gallery and the publication state. Kept off `projects_project` so the row that
+ * judging and scoring read stays untouched.
+ */
+@Entity({ tableName: 'projects_gallery_submission' })
+@Unique({ properties: ['projectId'] })
+export class ProjectGallerySubmission {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Property({ name: 'project_id', type: 'uuid' })
+  projectId!: string
+
+  @Property({ name: 'publish_to_gallery', type: 'boolean', default: false })
+  publishToGallery: boolean = false
+
+  @Property({ type: 'varchar', length: 280, nullable: true })
+  summary?: string | null
+
+  @Property({ name: 'built_on_open_mercato', type: 'text', nullable: true })
+  builtOnOpenMercato?: string | null
+
+  // Ordered pick of 2-3 of the project's screenshot attachments, with alt text
+  @Property({ type: 'jsonb', default: '[]' })
+  screenshots: GalleryScreenshot[] = []
+
+  @Property({ name: 'poster_attachment_id', type: 'uuid', nullable: true })
+  posterAttachmentId?: string | null
+
+  @Property({ name: 'show_team_members', type: 'boolean', default: false })
+  showTeamMembers: boolean = false
+
+  @Property({ name: 'consent_accepted_at', type: 'timestamptz', nullable: true })
+  consentAcceptedAt?: Date | null
+
+  @Property({ name: 'consent_accepted_by', type: 'uuid', nullable: true })
+  consentAcceptedBy?: string | null
+
+  // Publication
+  @Index()
+  @Property({ type: 'text', default: 'not_requested' })
+  status: GalleryStatus = GalleryStatus.NOT_REQUESTED
+
+  // Frozen at first publish: the public gallery URL must stay stable
+  @Property({ type: 'varchar', length: 120, nullable: true })
+  slug?: string | null
+
+  @Property({ name: 'pr_number', type: 'int', nullable: true })
+  prNumber?: number | null
+
+  @Property({ name: 'pr_url', type: 'varchar', length: 500, nullable: true })
+  prUrl?: string | null
+
+  @Property({ name: 'live_url', type: 'varchar', length: 500, nullable: true })
+  liveUrl?: string | null
+
+  @Property({ name: 'rejected_reason', type: 'text', nullable: true })
+  rejectedReason?: string | null
+
+  @Property({ name: 'published_at', type: 'timestamptz', nullable: true })
+  publishedAt?: Date | null
+
+  // Multi-tenancy
+  @Index()
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Index()
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'created_at', type: 'timestamptz', onCreate: () => new Date() })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: 'timestamptz', onCreate: () => new Date(), onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+
+  @Property({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date | null
+}

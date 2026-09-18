@@ -3,7 +3,9 @@ import { getCustomerAuthFromRequest } from '@open-mercato/core/modules/customer_
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
-import { Project, ProjectStatus } from '../../../data/entities'
+import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
+import { Project, ProjectGallerySubmission, ProjectStatus } from '../../../data/entities'
+import { applyGalleryInput, findGallerySubmissions, galleryInputSchema } from '../../../lib/gallery/submission'
 import { TeamMember } from '../../../../teams/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -24,7 +26,11 @@ const updateSchema = z.object({
   uses_preexisting_code: z.boolean().optional(),
   preexisting_code_description: z.string().nullable().optional(),
   built_during_hackathon_description: z.string().nullable().optional(),
+  // Opt-in to the Open Mercato Project Gallery (SPEC-008)
+  gallery: galleryInputSchema.optional(),
 })
+
+const PROJECT_RESOURCE_KIND = 'projects:project'
 
 export const metadata = {
   PUT: { requireCustomerAuth: true },
@@ -38,14 +44,14 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json()
-    const parsed = updateSchema.parse(body)
+    const requested = updateSchema.parse(body)
 
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
 
     // Find the project
     const project = await em.findOne(Project, {
-      id: parsed.project_id,
+      id: requested.project_id,
       deletedAt: null,
     } as FilterQuery<Project>)
 
@@ -69,6 +75,37 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Project has been submitted and cannot be edited' }, { status: 409 })
     }
 
+    // Read phase ends here: MikroORM 7 drops a pending UPDATE when a find is
+    // interleaved with it, so the sidecar is loaded before the first mutation.
+    const existingGallery = requested.gallery
+      ? (await findGallerySubmissions(em, [project.id], { tenantId: project.tenantId })).get(project.id) ?? null
+      : null
+
+    // Custom write route — run the mutation-guard registry (AGENTS.md CRITICAL rule 5).
+    // `userFeatures` is explicit: the wrapper's fallback resolves the STAFF rbacService.
+    const guard = await runRouteMutationGuards({
+      container,
+      req,
+      auth: {
+        userId: auth.sub,
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId,
+        userFeatures: auth.resolvedFeatures ?? [],
+      },
+      input: {
+        resourceKind: PROJECT_RESOURCE_KIND,
+        resourceId: project.id,
+        operation: 'update',
+        mutationPayload: { ...requested },
+      },
+    })
+    if (!guard.ok) return guard.response
+
+    // A guard may rewrite the payload; re-validate the merged result rather than trusting it.
+    const parsed = guard.modifiedPayload
+      ? updateSchema.parse({ ...requested, ...guard.modifiedPayload })
+      : requested
+
     // Apply updates
     if (parsed.title !== undefined) project.title = parsed.title
     if (parsed.tagline !== undefined) project.tagline = parsed.tagline
@@ -86,9 +123,22 @@ export async function PUT(req: Request) {
     if (parsed.preexisting_code_description !== undefined) project.preexistingCodeDescription = parsed.preexisting_code_description
     if (parsed.built_during_hackathon_description !== undefined) project.builtDuringHackathonDescription = parsed.built_during_hackathon_description
 
+    if (parsed.gallery) {
+      const gallery = existingGallery ?? em.create(ProjectGallerySubmission, {
+        projectId: project.id,
+        tenantId: project.tenantId,
+        organizationId: project.organizationId,
+      } as ProjectGallerySubmission)
+      applyGalleryInput(gallery, parsed.gallery, { customerUserId: auth.sub })
+      gallery.updatedAt = new Date()
+      em.persist(gallery)
+    }
+
     project.updatedAt = new Date()
     em.persist(project)
     await em.flush()
+
+    await guard.runAfterSuccess()
 
     return NextResponse.json({ ok: true, updated_at: project.updatedAt.toISOString() })
   } catch (error) {

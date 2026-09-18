@@ -10,6 +10,7 @@ import { Competition } from '../../../../competitions/data/entities'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { applyPortalTranslationOverlays, resolvePortalLocale } from '@/lib/portal-translations'
+import { findGallerySubmissions, resolveGallerySiteUrl, serializeGallerySubmission } from '../../../lib/gallery/submission'
 
 export const metadata = {
   GET: { requireCustomerAuth: true },
@@ -167,8 +168,13 @@ export async function GET(req: Request) {
       }
     }
 
+    const galleryByProjectId = await findGallerySubmissions(em, projects.map((project) => project.id), {
+      tenantId: auth.tenantId,
+    })
+
     const serializedProjectsWithAttachments = serializedProjects.map((project) => ({
       ...project,
+      gallery: serializeGallerySubmission(galleryByProjectId.get(project.id)),
       attachments: (project.attachment_ids ?? [])
         .map(id => attachmentMap.get(id))
         .filter(Boolean),
@@ -193,6 +199,7 @@ export async function GET(req: Request) {
       tracks: Array.from(trackMap.entries()).map(([id, t]) => ({ id, name: t.name, color: t.color })),
       trackName,
       submissionDeadline: submissionDeadline ? submissionDeadline.toISOString() : null,
+      gallerySiteUrl: resolveGallerySiteUrl(),
       hasTeam: true,
       isOwner: membership.role === 'owner',
     })

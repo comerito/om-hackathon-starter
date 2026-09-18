@@ -143,3 +143,94 @@ describe('partitionBySubmissionReadiness', () => {
     expect(partitionBySubmissionReadiness([], () => [])).toEqual({ ready: [], incomplete: [] })
   })
 })
+
+describe('gallery opt-in rules (SPEC-008)', () => {
+  const galleryProject: ProjectSubmissionCandidate = {
+    ...completeProject,
+    videoUrl: 'https://youtu.be/2IrOlyhoJ2w',
+    screenshotIds: ['s1', 's2', 's3', 's4'],
+  }
+  const completeGallery = {
+    publishToGallery: true,
+    summary: 'Quotes in minutes.',
+    builtOnOpenMercato: 'Auth came from the platform.',
+    screenshots: [
+      { attachmentId: 's1', alt: 'Dashboard' },
+      { attachmentId: 's2', alt: 'Editor' },
+    ],
+    posterAttachmentId: 's1',
+    consentAccepted: true,
+  }
+  const images = {
+    s1: { mimeType: 'image/png', fileSize: 500_000 },
+    s2: { mimeType: 'image/jpeg', fileSize: 500_000 },
+  }
+  const errorsFor = (project: ProjectSubmissionCandidate, gallery: typeof completeGallery, galleryImages = images) =>
+    collectProjectSubmissionErrors(project, { ...completeContext, gallery, galleryImages })
+
+  it('ignores gallery data entirely when the team did not opt in', () => {
+    const notOptedIn = { ...completeGallery, publishToGallery: false, summary: '', screenshots: [], consentAccepted: false }
+    expect(errorsFor({ ...completeProject, videoUrl: 'https://vimeo.com/1' }, notOptedIn)).toEqual([])
+    expect(collectProjectSubmissionErrors(completeProject, completeContext)).toEqual([])
+  })
+
+  it('accepts a complete opted-in project', () => {
+    expect(errorsFor(galleryProject, completeGallery)).toEqual([])
+  })
+
+  it('lists every missing gallery requirement', () => {
+    const errors = errorsFor(
+      { ...galleryProject, videoUrl: 'https://vimeo.com/1' },
+      {
+        ...completeGallery,
+        summary: ' ',
+        builtOnOpenMercato: '',
+        screenshots: [{ attachmentId: 's1', alt: '' }],
+        posterAttachmentId: 's2',
+        consentAccepted: false,
+      },
+    )
+    expect(errors).toEqual([
+      'Gallery summary is required',
+      '"Built on Open Mercato" description is required for the gallery',
+      'The gallery needs a YouTube or Loom video link',
+      'Pick 2 to 3 screenshots for the gallery',
+      'Every gallery screenshot needs a description (alt text)',
+      'Choose one of the gallery screenshots as the poster',
+      'Confirm the publication consent for the gallery',
+    ])
+  })
+
+  it('rejects an over-long summary', () => {
+    expect(errorsFor(galleryProject, { ...completeGallery, summary: 'x'.repeat(281) })).toEqual([
+      'Gallery summary must be at most 280 characters',
+    ])
+  })
+
+  it('rejects screenshots that are not uploaded to the project, or picked twice', () => {
+    const message = 'Gallery screenshots must be distinct uploaded project screenshots'
+    const foreign = [{ attachmentId: 's1', alt: 'a' }, { attachmentId: 'other', alt: 'b' }]
+    const twice = [{ attachmentId: 's1', alt: 'a' }, { attachmentId: 's1', alt: 'b' }]
+    expect(errorsFor(galleryProject, { ...completeGallery, screenshots: foreign })).toContain(message)
+    expect(errorsFor(galleryProject, { ...completeGallery, screenshots: twice })).toContain(message)
+  })
+
+  it('rejects GIFs and images above 5 MB for the gallery only', () => {
+    expect(
+      errorsFor(galleryProject, completeGallery, {
+        s1: { mimeType: 'image/gif', fileSize: 100 },
+        s2: { mimeType: 'image/png', fileSize: 6 * 1024 * 1024 },
+      }),
+    ).toEqual(['Gallery screenshots must be PNG, JPG, WebP or SVG', 'Gallery screenshots must be 5 MB or smaller'])
+  })
+
+  it('keeps an incomplete opted-in draft out of the demos auto-publish', () => {
+    const partition = partitionBySubmissionReadiness(
+      [galleryProject],
+      () => ['README.md'],
+      () => ({ gallery: { ...completeGallery, consentAccepted: false }, galleryImages: images }),
+    )
+    expect(partition.ready).toEqual([])
+    expect(partition.incomplete[0].reasons).toEqual(['Confirm the publication consent for the gallery'])
+  })
+})

@@ -2,6 +2,7 @@ import type { ResponseEnricher } from '@open-mercato/shared/lib/crud/response-en
 import type { EntityManager } from '@mikro-orm/postgresql'
 import { Team } from '../../teams/data/entities'
 import { Track } from '../../tracks/data/entities'
+import { GalleryStatus, ProjectGallerySubmission } from './entities'
 
 type ProjectRecord = Record<string, unknown> & { id: string; team_id?: string; track_id?: string }
 
@@ -53,4 +54,35 @@ const projectContextEnricher: ResponseEnricher<ProjectRecord, { _projects: { tea
   },
 }
 
-export const enrichers: ResponseEnricher[] = [projectContextEnricher]
+type GalleryEnrichment = { _gallery: { optedIn: boolean; status: GalleryStatus; prUrl: string | null; liveUrl: string | null } }
+const NO_GALLERY: GalleryEnrichment = { _gallery: { optedIn: false, status: GalleryStatus.NOT_REQUESTED, prUrl: null, liveUrl: null } }
+
+function toGalleryEnrichment(row: ProjectGallerySubmission | undefined | null): GalleryEnrichment {
+  if (!row) return NO_GALLERY
+  return { _gallery: { optedIn: row.publishToGallery, status: row.status, prUrl: row.prUrl ?? null, liveUrl: row.liveUrl ?? null } }
+}
+
+// Open Mercato Project Gallery opt-in + publication state (SPEC-008)
+const projectGalleryEnricher: ResponseEnricher<ProjectRecord, GalleryEnrichment> = {
+  id: 'projects.project-gallery',
+  targetEntity: 'projects:project',
+  priority: 20,
+  timeout: 2000,
+  fallback: NO_GALLERY,
+
+  async enrichOne(record, context) {
+    const em = (context.em as EntityManager).fork()
+    const row = await em.findOne(ProjectGallerySubmission, { projectId: record.id, deletedAt: null })
+    return { ...record, ...toGalleryEnrichment(row) }
+  },
+
+  async enrichMany(records, context) {
+    if (records.length === 0) return []
+    const em = (context.em as EntityManager).fork()
+    const rows = await em.find(ProjectGallerySubmission, { projectId: { $in: records.map(r => r.id) }, deletedAt: null })
+    const byProjectId = new Map(rows.map(row => [row.projectId, row]))
+    return records.map(r => ({ ...r, ...toGalleryEnrichment(byProjectId.get(r.id)) }))
+  },
+}
+
+export const enrichers: ResponseEnricher[] = [projectContextEnricher, projectGalleryEnricher]

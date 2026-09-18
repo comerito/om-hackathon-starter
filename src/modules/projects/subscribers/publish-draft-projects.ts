@@ -4,7 +4,8 @@ import { resolveNotificationService } from '@open-mercato/core/modules/notificat
 import { Competition } from '../../competitions/data/entities'
 import { Team, TeamMember, TeamRole } from '../../teams/data/entities'
 import { meetsMinimumTeamSize } from '../../teams/lib/team-size'
-import { Project, ProjectStatus } from '../data/entities'
+import { GalleryStatus, Project, ProjectStatus } from '../data/entities'
+import { findGallerySubmissions, loadGalleryImages, toGalleryCandidate } from '../lib/gallery/submission'
 import { partitionBySubmissionReadiness } from '../lib/submission-validation'
 
 export const metadata = {
@@ -91,12 +92,19 @@ export default async function handler(
     }
   }
 
+  // Gallery opt-ins (SPEC-008) — same rules as the manual submit, read up front.
+  const galleryByProjectId = await findGallerySubmissions(em, draftProjects.map((project) => project.id), {
+    tenantId: payload.tenantId,
+  })
+  const galleryImages = await loadGalleryImages(em, galleryByProjectId.values())
+
   // Decide, per draft, whether it satisfies the same requirements the team owner
   // would have had to satisfy through "submit project".
   const partition = partitionBySubmissionReadiness(draftProjects, (project) =>
     (project.attachmentIds ?? [])
       .map((id) => attachmentNamesById.get(id))
       .filter((name): name is string => typeof name === 'string'),
+    (project) => ({ gallery: toGalleryCandidate(galleryByProjectId.get(project.id)), galleryImages }),
   )
 
   const publishable: Project[] = []
@@ -145,6 +153,12 @@ export default async function handler(
     project.submittedAt = now
     project.updatedAt = now
     publishedIds.push(project.id)
+
+    const gallery = galleryByProjectId.get(project.id)
+    if (gallery?.publishToGallery) {
+      gallery.status = GalleryStatus.REQUESTED
+      em.persist(gallery)
+    }
   }
 
   if (publishedIds.length > 0) {

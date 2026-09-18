@@ -16,6 +16,17 @@ import { PortalPageTitle, ProgressBar, AvatarStack, PortalBadge, SectionLabel } 
 import { cn } from '@open-mercato/shared/lib/utils'
 import { AlertTriangle, Clock, Lock, Link2, Code, Video, Upload, Check, Circle, FolderCode, Sparkles, Pencil, FileCode2, Download, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import {
+  EMPTY_GALLERY_FORM,
+  GalleryPublishSection,
+  GalleryStatusCard,
+  galleryChecklistRows,
+  galleryFormFromServer,
+  galleryFormToPayload,
+  pruneGalleryScreenshots,
+  type GalleryFormValue,
+  type GalleryServerState,
+} from '../../../../components/GalleryPublishSection'
 
 /* ---------- types ---------- */
 
@@ -60,7 +71,10 @@ type ProjectData = {
   team_id: string
   competition_id: string
   updated_at: string
+  gallery?: GalleryServerState | null
 }
+
+const DEFAULT_GALLERY_SITE_URL = 'https://projects.openmercato.com'
 
 type TrackInfo = { id: string; name: string; color: string }
 type ProjectAttachment = NonNullable<ProjectData['attachments']>[number]
@@ -72,6 +86,7 @@ type MyProjectResponse = {
   tracks?: TrackInfo[]
   trackName: string | null
   submissionDeadline: string | null
+  gallerySiteUrl?: string
   hasTeam: boolean
   isOwner: boolean
 }
@@ -106,6 +121,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   const [usesPreexistingCode, setUsesPreexistingCode] = React.useState(false)
   const [preexistingCodeDescription, setPreexistingCodeDescription] = React.useState('')
   const [builtDuringDescription, setBuiltDuringDescription] = React.useState('')
+  const [gallery, setGallery] = React.useState<GalleryFormValue>(EMPTY_GALLERY_FORM)
 
   // File upload state
   const [uploadingScreenshot, setUploadingScreenshot] = React.useState(false)
@@ -200,7 +216,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     built_during_hackathon_description: builtDuringDescription.trim() || null,
     screenshot_ids: screenshotIds,
     attachment_ids: attachmentIds,
-  }), [title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds])
+    gallery: galleryFormToPayload(pruneGalleryScreenshots(gallery, screenshotIds)),
+  }), [gallery, title, tagline, description, problemStatement, solution, techStack, demoUrl, repoUrl, videoUrl, presentationUrl, usesPreexistingCode, preexistingCodeDescription, builtDuringDescription, screenshotIds, attachmentIds])
 
   const buildProjectPayloadFromServer = React.useCallback((projectToSerialize: ProjectData) => ({
     project_id: projectToSerialize.id,
@@ -219,6 +236,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     built_during_hackathon_description: projectToSerialize.built_during_hackathon_description ?? null,
     screenshot_ids: projectToSerialize.screenshot_ids ?? [],
     attachment_ids: projectToSerialize.attachment_ids ?? [],
+    gallery: galleryFormToPayload(galleryFormFromServer(projectToSerialize.gallery)),
   }), [])
 
   // Populate form when data loads or active project changes
@@ -242,6 +260,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     setLastSaved(p.updated_at ?? null)
     setScreenshotIds(p.screenshot_ids ?? [])
     setAttachmentIds(p.attachment_ids ?? [])
+    setGallery(galleryFormFromServer(p.gallery))
     const restoredReadme = (p.attachments ?? []).find((attachment) => attachment.file_name.trim().toLowerCase() === 'readme.md') ?? null
     setReadmeAttachment(restoredReadme)
     lastSyncedPayloadsRef.current.set(p.id, JSON.stringify(buildProjectPayloadFromServer(p)))
@@ -307,6 +326,9 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
             built_during_hackathon_description: payload.built_during_hackathon_description,
             screenshot_ids: payload.screenshot_ids,
             attachment_ids: payload.attachment_ids,
+            gallery: cachedProject.gallery
+              ? { ...cachedProject.gallery, ...payload.gallery }
+              : { ...payload.gallery, status: 'not_requested', pr_url: null, live_url: null, rejected_reason: null },
             attachments: payload.attachment_ids.length > 0 && readmeAttachmentSnapshot
               ? [readmeAttachmentSnapshot]
               : [],
@@ -441,6 +463,7 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
   function handleRemoveScreenshot(id: string) {
     setScreenshotIds(prev => {
       const next = prev.filter(s => s !== id)
+      setGallery(current => pruneGalleryScreenshots(current, next))
       if (project) {
         updateProjectCache(project.id, (cachedProject) => ({
           ...cachedProject,
@@ -505,12 +528,19 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
     }
   }
 
+  const gallerySiteUrl = data?.gallerySiteUrl ?? DEFAULT_GALLERY_SITE_URL
+  const galleryScreenshotOptions = screenshotIds
+    .map((id) => (project?.screenshots ?? []).find((shot) => shot.id === id))
+    .filter((shot): shot is NonNullable<typeof shot> => Boolean(shot))
+
   // Completeness check
   const requiredFields = [
     { label: t('projects.fields.checklist.title', 'Title'), filled: !!title.trim() },
     { label: t('projects.fields.checklist.description', 'Description'), filled: !!description.trim() },
     { label: t('projects.fields.checklist.readmeFeedback', 'README.md feedback file'), filled: attachmentIds.length > 0 },
     { label: t('projects.fields.checklist.originality', 'Originality disclosure'), filled: !usesPreexistingCode || !!preexistingCodeDescription.trim() },
+    // Gallery rows exist only while the team is opted in (SPEC-008)
+    ...galleryChecklistRows(t, gallery, { videoUrl, options: galleryScreenshotOptions }),
   ]
   const filledCount = requiredFields.filter(f => f.filled).length
   const totalRequired = requiredFields.length
@@ -931,6 +961,8 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
                 </a>
               </div>
             )}
+
+            <GalleryStatusCard gallery={project?.gallery} siteUrl={gallerySiteUrl} />
 
             {/* Team card */}
             {data?.team && (
@@ -1356,6 +1388,15 @@ function ProjectEditorContent({ orgSlug }: { orgSlug: string }) {
               />
             </div>
           </div>
+
+          {/* ---- Open Mercato Project Gallery opt-in ---- */}
+          <GalleryPublishSection
+            value={gallery}
+            onChange={setGallery}
+            options={galleryScreenshotOptions}
+            videoUrl={videoUrl}
+            siteUrl={gallerySiteUrl}
+          />
 
           {/* Flag warning */}
           {project?.flagged_for_reuse && (

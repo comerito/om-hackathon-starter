@@ -6,6 +6,10 @@ const events = [
   { id: 'projects.project.deleted', label: 'Project Deleted', entity: 'project', category: 'crud', clientBroadcast: true },
   { id: 'projects.project.submitted', label: 'Project Submitted', entity: 'project', category: 'lifecycle', clientBroadcast: true, portalBroadcast: true },
   { id: 'projects.project.flagged', label: 'Project Flagged', entity: 'project', category: 'lifecycle', clientBroadcast: true },
+  { id: 'projects.project.gallery_requested', label: 'Project Gallery Publication Requested', entity: 'project', category: 'lifecycle', clientBroadcast: true },
+  { id: 'projects.project.gallery_pr_opened', label: 'Project Gallery Pull Request Opened', entity: 'project', category: 'lifecycle', clientBroadcast: true },
+  { id: 'projects.project.gallery_published', label: 'Project Published to Gallery', entity: 'project', category: 'lifecycle', clientBroadcast: true, portalBroadcast: true },
+  { id: 'projects.project.gallery_rejected', label: 'Project Gallery Publication Rejected', entity: 'project', category: 'lifecycle', clientBroadcast: true, portalBroadcast: true },
   { id: 'projects.batch.auto_published', label: 'Projects Auto-Published', entity: 'project', category: 'lifecycle', clientBroadcast: true },
   { id: 'projects.batch.auto_publish_skipped', label: 'Projects Skipped by Auto-Publish', entity: 'project', category: 'lifecycle', clientBroadcast: true },
 ] as const

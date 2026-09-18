@@ -6,6 +6,7 @@ export const features = [
   { id: 'projects.manage', title: 'Manage projects', module: 'projects' },
   { id: 'projects.flag', title: 'Flag projects for code reuse', module: 'projects' },
   { id: 'projects.export_attachments', title: 'Export project attachments', module: 'projects' },
+  { id: 'projects.gallery_publish', title: 'Publish projects to the Open Mercato Project Gallery', module: 'projects' },
 ]
 
 export default features
