@@ -14,10 +14,13 @@ export const metadata = {
   id: 'competitions:notify-stage-advanced',
 }
 
+// Matches what both emitters send — the advance-stage API route and the
+// `competitions.competitions.advance_stage` command — and the shape every other
+// subscriber of this event already reads.
 type Payload = {
-  id: string
-  stage?: string
-  previousStage?: string
+  competitionId: string
+  oldStage?: string
+  newStage?: string
   tenantId: string
   organizationId: string
 }
@@ -29,16 +32,20 @@ export default async function handler(
   const em = ctx.resolve('em') as EntityManager
   const notificationService = resolveNotificationService(ctx)
 
-  // Get competition from DB (payload.stage may not be present)
-  const competition = await em.findOne(Competition, { id: payload.id } as FilterQuery<Competition>)
+  // Get competition from DB (payload.newStage may not be present)
+  const competition = await em.findOne(Competition, {
+    id: payload.competitionId,
+    tenantId: payload.tenantId,
+    deletedAt: null,
+  } as FilterQuery<Competition>)
   if (!competition) return
   const compName = competition.name ?? 'Competition'
-  const stage = payload.stage ?? competition.stage
+  const stage = payload.newStage ?? competition.stage
   const stageName = stageLabels[stage] ?? stage
 
   // Find all participants
   const participations = await em.find(CompetitionParticipation, {
-    competitionId: payload.id,
+    competitionId: payload.competitionId,
     tenantId: payload.tenantId,
     deletedAt: null,
   } as FilterQuery<CompetitionParticipation>)
@@ -59,8 +66,8 @@ export default async function handler(
       severity: 'warning',
       sourceModule: 'competitions',
       sourceEntityType: 'competitions:competition',
-      sourceEntityId: payload.id,
-      groupKey: `stage-${payload.id}`,
+      sourceEntityId: payload.competitionId,
+      groupKey: `stage-${payload.competitionId}`,
     },
     { tenantId: payload.tenantId, organizationId: payload.organizationId },
   )

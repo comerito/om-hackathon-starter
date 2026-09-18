@@ -1,9 +1,13 @@
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
+import { emitCrudSideEffects } from '@open-mercato/shared/lib/commands/helpers'
+import { invalidateCrudCache } from '@open-mercato/shared/lib/crud/cache'
+import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import { z } from 'zod'
 import { Competition, CompetitionStage as CompetitionStageValues, STAGE_ORDER } from '../../data/entities'
 import type { CompetitionStage } from '../../data/entities'
+import { competitionCrudEvents, competitionCrudIndexer } from '../../commands/competitions'
 import { Team, TeamStatus, TeamTrack } from '../../../teams/data/entities'
 import { teamsMissingTrack } from '../../lib/stages'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
@@ -98,6 +102,39 @@ export async function POST(request: Request) {
     competition.stage = parsed.target_stage as CompetitionStage
     em.persist(competition)
     await em.flush()
+
+    // Re-index and emit the CRUD `updated` event, the same way the CRUD commands do.
+    const dataEngine = container.resolve('dataEngine') as DataEngine
+    await emitCrudSideEffects({
+      dataEngine,
+      action: 'updated',
+      entity: competition,
+      identifiers: {
+        id: String(competition.id),
+        tenantId: auth.tenantId,
+        organizationId: competition.organizationId,
+      },
+      actorUserId: auth.userId ?? auth.sub ?? null,
+      events: competitionCrudEvents,
+      indexer: competitionCrudIndexer,
+    })
+    // `emitCrudSideEffects` only queues; the command bus flushes for commands, but this
+    // custom route has to do it itself.
+    await dataEngine.flushOrmEntityChanges()
+
+    // The back-office edit page reads the stage from the CRUD list, whose GET responses are
+    // cached whenever ENABLE_CRUD_API_CACHE is on — it is off in the local .env but defaults
+    // to on in the Docker/production compose files. Without this the cached row keeps the
+    // pre-advance stage, so the page re-offers the transition that already happened and the
+    // retry fails with "Target must be a later stage". `resource` must be the factory's
+    // resourceKind (`<events.module>.<events.entity>`), not the entity class name.
+    await invalidateCrudCache(
+      container,
+      'competitions.competition',
+      { id: String(competition.id), organizationId: competition.organizationId, tenantId: auth.tenantId },
+      auth.tenantId,
+      'competitions.stage.advance',
+    )
 
     // Emit stage_advanced event for subscribers (lockdown, auto-create projects, etc.)
     const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

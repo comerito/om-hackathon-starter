@@ -237,6 +237,22 @@ const advanceStageCommand: CommandHandler<Record<string, unknown>, Competition> 
     em.persist(competition)
     await em.flush()
 
+    // Keep the read side in step with the entity: index doc + CRUD `updated` event. The
+    // command bus flushes the queued side effects — and invalidates the cached CRUD GET
+    // responses — once this handler returns.
+    await emitCrudSideEffects({
+      dataEngine: de,
+      action: 'updated',
+      entity: competition,
+      identifiers: {
+        id: String(competition.id),
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
+      },
+      events: competitionCrudEvents,
+      indexer: competitionCrudIndexer,
+    })
+
     // Emit stage_advanced event for subscribers
     const eventBus = ctx.container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
     await eventBus.emit('competitions.competition.stage_advanced', {
