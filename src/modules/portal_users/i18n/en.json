@@ -1,0 +1,9 @@
+{
+  "portal_users.bulk.delete.label": "Delete selected",
+  "portal_users.bulk.delete.noSelection": "No users selected.",
+  "portal_users.bulk.delete.confirmTitle": "Delete {count} users?",
+  "portal_users.bulk.delete.confirmDescription": "Their portal access is revoked immediately. This cannot be undone from here.",
+  "portal_users.bulk.delete.success": "{count} users deleted",
+  "portal_users.bulk.delete.partial": "Deleted {count} of {total} users. Failed: {errors}",
+  "portal_users.bulk.delete.failed": "Could not delete the selected users. {errors}"
+}
