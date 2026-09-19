@@ -31,6 +31,7 @@ type ProjectRow = {
   final_score: number | null
   created_at: string
   _projects?: { teamName: string | null; trackName: string | null; trackColor: string | null }
+  _gallery?: { optedIn: boolean; status: string; prUrl: string | null; liveUrl: string | null }
 }
 
 type ListResponse = {
@@ -39,6 +40,15 @@ type ListResponse = {
   page: number
   pageSize: number
   totalPages: number
+}
+
+const galleryStatusPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  // Opted in on a draft: nothing has been requested from organizers yet
+  not_requested: { label: 'Opted in', variant: 'outline' },
+  requested: { label: 'Requested', variant: 'secondary' },
+  pr_open: { label: 'PR open', variant: 'outline' },
+  published: { label: 'Live', variant: 'default' },
+  rejected: { label: 'Not accepted', variant: 'destructive' },
 }
 
 const statusPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -207,6 +217,17 @@ export default function ProjectsTable() {
       cell: ({ getValue }) => {
         const val = String(getValue())
         return <EnumBadge value={val} map={statusPreset} />
+      },
+    },
+    {
+      id: 'gallery',
+      header: t('projects.table.gallery', 'Gallery'),
+      enableSorting: false,
+      meta: { priority: 5 },
+      cell: ({ row }) => {
+        const gallery = row.original._gallery
+        if (!gallery?.optedIn && (!gallery || gallery.status === 'not_requested')) return '—'
+        return <EnumBadge value={gallery.status} map={galleryStatusPreset} />
       },
     },
     {

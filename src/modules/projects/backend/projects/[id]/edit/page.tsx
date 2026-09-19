@@ -10,6 +10,7 @@ import { Button } from '@open-mercato/ui/primitives/button'
 import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
+import { GalleryAdminPanel } from '../../../../components/GalleryAdminPanel'
 
 async function loadTracks(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -235,6 +236,9 @@ export default function EditProjectPage({ params }: { params?: { id?: string } }
                 }
               }}
             />
+
+            {/* Open Mercato Project Gallery review + publish (SPEC-008) */}
+            {!loading && <GalleryAdminPanel projectId={id} />}
 
             {/* Attachments section */}
             {hasFiles && (
