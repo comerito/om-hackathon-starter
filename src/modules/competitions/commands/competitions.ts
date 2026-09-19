@@ -3,6 +3,7 @@ import { registerCommand } from '@open-mercato/shared/lib/commands'
 import { emitCrudSideEffects, requireId } from '@open-mercato/shared/lib/commands/helpers'
 import type { CrudEmitContext, CrudEventsConfig, CrudIndexerConfig } from '@open-mercato/shared/lib/crud/types'
 import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
+import { invalidateCrudCache } from '@open-mercato/shared/lib/crud/cache'
 import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { z } from 'zod'
@@ -230,7 +231,24 @@ const advanceStageCommand: CommandHandler<Record<string, unknown>, Competition> 
     const currentIdx = STAGE_ORDER.indexOf(competition.stage)
     const targetIdx = STAGE_ORDER.indexOf(target_stage as typeof STAGE_ORDER[number])
     if (targetIdx < 0) throw new CrudHttpError(400, { error: `Invalid target stage: ${target_stage}` })
-    if (targetIdx <= currentIdx) throw new CrudHttpError(400, { error: `Cannot go back from ${competition.stage} to ${target_stage}` })
+    if (targetIdx <= currentIdx) {
+      // Same stale-read deadlock the API route guards against: the command bus only
+      // invalidates the cached CRUD GETs after a *successful* execute, so a caller stuck
+      // on a cached pre-advance stage would keep sending the same doomed target forever.
+      // Flush the cached row before rejecting so the next read sees the real stage.
+      await invalidateCrudCache(
+        ctx.container,
+        'competitions.competition',
+        { id: String(competition.id), organizationId: scope.organizationId, tenantId: scope.tenantId },
+        scope.tenantId,
+        'competitions.stage.advance.stale-read',
+      )
+      throw new CrudHttpError(409, {
+        error: `Competition is already at stage ${competition.stage}, so it cannot move to ${target_stage}.`,
+        code: 'stage_already_reached',
+        competition: { id: String(competition.id), stage: competition.stage },
+      })
+    }
 
     const oldStage = competition.stage
     competition.stage = target_stage as typeof STAGE_ORDER[number]
