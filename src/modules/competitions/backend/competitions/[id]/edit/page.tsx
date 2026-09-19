@@ -20,7 +20,7 @@ type AdvanceStageResponse = {
   ok: boolean
   error?: string
   code?: string
-  competition?: { stage: string }
+  competition?: { id?: string; stage: string }
   warnings?: { teams_without_track?: Array<{ id: string; name: string }> }
 }
 
@@ -210,6 +210,21 @@ export default function EditCompetitionPage({ params }: { params?: { id?: string
     setAdvancing(true)
     try {
       let advanced = await postAdvanceStage(nextStage, false)
+
+      // This page reads its stage from the CRUD list GET, which is cached in production.
+      // When that read is stale the rail shows a stage the competition already left and
+      // this request targets a stage it is already in. The server flushes the cached row
+      // and hands back the real stage — adopt it so the rail and the button recover
+      // without a reload instead of repeating the same doomed request.
+      if (!advanced.ok && advanced.result?.code === 'stage_already_reached' && advanced.result.competition) {
+        const actualStage = advanced.result.competition.stage
+        setInitial(prev => prev ? { ...prev, stage: actualStage } : prev)
+        flash(
+          `This competition is already at ${STAGE_LABELS[actualStage] ?? actualStage}. The page was out of date and has been refreshed.`,
+          'warning',
+        )
+        return
+      }
 
       // The server refuses to advance to `hacking` while active teams have no track,
       // because those teams get no draft project and can no longer pick one. Show the

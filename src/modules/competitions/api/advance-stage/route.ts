@@ -57,7 +57,27 @@ export async function POST(request: Request) {
     }
 
     if (targetIdx <= currentIdx) {
-      return new Response(JSON.stringify({ error: `Cannot move from ${competition.stage} to ${parsed.target_stage}. Target must be a later stage.` }), { status: 400, headers: { 'content-type': 'application/json' } })
+      // The only way to get here from the back-office is a stale read: the page computed
+      // "next stage" from a stage the competition has already left. That stale row comes
+      // from the cached CRUD list GET, and the compose files set no CACHE_TTL, so a Redis
+      // entry lives until something evicts it by tag. The success path below is the only
+      // thing that evicts it — and it never runs for these requests, so without the flush
+      // here the page stays wrong forever and every retry fails identically.
+      await invalidateCrudCache(
+        container,
+        'competitions.competition',
+        { id: String(competition.id), organizationId: competition.organizationId, tenantId: auth.tenantId },
+        auth.tenantId,
+        'competitions.stage.advance.stale-read',
+      )
+      return new Response(JSON.stringify({
+        error: `Competition is already at stage ${competition.stage}, so it cannot move to ${parsed.target_stage}. The page was out of date and has been refreshed.`,
+        code: 'stage_already_reached',
+        competition: {
+          id: String(competition.id),
+          stage: competition.stage,
+        },
+      }), { status: 409, headers: { 'content-type': 'application/json' } })
     }
 
     // Preflight: entering `hacking` creates one draft project per team per assigned
