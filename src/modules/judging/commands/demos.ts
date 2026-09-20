@@ -4,6 +4,7 @@ import { CrudHttpError } from '@open-mercato/shared/lib/crud/errors'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../data/entities'
 import { advanceDemoSchema, reorderDemoSchema } from '../data/validators'
+import { planDemoReorder } from '../lib/demoOrder'
 import { Project, ProjectStatus } from '../../projects/data/entities'
 
 function ensureScope(ctx: CommandRuntimeContext) {
@@ -79,28 +80,36 @@ const reorderDemoCommand: CommandHandler<Record<string, unknown>, DemoSession> =
     const demo = await em.findOne(DemoSession, {
       id: parsed.id,
       tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
     } as FilterQuery<DemoSession>)
     if (!demo) throw new CrudHttpError(404, { error: 'Demo session not found' })
 
-    const oldOrder = demo.presentationOrder
-    demo.presentationOrder = parsed.new_order
-
-    // Shift other demos
-    const allDemos = await em.find(DemoSession, {
+    // Read the whole queue BEFORE mutating: MikroORM 7 drops a pending UPDATE when a find is
+    // interleaved with it (this command used to set the order first, then query).
+    const queue = await em.find(DemoSession, {
       competitionId: demo.competitionId,
       round: demo.round,
       tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
     } as FilterQuery<DemoSession>, { orderBy: { presentationOrder: 'ASC' } })
 
-    // Simple reorder: remove and reinsert
-    const others = allDemos.filter(d => d.id !== demo.id)
-    others.splice(parsed.new_order, 0, demo)
-    for (let i = 0; i < others.length; i++) {
-      others[i].presentationOrder = i
+    const plan = planDemoReorder(queue, parsed.id, parsed.new_order)
+    if (!plan.ok) {
+      throw new CrudHttpError(plan.reason === 'not_found' ? 404 : 409, {
+        error: plan.reason === 'not_found'
+          ? 'Demo session not found'
+          : 'Demos that have already started or finished keep their position',
+      })
     }
 
-    em.persist(others)
-    await em.flush()
+    const byId = new Map(queue.map((session) => [session.id, session]))
+    for (const row of plan.order) {
+      const session = byId.get(row.id)
+      if (!session || session.presentationOrder === row.presentationOrder) continue
+      session.presentationOrder = row.presentationOrder
+      em.persist(session)
+    }
+    if (plan.changed) await em.flush()
 
     try {
       const eventBus = ctx.container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }

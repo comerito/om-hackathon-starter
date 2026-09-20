@@ -171,5 +171,12 @@
   "judging.fields.maxScoreHelp": "Judges always rate each criterion with 1–10 stars; the stars are converted to this criterion's points and weighted. Changing criteria while voting is open recomputes judges' scores, and changing the points reinterprets votes cast before star voting.",
   "judging.fields.weight": "Weight (0-1)",
   "judging.fields.weightHelp": "Weights are normalised, so they don't have to add up to 1 — but keeping their sum at 1 is recommended.",
-  "judging.table.maxScore": "Points"
+  "judging.table.maxScore": "Points",
+  "judging.flash.reorderFailed": "Failed to change the demo order",
+  "judging.demos.order": "Order",
+  "judging.demos.moveUpNamed": "Move {name} up",
+  "judging.demos.moveDownNamed": "Move {name} down",
+  "judging.demos.moveToTop": "Move to top of queue",
+  "judging.demos.moveToEnd": "Move to end of queue",
+  "judging.demos.orderHelp": "Use the arrows to change the presentation order. Demos that are on stage or finished keep their position. The portal queue and the kiosk pick the change up within a few seconds."
 }
