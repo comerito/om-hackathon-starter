@@ -51,7 +51,7 @@ export function TeamMemberNames({ members }: { members: readonly TeamMemberSumma
 }
 
 /** Full roster card for the team edit page. */
-export function TeamRosterCard({ summary }: { summary: TeamSummary | null | undefined }) {
+export function TeamRosterCard({ summary, tracksSlot }: { summary: TeamSummary | null | undefined; tracksSlot?: React.ReactNode }) {
   const t = useT()
   if (!summary) return null
 
@@ -85,16 +85,18 @@ export function TeamRosterCard({ summary }: { summary: TeamSummary | null | unde
         )}
       </div>
 
-      <div className="rounded-lg border bg-card p-4">
-        <h3 className="mb-3 text-base font-semibold">
-          {t('teams.roster.tracks', 'Selected tracks')} ({summary.tracks.length})
-        </h3>
-        {summary.tracks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('teams.roster.noTracks', 'This team has not selected a track yet.')}</p>
-        ) : (
-          <TeamTrackBadges tracks={summary.tracks} />
-        )}
-      </div>
+      {tracksSlot ?? (
+        <div className="rounded-lg border bg-card p-4">
+          <h3 className="mb-3 text-base font-semibold">
+            {t('teams.roster.tracks', 'Selected tracks')} ({summary.tracks.length})
+          </h3>
+          {summary.tracks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('teams.roster.noTracks', 'This team has not selected a track yet.')}</p>
+          ) : (
+            <TeamTrackBadges tracks={summary.tracks} />
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
-import { Project, ProjectStatus } from '../data/entities'
+import { ensureDraftProjects } from '../lib/draftProjects'
 import { Team, TeamStatus, TeamTrack } from '../../teams/data/entities'
 
 export const metadata = {
@@ -44,41 +44,8 @@ export default async function handler(
       teamTracks.push({ trackId: team.trackId } as TeamTrack)
     }
 
-    for (const tt of teamTracks) {
-      // Check if project already exists for this team+track (idempotency)
-      const existing = await em.findOne(Project, {
-        teamId: team.id,
-        competitionId: payload.competitionId,
-        trackId: tt.trackId,
-        deletedAt: null,
-      } as FilterQuery<Project>)
-
-      if (existing) {
-        console.log(`[projects:create-draft-projects] Project already exists for team ${team.id} track ${tt.trackId} — skipping`)
-        continue
-      }
-
-      const now = new Date()
-      const project = em.create(Project, {
-        teamId: team.id,
-        competitionId: payload.competitionId,
-        trackId: tt.trackId,
-        title: `${team.name}'s Project`,
-        status: ProjectStatus.DRAFT,
-        techStack: [],
-        screenshotIds: [],
-        attachmentIds: [],
-        usesPreexistingCode: false,
-        flaggedForReuse: false,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now,
-        tenantId: payload.tenantId,
-        organizationId: payload.organizationId,
-      })
-      em.persist(project)
-      created++
-    }
+    const drafts = await ensureDraftProjects(em, team, teamTracks.map((tt) => tt.trackId))
+    created += drafts.length
   }
 
   if (created > 0) {
