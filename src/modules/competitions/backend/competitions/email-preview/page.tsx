@@ -5,6 +5,15 @@ import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { Input } from '@open-mercato/ui/primitives/input'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { InvitationEmail } from '../../../emails/InvitationEmail'
+import { ThankYouEmail } from '../../../emails/ThankYouEmail'
+import { DEFAULT_THANK_YOU_PHOTOS_URL } from '../../../lib/thankYouEmails'
+
+type TemplateId = 'invitation' | 'thank-you'
+
+const TEMPLATE_OPTIONS: Array<{ value: TemplateId; label: string; file: string }> = [
+  { value: 'invitation', label: 'Invitation', file: 'src/modules/competitions/emails/InvitationEmail.tsx' },
+  { value: 'thank-you', label: 'Thank-you (post-event)', file: 'src/modules/competitions/emails/ThankYouEmail.tsx' },
+]
 
 const ROLE_OPTIONS = [
   { value: 'participant', label: 'Participant' },
@@ -14,29 +23,46 @@ const ROLE_OPTIONS = [
 
 export default function EmailPreviewPage() {
   const t = useT()
+  const [template, setTemplate] = React.useState<TemplateId>('invitation')
   const [competitionName, setCompetitionName] = React.useState('HackOn Sopot 2026')
   const [displayName, setDisplayName] = React.useState('Jane Smith')
   const [role, setRole] = React.useState('participant')
+  const [photosUrl, setPhotosUrl] = React.useState(DEFAULT_THANK_YOU_PHOTOS_URL)
+
+  // The thank-you send dialog deep-links here with ?template=thank-you&photosUrl=…
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('template') === 'thank-you') setTemplate('thank-you')
+    const linkedPhotosUrl = params.get('photosUrl')
+    if (linkedPhotosUrl) setPhotosUrl(linkedPhotosUrl)
+  }, [])
 
   const acceptUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/acme-corp/portal/accept-invite?token=preview-token-example`
 
   const emailHtml = React.useMemo(() => {
     try {
       return renderToStaticMarkup(
-        InvitationEmail({ competitionName, displayName, role, acceptUrl }),
+        template === 'thank-you'
+          ? ThankYouEmail({ competitionName, displayName, photosUrl })
+          : InvitationEmail({ competitionName, displayName, role, acceptUrl }),
       )
     } catch {
       return '<p>Error rendering template</p>'
     }
-  }, [competitionName, displayName, role, acceptUrl])
+  }, [template, competitionName, displayName, role, acceptUrl, photosUrl])
+
+  const subject = template === 'thank-you'
+    ? `Dziękujemy za udział w ${competitionName}!`
+    : `Zaproszenie do wydarzenia ${competitionName}`
+  const templateFile = TEMPLATE_OPTIONS.find(option => option.value === template)?.file
 
   return (
     <Page>
       <PageBody>
         <div className="mb-6">
-          <h1 className="text-xl font-bold">{t('competitions.emailPreview.title', 'Invitation Email Preview')}</h1>
+          <h1 className="text-xl font-bold">{t('competitions.emailPreview.title', 'Email Preview')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t('competitions.emailPreview.description', 'Preview how the invitation email will look to recipients. Edit the sample data below.')}
+            {t('competitions.emailPreview.description', 'Preview how the email will look to recipients. Edit the sample data below.')}
           </p>
         </div>
 
@@ -44,6 +70,17 @@ export default function EmailPreviewPage() {
           {/* Controls */}
           <div className="space-y-4 rounded-lg border bg-background p-5">
             <h3 className="text-sm font-semibold">Sample Data</h3>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Template</label>
+              <select
+                value={template}
+                onChange={(e) => setTemplate(e.target.value as TemplateId)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {TEMPLATE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Competition Name</label>
@@ -63,21 +100,32 @@ export default function EmailPreviewPage() {
               />
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
+            {template === 'invitation' ? (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Photos link</label>
+                <Input
+                  value={photosUrl}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhotosUrl(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/…"
+                />
+              </div>
+            )}
 
             <div className="pt-2 border-t">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 To edit the template itself, modify:<br />
-                <code className="text-[10px] bg-muted px-1 rounded">src/modules/competitions/emails/InvitationEmail.tsx</code>
+                <code className="text-[10px] bg-muted px-1 rounded">{templateFile}</code>
               </p>
             </div>
           </div>
@@ -92,7 +140,7 @@ export default function EmailPreviewPage() {
                 <span className="font-medium text-muted-foreground">To:</span>
                 <span>jane.smith@example.com</span>
                 <span className="font-medium text-muted-foreground">Subject:</span>
-                <span className="font-semibold">You're invited to {competitionName}</span>
+                <span className="font-semibold">{subject}</span>
               </div>
             </div>
 

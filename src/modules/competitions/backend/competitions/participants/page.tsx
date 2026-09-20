@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { BulkInviteDialog } from '../../../components/BulkInviteDialog'
 import { ManualInviteDialog } from '../../../components/ManualInviteDialog'
+import { ThankYouEmailDialog } from '../../../components/ThankYouEmailDialog'
 import {
   buildSandboxInvitePayload,
   formatSentMarker,
@@ -25,6 +26,7 @@ import {
   sandboxInviteFlashKind,
   type SandboxInviteSummary,
 } from '../../../lib/sandboxInvitations'
+import { prepareThankYouBulkSend } from '../../../lib/thankYouEmails'
 
 type ParticipationRow = {
   id: string
@@ -37,6 +39,7 @@ type ParticipationRow = {
   looking_for_team: boolean
   discord_nick: string | null
   mercato_sandboxes_invited_at: string | null
+  thank_you_email_sent_at: string | null
   organization_id: string
   created_at: string
 }
@@ -52,6 +55,12 @@ type InvitationRow = {
   accepted_at: string | null
   expires_at: string | null
   created_at: string
+}
+
+type ThankYouEmailTarget = {
+  competitionId: string
+  participationIds: string[]
+  skippedAlreadySent: number
 }
 
 type InviteResponse = SandboxInviteSummary & {
@@ -81,6 +90,9 @@ export default function ParticipantsListPage() {
   const [filterValues, setFilterValues] = React.useState<FilterValues>({})
   const [showBulkInvite, setShowBulkInvite] = React.useState(false)
   const [showManualInvite, setShowManualInvite] = React.useState(false)
+  const [thankYouTarget, setThankYouTarget] = React.useState<ThankYouEmailTarget | null>(null)
+  // Resolves the pending bulk action once the dialog closes: `false` keeps the row selection.
+  const thankYouResolveRef = React.useRef<((clearSelection: boolean) => void) | null>(null)
   const [tab, setTab] = React.useState<'participants' | 'invitations'>('participants')
   const [invFilterValues, setInvFilterValues] = React.useState<FilterValues>({})
   const scopeVersion = useOrganizationScopeVersion()
@@ -251,7 +263,51 @@ export default function ParticipantsListPage() {
         return t('competitions.participants.sandboxInvite.sent', 'Sent: {timestamp}', { timestamp: sent })
       },
     },
+    {
+      accessorKey: 'thank_you_email_sent_at',
+      header: t('competitions.participants.thankYouEmail.column', 'Thank-you email'),
+      meta: { priority: 3 },
+      cell: ({ getValue }) => {
+        const sent = formatSentMarker(getValue() as string | null)
+        if (!sent) return <span className="text-muted-foreground">—</span>
+        return t('competitions.participants.thankYouEmail.sent', 'Sent: {timestamp}', { timestamp: sent })
+      },
+    },
   ], [t, userNameMap, competitionNameMap])
+
+  const handleThankYouBulkSend = React.useCallback((selectedRows: ParticipationRow[]) => {
+    const prepared = prepareThankYouBulkSend(selectedRows)
+    if (!prepared.ok) {
+      if (prepared.reason === 'mixed-competition') {
+        flash(
+          t('competitions.participants.thankYouEmail.mixedCompetition', 'Select participants from one competition only.'),
+          'error',
+        )
+      } else if (prepared.reason === 'already-sent-only') {
+        flash(
+          t('competitions.participants.thankYouEmail.alreadySent', 'The selected participants already received the thank-you email.'),
+          'error',
+        )
+      }
+      return false
+    }
+
+    setThankYouTarget({
+      competitionId: prepared.competitionId,
+      participationIds: prepared.participationIds,
+      skippedAlreadySent: prepared.skippedAlreadySent,
+    })
+    return new Promise<boolean>((resolve) => {
+      thankYouResolveRef.current = resolve
+    })
+  }, [t])
+
+  const handleThankYouDialogClose = React.useCallback((sent: boolean) => {
+    setThankYouTarget(null)
+    thankYouResolveRef.current?.(sent)
+    thankYouResolveRef.current = null
+    if (sent) void queryClient.invalidateQueries({ queryKey: ['participations'] })
+  }, [queryClient])
 
   const handleSandboxBulkInvite = React.useCallback(async (selectedRows: ParticipationRow[]) => {
     const prepared = prepareSandboxBulkInvite(selectedRows)
@@ -406,6 +462,11 @@ export default function ParticipantsListPage() {
                 id: 'invite-mercato-sandboxes',
                 label: t('competitions.participants.sandboxInvite.action', 'Invite to Mercato Sandboxes'),
                 onExecute: handleSandboxBulkInvite,
+              },
+              {
+                id: 'send-thank-you-email',
+                label: t('competitions.participants.thankYouEmail.action', 'Send thank-you email'),
+                onExecute: handleThankYouBulkSend,
               },
             ]}
             filters={[
@@ -566,6 +627,14 @@ export default function ParticipantsListPage() {
         )}
 
         {ConfirmDialogElement}
+        {thankYouTarget && (
+          <ThankYouEmailDialog
+            competitionId={thankYouTarget.competitionId}
+            participationIds={thankYouTarget.participationIds}
+            skippedAlreadySent={thankYouTarget.skippedAlreadySent}
+            onClose={handleThankYouDialogClose}
+          />
+        )}
         {showBulkInvite && <BulkInviteDialog onClose={() => { setShowBulkInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
         {showManualInvite && <ManualInviteDialog onClose={() => { setShowManualInvite(false); queryClient.invalidateQueries({ queryKey: ['participations', 'competition-invitations-list'] }) }} />}
       </PageBody>

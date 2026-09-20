@@ -297,6 +297,9 @@ export class CompetitionParticipation {
   @Property({ name: 'mercato_sandboxes_invited_at', type: 'timestamptz', nullable: true })
   mercatoSandboxesInvitedAt?: Date | null
 
+  @Property({ name: 'thank_you_email_sent_at', type: 'timestamptz', nullable: true })
+  thankYouEmailSentAt?: Date | null
+
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string

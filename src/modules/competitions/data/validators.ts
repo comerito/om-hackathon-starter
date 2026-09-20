@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { locales } from '@open-mercato/shared/lib/i18n/config'
 import { ACTION_URL_MAX_LENGTH, ACTION_URL_MESSAGE, isSafeActionUrl, normalizeActionUrl } from '../lib/action-url'
+import { THANK_YOU_EMAIL_MAX_RECIPIENTS, isValidPhotosUrl } from '../lib/thankYouEmails'
 
 export const portalLocaleEnum = z.enum(locales as [typeof locales[number], ...typeof locales[number][]])
 
@@ -456,3 +457,16 @@ export const sandboxInvitationSchema = z.object({
 
 export type SandboxInvitationSelection = z.infer<typeof sandboxInvitationSelectionSchema>
 export type SandboxInvitationInput = z.infer<typeof sandboxInvitationSchema>
+
+// ── Post-event thank-you emails ─────────────────────────────────────
+
+export const thankYouEmailSchema = z.object({
+  competition_id: z.string().uuid(),
+  photos_url: z.string().trim().max(2000).refine(isValidPhotosUrl, 'Photos link must be a valid http(s) URL'),
+  selection: z.object({
+    mode: z.literal('selected'),
+    participation_ids: z.array(z.string().uuid()).min(1).max(THANK_YOU_EMAIL_MAX_RECIPIENTS),
+  }),
+})
+
+export type ThankYouEmailInput = z.infer<typeof thankYouEmailSchema>

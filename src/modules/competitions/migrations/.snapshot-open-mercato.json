@@ -2716,6 +2716,23 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
+        "thank_you_email_sent_at": {
+          "name": "thank_you_email_sent_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamptz(6)",
