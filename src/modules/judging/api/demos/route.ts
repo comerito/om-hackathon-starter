@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { getAuthFromCookies } from '@open-mercato/shared/lib/auth/server'
+import { getAuthFromCookies, getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
+import { runRouteMutationGuards } from '@open-mercato/shared/lib/crud/route-mutation-guard'
+import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/directory/utils/organizationScope'
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../../data/entities'
 import { Project, ProjectStatus } from '../../../projects/data/entities'
@@ -9,6 +11,9 @@ import { Competition } from '../../../competitions/data/entities'
 import { Team } from '../../../teams/data/entities'
 import { Track } from '../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import { planDemoReorder } from '../../lib/demoOrder'
+
+const DEMO_RESOURCE_KIND = 'judging:demo_session'
 
 const generateSchema = z.object({
   action: z.literal('generate'),
@@ -170,27 +175,104 @@ export async function POST(req: Request) {
   }
 }
 
+const REORDER_ERRORS = {
+  not_found: { status: 404, error: 'Demo session not found' },
+  locked: { status: 409, error: 'This demo has already started or finished, so its position is fixed' },
+  target_locked: { status: 409, error: 'That position belongs to a demo that has already started or finished' },
+} as const
+
+/**
+ * Move one demo to a new queue position (`new_order`, 0-based). The rest of the queue is
+ * renumbered around it — see `lib/demoOrder.ts` for the rules.
+ */
 export async function PUT(req: Request) {
   try {
-    const auth = await getAuthFromCookies()
-    if (!auth?.tenantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const body = await req.json()
-    const parsedPut = reorderSchema.parse(body)
+    const auth = await getAuthFromRequest(req)
+    if (!auth?.tenantId || !auth?.sub) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const requested = reorderSchema.parse(await req.json())
+
     const container = await createRequestContainer()
     const em = container.resolve('em') as EntityManager
-    const demo = await em.findOne(DemoSession, { id: parsedPut.id, tenantId: auth.tenantId } as FilterQuery<DemoSession>)
-    if (!demo) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    demo.presentationOrder = parsedPut.new_order
-    em.persist(demo)
-    await em.flush()
-    return NextResponse.json({ ok: true })
+    const scope = await resolveOrganizationScopeForRequest({ container, auth, request: req })
+    const organizationId = scope.selectedId ?? auth.orgId
+    if (!organizationId) return NextResponse.json({ error: 'Organization context required' }, { status: 400 })
+
+    // ── Read phase: the whole queue, before anything is mutated ──
+    const demo = await em.findOne(DemoSession, {
+      id: requested.id,
+      tenantId: auth.tenantId,
+      organizationId,
+    } as FilterQuery<DemoSession>)
+    if (!demo) return NextResponse.json({ error: REORDER_ERRORS.not_found.error }, { status: 404 })
+
+    // Custom write route — run the mutation-guard registry (AGENTS.md CRITICAL rule 5).
+    const guard = await runRouteMutationGuards({
+      container,
+      req,
+      auth: { userId: auth.sub, tenantId: auth.tenantId, organizationId },
+      input: { resourceKind: DEMO_RESOURCE_KIND, resourceId: demo.id, operation: 'update', mutationPayload: { ...requested } },
+    })
+    if (!guard.ok) return guard.response
+    const parsedPut = guard.modifiedPayload ? reorderSchema.parse({ ...requested, ...guard.modifiedPayload }) : requested
+
+    const queue = await em.find(DemoSession, {
+      competitionId: demo.competitionId,
+      round: demo.round,
+      tenantId: auth.tenantId,
+      organizationId,
+    } as FilterQuery<DemoSession>, { orderBy: { presentationOrder: 'ASC' } })
+
+    const plan = planDemoReorder(queue, parsedPut.id, parsedPut.new_order)
+    if (!plan.ok) {
+      const failure = REORDER_ERRORS[plan.reason]
+      return NextResponse.json({ error: failure.error }, { status: failure.status })
+    }
+
+    // ── Write phase (no finds from here to the flush) ──
+    if (plan.changed) {
+      const byId = new Map(queue.map((session) => [session.id, session]))
+      const now = new Date()
+      for (const row of plan.order) {
+        const session = byId.get(row.id)
+        if (!session || session.presentationOrder === row.presentationOrder) continue
+        session.presentationOrder = row.presentationOrder
+        session.updatedAt = now
+        em.persist(session)
+      }
+      await em.flush()
+    }
+
+    await guard.runAfterSuccess()
+    if (plan.changed) {
+      // Broadcast for live listeners; the portal queue and the kiosk also poll every 10-15 s.
+      try {
+        const eventBus = container.resolve('eventBus') as { emit: (id: string, payload: Record<string, unknown>) => Promise<void> }
+        await eventBus.emit('judging.demo.queue_updated', {
+          competitionId: demo.competitionId,
+          round: demo.round,
+          tenantId: auth.tenantId,
+          organizationId,
+        })
+      } catch (e) {
+        console.error('[judging/demos] PUT event emit error:', e)
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      changed: plan.changed,
+      items: plan.order.map((row) => ({ id: row.id, presentation_order: row.presentationOrder })),
+    })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 422 })
+    }
     console.error('[judging/demos] PUT error:', error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export const openApi: OpenApiRouteDoc = {
   tag: 'Judging', summary: 'Demo session management',
-  methods: { GET: { summary: 'List demo sessions' }, POST: { summary: 'Generate queue or advance demo' }, PUT: { summary: 'Reorder demo' } },
+  methods: { GET: { summary: 'List demo sessions' }, POST: { summary: 'Generate queue or advance demo' }, PUT: { summary: 'Move a demo to a new queue position; the rest of the queue is renumbered' } },
 }

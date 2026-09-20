@@ -15,6 +15,9 @@ import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/u
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
+import { ArrowDown, ArrowUp } from 'lucide-react'
+import { IconButton } from '@open-mercato/ui/primitives/icon-button'
+import { neighbourPositions } from '../lib/demoOrder'
 
 type PanelRow = { id: string; name: string; competition_id: string; round: string; created_at: string; _judging?: { judgeCount: number; trackCount: number } }
 type CriterionRow = { id: string; name: string; track_id: string | null; weight: number; max_score: number; round: string; order: number }
@@ -202,8 +205,65 @@ export default function JudgingDashboard() {
     { accessorKey: 'round', header: t('judging.table.round', 'Round'), meta: { priority: 3 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={roundPreset} /> },
   ], [t, trackNameMap])
 
+  // One request at a time: every move renumbers the whole queue on the server.
+  const [movingDemoId, setMovingDemoId] = React.useState<string | null>(null)
+  const handleMoveDemo = React.useCallback(async (demoId: string, newOrder: number) => {
+    setMovingDemoId(demoId)
+    try {
+      const { ok, result } = await apiCall<{ error?: string }>('/api/judging/demos', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: demoId, new_order: newOrder }),
+      })
+      if (!ok) flash(result?.error ?? t('judging.flash.reorderFailed', 'Failed to change the demo order'), 'error')
+      await queryClient.invalidateQueries({ queryKey: ['judging-demos'] })
+    } finally {
+      setMovingDemoId(null)
+    }
+  }, [queryClient, t])
+
+  const demoOrderSessions = React.useMemo(
+    () => (demosData?.items ?? []).map((demo) => ({ id: demo.id, status: demo.status, presentationOrder: demo.presentation_order })),
+    [demosData],
+  )
+
   const demoColumns = React.useMemo<ColumnDef<DemoRow>[]>(() => [
     { accessorKey: 'presentation_order', header: '#', meta: { priority: 1 }, cell: ({ getValue }) => Number(getValue()) + 1 },
+    {
+      id: 'reorder',
+      header: t('judging.demos.order', 'Order'),
+      enableSorting: false,
+      meta: { priority: 1 },
+      cell: ({ row }) => {
+        const { up, down } = neighbourPositions(demoOrderSessions, row.original.id)
+        if (up === null && down === null) return null
+        const name = row.original.project_title ?? row.original.team_name ?? ''
+        return (
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            <IconButton
+              size="sm"
+              variant="outline"
+              type="button"
+              disabled={up === null || movingDemoId !== null}
+              aria-label={t('judging.demos.moveUpNamed', 'Move {name} up', { name })}
+              onClick={() => { if (up !== null) void handleMoveDemo(row.original.id, up) }}
+            >
+              <ArrowUp />
+            </IconButton>
+            <IconButton
+              size="sm"
+              variant="outline"
+              type="button"
+              disabled={down === null || movingDemoId !== null}
+              aria-label={t('judging.demos.moveDownNamed', 'Move {name} down', { name })}
+              onClick={() => { if (down !== null) void handleMoveDemo(row.original.id, down) }}
+            >
+              <ArrowDown />
+            </IconButton>
+          </div>
+        )
+      },
+    },
     { accessorKey: 'status', header: t('judging.table.status', 'Status'), meta: { priority: 1 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={demoStatusPreset} /> },
     {
       accessorKey: 'project_title',
@@ -218,7 +278,7 @@ export default function JudgingDashboard() {
       cell: ({ row }) => row.original.track_name ?? row.original.track_id.substring(0, 8),
     },
     { accessorKey: 'actual_start', header: t('judging.table.started', 'Started'), meta: { priority: 3 }, cell: ({ getValue }) => getValue() ? new Date(getValue() as string).toLocaleTimeString() : '—' },
-  ], [t])
+  ], [t, demoOrderSessions, movingDemoId, handleMoveDemo])
 
   async function handleGenerateQueue() {
     if (!selectedCompetitionId) { flash('Please select a competition first', 'error'); return }
@@ -358,17 +418,22 @@ export default function JudgingDashboard() {
             )}
             <Button onClick={handleGenerateQueue} variant="outline" disabled={!selectedCompetitionId}>{t('judging.demos.generateQueue', 'Generate Queue')}</Button>
           </div>
+          <p className="mb-3 text-sm text-muted-foreground">
+            {t('judging.demos.orderHelp', 'Use the arrows to change the presentation order. Demos that are on stage or finished keep their position. The portal queue and the kiosk pick the change up within a few seconds.')}
+          </p>
           <DataTable title={t('judging.demos.title', 'Demo Sessions')}
             columns={demoColumns} data={demosData?.items ?? []}
             isLoading={demosLoading || !scopeReady}
             rowActions={(row) => {
               const nextStatus = row.status === 'queued' ? 'on_deck' : row.status === 'on_deck' ? 'presenting' : row.status === 'presenting' ? 'qa' : row.status === 'qa' ? 'completed' : null
-              return nextStatus ? (
-                <RowActions items={[
-                  { label: `→ ${nextStatus.replace('_', ' ')}`, onSelect: () => handleAdvanceDemo(row.id, nextStatus) },
-                  { label: t('judging.demos.skip', 'Skip'), destructive: true, onSelect: () => handleAdvanceDemo(row.id, 'skipped') },
-                ]} />
-              ) : null
+              const { first, last } = neighbourPositions(demoOrderSessions, row.id)
+              const items = [
+                ...(nextStatus ? [{ label: `→ ${nextStatus.replace('_', ' ')}`, onSelect: () => handleAdvanceDemo(row.id, nextStatus) }] : []),
+                ...(first !== null ? [{ label: t('judging.demos.moveToTop', 'Move to top of queue'), onSelect: () => handleMoveDemo(row.id, first) }] : []),
+                ...(last !== null ? [{ label: t('judging.demos.moveToEnd', 'Move to end of queue'), onSelect: () => handleMoveDemo(row.id, last) }] : []),
+                ...(nextStatus ? [{ label: t('judging.demos.skip', 'Skip'), destructive: true, onSelect: () => handleAdvanceDemo(row.id, 'skipped') }] : []),
+              ]
+              return items.length > 0 ? <RowActions items={items} /> : null
             }}
           />
         </>

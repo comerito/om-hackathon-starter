@@ -171,5 +171,12 @@
   "judging.fields.maxScoreHelp": "Jurorzy zawsze oceniają każde kryterium w skali 1–10 gwiazdek; gwiazdki są przeliczane na punkty tego kryterium i uwzględniają jego wagę. Zmiana kryteriów w trakcie głosowania przelicza oceny jurorów, a zmiana liczby punktów zmienia znaczenie głosów oddanych przed wprowadzeniem gwiazdek.",
   "judging.fields.weight": "Waga (0-1)",
   "judging.fields.weightHelp": "Wagi są normalizowane, więc nie muszą sumować się do 1 — zalecamy jednak, aby ich suma wynosiła 1.",
-  "judging.table.maxScore": "Punkty"
+  "judging.table.maxScore": "Punkty",
+  "judging.flash.reorderFailed": "Nie udało się zmienić kolejności prezentacji",
+  "judging.demos.order": "Kolejność",
+  "judging.demos.moveUpNamed": "Przesuń {name} w górę",
+  "judging.demos.moveDownNamed": "Przesuń {name} w dół",
+  "judging.demos.moveToTop": "Przenieś na początek kolejki",
+  "judging.demos.moveToEnd": "Przenieś na koniec kolejki",
+  "judging.demos.orderHelp": "Użyj strzałek, aby zmienić kolejność prezentacji. Prezentacje, które trwają lub już się odbyły, zachowują swoją pozycję. Kolejka w portalu i kiosk pokażą zmianę w ciągu kilku sekund."
 }
