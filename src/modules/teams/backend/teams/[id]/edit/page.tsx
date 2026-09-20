@@ -6,6 +6,7 @@ import { CrudForm, type CrudField, type CrudFormGroup } from '@open-mercato/ui/b
 import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/utils/crud'
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { TeamRosterCard, type TeamSummary } from '../../../../components/TeamRoster'
 
 async function loadTracks(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -30,6 +31,7 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
   const [initial, setInitial] = React.useState<TeamFormValues | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
+  const [summary, setSummary] = React.useState<TeamSummary | null>(null)
 
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'name', label: t('teams.fields.name', 'Name'), type: 'text', required: true },
@@ -55,6 +57,7 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
         const item = data?.items?.[0]
         if (!item) throw new Error('Team not found')
         if (!cancelled) {
+          setSummary((item._teams as TeamSummary | undefined) ?? null)
           setInitial({
             id: String(item.id),
             name: String(item.name ?? ''),
@@ -87,6 +90,7 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
         {err ? (
           <div className="text-red-600">{err}</div>
         ) : (
+          <>
           <CrudForm<TeamFormValues>
             title={t('teams.edit.title', 'Edit Team')}
             backHref="/backend/teams"
@@ -110,6 +114,9 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
               }
             }}
           />
+          {/* Members + every selected track, by name */}
+          {!loading && <TeamRosterCard summary={summary} />}
+          </>
         )}
       </PageBody>
     </Page>
