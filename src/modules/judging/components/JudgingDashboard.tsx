@@ -18,8 +18,9 @@ import Link from 'next/link'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { IconButton } from '@open-mercato/ui/primitives/icon-button'
 import { neighbourPositions } from '../lib/demoOrder'
+import { DEFAULT_PRESENTATION_MINUTES, DEFAULT_QA_MINUTES } from '../lib/demoDurations'
 
-type PanelRow = { id: string; name: string; competition_id: string; round: string; created_at: string; _judging?: { judgeCount: number; trackCount: number } }
+type PanelRow = { id: string; name: string; competition_id: string; round: string; created_at: string; presentation_duration_minutes?: number | null; qa_duration_minutes?: number | null; _judging?: { judgeCount: number; trackCount: number } }
 type CriterionRow = { id: string; name: string; track_id: string | null; weight: number; max_score: number; round: string; order: number }
 type DemoRow = {
   id: string
@@ -195,6 +196,14 @@ export default function JudgingDashboard() {
     { accessorKey: 'round', header: t('judging.table.round', 'Round'), meta: { priority: 2 }, cell: ({ getValue }) => <EnumBadge value={String(getValue())} map={roundPreset} /> },
     { id: 'judges', header: t('judging.table.judges', 'Judges'), meta: { priority: 2 }, cell: ({ row }) => row.original._judging?.judgeCount ?? 0 },
     { id: 'tracks', header: t('judging.table.tracks', 'Tracks'), meta: { priority: 3 }, cell: ({ row }) => row.original._judging?.trackCount ?? 0 },
+    {
+      id: 'timing',
+      header: t('judging.table.demoTiming', 'Demo timing'),
+      enableSorting: false,
+      meta: { priority: 3 },
+      // Presentation + Q&A minutes; the defaults are shown when the panel sets nothing.
+      cell: ({ row }) => `${row.original.presentation_duration_minutes ?? DEFAULT_PRESENTATION_MINUTES} + ${row.original.qa_duration_minutes ?? DEFAULT_QA_MINUTES} min`,
+    },
   ], [t])
 
   const criterionColumns = React.useMemo<ColumnDef<CriterionRow>[]>(() => [

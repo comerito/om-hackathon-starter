@@ -178,5 +178,17 @@
   "judging.demos.moveDownNamed": "Przesuń {name} w dół",
   "judging.demos.moveToTop": "Przenieś na początek kolejki",
   "judging.demos.moveToEnd": "Przenieś na koniec kolejki",
-  "judging.demos.orderHelp": "Użyj strzałek, aby zmienić kolejność prezentacji. Prezentacje, które trwają lub już się odbyły, zachowują swoją pozycję. Kolejka w portalu i kiosk pokażą zmianę w ciągu kilku sekund."
+  "judging.demos.orderHelp": "Użyj strzałek, aby zmienić kolejność prezentacji. Prezentacje, które trwają lub już się odbyły, zachowują swoją pozycję. Kolejka w portalu i kiosk pokażą zmianę w ciągu kilku sekund.",
+  "judging.panelTiming.saved": "Zapisano czasy prezentacji. Prezentacje, które jeszcze się nie zaczęły, korzystają z nowych czasów.",
+  "judging.panelTiming.saveFailed": "Nie udało się zapisać czasów prezentacji",
+  "judging.panelTiming.title": "Czas prezentacji",
+  "judging.panelTiming.help": "Dotyczy prezentacji z tracków przypisanych do tego panelu. Zostaw pole puste, aby użyć wartości domyślnej ({presentation} min prezentacji, {qa} min Q&A). Prezentacje, które trwają lub już się odbyły, zachowują swoje czasy.",
+  "judging.panelTiming.presentation": "Czas prezentacji (minuty)",
+  "judging.panelTiming.presentationInvalid": "Pełne minuty, od 1 do 120",
+  "judging.panelTiming.qa": "Czas Q&A (minuty)",
+  "judging.panelTiming.qaInvalid": "Pełne minuty, od 0 do 60 (0 = bez Q&A)",
+  "judging.panelTiming.saving": "Zapisywanie...",
+  "judging.panelTiming.save": "Zapisz czasy",
+  "judging.panelTiming.createHelp": "Opcjonalne. Puste = wartość domyślna.",
+  "judging.table.demoTiming": "Czas prezentacji"
 }

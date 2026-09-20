@@ -7,6 +7,7 @@ import { JudgePanel, JudgePanelJudge, JudgePanelTrack } from '../../data/entitie
 import { NOT_A_JUDGE_ERROR, isEligibleJudge } from '../../lib/judgeEligibility'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { rawAll } from '@/lib/db'
+import { syncDemoDurationsAndNotify } from '../../lib/demoDurationSync'
 
 export const metadata = {
   GET: { requireAuth: true, requireFeatures: ['judging.panels.manage'] },
@@ -64,7 +65,11 @@ export async function GET(req: Request) {
     )
 
     return NextResponse.json({
-      panel: { id: panel.id, name: panel.name, round: panel.round, competition_id: panel.competitionId },
+      panel: {
+        id: panel.id, name: panel.name, round: panel.round, competition_id: panel.competitionId,
+        presentation_duration_minutes: panel.presentationDurationMinutes ?? null,
+        qa_duration_minutes: panel.qaDurationMinutes ?? null,
+      },
       judges: judges.map((j) => ({
         id: j.id,
         judge_id: j.judge_id,
@@ -144,6 +149,8 @@ export async function POST(req: Request) {
       })
       em.persist(entry)
       await em.flush()
+      // The panel now hears this track: its demos that have not started take the panel's times.
+      await syncDemoDurationsAndNotify(container, panel.competitionId, { tenantId: auth.tenantId, organizationId: panel.organizationId })
       return NextResponse.json({ ok: true, id: entry.id }, { status: 201 })
     }
 
@@ -185,8 +192,13 @@ export async function DELETE(req: Request) {
     if (type === 'track') {
       const entry = await em.findOne(JudgePanelTrack, { id, tenantId: auth.tenantId } as FilterQuery<JudgePanelTrack>)
       if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      // Read before the removal: needed to re-time the track's demos afterwards.
+      const panel = await em.findOne(JudgePanel, { id: entry.panelId, tenantId: auth.tenantId } as FilterQuery<JudgePanel>)
       em.remove(entry)
       await em.flush()
+      if (panel) {
+        await syncDemoDurationsAndNotify(container, panel.competitionId, { tenantId: auth.tenantId, organizationId: panel.organizationId })
+      }
       return NextResponse.json({ ok: true })
     }
 

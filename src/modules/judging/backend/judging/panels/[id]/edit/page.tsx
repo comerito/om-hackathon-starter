@@ -11,9 +11,15 @@ import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import Link from 'next/link'
+import { PanelDemoTimingCard } from '../../../../../components/PanelDemoTimingCard'
 
 type PanelData = {
-  panel: { id: string; name: string; round: string; competition_id: string; _competitions?: { name: string | null } }
+  panel: {
+    id: string; name: string; round: string; competition_id: string
+    presentation_duration_minutes?: number | null
+    qa_duration_minutes?: number | null
+    _competitions?: { name: string | null }
+  }
   judges: Array<{ id: string; judge_id: string; display_name: string; email: string | null }>
   tracks: Array<{ id: string; track_id: string; track_name: string; color: string }>
 }
@@ -145,6 +151,13 @@ export default function EditPanelPage({ params }: { params?: { id?: string } }) 
           <h1 className="mt-2 text-xl font-bold">{data.panel.name}</h1>
           <p className="text-sm text-muted-foreground capitalize">Round: {data.panel.round}</p>
         </div>
+
+        <PanelDemoTimingCard
+          panelId={data.panel.id}
+          presentationMinutes={data.panel.presentation_duration_minutes}
+          qaMinutes={data.panel.qa_duration_minutes}
+          onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['panel-members', panelId] }) }}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Judges section */}

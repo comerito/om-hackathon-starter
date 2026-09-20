@@ -5,16 +5,26 @@ export const judgingRoundValues = ['preliminary', 'final'] as const
 export const criterionRoundValues = ['preliminary', 'final', 'both'] as const
 export const demoStatusValues = ['queued', 'on_deck', 'presenting', 'qa', 'completed', 'skipped'] as const
 
+// Stage time for the demos a panel hears. null / omitted = the hard-coded default
+// (see lib/demoDurations.ts). Forms send '' for an empty number input.
+const emptyToNull = (value: unknown) => (value === '' || value === undefined ? null : value)
+const presentationMinutesSchema = z.preprocess(emptyToNull, z.coerce.number().int().min(1).max(120).nullable())
+const qaMinutesSchema = z.preprocess(emptyToNull, z.coerce.number().int().min(0).max(60).nullable())
+
 export const createPanelSchema = z.object({
   competition_id: z.string().uuid(),
   name: z.string().min(1).max(255),
   round: z.enum(judgingRoundValues).default('preliminary'),
+  presentation_duration_minutes: presentationMinutesSchema.optional(),
+  qa_duration_minutes: qaMinutesSchema.optional(),
 })
 
 export const updatePanelSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255).optional(),
   round: z.enum(judgingRoundValues).optional(),
+  presentation_duration_minutes: presentationMinutesSchema.optional(),
+  qa_duration_minutes: qaMinutesSchema.optional(),
 })
 
 // ── Panel Judges/Tracks ──────────────────────────────────────────────

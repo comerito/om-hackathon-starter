@@ -1,6 +1,7 @@
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus, JudgingRound } from '../data/entities'
 import { Project, ProjectStatus } from '../../projects/data/entities'
+import { loadDemoDurationResolver, pickDurations } from '../lib/demoDurationSync'
 
 export const metadata = {
   event: 'projects.batch.auto_published',
@@ -21,6 +22,12 @@ export default async function handler(
     deletedAt: null,
     tenantId: payload.tenantId,
   } as FilterQuery<Project>, { orderBy: { trackId: 'ASC', createdAt: 'ASC' } })
+
+  // Panel times for the demos about to be queued (5 + 2 minutes when no panel sets them).
+  const resolveDurations = await loadDemoDurationResolver(em, payload.competitionId, {
+    tenantId: payload.tenantId,
+    organizationId: payload.organizationId,
+  })
 
   let order = 0
   let created = 0
@@ -44,8 +51,7 @@ export default async function handler(
       projectId: project.id,
       trackId: project.trackId,
       presentationOrder: order++,
-      presentationDurationMinutes: 3,
-      qaDurationMinutes: 2,
+      ...pickDurations(resolveDurations({ trackId: project.trackId, round: JudgingRound.PRELIMINARY })),
       status: DemoStatus.QUEUED,
       round: JudgingRound.PRELIMINARY,
       tenantId: payload.tenantId,

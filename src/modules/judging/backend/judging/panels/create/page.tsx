@@ -6,6 +6,7 @@ import { createCrud, fetchCrudList } from '@open-mercato/ui/backend/utils/crud'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import { useScopedCompetitionSeedOptions } from '@/lib/competition-label'
+import { DEFAULT_PRESENTATION_MINUTES, DEFAULT_QA_MINUTES } from '../../../../lib/demoDurations'
 
 async function loadCompetitions(query?: string) {
   const params: Record<string, string> = { pageSize: '20' }
@@ -23,10 +24,15 @@ export default function CreatePanelPage() {
     { id: 'name', label: t('judging.fields.name', 'Panel Name'), type: 'text', required: true },
     { id: 'round', label: t('judging.fields.round', 'Round'), type: 'select', defaultValue: 'preliminary',
       options: [{ value: 'preliminary', label: 'Preliminary' }, { value: 'final', label: 'Final' }] },
+    { id: 'presentation_duration_minutes', label: t('judging.panelTiming.presentation', 'Presentation time (minutes)'), type: 'number',
+      placeholder: String(DEFAULT_PRESENTATION_MINUTES), description: t('judging.panelTiming.createHelp', 'Optional. Empty = the default.') },
+    { id: 'qa_duration_minutes', label: t('judging.panelTiming.qa', 'Q&A time (minutes)'), type: 'number',
+      placeholder: String(DEFAULT_QA_MINUTES), description: t('judging.panelTiming.createHelp', 'Optional. Empty = the default.') },
   ], [t, competitionSeedOptions])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
     { id: 'details', title: t('judging.groups.details', 'Panel Details'), column: 1, fields: ['competition_id', 'name', 'round'] },
+    { id: 'timing', title: t('judging.panelTiming.title', 'Demo timing'), column: 1, fields: ['presentation_duration_minutes', 'qa_duration_minutes'] },
   ], [t])
 
   return (
