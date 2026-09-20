@@ -268,21 +268,34 @@ describe('POST /api/competitions/admin/thank-you-emails — delivery and persist
     const { status, body } = await callPost([unsent.id, sent.id])
 
     expect(status).toBe(200)
-    expect(body.sent).toBe(1)
+    expect(body).toMatchObject({ sent: 1, failed: 0, skipped: 1 })
+    expect(body.results).toEqual(
+      expect.arrayContaining([
+        { participation_id: unsent.id, status: 'sent' },
+        { participation_id: sent.id, status: 'skipped' },
+      ]),
+    )
     expect(mockSendThankYouEmail).toHaveBeenCalledTimes(1)
     expect(sent.thankYouEmailSentAt).toEqual(sentAt)
   })
 
-  it('sends nothing when every selected id was already thanked', async () => {
-    const sent = participation(1, { thankYouEmailSentAt: new Date('2026-09-19T10:00:00.000Z') })
-    participations = [sent]
+  it('treats a retried chunk whose response was lost as a harmless no-op', async () => {
+    const one = participation(1)
+    const two = participation(2)
+    participations = [one, two]
+    users = [userFor(one, 'ada@example.com'), userFor(two, 'grace@example.com')]
 
-    const { status, body } = await callPost([sent.id])
+    // First attempt: the emails leave and are marked, but imagine the response never reached the browser.
+    await callPost([one.id, two.id])
+    expect(mockSendThankYouEmail).toHaveBeenCalledTimes(2)
 
-    expect(status).toBe(400)
-    expect(body).toEqual({ error: 'Everyone in this selection already received the thank-you email' })
-    expect(mockSendThankYouEmail).not.toHaveBeenCalled()
-    expect(emFlush).not.toHaveBeenCalled()
+    // The backoffice retries the same chunk.
+    const { status, body } = await callPost([one.id, two.id])
+
+    expect(status).toBe(200)
+    expect(body).toMatchObject({ ok: true, sent: 0, failed: 0, skipped: 2 })
+    expect(mockSendThankYouEmail).toHaveBeenCalledTimes(2)
+    expect(mockFindWithDecryption).toHaveBeenCalledTimes(1)
   })
 })
 

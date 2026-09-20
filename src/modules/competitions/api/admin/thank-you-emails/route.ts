@@ -15,6 +15,7 @@ import {
   THANK_YOU_EMAIL_BATCH_DELAY_MS,
   THANK_YOU_EMAIL_CONCURRENCY,
   skipAlreadyThankedParticipations,
+  type ThankYouEmailItemResult,
 } from '../../../lib/thankYouEmails'
 
 const PARTICIPATION_RESOURCE_KIND = 'competitions:competition_participation'
@@ -26,10 +27,7 @@ export const metadata = {
   },
 }
 
-type LocalItemResult = {
-  participation_id: string
-  status: 'sent' | 'failed'
-}
+type LocalItemResult = ThankYouEmailItemResult
 
 function applyOrganizationScope<T extends Record<string, unknown>>(
   where: T,
@@ -43,10 +41,11 @@ function applyOrganizationScope<T extends Record<string, unknown>>(
 
 function jsonResponse(results: LocalItemResult[]) {
   const sent = results.filter((item) => item.status === 'sent').length
-  const failed = results.length - sent
+  const failed = results.filter((item) => item.status === 'failed').length
+  const skipped = results.filter((item) => item.status === 'skipped').length
   const ok = failed === 0
   return NextResponse.json(
-    { ok, status: ok ? 'complete' : 'partial', sent, failed, results },
+    { ok, status: ok ? 'complete' : 'partial', sent, failed, skipped, results },
     { status: ok ? 200 : 207 },
   )
 }
@@ -118,12 +117,14 @@ export async function POST(req: Request) {
     const ordered = ids.map((id) => byId.get(id)).filter((row): row is NonNullable<typeof row> => row != null)
     const participations = skipAlreadyThankedParticipations(ordered)
 
-    if (participations.length === 0) {
-      return NextResponse.json(
-        { error: 'Everyone in this selection already received the thank-you email' },
-        { status: 400 },
-      )
-    }
+    // Already-thanked rows are reported, not rejected: the backoffice retries a chunk whose
+    // response was lost, and that retry must be a harmless no-op rather than an error.
+    const unsentIds = new Set(participations.map((row) => row.id))
+    const results: LocalItemResult[] = ordered
+      .filter((row) => !unsentIds.has(row.id))
+      .map((row) => ({ participation_id: row.id, status: 'skipped' }))
+
+    if (participations.length === 0) return jsonResponse(results)
 
     const customerUserIds = [...new Set(participations.map((row) => row.customerUserId))]
     const users = await findWithDecryption(
@@ -139,7 +140,6 @@ export async function POST(req: Request) {
     )
     const usersById = new Map(users.map((user) => [user.id, user]))
 
-    const results: LocalItemResult[] = []
     const sendable: Array<{ participation: (typeof participations)[number]; email: string; displayName: string }> = []
     for (const participation of participations) {
       const user = usersById.get(participation.customerUserId)
@@ -208,7 +208,7 @@ export const openApi: OpenApiRouteDoc = {
   methods: {
     POST: {
       summary:
-        'Resolve selected tenant-scoped participants and email each one a thank-you message with the event photos link. Already-thanked rows are skipped. Marks only delivered items as sent; answers 207 when some deliveries failed.',
+        'Resolve selected tenant-scoped participants and email each one a thank-you message with the event photos link. Already-thanked rows are reported as skipped and never emailed again, so a retried request is idempotent. Marks only delivered items as sent; answers 207 when some deliveries failed. Callers should send small chunks rather than one long-running request.',
     },
   },
 }
