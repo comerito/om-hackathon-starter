@@ -79,6 +79,7 @@ export async function GET(request: Request) {
     looking_for_team: p.lookingForTeam,
     discord_nick: profileMap.get(p.customerUserId)?.discordNick ?? null,
     mercato_sandboxes_invited_at: p.mercatoSandboxesInvitedAt ?? null,
+    thank_you_email_sent_at: p.thankYouEmailSentAt ?? null,
     created_at: p.createdAt,
   }))
 
