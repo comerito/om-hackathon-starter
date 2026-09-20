@@ -7,19 +7,12 @@ import { fetchCrudList, updateCrud, deleteCrud } from '@open-mercato/ui/backend/
 import { pushWithFlash } from '@open-mercato/ui/backend/utils/flash'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { TeamRosterCard, type TeamSummary } from '../../../../components/TeamRoster'
-
-async function loadTracks(query?: string) {
-  const params: Record<string, string> = { pageSize: '20' }
-  if (query) params.name = query
-  const res = await fetchCrudList<{ id: string; name: string }>('competitions/tracks', params)
-  return (res?.items ?? []).map((tr) => ({ value: tr.id, label: tr.name }))
-}
+import { TeamTracksEditor } from '../../../../components/TeamTracksEditor'
 
 type TeamFormValues = {
   id: string
   name: string
   description: string
-  track_id: string
   table_number: number | null
   table_location: string
 }
@@ -32,17 +25,17 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
   const [loading, setLoading] = React.useState(true)
   const [err, setErr] = React.useState<string | null>(null)
   const [summary, setSummary] = React.useState<TeamSummary | null>(null)
+  const [competitionId, setCompetitionId] = React.useState<string | null>(null)
 
   const fields = React.useMemo<CrudField[]>(() => [
     { id: 'name', label: t('teams.fields.name', 'Name'), type: 'text', required: true },
     { id: 'description', label: t('teams.fields.description', 'Description'), type: 'textarea' },
-    { id: 'track_id', label: t('teams.fields.track', 'Track'), type: 'combobox', loadOptions: loadTracks },
     { id: 'table_number', label: t('teams.fields.tableNumber', 'Table Number'), type: 'number' },
     { id: 'table_location', label: t('teams.fields.tableLocation', 'Table Location'), type: 'text' },
   ], [t])
 
   const groups = React.useMemo<CrudFormGroup[]>(() => [
-    { id: 'general', title: t('teams.groups.general', 'General'), column: 1, fields: ['name', 'description', 'track_id'] },
+    { id: 'general', title: t('teams.groups.general', 'General'), column: 1, fields: ['name', 'description'] },
     { id: 'logistics', title: t('teams.groups.logistics', 'Logistics'), column: 2, fields: ['table_number', 'table_location'] },
   ], [t])
 
@@ -58,11 +51,11 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
         if (!item) throw new Error('Team not found')
         if (!cancelled) {
           setSummary((item._teams as TeamSummary | undefined) ?? null)
+          setCompetitionId(item.competition_id ? String(item.competition_id) : null)
           setInitial({
             id: String(item.id),
             name: String(item.name ?? ''),
             description: String(item.description ?? ''),
-            track_id: String(item.track_id ?? ''),
             table_number: item.table_number != null ? Number(item.table_number) : null,
             table_location: String(item.table_location ?? ''),
           })
@@ -77,8 +70,16 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
     return () => { cancelled = true }
   }, [id])
 
+  // Tracks are saved outside the CrudForm, so only the roster is refreshed — typed-but-unsaved
+  // form values must survive.
+  const reloadSummary = React.useCallback(async () => {
+    if (!id) return
+    const data = await fetchCrudList<Record<string, unknown>>('teams/teams', { id, pageSize: '1' })
+    setSummary((data?.items?.[0]?._teams as TeamSummary | undefined) ?? null)
+  }, [id])
+
   const fallback = React.useMemo<TeamFormValues>(() => ({
-    id: id ?? '', name: '', description: '', track_id: '',
+    id: id ?? '', name: '', description: '',
     table_number: null, table_location: '',
   }), [id])
 
@@ -115,7 +116,19 @@ export default function EditTeamPage({ params }: { params?: { id?: string } }) {
             }}
           />
           {/* Members + every selected track, by name */}
-          {!loading && <TeamRosterCard summary={summary} />}
+          {!loading && (
+            <TeamRosterCard
+              summary={summary}
+              tracksSlot={competitionId ? (
+                <TeamTracksEditor
+                  teamId={id}
+                  competitionId={competitionId}
+                  assigned={summary?.tracks ?? []}
+                  onSaved={reloadSummary}
+                />
+              ) : undefined}
+            />
+          )}
           </>
         )}
       </PageBody>

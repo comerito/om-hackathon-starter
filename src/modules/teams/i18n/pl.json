@@ -151,5 +151,15 @@
   "teams.roster.members": "Członkowie",
   "teams.roster.noMembers": "Ten zespół nie ma członków.",
   "teams.roster.tracks": "Wybrane tracki",
-  "teams.roster.noTracks": "Ten zespół nie wybrał jeszcze tracka."
+  "teams.roster.noTracks": "Ten zespół nie wybrał jeszcze tracka.",
+  "teams.tracksEditor.saveFailed": "Nie udało się zaktualizować tracków",
+  "teams.tracksEditor.savedWithDrafts": "Zaktualizowano tracki. Utworzone projekty robocze: {count}",
+  "teams.tracksEditor.saved": "Zaktualizowano tracki",
+  "teams.tracksEditor.help": "Organizator może ustawić tracki na każdym etapie, maksymalnie {max} na zespół.",
+  "teams.tracksEditor.hackingHint": "Konkurs jest w fazie hackingu, więc dla każdego nowo przypisanego tracka tworzony jest projekt roboczy.",
+  "teams.tracksEditor.loading": "Wczytywanie tracków...",
+  "teams.tracksEditor.noTracks": "Ten konkurs nie ma tracków.",
+  "teams.tracksEditor.inactive": "nieaktywny",
+  "teams.tracksEditor.saving": "Zapisywanie...",
+  "teams.tracksEditor.save": "Zapisz tracki"
 }

@@ -151,5 +151,15 @@
   "teams.roster.members": "Members",
   "teams.roster.noMembers": "This team has no members.",
   "teams.roster.tracks": "Selected tracks",
-  "teams.roster.noTracks": "This team has not selected a track yet."
+  "teams.roster.noTracks": "This team has not selected a track yet.",
+  "teams.tracksEditor.saveFailed": "Could not update tracks",
+  "teams.tracksEditor.savedWithDrafts": "Tracks updated. Draft projects created: {count}",
+  "teams.tracksEditor.saved": "Tracks updated",
+  "teams.tracksEditor.help": "Organizers can set tracks at any stage, up to {max} per team.",
+  "teams.tracksEditor.hackingHint": "The competition is in the hacking stage, so a draft project is created for every newly assigned track.",
+  "teams.tracksEditor.loading": "Loading tracks...",
+  "teams.tracksEditor.noTracks": "This competition has no tracks.",
+  "teams.tracksEditor.inactive": "inactive",
+  "teams.tracksEditor.saving": "Saving...",
+  "teams.tracksEditor.save": "Save tracks"
 }
