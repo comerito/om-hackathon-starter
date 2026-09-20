@@ -4,11 +4,11 @@ export const setup: ModuleSetupConfig = {
   defaultRoleFeatures: {
     superadmin: [
       'projects.view', 'projects.create', 'projects.edit', 'projects.delete',
-      'projects.manage', 'projects.flag', 'projects.export_attachments',
+      'projects.manage', 'projects.flag', 'projects.export_attachments', 'projects.gallery_publish',
     ],
     admin: [
       'projects.view', 'projects.create', 'projects.edit', 'projects.delete',
-      'projects.manage', 'projects.flag', 'projects.export_attachments',
+      'projects.manage', 'projects.flag', 'projects.export_attachments', 'projects.gallery_publish',
     ],
   },
   defaultCustomerRoleFeatures: {

@@ -143,5 +143,13 @@
   "teams.portal.recruitment.browseAll": "Browse everyone",
   "teams.portal.recruitment.matchesEmpty": "Nobody without a team lists these skills yet. Your posting stays visible on the Teams page.",
   "teams.portal.recruitment.isLookingForTeam": "looking for a team",
-  "teams.portal.recruitment.invited": "Invited"
+  "teams.portal.recruitment.invited": "Invited",
+  "teams.table.tracks": "Tracks",
+  "teams.table.members": "Members",
+  "teams.roster.owner": "owner",
+  "teams.roster.member": "member",
+  "teams.roster.members": "Members",
+  "teams.roster.noMembers": "This team has no members.",
+  "teams.roster.tracks": "Selected tracks",
+  "teams.roster.noTracks": "This team has not selected a track yet."
 }

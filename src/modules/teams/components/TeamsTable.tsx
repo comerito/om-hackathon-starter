@@ -14,6 +14,7 @@ import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/u
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
 import Link from 'next/link'
+import { TeamMemberNames, TeamTrackBadges, type TeamSummary } from './TeamRoster'
 import { useRouter } from 'next/navigation'
 
 type TeamRow = {
@@ -24,6 +25,7 @@ type TeamRow = {
   status: string
   is_finalist: boolean
   created_at: string
+  _teams?: TeamSummary
 }
 
 type ListResponse = {
@@ -76,13 +78,18 @@ export default function TeamsTable() {
   const columns = React.useMemo<ColumnDef<TeamRow>[]>(() => [
     { accessorKey: 'name', header: t('teams.table.name', 'Name'), meta: { priority: 1 } },
     {
-      accessorKey: 'track_id',
-      header: t('teams.table.track', 'Track'),
+      id: 'tracks',
+      header: t('teams.table.tracks', 'Tracks'),
+      enableSorting: false,
       meta: { priority: 3 },
-      cell: ({ getValue }) => {
-        const val = getValue() as string | null
-        return val ? val.substring(0, 8) + '...' : '\u2014'
-      },
+      cell: ({ row }) => <TeamTrackBadges tracks={row.original._teams?.tracks} />,
+    },
+    {
+      id: 'members',
+      header: t('teams.table.members', 'Members'),
+      enableSorting: false,
+      meta: { priority: 3 },
+      cell: ({ row }) => <TeamMemberNames members={row.original._teams?.members} />,
     },
     {
       accessorKey: 'status',

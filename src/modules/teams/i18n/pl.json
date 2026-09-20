@@ -143,5 +143,13 @@
   "teams.portal.recruitment.browseAll": "Przeglądaj wszystkich",
   "teams.portal.recruitment.matchesEmpty": "Nikt bez zespołu nie ma jeszcze tych umiejętności w profilu. Wasze ogłoszenie pozostaje widoczne na stronie Zespoły.",
   "teams.portal.recruitment.isLookingForTeam": "szuka zespołu",
-  "teams.portal.recruitment.invited": "Zaproszono"
+  "teams.portal.recruitment.invited": "Zaproszono",
+  "teams.table.tracks": "Tracki",
+  "teams.table.members": "Członkowie",
+  "teams.roster.owner": "właściciel",
+  "teams.roster.member": "członek",
+  "teams.roster.members": "Członkowie",
+  "teams.roster.noMembers": "Ten zespół nie ma członków.",
+  "teams.roster.tracks": "Wybrane tracki",
+  "teams.roster.noTracks": "Ten zespół nie wybrał jeszcze tracka."
 }
