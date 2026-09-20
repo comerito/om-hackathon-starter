@@ -4,6 +4,8 @@
 
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { Attachment } from '@open-mercato/core/modules/attachments/data/entities'
+import { CustomerUser } from '@open-mercato/core/modules/customer_accounts/data/entities'
+import { findWithDecryption } from '@open-mercato/shared/lib/encryption/find'
 import { Competition } from '../../../competitions/data/entities'
 import { Team, TeamMember } from '../../../teams/data/entities'
 import { Track } from '../../../tracks/data/entities'
@@ -84,13 +86,17 @@ export async function buildGalleryProject(
     const members = await em.find(TeamMember, { teamId: project.teamId, deletedAt: null, ...scope } as FilterQuery<TeamMember>)
     const userIds = members.map((member) => member.customerUserId)
     if (userIds.length > 0) {
-      // `execute()` inlines parameters: `IN (?)` with a non-empty array is the correct form.
-      const rows = await em.getConnection().execute<Array<{ display_name: string | null }>>(
-        `SELECT display_name FROM customer_users WHERE id IN (?) AND tenant_id = ?`,
-        [userIds, project.tenantId],
+      // display_name is encryptable on customer_users: a raw select would publish ciphertext
+      // once a tenant has encryption seeded.
+      const users = await findWithDecryption(
+        em,
+        CustomerUser,
+        { id: { $in: userIds }, tenantId: project.tenantId } as FilterQuery<CustomerUser>,
+        undefined,
+        scope,
       )
       // Display names only — never fall back to an e-mail address on a public page.
-      teamMembers = rows.map((row) => row.display_name?.trim() ?? '').filter(Boolean)
+      teamMembers = users.map((user) => user.displayName?.trim() ?? '').filter(Boolean)
     }
   }
 
