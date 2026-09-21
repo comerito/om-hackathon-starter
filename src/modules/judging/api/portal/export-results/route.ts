@@ -24,7 +24,7 @@ type ExportResultRow = {
   status: string | null
   rank: number | null
   avg_score: number | string | null
-  peer_vote_count: number | null
+  peer_vote_count: number | string | null
   is_finalist: boolean | null
 }
 
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
          p.status AS status,
          p."rank" AS "rank",
          s.avg_score AS avg_score,
-         p.peer_vote_count AS peer_vote_count,
+         COALESCE(v.vote_count, 0) AS peer_vote_count,
          t.is_finalist AS is_finalist
        FROM projects_project p
        LEFT JOIN teams_team t ON p.team_id = t.id AND t.tenant_id = p.tenant_id
@@ -85,13 +85,20 @@ export async function GET(req: Request) {
            AND organization_id = ?
          GROUP BY project_id
        ) s ON s.project_id = p.id
+       LEFT JOIN (
+         SELECT project_id, count(*) AS vote_count
+         FROM sponsors_peer_vote
+         WHERE competition_id = ?
+           AND tenant_id = ?
+         GROUP BY project_id
+       ) v ON v.project_id = p.id
        WHERE p.competition_id = ?
          AND p.tenant_id = ?
          AND p.organization_id = ?
          AND p.deleted_at IS NULL
          AND p.status <> 'draft'
        ORDER BY COALESCE(p.rank, 9999) ASC, COALESCE(s.avg_score, 0) DESC`,
-      [competitionId, auth.tenantId, auth.orgId, competitionId, auth.tenantId, auth.orgId],
+      [competitionId, auth.tenantId, auth.orgId, competitionId, auth.tenantId, competitionId, auth.tenantId, auth.orgId],
     )
 
     const translatedRows = await applyPortalTranslationOverlays(
@@ -116,7 +123,7 @@ export async function GET(req: Request) {
       const title = (row.title || '').replace(/"/g, '""')
       const teamName = (row.team_name || '').replace(/"/g, '""')
       const avgScore = row.avg_score != null ? Number(row.avg_score).toFixed(2) : ''
-      const peerVotes = row.peer_vote_count ?? 0
+      const peerVotes = Number(row.peer_vote_count ?? 0)
       const status = row.status || ''
       const finalist = row.is_finalist ? 'Yes' : 'No'
       return `${rank},"${title}","${teamName}",${avgScore},${peerVotes},"${status}","${finalist}"`
