@@ -9,6 +9,7 @@
 
 const mockGetAuthFromCookies = jest.fn()
 const mockCreateRequestContainer = jest.fn()
+const mockRawAll = jest.fn()
 
 jest.mock(
   '@open-mercato/shared/lib/auth/server',
@@ -20,6 +21,7 @@ jest.mock(
   () => ({ createRequestContainer: (...args: unknown[]) => mockCreateRequestContainer(...args) }),
   { virtual: true },
 )
+jest.mock('@/lib/db', () => ({ rawAll: (...args: unknown[]) => mockRawAll(...args) }))
 // The entity modules pull in MikroORM decorators; the validation path never uses them.
 jest.mock('../../../data/entities', () => ({ ProjectScore: class ProjectScore {} }))
 jest.mock('../../../../projects/data/entities', () => ({ Project: class Project {} }))
@@ -100,5 +102,42 @@ describe('GET /api/judging/leaderboard — competition_id validation', () => {
     } finally {
       consoleError.mockRestore()
     }
+  })
+})
+
+describe('GET /api/judging/leaderboard — People\'s Choice votes', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Project } = require('../../../../projects/data/entities') as { Project: unknown }
+
+  const projects = [
+    // `peerVoteCount` is the denormalized column nothing maintains — it stays null in production.
+    { id: 'project-a', title: 'Alpha', teamId: 'team-a', trackId: 'track-1', peerVoteCount: null },
+    { id: 'project-b', title: 'Beta', teamId: 'team-b', trackId: 'track-1', peerVoteCount: null },
+  ]
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetAuthFromCookies.mockResolvedValue({ tenantId: 'tenant-1' })
+    const em = {
+      find: jest.fn(async (entity: unknown) => (entity === Project ? projects : [])),
+    }
+    mockCreateRequestContainer.mockResolvedValue({ resolve: () => em })
+  })
+
+  it('reports the votes counted from sponsors_peer_vote, not the never-written project column', async () => {
+    // Postgres returns count(*) as a bigint string.
+    mockRawAll.mockResolvedValue([{ project_id: 'project-a', vote_count: '12' }])
+
+    const res = await GET(request(`?competition_id=${VALID_UUID}`))
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { items: Array<{ project_id: string; peer_vote_count: number }> }
+
+    const byId = new Map(body.items.map((item) => [item.project_id, item.peer_vote_count]))
+    expect(byId.get('project-a')).toBe(12)
+    expect(byId.get('project-b')).toBe(0)
+
+    const [, sql, params] = mockRawAll.mock.calls[0] as [unknown, string, unknown[]]
+    expect(sql).toContain('sponsors_peer_vote')
+    expect(params).toEqual([VALID_UUID, 'tenant-1'])
   })
 })

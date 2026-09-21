@@ -186,6 +186,21 @@ describe('portal export-results — the stage gate (#118)', () => {
     expect(mockRawAll).toHaveBeenCalledTimes(1)
   })
 
+  it('counts People\'s Choice votes from sponsors_peer_vote, not the never-written project column', async () => {
+    mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
+    mockCreateRequestContainer.mockResolvedValue(
+      container(makeEm({ id: COMPETITION_ID, stage: CompetitionStage.FINISHED })),
+    )
+
+    await GET(request())
+
+    const [, sql, params] = mockRawAll.mock.calls[0] as [unknown, string, unknown[]]
+    expect(sql).toContain('FROM sponsors_peer_vote')
+    expect(sql).not.toContain('p.peer_vote_count')
+    // Parameters are inlined positionally, so every placeholder needs its value.
+    expect((sql.match(/\?/g) ?? []).length).toBe(params.length)
+  })
+
   it('reports a competition outside the caller\'s tenant as 404 with no CSV', async () => {
     mockGetCustomerAuthFromRequest.mockResolvedValue(auth(JUDGE_FEATURES))
     mockCreateRequestContainer.mockResolvedValue(container(makeEm(null)))
