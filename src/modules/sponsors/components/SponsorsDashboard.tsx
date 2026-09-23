@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation'
 
 type SponsorRow = { id: string; name: string; tier: string; logo_url: string; is_visible: boolean; order: number; created_at: string }
 type PrizeRow = { id: string; name: string; category: string; track_id: string | null; value: string | null; rank: number | null; winning_project_id: string | null; awarded_at: string | null; order: number }
-type TallyEntry = { project_id: string; vote_count: number }
+type TallyEntry = { project_id: string; project_title: string | null; team_name: string | null; vote_count: number }
 
 const tierPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   title: { label: 'Title', variant: 'default' },
@@ -163,18 +163,20 @@ export default function SponsorsDashboard() {
                 <thead><tr className="border-b bg-muted/50">
                   <th className="p-2 text-center w-12">#</th>
                   <th className="p-2 text-left">{t('sponsors.votes.project', 'Project')}</th>
+                  <th className="p-2 text-left">{t('sponsors.votes.team', 'Team')}</th>
                   <th className="p-2 text-right">{t('sponsors.votes.count', 'Votes')}</th>
                 </tr></thead>
                 <tbody>
                   {(tallyData?.items ?? []).map((entry, i) => (
                     <tr key={entry.project_id} className="border-b last:border-0">
                       <td className="p-2 text-center font-mono">{i + 1}</td>
-                      <td className="p-2">{entry.project_id.substring(0, 8)}...</td>
+                      <td className="p-2 font-medium">{entry.project_title ?? `${entry.project_id.substring(0, 8)}...`}</td>
+                      <td className="p-2">{entry.team_name ?? '—'}</td>
                       <td className="p-2 text-right font-mono font-bold">{entry.vote_count}</td>
                     </tr>
                   ))}
                   {(tallyData?.items ?? []).length === 0 && (
-                    <tr><td colSpan={3} className="p-4 text-center text-muted-foreground">{t('sponsors.votes.empty', 'No votes cast yet')}</td></tr>
+                    <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">{t('sponsors.votes.empty', 'No votes cast yet')}</td></tr>
                   )}
                 </tbody>
               </table>
