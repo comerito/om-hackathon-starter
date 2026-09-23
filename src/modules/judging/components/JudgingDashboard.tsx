@@ -43,7 +43,7 @@ type ScoreProgress = {
   total_score: number | null
   round: string
 }
-type LeaderboardRow = { project_title: string; team_name: string | null; average_score: number | null; rank: number | null; track_id: string }
+type LeaderboardRow = { project_title: string; team_name: string | null; average_score: number | null; rank: number | null; track_id: string; peer_vote_count: number }
 
 const roundPreset: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   preliminary: { label: 'Preliminary', variant: 'default' },
@@ -78,6 +78,10 @@ export default function JudgingDashboard() {
   // so it gets its own selector following the Demo Queue pattern above.
   const [localLeaderboardCompetitionId, setLocalLeaderboardCompetitionId] = React.useState('')
   const leaderboardCompetitionId = scopedCompetitionId ?? localLeaderboardCompetitionId
+  // Ranks are computed per track, so during demos/judging the leaderboard is read one track
+  // at a time; empty means all tracks of the selected competition.
+  const [leaderboardTrackId, setLeaderboardTrackId] = React.useState('')
+  React.useEffect(() => { setLeaderboardTrackId('') }, [leaderboardCompetitionId])
   // Scoring progress is per-competition for the same reason — scores of two events say nothing
   // side by side — and follows the same selector pattern.
   const [localScoresCompetitionId, setLocalScoresCompetitionId] = React.useState('')
@@ -174,12 +178,26 @@ export default function JudgingDashboard() {
     retry: false,
   })
 
+  // Tracks of the leaderboard competition (track filter + track column)
+  const { data: leaderboardTracksData } = useQuery({
+    queryKey: ['judging-leaderboard-tracks', scopeVersion, leaderboardCompetitionId],
+    queryFn: () => fetchCrudList<{ id: string; name: string }>('tracks/tracks', { pageSize: '100', competition_id: leaderboardCompetitionId }),
+    enabled: tab === 'leaderboard' && scopeReady && !!leaderboardCompetitionId,
+  })
+  const leaderboardTrackNameMap = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const tr of leaderboardTracksData?.items ?? []) map.set(tr.id, tr.name)
+    return map
+  }, [leaderboardTracksData])
+
   // Leaderboard — always scoped to one competition; a failed request must surface
   // as an error, not as the "no scores yet" empty state.
   const { data: leaderboardData, isLoading: leaderboardLoading, isError: leaderboardIsError, error: leaderboardError } = useQuery({
-    queryKey: ['judging-leaderboard', scopeVersion, leaderboardCompetitionId],
+    queryKey: ['judging-leaderboard', scopeVersion, leaderboardCompetitionId, leaderboardTrackId],
     queryFn: async () => {
-      const { ok, result, status, response } = await apiCall<{ items: LeaderboardRow[]; error?: string }>(`/api/judging/leaderboard?competition_id=${encodeURIComponent(leaderboardCompetitionId)}`)
+      const params = new URLSearchParams({ competition_id: leaderboardCompetitionId })
+      if (leaderboardTrackId) params.set('track_id', leaderboardTrackId)
+      const { ok, result, status, response } = await apiCall<{ items: LeaderboardRow[]; error?: string }>(`/api/judging/leaderboard?${params.toString()}`)
       if (!ok) {
         const serverMessage = typeof result?.error === 'string' ? result.error : response.statusText
         throw new Error(serverMessage ? `${serverMessage} (${status})` : `Request failed (${status})`)
@@ -501,18 +519,32 @@ export default function JudgingDashboard() {
       {tab === 'leaderboard' && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">{t('judging.leaderboard.title', 'Leaderboard')}</h3>
-          {scopedCompetitionId ? null : (
-            <select
-              value={localLeaderboardCompetitionId}
-              onChange={(e) => setLocalLeaderboardCompetitionId(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">{t('judging.leaderboard.selectCompetition', 'Select competition...')}</option>
-              {(competitionsData?.items ?? []).map(c => (
-                <option key={c.id} value={c.id}>{c.name} ({c.stage})</option>
-              ))}
-            </select>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {scopedCompetitionId ? null : (
+              <select
+                value={localLeaderboardCompetitionId}
+                onChange={(e) => setLocalLeaderboardCompetitionId(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{t('judging.leaderboard.selectCompetition', 'Select competition...')}</option>
+                {(competitionsData?.items ?? []).map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.stage})</option>
+                ))}
+              </select>
+            )}
+            {leaderboardCompetitionId ? (
+              <select
+                value={leaderboardTrackId}
+                onChange={(e) => setLeaderboardTrackId(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{t('judging.leaderboard.allTracks', 'All tracks')}</option>
+                {(leaderboardTracksData?.items ?? []).map(tr => (
+                  <option key={tr.id} value={tr.id}>{tr.name}</option>
+                ))}
+              </select>
+            ) : null}
+          </div>
           {!leaderboardCompetitionId ? (
             <div className="rounded-lg border p-4 text-center text-muted-foreground">
               {t('judging.leaderboard.pickCompetition', 'Select a competition to see its leaderboard.')}
@@ -531,7 +563,9 @@ export default function JudgingDashboard() {
                     <th className="p-2 text-center w-12">#</th>
                     <th className="p-2 text-left">{t('judging.leaderboard.project', 'Project')}</th>
                     <th className="p-2 text-left">{t('judging.leaderboard.team', 'Team')}</th>
+                    {leaderboardTrackId ? null : <th className="p-2 text-left">{t('judging.leaderboard.track', 'Track')}</th>}
                     <th className="p-2 text-right">{t('judging.leaderboard.score', 'Avg Score')}</th>
+                    <th className="p-2 text-right">{t('judging.leaderboard.votes', "People's Choice votes")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -540,11 +574,13 @@ export default function JudgingDashboard() {
                       <td className="p-2 text-center font-mono">{entry.rank ?? i + 1}</td>
                       <td className="p-2 font-medium">{entry.project_title}</td>
                       <td className="p-2">{entry.team_name}</td>
+                      {leaderboardTrackId ? null : <td className="p-2">{leaderboardTrackNameMap.get(entry.track_id) ?? '—'}</td>}
                       <td className="p-2 text-right font-mono">{entry.average_score != null ? entry.average_score.toFixed(1) : '—'}</td>
+                      <td className="p-2 text-right font-mono">{entry.peer_vote_count ?? 0}</td>
                     </tr>
                   ))}
                   {(leaderboardData?.items ?? []).length === 0 && (
-                    <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">{t('judging.leaderboard.empty', 'No scores available yet')}</td></tr>
+                    <tr><td colSpan={leaderboardTrackId ? 5 : 6} className="p-4 text-center text-muted-foreground">{t('judging.leaderboard.empty', 'No scores available yet')}</td></tr>
                   )}
                 </tbody>
               </table>

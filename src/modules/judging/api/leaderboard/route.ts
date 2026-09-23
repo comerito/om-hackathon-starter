@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { ProjectScore } from '../../data/entities'
 import { Project } from '../../../projects/data/entities'
 import { Team } from '../../../teams/data/entities'
+import { countPeerVotesByProject } from '../../../sponsors/lib/peerVoteCounts'
 import { leaderboardQuerySchema } from '../../data/validators'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
@@ -73,6 +74,12 @@ export async function GET(req: Request) {
       scoreMap.set(s.projectId, arr)
     }
 
+    // People's Choice tally, counted from the votes themselves: `Project.peerVoteCount` is a
+    // column nothing writes, so reading it showed 0 no matter how many votes were cast.
+    const peerVoteCounts = projectIds.length
+      ? await countPeerVotesByProject(em, { competitionId, tenantId: auth.tenantId })
+      : new Map<string, number>()
+
     // Get team names
     const teamIds = [...new Set(projects.map(p => p.teamId))]
     const teams = teamIds.length ? await em.find(Team, { id: { $in: teamIds }, tenantId: auth.tenantId } as FilterQuery<Team>) : []
@@ -98,7 +105,7 @@ export async function GET(req: Request) {
         final_score: p.finalScore,
         rank: p.rank,
         manual_rank_override: p.manualRankOverride,
-        peer_vote_count: p.peerVoteCount,
+        peer_vote_count: peerVoteCounts.get(p.id) ?? 0,
         is_finalist: team?.isFinalist ?? false,
       }
     })
