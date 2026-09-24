@@ -7,11 +7,11 @@ import { resolveOrganizationScopeForRequest } from '@open-mercato/core/modules/d
 import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../../data/entities'
 import { Project, ProjectStatus } from '../../../projects/data/entities'
-import { Competition } from '../../../competitions/data/entities'
 import { Team } from '../../../teams/data/entities'
 import { Track } from '../../../tracks/data/entities'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { planDemoReorder } from '../../lib/demoOrder'
+import { loadDemoDurationResolver, pickDurations } from '../../lib/demoDurationSync'
 
 const DEMO_RESOURCE_KIND = 'judging:demo_session'
 
@@ -115,11 +115,12 @@ export async function POST(req: Request) {
       const competitionId = parsed.competition_id
       const round = parsed.round
 
-      // Read duration config from competition
-      const competition = await em.findOne(Competition, { id: competitionId, tenantId: auth.tenantId } as FilterQuery<Competition>)
-      const demoConfig = (competition as Record<string, unknown> | null)?.demoConfig as { presentationDurationMinutes?: number; qaDurationMinutes?: number } | undefined
-      const presDuration = demoConfig?.presentationDurationMinutes ?? 3
-      const qaDuration = demoConfig?.qaDurationMinutes ?? 2
+      // Stage time comes from the judging panel that hears the demo, else the hard-coded
+      // 5 + 2 minutes (lib/demoDurations.ts).
+      const resolveDurations = await loadDemoDurationResolver(em, competitionId, {
+        tenantId: auth.tenantId,
+        organizationId: auth.orgId!,
+      })
 
       const projects = await em.find(Project, {
         competitionId, status: ProjectStatus.PUBLISHED, deletedAt: null, tenantId: auth.tenantId,
@@ -132,7 +133,7 @@ export async function POST(req: Request) {
         const now = new Date()
         em.create(DemoSession, {
           competitionId, teamId: project.teamId, projectId: project.id, trackId: project.trackId,
-          presentationOrder: order++, presentationDurationMinutes: presDuration, qaDurationMinutes: qaDuration,
+          presentationOrder: order++, ...pickDurations(resolveDurations({ trackId: project.trackId, round })),
           status: DemoStatus.QUEUED, round: round as 'preliminary' | 'final',
           tenantId: auth.tenantId!, organizationId: auth.orgId!, createdAt: now, updatedAt: now,
         })

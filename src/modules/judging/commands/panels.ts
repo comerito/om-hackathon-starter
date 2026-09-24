@@ -7,6 +7,7 @@ import type { DataEngine } from '@open-mercato/shared/lib/data/engine'
 import type { FilterQuery } from '@mikro-orm/postgresql'
 import { JudgePanel } from '../data/entities'
 import { createPanelSchema, updatePanelSchema } from '../data/validators'
+import { syncDemoDurationsAndNotify } from '../lib/demoDurationSync'
 
 const ENTITY_ID = 'judging:judge_panel'
 
@@ -53,6 +54,8 @@ const createPanelCommand: CommandHandler<Record<string, unknown>, JudgePanel> = 
         competitionId: parsed.competition_id,
         name: parsed.name,
         round: parsed.round,
+        presentationDurationMinutes: parsed.presentation_duration_minutes ?? null,
+        qaDurationMinutes: parsed.qa_duration_minutes ?? null,
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
       },
@@ -62,6 +65,8 @@ const createPanelCommand: CommandHandler<Record<string, unknown>, JudgePanel> = 
       identifiers: { id: String(panel.id), tenantId: scope.tenantId, organizationId: scope.organizationId },
       events: panelCrudEvents, indexer: panelCrudIndexer,
     })
+    // Panel times (or the panel itself) changed: demos that have not started follow.
+    await syncDemoDurationsAndNotify(ctx.container, panel.competitionId, scope)
     return panel
   },
 }
@@ -78,6 +83,8 @@ const updatePanelCommand: CommandHandler<Record<string, unknown>, JudgePanel> = 
       apply: (e) => {
         if (parsed.name !== undefined) e.name = parsed.name
         if (parsed.round !== undefined) e.round = parsed.round
+        if (parsed.presentation_duration_minutes !== undefined) e.presentationDurationMinutes = parsed.presentation_duration_minutes
+        if (parsed.qa_duration_minutes !== undefined) e.qaDurationMinutes = parsed.qa_duration_minutes
       },
     })
     if (!panel) throw new CrudHttpError(404, { error: 'Panel not found' })
@@ -86,6 +93,8 @@ const updatePanelCommand: CommandHandler<Record<string, unknown>, JudgePanel> = 
       identifiers: { id: String(panel.id), tenantId: scope.tenantId, organizationId: scope.organizationId },
       events: panelCrudEvents, indexer: panelCrudIndexer,
     })
+    // Panel times (or the panel itself) changed: demos that have not started follow.
+    await syncDemoDurationsAndNotify(ctx.container, panel.competitionId, scope)
     return panel
   },
 }
@@ -107,6 +116,8 @@ const deletePanelCommand: CommandHandler<{ body?: Record<string, unknown>; query
       identifiers: { id, tenantId: scope.tenantId, organizationId: scope.organizationId },
       events: panelCrudEvents, indexer: panelCrudIndexer,
     })
+    // Panel times (or the panel itself) changed: demos that have not started follow.
+    await syncDemoDurationsAndNotify(ctx.container, panel.competitionId, scope)
     return panel
   },
 }

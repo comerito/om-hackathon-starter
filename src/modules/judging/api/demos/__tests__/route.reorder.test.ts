@@ -19,7 +19,6 @@ jest.mock('@open-mercato/shared/lib/crud/route-mutation-guard', () => ({ runRout
 jest.mock('@open-mercato/core/modules/directory/utils/organizationScope', () => ({ resolveOrganizationScopeForRequest: async () => ({ selectedId: null }) }), { virtual: true })
 jest.mock('../../../data/entities', () => ({ DemoSession: class DemoSession {}, DemoStatus: { QUEUED: 'queued' } }))
 jest.mock('../../../../projects/data/entities', () => ({ Project: class Project {}, ProjectStatus: { PUBLISHED: 'published' } }))
-jest.mock('../../../../competitions/data/entities', () => ({ Competition: class Competition {} }))
 jest.mock('../../../../teams/data/entities', () => ({ Team: class Team {} }))
 jest.mock('../../../../tracks/data/entities', () => ({ Track: class Track {} }))
 

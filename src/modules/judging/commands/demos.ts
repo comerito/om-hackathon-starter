@@ -5,6 +5,7 @@ import type { EntityManager, FilterQuery } from '@mikro-orm/postgresql'
 import { DemoSession, DemoStatus } from '../data/entities'
 import { advanceDemoSchema, reorderDemoSchema } from '../data/validators'
 import { planDemoReorder } from '../lib/demoOrder'
+import { loadDemoDurationResolver, pickDurations } from '../lib/demoDurationSync'
 import { Project, ProjectStatus } from '../../projects/data/entities'
 
 function ensureScope(ctx: CommandRuntimeContext) {
@@ -144,6 +145,8 @@ const generateDemoQueueCommand: CommandHandler<Record<string, unknown>, { count:
       tenantId: scope.tenantId,
     } as FilterQuery<Project>, { orderBy: { trackId: 'ASC', createdAt: 'ASC' } })
 
+    const resolveDurations = await loadDemoDurationResolver(em, competition_id, scope)
+
     let order = 0
     const created: DemoSession[] = []
     for (const project of projects) {
@@ -162,8 +165,7 @@ const generateDemoQueueCommand: CommandHandler<Record<string, unknown>, { count:
         projectId: project.id,
         trackId: project.trackId,
         presentationOrder: order++,
-        presentationDurationMinutes: 3,
-        qaDurationMinutes: 2,
+        ...pickDurations(resolveDurations({ trackId: project.trackId, round })),
         status: DemoStatus.QUEUED,
         round: round as 'preliminary' | 'final',
         tenantId: scope.tenantId,

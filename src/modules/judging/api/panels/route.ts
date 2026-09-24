@@ -31,7 +31,7 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
   enrichers: { entityId: ENTITY_ID },
   list: {
     schema: querySchema, entityId: ENTITY_ID,
-    fields: ['id', 'competition_id', 'name', 'round', 'tenant_id', 'organization_id', 'created_at'],
+    fields: ['id', 'competition_id', 'name', 'round', 'presentation_duration_minutes', 'qa_duration_minutes', 'tenant_id', 'organization_id', 'created_at'],
     sortFieldMap: { id: 'id', name: 'name', round: 'round', created_at: 'created_at' },
     buildFilters: async (q: Query) => {
       const f: Record<string, unknown> = {}
@@ -44,6 +44,8 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
     transformItem: (item: Record<string, unknown>) => ({
       id: String(item.id), competition_id: String(item.competition_id),
       name: String(item.name), round: String(item.round),
+      presentation_duration_minutes: item.presentation_duration_minutes == null ? null : Number(item.presentation_duration_minutes),
+      qa_duration_minutes: item.qa_duration_minutes == null ? null : Number(item.qa_duration_minutes),
       tenant_id: item.tenant_id, organization_id: item.organization_id, created_at: item.created_at,
     }),
   },

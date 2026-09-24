@@ -42,6 +42,13 @@ export class JudgePanel {
   @Property({ type: 'text', default: 'preliminary' })
   round: JudgingRound = JudgingRound.PRELIMINARY
 
+  // Stage time for the demos this panel hears. Null = inherit the competition's demo settings.
+  @Property({ name: 'presentation_duration_minutes', type: 'int', nullable: true })
+  presentationDurationMinutes?: number | null
+
+  @Property({ name: 'qa_duration_minutes', type: 'int', nullable: true })
+  qaDurationMinutes?: number | null
+
   @Index()
   @Property({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string
