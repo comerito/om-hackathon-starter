@@ -1,5 +1,7 @@
 import {
+  THANK_YOU_EMAIL_CLIENT_CHUNK_SIZE,
   buildThankYouEmailPayload,
+  chunkParticipationIds,
   isValidPhotosUrl,
   prepareThankYouBulkSend,
   skipAlreadyThankedParticipations,
@@ -87,9 +89,26 @@ describe('skipAlreadyThankedParticipations', () => {
   })
 })
 
+describe('chunkParticipationIds', () => {
+  it('splits a large selection into short requests, keeping order and every id', () => {
+    const ids = Array.from({ length: 10 }, (_, index) => `id-${index}`)
+    const chunks = chunkParticipationIds(ids)
+    expect(chunks.every((chunk) => chunk.length <= THANK_YOU_EMAIL_CLIENT_CHUNK_SIZE)).toBe(true)
+    expect(chunks.flat()).toEqual(ids)
+    expect(chunkParticipationIds(ids, 3).map((chunk) => chunk.length)).toEqual([3, 3, 3, 1])
+  })
+
+  it('returns no chunks for an empty selection and never loops on a bad size', () => {
+    expect(chunkParticipationIds([])).toEqual([])
+    expect(chunkParticipationIds(['a', 'b'], 0)).toEqual([['a'], ['b']])
+  })
+})
+
 describe('thankYouEmailFlashKind', () => {
   it('maps the send summary to a flash severity', () => {
     expect(thankYouEmailFlashKind({ sent: 3, failed: 0, status: 'complete' })).toBe('success')
+    // Everything was already sent (e.g. a retried chunk): nothing failed, so not an error.
+    expect(thankYouEmailFlashKind({ sent: 0, failed: 0, status: 'complete' })).toBe('success')
     expect(thankYouEmailFlashKind({ sent: 2, failed: 1, status: 'partial' })).toBe('warning')
     expect(thankYouEmailFlashKind({ sent: 0, failed: 2, status: 'partial' })).toBe('error')
   })
