@@ -1,0 +1,9 @@
+{
+  "portal_users.bulk.delete.label": "Usuń zaznaczonych",
+  "portal_users.bulk.delete.noSelection": "Nie zaznaczono żadnych użytkowników.",
+  "portal_users.bulk.delete.confirmTitle": "Usunąć {count} użytkowników?",
+  "portal_users.bulk.delete.confirmDescription": "Dostęp do portalu zostanie natychmiast odebrany. Tej operacji nie cofniesz z tego ekranu.",
+  "portal_users.bulk.delete.success": "Usunięto {count} użytkowników",
+  "portal_users.bulk.delete.partial": "Usunięto {count} z {total} użytkowników. Nie udało się: {errors}",
+  "portal_users.bulk.delete.failed": "Nie udało się usunąć zaznaczonych użytkowników. {errors}"
+}
