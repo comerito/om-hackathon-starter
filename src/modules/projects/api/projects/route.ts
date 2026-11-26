@@ -1,6 +1,8 @@
 import { z } from 'zod'
-import { makeCrudRoute } from '@open-mercato/shared/lib/crud/factory'
+import type { EntityManager } from '@mikro-orm/postgresql'
+import { makeCrudRoute, type CrudCtx } from '@open-mercato/shared/lib/crud/factory'
 import { Project } from '../../data/entities'
+import { GALLERY_FILTER_VALUES, narrowIdFilter, resolveListFilterConstraints } from '../../lib/listFilters'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 
 const ENTITY_ID = 'projects:project'
@@ -15,9 +17,14 @@ const querySchema = z
     competition_id: z.string().uuid().optional(),
     track_id: z.string().uuid().optional(),
     team_id: z.string().uuid().optional(),
+    // Single status or a comma-separated list (`published,scored`).
     status: z.string().optional(),
     flagged_for_reuse: z.enum(['true', 'false']).optional(),
     title: z.string().optional(),
+    team_name: z.string().optional(),
+    gallery_status: z.enum(GALLERY_FILTER_VALUES).optional(),
+    submitted_from: z.string().datetime({ offset: true }).optional(),
+    submitted_to: z.string().datetime({ offset: true }).optional(),
     organizationId: z.string().uuid().optional(),
   })
   .passthrough()
@@ -94,17 +101,40 @@ export const { metadata, GET, POST, PUT, DELETE } = makeCrudRoute({
       'manual_rank_override', 'tenant_id', 'organization_id', 'is_active', 'created_at', 'updated_at',
     ],
     sortFieldMap: { id: 'id', title: 'title', status: 'status', created_at: 'created_at', submitted_at: 'submitted_at', final_score: 'final_score' },
-    buildFilters: async (q: Query) => {
+    buildFilters: async (q: Query, ctx: CrudCtx) => {
       const filters: Record<string, unknown> = {}
       if (q.id) filters.id = q.id
       if (q.competition_id) filters.competition_id = q.competition_id
       if (q.track_id) filters.track_id = q.track_id
       if (q.team_id) filters.team_id = q.team_id
-      if (q.status) filters.status = q.status
+      if (q.status) {
+        const statuses = q.status.split(',').map((value) => value.trim()).filter(Boolean)
+        if (statuses.length === 1) filters.status = statuses[0]
+        else if (statuses.length > 1) filters.status = { $in: statuses }
+      }
       if (q.flagged_for_reuse === 'true') filters.flagged_for_reuse = true
       if (q.flagged_for_reuse === 'false') filters.flagged_for_reuse = false
       if (q.title) filters.title = { $ilike: `%${q.title}%` }
       if (q.organizationId) filters.organization_id = q.organizationId
+      if (q.submitted_from || q.submitted_to) {
+        const range: Record<string, string> = {}
+        if (q.submitted_from) range.$gte = q.submitted_from
+        if (q.submitted_to) range.$lte = q.submitted_to
+        filters.submitted_at = range
+      }
+      // Team name and gallery state live in other tables: resolve them to id constraints.
+      if (q.team_name || q.gallery_status) {
+        const constraints = await resolveListFilterConstraints(ctx.container.resolve('em') as EntityManager, {
+          tenantId: ctx.auth?.tenantId ?? null,
+          organizationIds: ctx.organizationIds,
+          teamName: q.team_name,
+          galleryStatus: q.gallery_status,
+        })
+        const teamFilter = narrowIdFilter(q.team_id, constraints.teamIds, null)
+        if (teamFilter !== undefined) filters.team_id = teamFilter
+        const idFilter = narrowIdFilter(q.id, constraints.projectIds, constraints.excludedProjectIds)
+        if (idFilter !== undefined) filters.id = idFilter
+      }
       return filters
     },
     transformItem: (item: BaseFields) => ({
