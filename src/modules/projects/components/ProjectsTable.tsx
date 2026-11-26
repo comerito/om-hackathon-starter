@@ -13,10 +13,11 @@ import { useConfirmDialog } from '@open-mercato/ui/backend/confirm-dialog'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 import { useCompetitionScope } from '@/lib/competition-scope'
-import type { FilterValues } from '@open-mercato/ui/backend/FilterBar'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { FileSpreadsheet } from 'lucide-react'
 import { downloadCompetitionAttachments } from '../lib/downloadCompetitionAttachments'
+import { downloadProjectsExport, fetchAllMatchingProjectIds } from '../lib/downloadProjectsExport'
+import { ProjectsInlineFilters, toListQueryParams, type ProjectListFilters } from './ProjectsInlineFilters'
 
 type ProjectRow = {
   id: string
@@ -66,30 +67,37 @@ export default function ProjectsTable() {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'title', desc: false }])
   const [page, setPage] = React.useState(1)
   const [searchValue, setSearchValue] = React.useState('')
-  const [filterValues, setFilterValues] = React.useState<FilterValues>({})
+  const [filterValues, setFilterValues] = React.useState<ProjectListFilters>({})
   const [flagProjectId, setFlagProjectId] = React.useState<string | null>(null)
   const [flagReason, setFlagReason] = React.useState('')
   const [flagging, setFlagging] = React.useState(false)
   const [exportingAttachments, setExportingAttachments] = React.useState(false)
+  const [exportingAll, setExportingAll] = React.useState(false)
   const scopeVersion = useOrganizationScopeVersion()
   const { competitionId: scopedCompetitionId, ready: scopeReady } = useCompetitionScope()
 
-  const queryParams = React.useMemo(() => {
+  const applyFilters = React.useCallback((next: ProjectListFilters) => {
+    setFilterValues(next)
+    setPage(1)
+  }, [])
+
+  // Everything that narrows the list except paging — shared by the table and "export filtered".
+  const filterParams = React.useMemo(() => {
     const params: Record<string, string> = {
-      page: page.toString(),
-      pageSize: '50',
       sortField: sorting[0]?.id || 'title',
       sortDir: sorting[0]?.desc ? 'desc' : 'asc',
+      ...toListQueryParams(filterValues),
     }
     if (searchValue) params.title = searchValue
     // Global header scope wins over the per-page filter, which is hidden while scoped.
-    if (scopedCompetitionId) {
-      params.competition_id = scopedCompetitionId
-    } else if (filterValues.competition_id && typeof filterValues.competition_id === 'string') {
-      params.competition_id = filterValues.competition_id
-    }
-    return new URLSearchParams(params).toString()
-  }, [filterValues.competition_id, page, searchValue, sorting, scopedCompetitionId])
+    if (scopedCompetitionId) params.competition_id = scopedCompetitionId
+    return params
+  }, [filterValues, searchValue, sorting, scopedCompetitionId])
+
+  const queryParams = React.useMemo(
+    () => new URLSearchParams({ ...filterParams, page: page.toString(), pageSize: '50' }).toString(),
+    [filterParams, page],
+  )
 
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['projects', queryParams, scopeVersion],
@@ -109,7 +117,66 @@ export default function ProjectsTable() {
     () => (competitionsData ?? []).map((competition) => ({ value: competition.id, label: competition.name })),
     [competitionsData],
   )
-  const selectedCompetitionId = scopedCompetitionId ?? (typeof filterValues.competition_id === 'string' ? filterValues.competition_id : null)
+  const selectedCompetitionId = scopedCompetitionId ?? filterValues.competition_id ?? null
+
+  const { data: tracksData } = useQuery({
+    queryKey: ['projects-tracks', selectedCompetitionId, scopeVersion],
+    queryFn: async () => {
+      const params: Record<string, string> = { pageSize: '100', sortField: 'name', sortDir: 'asc' }
+      if (selectedCompetitionId) params.competition_id = selectedCompetitionId
+      const response = await fetchCrudList<{ id: string; name: string; color: string | null; competition_id: string }>('tracks/tracks', params)
+      return response?.items ?? []
+    },
+    enabled: scopeReady,
+  })
+
+  const trackOptions = React.useMemo(() => {
+    const competitionNames = new Map((competitionsData ?? []).map((competition) => [competition.id, competition.name]))
+    const tracks = tracksData ?? []
+    // Without a competition the same track name can repeat across events: disambiguate.
+    return tracks.map((track) => ({
+      value: track.id,
+      color: track.color,
+      label: !selectedCompetitionId && competitionNames.get(track.competition_id)
+        ? `${track.name} · ${competitionNames.get(track.competition_id)}`
+        : track.name,
+    }))
+  }, [tracksData, competitionsData, selectedCompetitionId])
+
+  // A track picked under another competition would silently empty the table: drop it.
+  React.useEffect(() => {
+    if (!filterValues.track_id || !tracksData) return
+    if (!tracksData.some((track) => track.id === filterValues.track_id)) {
+      applyFilters({ ...filterValues, track_id: undefined })
+    }
+  }, [tracksData, filterValues, applyFilters])
+
+  async function runExport(ids: string[]): Promise<boolean> {
+    if (ids.length === 0) {
+      flash(t('projects.exportXlsx.empty', 'No projects to export'), 'error')
+      return false
+    }
+    try {
+      await downloadProjectsExport(ids)
+      flash(t('projects.exportXlsx.done', 'Exported {count} projects to Excel', { count: ids.length }), 'success')
+      return true
+    } catch (err) {
+      flash(err instanceof Error ? err.message : t('projects.exportXlsx.error', 'Failed to export projects'), 'error')
+      return false
+    }
+  }
+
+  async function handleExportFiltered() {
+    setExportingAll(true)
+    try {
+      const ids = await fetchAllMatchingProjectIds(filterParams)
+      await runExport(ids)
+    } catch (err) {
+      flash(err instanceof Error ? err.message : t('projects.exportXlsx.error', 'Failed to export projects'), 'error')
+    } finally {
+      setExportingAll(false)
+    }
+  }
 
   // Compute submission progress
   const totalProjects = data?.total ?? 0
@@ -291,18 +358,52 @@ export default function ProjectsTable() {
       <DataTable
         title={t('projects.table.title', 'Projects')}
         actions={
-          selectedCompetitionId ? (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={handleExportAttachments}
-              disabled={exportingAttachments}
+              onClick={handleExportFiltered}
+              disabled={exportingAll || !data?.total}
+              title={t('projects.exportXlsx.filteredHint', 'Export every project matching the current filters')}
             >
-              {exportingAttachments
-                ? t('projects.export.exporting', 'Preparing archive...')
-                : t('projects.export.action', 'Download Competition Attachments')}
+              <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {exportingAll
+                ? t('projects.exportXlsx.exporting', 'Preparing Excel...')
+                : t('projects.exportXlsx.filtered', 'Export to Excel ({count})', { count: data?.total ?? 0 })}
             </Button>
-          ) : undefined
+            {selectedCompetitionId ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportAttachments}
+                disabled={exportingAttachments}
+              >
+                {exportingAttachments
+                  ? t('projects.export.exporting', 'Preparing archive...')
+                  : t('projects.export.action', 'Download Competition Attachments')}
+              </Button>
+            ) : null}
+          </div>
+        }
+        bulkActions={[
+          {
+            id: 'export-xlsx',
+            label: t('projects.exportXlsx.selected', 'Export selected to Excel'),
+            icon: FileSpreadsheet,
+            // Returning false keeps the selection so the user can retry.
+            onExecute: (rows: ProjectRow[]) => runExport(rows.map((row) => row.id)),
+          },
+        ]}
+        // Changing filters, sorting or page clears a selection the user can no longer see.
+        selectionScopeKey={queryParams}
+        activeFilterChips={
+          <ProjectsInlineFilters
+            value={filterValues}
+            onChange={applyFilters}
+            competitionOptions={competitionOptions}
+            trackOptions={trackOptions}
+            showCompetition={!scopedCompetitionId}
+          />
         }
         columns={columns}
         data={data?.items ?? []}
@@ -312,17 +413,6 @@ export default function ProjectsTable() {
         sortable
         sorting={sorting}
         onSortingChange={(s) => { setSorting(s); setPage(1) }}
-        filters={scopedCompetitionId ? [] : [
-          {
-            id: 'competition_id',
-            label: t('projects.filters.competition', 'Competition'),
-            type: 'select',
-            options: competitionOptions,
-          },
-        ]}
-        filterValues={filterValues}
-        onFiltersApply={(values: FilterValues) => { setFilterValues(values); setPage(1) }}
-        onFiltersClear={() => { setFilterValues({}); setPage(1) }}
         rowActions={(row) => (
           <RowActions
             items={[
