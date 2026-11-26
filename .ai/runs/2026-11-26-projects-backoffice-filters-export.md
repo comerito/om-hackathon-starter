@@ -34,7 +34,15 @@ On `/backend/projects` organizers need to:
 ## Progress
 
 - [x] 1. Plan
-- [ ] 2. List API filters
-- [ ] 3. XLSX writer + export route + unit tests
-- [ ] 4. ProjectsTable inline filters, selection, export actions, i18n
-- [ ] 5. Validation gate (`yarn generate`, `typecheck`, `lint`, `test`, `build`) + PR
+- [x] 2. List API filters
+- [x] 3. XLSX writer + export route + unit tests
+- [x] 4. ProjectsTable inline filters, selection, export actions, i18n
+- [x] 5. Validation gate (`yarn generate`, `typecheck`, `lint`, `test`, `build`) + PR
+
+## Gate results
+
+- `yarn generate` ✅ · `yarn typecheck` ✅ · `yarn test` ✅ (83 suites / 1020 tests)
+- `yarn build` ✅ with `NODE_OPTIONS=--max-old-space-size=8192` (default heap OOMs in this environment)
+- `yarn lint` ❌ pre-existing and unrelated: `next lint` was removed in Next 16 and the repo has no ESLint config
+- Browser QA not run: no Postgres reachable in this environment. The generated .xlsx was read back with ExcelJS 4.4.0
+  (header bold + frozen, autofilter, date format, Polish characters intact).
